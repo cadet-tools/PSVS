@@ -124,7 +124,7 @@
 
   async function performSave(silent) {
     if (S.newerFile) {
-      CP.ui.toast(`Datu failu saglabājusi jaunāka CADET PERSONĀLS versija (datu shēma v${S.newerFile}, šai versijai v${CP.SCHEMA}). Lai dati netiktu sabojāti, saglabāšana ir atslēgta. Pārlādē lapu (Ctrl+F5) vai atver jaunāko versiju.`, 'err', 20000);
+      CP.ui.toast(`Datu failu saglabājusi jaunāka CADET PERSONĀLS versija. Lai dati netiktu sabojāti, saglabāšana ir atslēgta. Pārlādē lapu (Ctrl+F5) vai atver jaunāko versiju.`, 'err', 20000);
       return false;
     }
     if (!S.root) {

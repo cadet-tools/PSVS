@@ -10,6 +10,7 @@
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}</div>`;
 
   CP.pages.dashboard = {
+    after() { CP.watch?.paint(); },
     render() {
       const cur = D.peopleInYear().filter(D.isCurrent), al = D.alerts();
       const miss = cur.map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length).sort((a, b) => b.m.length - a.m.length || U.cmp(U.sortName(a.p), U.sortName(b.p)));
@@ -28,13 +29,14 @@
         : !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>${S.pendingRoot ? `Mape <b>“${esc(S.pendingRoot.name)}”</b> ir atrasta. Chrome drošības dēļ pēc pārlūka restartēšanas lūdz apstiprināt piekļuvi — spied pogu zemāk.` : 'Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.'}</p>
         <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : `<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>`}</div>
         ${ui.rootDrop()}
-        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>`
+        <p class="muted small">Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
         : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
       const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
       if (!S.root && B && B.step !== 'index') return `<div class="page">${head}${start}</div>`;   // kamēr mape atveras vai nav pieejama — tikai statuss
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
         ${start}
         ${CP.years?.banner() || ''}
+        <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
         <div class="stats">
           <button class="stat" data-tone="green" data-act="openList" data-arg="active">${CP.ic('userCheck')}<span>Aktīvie</span><strong>${cnt('active')}</strong></button>
           <button class="stat" data-tone="blue" data-act="openList" data-arg="candidate">${CP.ic('userClock')}<span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
@@ -42,7 +44,7 @@
           <button class="stat" data-tone="violet" data-page="documents">${CP.ic('files')}<span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
           <button class="stat" data-tone="olive" data-page="equipment">${CP.ic('backpack')}<span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && D.inYear(D.person(x.personId))).length}</strong></button>
           <button class="stat" data-tone="red" data-page="alerts">${CP.ic('bell')}<span>Uzdevumi un brīdinājumi</span><strong class="${al.some(a => a.sev > 1) ? 'red' : al.length ? 'warn' : ''}">${al.length}</strong></button>
-        </div>
+        </div></div>
         <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel / e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
         <div class="cards2">
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>

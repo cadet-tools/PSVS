@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.12.0 — 2026-10-12 — Pulkstenis un pauzes
+- Pārskatā ir taktiskā pulksteņa stila ciparnīca. Tā rāda laiku, sekundes, datumu, darba laiku un divus progresa lokus, un tās krāsa pielāgojas tēmai un akcentam.
+- Darba laika taimeris: laiks tiek skaitīts, kamēr rīks ir atvērts. Pēc 40 min parādās paziņojums “Labs darbs! … Laiks paņemt īsu pauzi”. Poga “Sākt pauzi” skaita 5 min, un pēc tam sākas jauns posms. Ja rīks bijis aizvērts ilgāk par 5 min, tas tiek uzskatīts par pauzi.
+- Lietotāja skatā noņemti tehniski un “aizkulišu” paskaidrojumi (datu shēmas versijas, testa kanāls, izstrādes process).
+
 ## 1.11.0 — 2026-10-12 — Jaunais izskats visiem; “Par rīku”
 - Dizains v2 tagad ir arī stabilajā un lokālajā versijā: ikonas, krāsu flīzes, tumšā un gaišā tēma, akcenta krāsa (Iestatījumi → Izskats).
 - Jauna sadaļa **Par rīku** (navigācijā ⓘ): kam rīks paredzēts, kur glabājas dati, 8 soļi, kā sākt lietot, ko rīks prot, izstrādātājs Jānis Eglis.

@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 20 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 21 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.11.0';
+  CP.VERSION = '1.12.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -864,7 +864,7 @@ window.CP = window.CP || {};
 
   async function performSave(silent) {
     if (S.newerFile) {
-      CP.ui.toast(`Datu failu saglabājusi jaunāka CADET PERSONĀLS versija (datu shēma v${S.newerFile}, šai versijai v${CP.SCHEMA}). Lai dati netiktu sabojāti, saglabāšana ir atslēgta. Pārlādē lapu (Ctrl+F5) vai atver jaunāko versiju.`, 'err', 20000);
+      CP.ui.toast(`Datu failu saglabājusi jaunāka CADET PERSONĀLS versija. Lai dati netiktu sabojāti, saglabāšana ir atslēgta. Pārlādē lapu (Ctrl+F5) vai atver jaunāko versiju.`, 'err', 20000);
       return false;
     }
     if (!S.root) {
@@ -3427,6 +3427,147 @@ window.CP = window.CP || {};
 })(window.CP);
 
 
+/* ==== js/watch.js ==== */
+/* =====================================================================
+   Pārskata pulkstenis (taktiskā pulksteņa stilā) + darba laika taimeris.
+   - Laiks tiek skaitīts, kamēr rīks ir atvērts. Ja rīks bijis paslēpts/aizvērts ilgāk par 5 min — tā ir pauze, sākas jauns posms.
+   - Pēc 40 min nepārtraukta darba — paziņojums ar ieteikumu paņemt pauzi; “Sākt pauzi” skaita 5 min.
+   Stāvoklis glabājas pārlūkā (localStorage), ne datu failā.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const S = CP.state, U = CP.util, A = CP.actions;
+  const WORK_MIN = 40, BREAK_MIN = 5, GAP_MIN = 5, SNOOZE_MIN = 10;
+  const KEY = 'cp-session';
+  const DAYS = ['Svētdiena', 'Pirmdiena', 'Otrdiena', 'Trešdiena', 'Ceturtdiena', 'Piektdiena', 'Sestdiena'];
+  const MONTHS = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
+  const pad = n => String(n).padStart(2, '0');
+  const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  const save = st => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* tikai ērtībai */ } };
+  let st = load(); const now0 = Date.now();
+  if (!st || now0 - (st.last || 0) > GAP_MIN * 60000) st = { start: now0, last: now0, remindAt: now0 + WORK_MIN * 60000, breakEnd: 0 };
+  save(st);
+
+  /** Darba sesija: sākums no jauna (pēc pauzes) */
+  function restart(t = Date.now()) { st = { start: t, last: t, remindAt: t + WORK_MIN * 60000, breakEnd: 0 }; save(st); }
+
+  A.breakStart = () => { st.breakEnd = Date.now() + BREAK_MIN * 60000; save(st); paint(); CP.ui.toast(`Pauze ${BREAK_MIN} minūtes. Pastaigā, izstaipies, padzer ūdeni.`, 'ok', 8000); };
+  A.breakEnd = () => { restart(); paint(); };
+
+  function tick() {
+    const t = Date.now();
+    if (document.visibilityState === 'visible') {
+      if (t - st.last > GAP_MIN * 60000) restart(t);          // atgriezies pēc garākas prombūtnes — tā bija pauze
+      st.last = t;
+    }
+    if (st.breakEnd && t >= st.breakEnd) { restart(t); CP.ui.toast('Pauze beigusies. Labu darbu turpinot!', 'ok', 8000); }
+    if (!st.breakEnd && t >= st.remindAt && document.visibilityState === 'visible') {
+      st.remindAt = t + SNOOZE_MIN * 60000;
+      const min = Math.round((t - st.start) / 60000);
+      CP.ui.toast(`Labs darbs! Tu strādā jau ${min} min. Laiks paņemt īsu pauzi — acīm un mugurai tas noder.`, 'ok', 60000, { act: 'breakStart', label: `Sākt pauzi (${BREAK_MIN} min)` });
+    }
+    if (t % 15000 < 1000) save(st);
+    paint();
+  }
+
+  /* --- Pulksteņa ciparnīca (SVG) --- */
+  const C = 150, R_CASE = 142, R_BEZEL = 128, R_FACE = 104;
+  function ticks() {
+    let s = '';
+    for (let i = 0; i < 60; i++) {
+      const a = i * 6 * Math.PI / 180, major = i % 5 === 0, r1 = R_BEZEL - (major ? 13 : 7), r2 = R_BEZEL - 2;
+      s += `<line x1="${(C + r1 * Math.sin(a)).toFixed(1)}" y1="${(C - r1 * Math.cos(a)).toFixed(1)}" x2="${(C + r2 * Math.sin(a)).toFixed(1)}" y2="${(C - r2 * Math.cos(a)).toFixed(1)}" class="${major ? 'tk-major' : 'tk'}"/>`;
+    }
+    return s;
+  }
+  // taustiņi korpusa malā (grādos no 12): LIGHT, UP, DOWN kreisajā pusē; START, BACK labajā
+  const BTN = [[-60, 'LIGHT'], [-110, 'UP · MENU'], [-145, 'DOWN'], [60, 'START · STOP'], [120, 'BACK · LAP']];
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [C + r * Math.sin(a), C - r * Math.cos(a)]; };
+  function buttons() {
+    return BTN.map(([d]) => { const [x, y] = pt(d, R_CASE + 4); return `<rect class="w-btn" x="${(x - 9).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="18" height="10" rx="3" transform="rotate(${d + 90} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }).join('');
+  }
+  function bezelText() {
+    return BTN.map(([d, t], i) => {
+      const r = R_CASE - 7, span = 28, left = d < 0;
+      const [x1, y1] = pt(d - span / 2, r), [x2, y2] = pt(d + span / 2, r);
+      // apakšējā pusē teksts iet pretējā virzienā, lai būtu lasāms
+      const bottom = Math.abs(d) > 90;
+      const path = bottom ? `M${x2.toFixed(1)} ${y2.toFixed(1)} A${r} ${r} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}` : `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+      return `<path id="wbt${i}" d="${path}" fill="none"/><text class="w-engr${left ? '' : ''}"><textPath href="#wbt${i}" startOffset="50%" text-anchor="middle">${t}</textPath></text>`;
+    }).join('');
+  }
+  // loki: kreisais (darbs) 205°→335°, labais (sekundes) 25°→155° — kā datu loki taktiskā pulkstenī
+  const arcPath = (from, to, r) => { const [x1, y1] = pt(from, r), [x2, y2] = pt(to, r); return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`; };
+
+  CP.watch = {
+    html() {
+      const rA = R_FACE - 9;
+      return `<section class="card watch-card" aria-label="Pulkstenis un darba laiks">
+        <svg class="watch" viewBox="0 0 300 300" role="img" aria-labelledby="wAria">
+          <title id="wAria">Pulkstenis</title>
+          <defs>
+            <linearGradient id="wSteel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="st-a"/><stop offset=".5" class="st-b"/><stop offset="1" class="st-c"/></linearGradient>
+            <radialGradient id="wFace" cx=".5" cy=".42" r=".65"><stop offset="0" class="fc-a"/><stop offset="1" class="fc-b"/></radialGradient>
+          </defs>
+          ${buttons()}
+          <circle cx="${C}" cy="${C}" r="${R_CASE}" class="w-case" fill="url(#wSteel)"/>
+          <circle cx="${C}" cy="${C}" r="${R_BEZEL + 1}" class="w-bezel"/>
+          ${bezelText()}
+          <g class="w-ticks">${ticks()}</g>
+          <circle cx="${C}" cy="${C}" r="${R_FACE}" class="w-face" fill="url(#wFace)"/>
+          <path d="${arcPath(205, 335, rA)}" class="w-track" pathLength="100"/>
+          <path id="wArcWork" d="${arcPath(205, 335, rA)}" class="w-arc" pathLength="100" stroke-dasharray="0 100"/>
+          <path d="${arcPath(25, 155, rA)}" class="w-track" pathLength="100"/>
+          <path id="wArcSec" d="${arcPath(25, 155, rA)}" class="w-arc w-arc2" pathLength="100" stroke-dasharray="0 100"/>
+          <text x="${C}" y="98" class="w-date" id="wDate"></text>
+          <text x="${C - 10}" y="160" class="w-time" id="wTime">--:--</text>
+          <text x="${C + 63}" y="160" class="w-sec" id="wSec">--</text>
+          <line x1="${C - 58}" y1="176" x2="${C + 58}" y2="176" class="w-rule"/>
+          <text x="${C}" y="198" class="w-lbl" id="wWorkLbl">Darbā</text>
+          <text x="${C}" y="222" class="w-work" id="wWork">00:00</text>
+        </svg>
+        <div class="watch-foot" id="wNote"></div>
+      </section>`;
+    }
+  };
+
+  function paint() {
+    const el = document.getElementById('wTime'); if (!el) return;
+    const d = new Date(), t = d.getTime();
+    el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    document.getElementById('wSec').textContent = pad(d.getSeconds());
+    document.getElementById('wDate').textContent = `${DAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+    document.getElementById('wArcSec').setAttribute('stroke-dasharray', `${(d.getSeconds() / 59 * 100).toFixed(1)} 100`);
+    const work = document.getElementById('wWork'), lbl = document.getElementById('wWorkLbl'), arc = document.getElementById('wArcWork'), note = document.getElementById('wNote');
+    const card = el.closest('.watch-card');
+    if (st.breakEnd) {
+      const left = st.breakEnd - t;
+      lbl.textContent = 'Pauze'; work.textContent = mmss(left);
+      arc.setAttribute('stroke-dasharray', `${(100 - left / (BREAK_MIN * 600)).toFixed(1)} 100`);
+      card.dataset.state = 'break';
+      note.innerHTML = `<span>Pauze līdz ${new Date(st.breakEnd).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' })}</span><button class="sm ghost" data-act="breakEnd">Turpināt darbu</button>`;
+      return;
+    }
+    const ms = t - st.start, pct = Math.min(100, ms / (WORK_MIN * 600));
+    lbl.textContent = 'Darbā'; work.textContent = ms >= 3600000 ? `${Math.floor(ms / 3600000)}:${mmss(ms % 3600000)}` : mmss(ms);
+    arc.setAttribute('stroke-dasharray', `${pct.toFixed(1)} 100`);
+    const over = ms >= WORK_MIN * 60000;
+    card.dataset.state = over ? 'over' : '';
+    const key = over ? 'over' : 'work' + Math.floor(Math.max(0, WORK_MIN * 60000 - ms) / 60000);
+    if (note.dataset.k !== key) {
+      note.dataset.k = key;
+      note.innerHTML = over ? `<span>Laiks pauzei</span><button class="sm" data-act="breakStart">Sākt pauzi</button>` : `<span>Pauze pēc ${Math.max(1, Math.ceil((WORK_MIN * 60000 - ms) / 60000))} min</span>`;
+    }
+  }
+  CP.watch.paint = paint;
+
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', tick);
+})(window.CP);
+
+
 /* ==== js/dashboard.js ==== */
 /* =====================================================================
    Pārskats un uzdevumu / brīdinājumu lapa
@@ -3440,6 +3581,7 @@ window.CP = window.CP || {};
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}</div>`;
 
   CP.pages.dashboard = {
+    after() { CP.watch?.paint(); },
     render() {
       const cur = D.peopleInYear().filter(D.isCurrent), al = D.alerts();
       const miss = cur.map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length).sort((a, b) => b.m.length - a.m.length || U.cmp(U.sortName(a.p), U.sortName(b.p)));
@@ -3458,13 +3600,14 @@ window.CP = window.CP || {};
         : !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>${S.pendingRoot ? `Mape <b>“${esc(S.pendingRoot.name)}”</b> ir atrasta. Chrome drošības dēļ pēc pārlūka restartēšanas lūdz apstiprināt piekļuvi — spied pogu zemāk.` : 'Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.'}</p>
         <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : `<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>`}</div>
         ${ui.rootDrop()}
-        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>`
+        <p class="muted small">Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
         : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
       const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
       if (!S.root && B && B.step !== 'index') return `<div class="page">${head}${start}</div>`;   // kamēr mape atveras vai nav pieejama — tikai statuss
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
         ${start}
         ${CP.years?.banner() || ''}
+        <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
         <div class="stats">
           <button class="stat" data-tone="green" data-act="openList" data-arg="active">${CP.ic('userCheck')}<span>Aktīvie</span><strong>${cnt('active')}</strong></button>
           <button class="stat" data-tone="blue" data-act="openList" data-arg="candidate">${CP.ic('userClock')}<span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
@@ -3472,7 +3615,7 @@ window.CP = window.CP || {};
           <button class="stat" data-tone="violet" data-page="documents">${CP.ic('files')}<span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
           <button class="stat" data-tone="olive" data-page="equipment">${CP.ic('backpack')}<span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && D.inYear(D.person(x.personId))).length}</strong></button>
           <button class="stat" data-tone="red" data-page="alerts">${CP.ic('bell')}<span>Uzdevumi un brīdinājumi</span><strong class="${al.some(a => a.sev > 1) ? 'red' : al.length ? 'warn' : ''}">${al.length}</strong></button>
-        </div>
+        </div></div>
         <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel / e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
         <div class="cards2">
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
@@ -3663,7 +3806,7 @@ window.CP = window.CP || {};
   CP.pages.settings = {
     render() {
       const s = S.db.settings, o = s.ocr;
-      return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
+      return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION}`, ui.saveBtn())}
       ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
@@ -3672,7 +3815,7 @@ window.CP = window.CP || {};
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
         ${ui.rootDrop()}
-        ${CP.WEB ? `<div class="actions" style="margin-top:10px">${CP.installPrompt ? '<button data-act="installApp">⬇ Instalēt kā lietotni</button>' : ''}<span class="small muted">Tīmekļa versija · ${CP.CHANNEL === 'test' ? 'TESTA kanāls' : 'stabilā'} · dati tikai šajā datorā, uz serveri netiek sūtīti</span></div>` : ''}
+        ${CP.WEB ? `<div class="actions" style="margin-top:10px">${CP.installPrompt ? '<button data-act="installApp">⬇ Instalēt kā lietotni</button>' : ''}<span class="small muted">Dati glabājas tikai tavā datu mapē.</span></div>` : ''}
         <details class="small" style="margin-top:8px"><summary>Mapes piekļuves diagnostika</summary>${(() => { const g = CP.store.diag || {}, l = g.last; return ui.dl([['Protokols', g.protocol], ['Programmas atrašanās', g.host === '(lokāls)' ? 'lokāls ceļš ✓' : 'tīkla ceļš \\\\' + g.host + ' ⚠'], ['Drošs konteksts', String(g.secure)], ['Mapes dialogs', g.picker === 'function' ? 'pieejams' : 'nav'], ['Ievilkšana', g.dropHandle === 'function' ? 'pieejama' : 'nav'], ['Pēdējais notikums', l ? `${l.at} · ${l.via} → ${l.step}${l.ms != null ? ' (' + l.ms + ' ms)' : ''}${l.error ? ' · ' + l.error : ''}` : '—']]); })()}</details>
         <label class="check" style="margin-top:12px"><input type="checkbox" data-set="autosave" ${s.autosave ? 'checked' : ''}> Saglabāt automātiski pēc katras izmaiņas</label>
         <p class="muted small">JSON kopija satur datubāzi, nevis dokumentu failus. Tā netiek saukta par pilnu arhīvu.</p>
@@ -3822,7 +3965,7 @@ window.CP = window.CP || {};
   A.verifyBackup = async name => {
     try {
       const r = await CP.store.verifyBackup(name);
-      ui.toast(r.ok ? `Kopija derīga: ${r.people} personas, ${r.documents} dokumenti, shēma v${r.version}.` : 'Kopija nav derīga: ' + r.error, r.ok ? 'ok' : 'err', 9000);
+      ui.toast(r.ok ? `Kopija derīga: ${r.people} personas, ${r.documents} dokumenti, datu versija ${r.version}.` : 'Kopija nav derīga: ' + r.error, r.ok ? 'ok' : 'err', 9000);
     } catch (e) { ui.toast('Pārbaudi neizdevās: ' + e.message, 'err'); }
   };
   A.restoreBackup = name => CP.store.restoreBackup(name);
@@ -3879,13 +4022,12 @@ window.CP = window.CP || {};
 
   CP.pages.about = {
     render() {
-      const web = CP.WEB, ch = CP.CHANNEL === 'test';
       return `<div class="page narrow about">${ui.backBtn()}
         <section class="card about-hero">
           <img class="about-logo" src="PS_LOGO.png" alt="">
           <div><h1>CADET PERSONĀLS</h1>
             <p class="about-lead">Jaunsardzes instruktora darba rīks: jauniešu uzskaite, dokumenti, ekipējums un saziņa vienuviet, bez mapju meklēšanas.</p>
-            <p class="muted small">Versija ${esc(CP.VERSION)}${ch ? ' · testa versija' : ''} · datu shēma v${CP.SCHEMA}${web ? ' · tīmekļa versija' : ' · lokālā versija'}</p></div>
+            <p class="muted small">Versija ${esc(CP.VERSION)}</p></div>
         </section>
 
         <div class="about-grid">
@@ -3894,7 +4036,7 @@ window.CP = window.CP || {};
             <ul class="about-list"><li>uzturēt kārtībā jaunsargu un viņu vecāku datus;</li><li>redzēt, kuriem trūkst dokumentu vai jāatdod ekipējums;</li><li>ātri sazināties ar jaunieti vai vecākiem;</li><li>sagatavot jaunu mācību gadu, nepazaudējot vēsturi.</li></ul>
           </section>
           <section class="card"><h3>${ic('shield')}Kur glabājas dati</h3>
-            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Rīks darbojas pārlūkā un uz serveriem neko nesūta. Citi lietotāji tavus datus neredz.</p>
+            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Uz serveriem nekas netiek sūtīts, un citi lietotāji tavus datus neredz.</p>
             <p class="muted small">Izņēmums: ja Iestatījumos ieslēdz Google Vision rokraksta atpazīšanu, anketas attēls tiek nosūtīts Google. Pēc noklusējuma tā ir izslēgta.</p>
           </section>
         </div>
@@ -3908,10 +4050,7 @@ window.CP = window.CP || {};
           <div class="feat">${FEATURES.map(([i, t, d]) => `<div class="feat-item"><span class="feat-ic">${ic(i)}</span><div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
         </section>
 
-        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3>
-          <p><b>Jānis Eglis</b> — Jaunsardzes instruktors un skolotājs. Rīks radīts paša ikdienas darbam un tiek pilnveidots, lai atvieglotu arī citu instruktoru darbu.</p>
-          <p class="muted small">Atjauninājumi ielādējas automātiski. Jaunas iespējas vispirms tiek pārbaudītas testa versijā, un tikai tad nonāk šeit. Datu fails pirms atjaunināšanas tiek saglabāts kopijā.${web ? ' Avota kods: <a href="https://github.com/cadet-tools/PSVS" target="_blank" rel="noopener">github.com/cadet-tools/PSVS</a>.' : ''}</p>
-        </section>
+        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><p><b>Jānis Eglis</b></p></section>
       </div>`;
     }
   };

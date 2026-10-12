@@ -8,7 +8,7 @@
   CP.pages.settings = {
     render() {
       const s = S.db.settings, o = s.ocr;
-      return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
+      return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION}`, ui.saveBtn())}
       ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
@@ -17,7 +17,7 @@
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
         ${ui.rootDrop()}
-        ${CP.WEB ? `<div class="actions" style="margin-top:10px">${CP.installPrompt ? '<button data-act="installApp">⬇ Instalēt kā lietotni</button>' : ''}<span class="small muted">Tīmekļa versija · ${CP.CHANNEL === 'test' ? 'TESTA kanāls' : 'stabilā'} · dati tikai šajā datorā, uz serveri netiek sūtīti</span></div>` : ''}
+        ${CP.WEB ? `<div class="actions" style="margin-top:10px">${CP.installPrompt ? '<button data-act="installApp">⬇ Instalēt kā lietotni</button>' : ''}<span class="small muted">Dati glabājas tikai tavā datu mapē.</span></div>` : ''}
         <details class="small" style="margin-top:8px"><summary>Mapes piekļuves diagnostika</summary>${(() => { const g = CP.store.diag || {}, l = g.last; return ui.dl([['Protokols', g.protocol], ['Programmas atrašanās', g.host === '(lokāls)' ? 'lokāls ceļš ✓' : 'tīkla ceļš \\\\' + g.host + ' ⚠'], ['Drošs konteksts', String(g.secure)], ['Mapes dialogs', g.picker === 'function' ? 'pieejams' : 'nav'], ['Ievilkšana', g.dropHandle === 'function' ? 'pieejama' : 'nav'], ['Pēdējais notikums', l ? `${l.at} · ${l.via} → ${l.step}${l.ms != null ? ' (' + l.ms + ' ms)' : ''}${l.error ? ' · ' + l.error : ''}` : '—']]); })()}</details>
         <label class="check" style="margin-top:12px"><input type="checkbox" data-set="autosave" ${s.autosave ? 'checked' : ''}> Saglabāt automātiski pēc katras izmaiņas</label>
         <p class="muted small">JSON kopija satur datubāzi, nevis dokumentu failus. Tā netiek saukta par pilnu arhīvu.</p>
@@ -167,7 +167,7 @@
   A.verifyBackup = async name => {
     try {
       const r = await CP.store.verifyBackup(name);
-      ui.toast(r.ok ? `Kopija derīga: ${r.people} personas, ${r.documents} dokumenti, shēma v${r.version}.` : 'Kopija nav derīga: ' + r.error, r.ok ? 'ok' : 'err', 9000);
+      ui.toast(r.ok ? `Kopija derīga: ${r.people} personas, ${r.documents} dokumenti, datu versija ${r.version}.` : 'Kopija nav derīga: ' + r.error, r.ok ? 'ok' : 'err', 9000);
     } catch (e) { ui.toast('Pārbaudi neizdevās: ' + e.message, 'err'); }
   };
   A.restoreBackup = name => CP.store.restoreBackup(name);

@@ -310,3 +310,36 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
 .feat-ic{width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft,#55b5a122);color:var(--teal)}
 .feat-ic .ic{width:19px;height:19px}
 @media (max-width:640px){.about-hero{flex-direction:column;align-items:flex-start}}
+
+/* Pārskata pulkstenis */
+.dash-top{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:stretch}
+.dash-top .stats,html.d2 .dash-top .stats{margin:0;grid-template-columns:repeat(3,minmax(0,1fr));align-content:stretch}
+.dash-top .stats .stat{height:100%}
+@media (max-width:1150px){.dash-top{grid-template-columns:1fr}.dash-top .watch-card{max-width:360px}}
+.watch-card{margin:0;padding:14px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  --w-case-a:color-mix(in srgb,var(--acc,#55b5a1) 8%,#3a403e);--w-case-b:#1d2120;--w-case-c:#4a514e;--w-bezel:#141817;--w-face-a:#121614;--w-face-b:#050706;
+  --w-ink:#eef3f0;--w-dim:#7f8b86;--w-engr:#9aa59f;--w-btn:#2a302e}
+html[data-theme="light"] .watch-card{--w-case-a:#d9dfdc;--w-case-b:#aeb6b2;--w-case-c:#eef2f0;--w-bezel:#2a302e;--w-face-a:#1a1f1d;--w-face-b:#0a0d0c;--w-btn:#9ea7a3}
+.watch{width:100%;max-width:300px;height:auto;display:block;font-family:'Manrope',system-ui,sans-serif}
+.watch .st-a{stop-color:var(--w-case-a)} .watch .st-b{stop-color:var(--w-case-b)} .watch .st-c{stop-color:var(--w-case-c)}
+.watch .fc-a{stop-color:var(--w-face-a)} .watch .fc-b{stop-color:var(--w-face-b)}
+.watch .w-btn{fill:var(--w-btn);stroke:#0006;stroke-width:1}
+.watch .w-case{stroke:#0007;stroke-width:1.5}
+.watch .w-bezel{fill:var(--w-bezel);stroke:#ffffff14;stroke-width:1}
+.watch .w-engr{fill:var(--w-engr);font-size:8px;font-weight:800;letter-spacing:.12em}
+.watch .tk{stroke:var(--w-dim);stroke-width:1.2;opacity:.55}
+.watch .tk-major{stroke:var(--w-ink);stroke-width:2.6;stroke-linecap:round}
+.watch .w-face{stroke:#000;stroke-width:2}
+.watch .w-track{fill:none;stroke:#ffffff17;stroke-width:7;stroke-linecap:round}
+.watch .w-arc{fill:none;stroke:var(--acc,#55b5a1);stroke-width:7;stroke-linecap:round;transition:stroke-dasharray .4s ease}
+.watch .w-arc2{stroke:color-mix(in srgb,var(--acc,#55b5a1) 55%,#ffffff);stroke-width:4;transition:none}
+.watch-card[data-state="over"] .w-arc{stroke:var(--t-amber,#f3b443)}
+.watch .w-date{fill:var(--w-dim);font-size:12px;font-weight:700;text-anchor:middle}
+.watch .w-time{fill:var(--w-ink);font-size:54px;font-weight:800;letter-spacing:-.03em;text-anchor:middle;font-variant-numeric:tabular-nums}
+.watch .w-sec{fill:var(--acc,#55b5a1);font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.watch .w-rule{stroke:#ffffff1f;stroke-width:1}
+.watch .w-lbl{fill:var(--w-dim);font-size:11px;font-weight:700;text-anchor:middle;letter-spacing:.06em}
+.watch .w-work{fill:var(--w-ink);font-size:22px;font-weight:800;text-anchor:middle;font-variant-numeric:tabular-nums}
+.watch-card[data-state="over"] .w-work{fill:var(--t-amber,#f3b443)}
+.watch-card[data-state="break"] .w-work{fill:var(--acc,#55b5a1)}
+.watch-foot{display:flex;align-items:center;justify-content:center;gap:10px;min-height:28px;font-size:13px;color:var(--muted);font-weight:600}

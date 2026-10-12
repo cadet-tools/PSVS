@@ -29,13 +29,12 @@
 
   CP.pages.about = {
     render() {
-      const web = CP.WEB, ch = CP.CHANNEL === 'test';
       return `<div class="page narrow about">${ui.backBtn()}
         <section class="card about-hero">
           <img class="about-logo" src="PS_LOGO.png" alt="">
           <div><h1>CADET PERSONĀLS</h1>
             <p class="about-lead">Jaunsardzes instruktora darba rīks: jauniešu uzskaite, dokumenti, ekipējums un saziņa vienuviet, bez mapju meklēšanas.</p>
-            <p class="muted small">Versija ${esc(CP.VERSION)}${ch ? ' · testa versija' : ''} · datu shēma v${CP.SCHEMA}${web ? ' · tīmekļa versija' : ' · lokālā versija'}</p></div>
+            <p class="muted small">Versija ${esc(CP.VERSION)}</p></div>
         </section>
 
         <div class="about-grid">
@@ -44,7 +43,7 @@
             <ul class="about-list"><li>uzturēt kārtībā jaunsargu un viņu vecāku datus;</li><li>redzēt, kuriem trūkst dokumentu vai jāatdod ekipējums;</li><li>ātri sazināties ar jaunieti vai vecākiem;</li><li>sagatavot jaunu mācību gadu, nepazaudējot vēsturi.</li></ul>
           </section>
           <section class="card"><h3>${ic('shield')}Kur glabājas dati</h3>
-            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Rīks darbojas pārlūkā un uz serveriem neko nesūta. Citi lietotāji tavus datus neredz.</p>
+            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Uz serveriem nekas netiek sūtīts, un citi lietotāji tavus datus neredz.</p>
             <p class="muted small">Izņēmums: ja Iestatījumos ieslēdz Google Vision rokraksta atpazīšanu, anketas attēls tiek nosūtīts Google. Pēc noklusējuma tā ir izslēgta.</p>
           </section>
         </div>
@@ -58,10 +57,7 @@
           <div class="feat">${FEATURES.map(([i, t, d]) => `<div class="feat-item"><span class="feat-ic">${ic(i)}</span><div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
         </section>
 
-        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3>
-          <p><b>Jānis Eglis</b> — Jaunsardzes instruktors un skolotājs. Rīks radīts paša ikdienas darbam un tiek pilnveidots, lai atvieglotu arī citu instruktoru darbu.</p>
-          <p class="muted small">Atjauninājumi ielādējas automātiski. Jaunas iespējas vispirms tiek pārbaudītas testa versijā, un tikai tad nonāk šeit. Datu fails pirms atjaunināšanas tiek saglabāts kopijā.${web ? ' Avota kods: <a href="https://github.com/cadet-tools/PSVS" target="_blank" rel="noopener">github.com/cadet-tools/PSVS</a>.' : ''}</p>
-        </section>
+        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><p><b>Jānis Eglis</b></p></section>
       </div>`;
     }
   };
