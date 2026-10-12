@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data: https://vision.googleapis.com; worker-src 'self' blob:; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
+<meta name="cp-channel" content="test">
+<meta name="cp-vendor" content="../vendor/">
+<meta name="theme-color" content="#0b1219">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CADET PERSONĀLS (TESTS)</title>
+<style>
+/* =====================================================================
+   CADET PERSONĀLS — stils
+   Tumšā tēma no 0.2 versijas; krāsas — mainīgie zemāk.
+   ===================================================================== */
+:root {
+  color-scheme: dark;
+  --bg: #0b1219; --rail: #0d1921; --side: #111d26; --panel: #15222d; --panel2: #1b2c38; --field: #0d1a23;
+  --edge: #2b3f4c; --edge2: #3a5668; --txt: #ecf3f7; --muted: #9fb3c3;
+  --teal: #55b5a1; --teal-d: #167866; --teal-b: #299784; --amber: #f1c079; --orange: #f0a35e; --red: #ef9292; --green: #88ddbc; --wa: #1f8f55;
+  --r: 12px; --r-sm: 8px; --shadow: 0 10px 40px #0008;
+}
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; background: var(--bg); color: var(--txt); font: 14px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif }
+h1, h2, h3, h4, p { margin-top: 0 }
+h1 { font-size: 24px; margin-bottom: 2px; line-height: 1.2 }
+h2 { font-size: 18px }
+h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px }
+h4 { font-size: 13px; color: #b9e3df; margin: 18px 0 8px }
+a { color: #9fd8ec }
+code { background: var(--field); padding: 1px 5px; border-radius: 5px }
+.muted { color: var(--muted) } .small { font-size: 12px } .warn { color: var(--amber) } .red { color: var(--red) } .good { color: var(--green) }
+.hidden { display: none !important } .grow { flex: 1 } .right { margin-left: auto } .nowrap { white-space: nowrap } .pre { white-space: pre-wrap; margin: 0 } .pad { padding: 8px }
+
+/* --- Pogas un ievades lauki --- */
+button, .btn { font: inherit; background: #273b49; color: var(--txt); border: 1px solid #3b5867; border-radius: var(--r-sm); padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; white-space: nowrap; line-height: 1.3 }
+button:hover, .btn:hover { background: #345265 }
+button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px }
+button:disabled { opacity: .45; cursor: not-allowed }
+.mainbtn { background: var(--teal-d); border-color: var(--teal-b) } .mainbtn:hover { background: #1d8b77 }
+.wabtn { background: var(--wa); border-color: #2bb06c } .wabtn:hover { background: #25a362 }
+.ghost { background: transparent; border-color: transparent } .ghost:hover { background: #ffffff12 }
+.danger { color: #ffc4c4 }
+button.sm, .btn.sm, select.sm { padding: 4px 9px; font-size: 12px; border-radius: 7px }
+button.sq { width: 34px; height: 34px; padding: 0; justify-content: center }
+button.block { width: 100%; justify-content: center; margin-top: 8px }
+button.on { background: #6b5320; border-color: var(--amber) }
+[data-act="save"].pending::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); display: inline-block }
+input, textarea, select { font: inherit; background: var(--field); border: 1px solid var(--edge2); color: #eff7fb; border-radius: var(--r-sm); padding: 8px 10px; width: 100%; min-width: 0 }
+input[type=checkbox] { width: auto; accent-color: var(--teal) }
+textarea { resize: vertical }
+label { font-size: 12px; color: #bacad5 }
+label.check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--txt); cursor: pointer }
+label.inline { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap } label.inline select, label.inline input { width: auto }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center } .actions.center { justify-content: center }
+
+/* --- Izkārtojums --- */
+.app { display: grid; grid-template-columns: 72px 280px minmax(0, 1fr); height: 100vh }
+.nav { background: var(--rail); border-right: 1px solid var(--edge); padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow-y: auto }
+.nav button { width: 60px; flex-direction: column; gap: 1px; border: 0; background: transparent; padding: 7px 0; position: relative; color: var(--muted) }
+.nav button span { font-size: 19px; line-height: 1.1 } .nav button small { font-size: 10px }
+.nav button:hover { background: #ffffff0d; color: var(--txt) }
+.nav button.active { background: #29423e; color: #b1ead7 }
+.badge { position: absolute; top: 3px; right: 8px; background: #b5584f; color: #fff; border-radius: 9px; font-size: 10px; padding: 0 5px; min-width: 16px }
+.logo { width: 48px; height: 48px; display: block; object-fit: contain; background: transparent; border: 0; margin-bottom: 8px }
+.aside { background: var(--side); border-right: 1px solid var(--edge); padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0 }
+.aside-top { display: flex; justify-content: space-between; align-items: center } .aside h2 { margin: 0; font-size: 17px }
+.side-filters { display: flex; gap: 8px; align-items: center } .side-filters select { flex: 1 }
+.sidebtns { display: grid; grid-template-columns: 1fr auto; gap: 6px } .sidebtns button { justify-content: center; font-size: 13px }
+.rootline { display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--edge); padding-bottom: 8px }
+.dotstate { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle } .dotstate.ok { background: var(--green) } .dotstate.warn { background: var(--amber) } .dotstate.err { background: var(--red) }
+.sidelist { overflow-y: auto; flex: 1; margin: 0 -6px; padding: 0 2px }
+.person { width: 100%; background: transparent; border: 0; display: flex; align-items: center; text-align: left; gap: 10px; padding: 7px 8px; white-space: normal; border-radius: 9px }
+.person.active { background: #294456 } .person.archived { opacity: .65 }
+.p-meta { flex: 1; min-width: 0 } .p-meta b, .p-meta small { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis } .p-meta small { color: var(--muted); font-size: 11px }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex: none }
+.avatar { --h: 200; width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: hsl(var(--h) 28% 32%); color: hsl(var(--h) 60% 88%); font-weight: 700; font-size: 13px }
+.avatar.sm { width: 30px; height: 30px; font-size: 11px } .avatar.lg { width: 64px; height: 64px; font-size: 22px }
+.view { overflow-y: auto; padding: 0 0 40px; display: flex; flex-direction: column }
+.yearbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 10px; padding: 8px 18px; background: #101920ee; border-bottom: 1px solid var(--edge); backdrop-filter: blur(8px) }
+.yearpick { position: relative }
+.yearmenu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 240px; max-height: 70vh; overflow: auto; background: #17242e; border: 1px solid var(--edge2); border-radius: 12px; padding: 6px; display: grid; gap: 2px; box-shadow: 0 12px 40px #0008 }
+.yearmenu button { justify-content: flex-start; text-align: left }
+.yearmenu button.on { background: #173a31; border-color: var(--teal) }
+#main { padding: 18px 28px 40px }
+.yearnote { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center }
+.movelist { max-height: 320px; overflow: auto; display: grid; gap: 4px; margin: 8px 0 }
+.moveitem { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--edge); border-radius: 8px }
+.moveitem input { width: auto }
+.page { max-width: 1480px; margin: 0 auto } .page.narrow { max-width: 980px }
+.page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px } .page-head p { margin: 0 }
+
+/* --- Kartītes --- */
+.card { background: var(--panel); border: 1px solid var(--edge); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px }
+.card > h3 .right { font-weight: 400 }
+details.card > summary { cursor: pointer; list-style: none } details.card[open] > summary { margin-bottom: 12px }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; align-items: start } .cards2 > .card { margin: 0 } .cards2 > .wide { grid-column: 1 / -1 }
+.notice { border: 1px solid #645537; background: #29271e; border-radius: 10px; padding: 9px 13px; color: #f0d7b5; margin-bottom: 12px; font-size: 13px }
+.hero { border-color: #2e6a5d; background: linear-gradient(135deg, #15302b, var(--panel)) }
+.quick { display: flex; gap: 8px; flex-wrap: wrap }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px }
+.stat { background: var(--panel); border: 1px solid var(--edge); border-radius: var(--r); padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 2px; white-space: normal; text-align: left }
+.stat span { color: var(--muted); font-size: 12px } .stat strong { font-size: 28px; line-height: 1.1 } .stat:hover { border-color: var(--edge2); background: var(--panel2) }
+
+/* --- Definīciju saraksts: etiķete un vērtība blakus --- */
+.dl { display: grid; grid-template-columns: minmax(130px, 34%) 1fr; gap: 0; margin: 0 }
+.dl dt, .dl dd { padding: 6px 0; border-bottom: 1px solid #22343f; margin: 0 }
+.dl dt { color: var(--muted); padding-right: 14px } .dl dd { overflow-wrap: anywhere }
+.dl dt:last-of-type, .dl dd:last-of-type { border-bottom: 0 }
+
+/* --- Rindas, birkas, statusi --- */
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #22343f; flex-wrap: wrap } .row:last-child { border-bottom: 0 }
+.row.done { opacity: .5 }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0 } .who b, .who small { display: block } .who small { font-size: 11px }
+.tag { display: inline-block; border-radius: 7px; background: #2d4756; color: #cfe5f2; padding: 1px 7px; font-size: 11px; font-weight: 500; vertical-align: middle }
+.status { display: inline-block; border-radius: 20px; padding: 1px 9px; font-size: 11px; font-weight: 600; vertical-align: middle; border: 1px solid }
+.s-active { color: #9be5c8; border-color: #2f7d65; background: #173a31 } .s-candidate { color: #a9d4f5; border-color: #3a6d93; background: #182f42 }
+.s-paused { color: #f6d6a0; border-color: #8a6a35; background: #33291a } .s-archived { color: #c2c9cf; border-color: #4b5963; background: #222c33 }
+.pill { display: inline-block; border-radius: 20px; padding: 1px 9px; font-size: 12px; font-weight: 600 }
+.pill.ok { background: #173a31; color: #9be5c8 } .pill.warn { background: #33291a; color: #f6d6a0 } .pill.bad { background: #3d1f22; color: #ffb4b4 }
+.chips { display: flex; gap: 6px; flex-wrap: wrap } .chips.col { flex-direction: column; align-items: flex-start }
+.chip { border-radius: 20px; padding: 2px 10px; font-size: 12px; border: 1px solid } .chip.ok { border-color: #2f7d65; color: #9be5c8; background: #173a31 } .chip.miss { border-color: #8a6a35; color: #f6d6a0; background: #33291a }
+.chipbtn { border-radius: 20px; padding: 3px 12px; font-size: 12px } .chipbtn.on { background: #28685d; border-color: #3e9b8b }
+.count { background: var(--amber); color: #2a1f08; border-radius: 9px; padding: 0 6px; font-size: 11px }
+.empty { padding: 34px 20px; color: var(--muted); text-align: center }
+
+/* --- Tabula --- */
+.filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 12px } .filters input[type=search] { flex: 1; min-width: 240px } .filters select { width: auto }
+.tablewrap { overflow: auto; border: 1px solid var(--edge); border-radius: var(--r); background: var(--panel) }
+.table { border-collapse: collapse; width: 100%; min-width: 760px }
+.table th, .table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #22343f; vertical-align: middle }
+.table td small { display: block }
+.table th { color: #b5cad8; font-size: 12px; font-weight: 600; background: #13202a; position: sticky; top: 0; z-index: 1 }
+.table th.sortable { cursor: pointer; user-select: none } .table th.sortable:hover, .table th.on { color: var(--txt) }
+.table tbody tr[data-person] { cursor: pointer } .table tbody tr:hover { background: #1a2b37 } .table tr.sel { background: #1d3a3a }
+.table .chk { width: 36px } .table td.right { text-align: right }
+.bulkbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #1d3a3a; border: 1px solid #2f6b5a; border-radius: var(--r); padding: 8px 12px; margin-bottom: 10px }
+
+/* --- Personas kartiņa --- */
+.person-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px }
+.ph-main { flex: 1; min-width: 240px } .ph-main h1 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap } .ph-main p { margin: 0 }
+.person-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start }
+.pl-side { position: sticky; top: 0 } .pl-side .card { padding: 14px 16px }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--edge); margin-bottom: 14px }
+.tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 9px 14px; color: var(--muted) }
+.tabs button:hover { color: var(--txt); background: transparent } .tabs button.active { color: var(--txt); border-bottom-color: var(--teal) }
+.tabs small { color: var(--muted) }
+.contact { padding: 10px 0; border-bottom: 1px solid #22343f } .contact:last-child { border-bottom: 0 } .contact:first-of-type { padding-top: 0 }
+.contact .role { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em }
+.contact .c-name { font-weight: 650 } .contact .c-how { font-size: 12px; color: #c4d6e0; display: flex; flex-direction: column; margin-bottom: 7px } .contact .c-how a { text-decoration: none }
+.contact .c-btns { display: flex; gap: 6px; flex-wrap: wrap }
+.task { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0 } .task.late span { color: var(--red) }
+.menu { position: relative } .menu > summary { list-style: none } .menu > summary::-webkit-details-marker { display: none }
+.menu-list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; background: var(--panel2); border: 1px solid var(--edge2); border-radius: 10px; padding: 6px; min-width: 260px; box-shadow: var(--shadow); display: flex; flex-direction: column }
+.menu-list button { background: transparent; border: 0; justify-content: flex-start; padding: 8px 10px } .menu-list button:hover { background: #ffffff10 }
+.tl { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #22343f } .tl:last-child { border-bottom: 0 }
+.tl-ic { width: 28px; height: 28px; flex: none; border-radius: 50%; background: #213441; display: grid; place-items: center; font-size: 13px }
+.tl-body { flex: 1; min-width: 0 } .tl-meta { font-size: 11px; color: var(--muted) }
+.composer { display: grid; gap: 8px }
+.inline-form { display: flex; gap: 8px; margin-top: 10px } .inline-form select, .inline-form input { flex: 1 }
+.namegrid { display: flex; flex-wrap: wrap; gap: 6px } .namechip { font-size: 12px; padding: 4px 10px; border-radius: 20px }
+.reqgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px }
+.req { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid; border-radius: 10px; padding: 8px 10px; flex-wrap: wrap }
+.req.ok { border-color: #2f7d65; background: #15302a; color: #9be5c8 } .req.miss { border-color: #8a6a35; background: #2a2418; color: #f6d6a0 }
+.doc .doc-ic { font-size: 20px; width: 28px; text-align: center }
+.dropzone { border: 2px dashed transparent; border-radius: 10px; margin: -4px; padding: 4px } .dropzone.over { border-color: var(--teal); background: #55b5a110 }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 4px 0 8px } .crumbs button { padding: 2px 8px; font-size: 12px }
+.alert .al-ic { width: 24px; text-align: center } .alert.bad .grow { color: #ffc0c0 } .alert.warn .grow { color: #f6d6a0 }
+.comms-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start } .comms-layout > .card { margin: 0 }
+.reclist { max-height: 60vh; overflow-y: auto }
+.tplrow { display: grid; grid-template-columns: 200px 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start }
+
+/* --- Formas --- */
+.fieldgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px }
+.fieldgrid .wide, .fieldgrid > .check.wide { grid-column: 1 / -1 }
+.field { display: grid; gap: 4px; align-content: start } .field label { display: flex; align-items: center; gap: 4px }
+.field .reqmark { color: var(--amber) } .field .fx { margin-left: auto }
+.field .hint { font-size: 12px; min-height: 0 } .field .hint:empty { display: none }
+.field.bad input, .field.bad select { border-color: var(--red) } .field.bad .hint { color: var(--red) }
+.field.warn input { border-color: var(--amber) } .field.warn .hint { color: var(--amber) }
+.field.auto input, .field.auto select, .field.auto textarea { border-color: #d9b264; background: #2a2615 }
+.field.check input, .field.check textarea { border-color: var(--orange) }
+.fs { border: 1px solid var(--edge); border-radius: var(--r); padding: 12px 14px 14px; margin: 0 0 12px } .fs legend { padding: 0 6px; color: #b9e3df; font-weight: 700; font-size: 13px }
+.sugg { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #33261a; border: 1px solid #7a5530; border-radius: 7px; padding: 5px 8px; color: #f6d6a0 }
+.sugg small { color: #c9a77a } .sugg b { color: #fff3dd }
+.zbtn { visibility: hidden; padding: 0 6px; font-size: 13px; background: transparent; border: 0; color: var(--teal) } .field.has-zone .zbtn { visibility: visible } .zbtn:hover { background: #ffffff12 }
+
+/* --- Dialogi --- */
+dialog { background: #172632; color: #e9f4f8; border: 1px solid #567080; border-radius: 15px; padding: 0; width: min(640px, 96vw); max-height: 94vh; box-shadow: var(--shadow) }
+dialog[open] { display: flex; flex-direction: column }
+dialog > form { display: flex; flex-direction: column; min-height: 0; flex: 1 }
+dialog.wide { width: min(980px, 96vw) } dialog.xl { width: min(1300px, 98vw); height: 94vh }
+dialog::backdrop { background: #000a }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--edge) } .dlg-head h2 { margin: 0; flex: 1; font-size: 17px; overflow-wrap: anywhere }
+.dlg-body { padding: 16px 18px; overflow-y: auto; flex: 1; min-height: 0 }
+.dlg-foot { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--edge); flex-wrap: wrap }
+.viewer { width: 100%; height: 100%; border: 0; border-radius: 8px; background: #fff }
+iframe.viewer { min-height: 75vh } .viewimg { max-width: 100%; max-height: 78vh; display: block; margin: auto }
+
+/* --- Ziņojumi (rādās aktīvajā logā) --- */
+.toast-host { position: fixed; right: 20px; bottom: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none }
+dialog > .toast-host { position: sticky; right: auto; bottom: 0; padding: 0 16px 12px; align-items: stretch }
+.toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px 11px 15px; border-radius: 10px; background: #1f5b4c; border: 1px solid #2f8a73; max-width: min(520px, 90vw); box-shadow: var(--shadow); animation: tin .18s ease-out }
+.toast.warn { background: #4a3a1c; border-color: #8a6a35 } .toast.err { background: #4e2226; border-color: #9b5555 }
+.toast .x { background: transparent; border: 0; padding: 0 4px; opacity: .7 }
+@keyframes tin { from { transform: translateY(8px); opacity: 0 } }
+
+/* --- Anketu ievade --- */
+dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
+.scan { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; height: 100%; width: 100% }
+.scan-head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--edge); flex-wrap: wrap } .scan-head h2 { margin: 0; font-size: 17px }
+.vsep { width: 1px; height: 24px; background: var(--edge2) }
+.scan-msg { display: flex; align-items: center; gap: 12px; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid var(--edge); min-height: 38px }
+.scan-msg.info { background: #142530; color: #cfe3ee } .scan-msg.ok { background: #15342c; color: #a9ecd2 } .scan-msg.warn { background: #3a2f18; color: #f6d6a0 } .scan-msg.err { background: #43201f; color: #ffc2c2 } .scan-msg.busy { background: #142a36; color: #cfe3ee }
+.scan-msg .txt { flex: 1 } .scan-msg .bar { width: 200px; height: 6px; background: #ffffff1a; border-radius: 4px; overflow: hidden } .scan-msg .bar i { display: block; height: 100%; width: 0; background: var(--teal); transition: width .2s }
+.scan-body { display: grid; grid-template-columns: minmax(0, 1fr) 460px; min-height: 0 }
+.scan-body > .viewer { background: transparent; border-radius: 0; display: flex; flex-direction: column; min-height: 0 }
+.scan-side { overflow-y: auto; padding: 14px 16px; border-left: 1px solid var(--edge); background: #15232e }
+.scan-side .fieldgrid { margin-bottom: 12px }
+.scan-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--edge); flex-wrap: wrap }
+.tplbar { border: 1px solid #7a6533; background: #2b2616; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; display: grid; gap: 8px } .tplbar ol { margin: 0; padding-left: 18px }
+
+/* Skatītājs (kā PDF skatītājs: ritināšana, Ctrl + ritenītis tuvina) */
+.vw-tools { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--edge); background: #12202a; flex-wrap: wrap }
+.vw-tools button { padding: 4px 10px; font-size: 13px } .vw-zoom { min-width: 62px; justify-content: center; font-variant-numeric: tabular-nums }
+.vw-sep { width: 1px; height: 20px; background: var(--edge2) }
+.vw-page { display: flex; align-items: center; gap: 3px } .vw-pn { padding: 2px 8px; font-size: 12px; background: transparent } .vw-pn.on { background: #28685d; border-color: #3e9b8b }
+.vw-scroll { position: relative; flex: 1; overflow: auto; background: #3a444b; outline: none }
+.vw-scroll.over { box-shadow: inset 0 0 0 3px var(--teal) }
+.vw-pages { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px; width: max-content; min-width: 100% }
+.vw-pg { position: relative; background: #fff; box-shadow: 0 2px 14px #0007; flex: none }
+.vw-pg canvas { display: block; width: 100%; height: 100% }
+.vw-html { color: #111; } .dx { padding: 60px 70px; font: 15px/1.45 'Times New Roman', serif; box-sizing: border-box }
+.dx p { margin: 0 0 4px } .dx-tbl { border-collapse: collapse; width: 100%; margin: 4px 0 8px } .dx-tbl td { border-bottom: 1px solid #999; padding: 3px 6px; vertical-align: bottom }
+.dx-blk.on, .dx-blk.on td { background: #fde9b8; outline: 2px solid #e0a83a }
+.vw-ov { position: absolute; inset: 0 }
+.vw-empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: #c9d4db; pointer-events: none } .vw-scroll.has-doc .vw-empty { display: none }
+.vw-empty p { margin: 4px 0 } .vw-drop { font-size: 44px; opacity: .6 }
+.vw-line { position: absolute; border-radius: 2px; cursor: copy }
+.vw-line:hover { background: rgba(85, 181, 161, .22); outline: 2px solid rgba(46, 140, 120, .9) }
+.vw-hl { position: absolute; border: 2px solid #e0a83a; background: rgba(241, 192, 121, .18); border-radius: 4px; box-shadow: 0 0 0 9999px rgba(10, 20, 28, .28); pointer-events: none; animation: hl .5s ease-out }
+@keyframes hl { from { box-shadow: 0 0 0 9999px rgba(10, 20, 28, 0); transform: scale(1.03) } }
+.vw-scroll[data-mode=draw] .vw-pg { cursor: crosshair } .vw-scroll[data-mode=draw] { user-select: none }
+.vw-draw { position: absolute; border: 2px dashed #e0a83a; background: rgba(241, 192, 121, .15) }
+.vw-zone { position: absolute; border: 2px solid rgba(46, 140, 120, .85); background: rgba(85, 181, 161, .08); border-radius: 3px; pointer-events: none }
+.vw-scroll[data-mode="draw"] .vw-zone { pointer-events: auto; cursor: move }
+.vw-zone.on { border-color: #e0a83a; background: rgba(241, 192, 121, .16); z-index: 2 }
+.vw-zone > span { position: absolute; left: -2px; bottom: 100%; background: #1d6b5c; color: #fff; font: 600 12px/1.5 system-ui, sans-serif; padding: 0 6px; border-radius: 4px 4px 0 0; white-space: nowrap; display: flex; gap: 4px; align-items: center; pointer-events: auto }
+.vw-zone.on > span { background: #9a7224 }
+.vw-zdel { pointer-events: auto; padding: 0 5px; font-size: 11px; line-height: 1.4; background: #8a3434; border-color: #b55; border-radius: 3px }
+.vw-rs { display: none; position: absolute; width: 12px; height: 12px; right: -6px; bottom: -6px; background: #fff; border: 2px solid #1d6b5c; border-radius: 2px; cursor: nwse-resize; pointer-events: auto }
+.vw-scroll[data-mode="draw"] .vw-rs { display: block }
+.vw-zfield { font: 12px system-ui, sans-serif; max-width: 180px; color: #143; background: #fff; border: 0; padding: 1px 4px }
+.tplbar { border: 1px solid #7a6533; background: #2b2616; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; display: grid; gap: 8px } .tplbar ol { margin: 0; padding-left: 18px }
+.pinbtn { padding: 0 6px; font-size: 12px; background: transparent; border: 0; opacity: .45; filter: grayscale(1) } .pinbtn.on { opacity: 1; filter: none } .pinbtn:hover { opacity: 1; background: #ffffff12 }
+.pinnote { font-size: 12px; color: #f6d6a0; display: flex; gap: 6px; align-items: center } .pinnote button { padding: 0 6px; font-size: 11px }
+.duphint { font-size: 12px; border-radius: 7px; padding: 4px 8px } .duphint.bad { background: #3a2f18; color: #f6d6a0; border: 1px solid #8a6a35 } .duphint.info { color: var(--muted) }
+.dupcard { border-color: #6b5530 }
+.vcgrid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start }
+.vcrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--edge); border-radius: 10px; margin-bottom: 6px; cursor: pointer; font-size: 14px; color: var(--txt) }
+.vcrow input { width: auto; flex: none; accent-color: var(--teal) } .vcrow span { flex: 1 } .vcrow small { display: block } .vcrow:has(input[type=radio]:checked) { border-color: var(--teal); background: #173a31 }
+.vcqr { background: #fff; color: #111; border-radius: 12px; padding: 14px; text-align: center; min-height: 260px } .vcqr svg { width: 100%; height: auto; display: block } .vcqr p { margin: 6px 0 0 }
+@media (max-width: 760px) { .vcgrid { grid-template-columns: 1fr } }
+.eqtable td, .eqtable th { padding: 7px 9px } .eqtable tr.done td { opacity: .6 }
+.tag.ok { background: #173a31; color: #9be5c8 } .tag.warn { background: #3a2f18; color: #f6d6a0 } .tag:empty { display: none }
+
+/* --- Pielāgošana ekrāniem --- */
+@media (max-width: 1250px) { .person-layout { grid-template-columns: minmax(0, 1fr) 300px } .scan-body { grid-template-columns: minmax(0, 1fr) 400px } }
+@media (max-width: 1080px) {
+  .app { grid-template-columns: 64px 240px minmax(0, 1fr) } .view { padding: 0 0 16px }
+  .person-layout, .comms-layout { grid-template-columns: 1fr } .pl-side { position: static }
+  .cards2 { grid-template-columns: 1fr } .scan-body { grid-template-columns: 1fr; grid-template-rows: 55% 45% } .scan-side { border-left: 0; border-top: 1px solid var(--edge) }
+}
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; height: auto; min-height: 100vh }
+  .nav { flex-direction: row; overflow-x: auto; padding: 6px } .nav .logo, .nav .grow { display: none } .nav button { width: 58px; flex: none }
+  .aside { max-height: 300px } .fieldgrid { grid-template-columns: 1fr } .tplrow { grid-template-columns: 1fr }
+}
+
+/* --- Drukāšana (kartiņa) --- */
+@media print {
+  body { background: #fff; color: #000 } .nav, .aside, .tabs, .pl-side, .person-head .actions, .toast-host { display: none !important }
+  .app { display: block; height: auto } .view { overflow: visible; padding: 0 } .card { border-color: #bbb; background: #fff; break-inside: avoid }
+  .dl dt { color: #555 } .muted { color: #555 } .person-layout { display: block }
+}
+
+/* Datu mapes ievilkšana */
+.rootdrop{margin-top:12px;border:2px dashed var(--edge2);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;text-align:center;transition:background .15s,border-color .15s}
+.rootdrop.over,.rootline.over{border-color:var(--teal);background:rgba(85,181,161,.10)}
+.rootline.over{outline:2px dashed var(--teal);border-radius:8px}
+.err-text{color:var(--red);margin-top:6px}
+.netwarn{margin-top:12px;border:1px solid var(--orange);background:rgba(240,163,94,.12);color:var(--txt);border-radius:12px;padding:12px 14px;line-height:1.45}
+.testbanner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:1000;background:var(--orange);color:#1b1206;font-weight:700;font-size:12px;padding:3px 14px;border-radius:0 0 8px 8px;pointer-events:none}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Navigācijas josla -->
+  <nav class="nav" aria-label="Galvenā navigācija">
+    <img class="logo" src="PS_LOGO.png" alt="CADET PERSONĀLS" title="CADET PERSONĀLS">
+    <button data-page="dashboard" title="Pārskats"><span>▦</span><small>Pārskats</small></button>
+    <button data-page="people" title="Personas"><span>♙</span><small>Personas</small></button>
+    <button data-page="comms" title="Saziņa"><span>✉</span><small>Saziņa</small></button>
+    <button data-page="documents" title="Dokumenti"><span>▤</span><small>Dokumenti</small></button>
+    <button data-page="equipment" title="Ekipējums"><span>▣</span><small>Ekipējums</small></button>
+    <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span>⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
+    <button data-page="archive" title="Arhīvs"><span>◷</span><small>Arhīvs</small></button>
+    <span class="grow"></span>
+    <button data-page="settings" title="Iestatījumi"><span>⚙</span><small>Iestatīj.</small></button>
+  </nav>
+
+  <!-- Ātrā personu sānjosla -->
+  <aside class="aside" aria-label="Personu saraksts">
+    <div class="aside-top"><h2>Personas <small id="sideCount" class="muted"></small></h2><button class="mainbtn sq" data-act="addPerson" title="Jauna persona">＋</button></div>
+    <input id="search" type="search" placeholder="Meklēt…  (Ctrl+K)" autocomplete="off">
+    <div class="side-filters"><select id="groupFilter" aria-label="Grupa"></select><label class="check small"><input type="checkbox" id="sideArchive"> Arhīvs</label></div>
+    <div class="sidebtns">
+      <button class="mainbtn" data-act="scan">📷 Ievadīt anketu</button>
+      <button data-act="import" title="Imports no Excel / CSV">⬆ Imports</button>
+    </div>
+    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><span id="rootLabel" class="small muted"></span><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi">📁</button></div>
+    <div id="restoreBox"></div>
+    <div id="sideList" class="sidelist"></div>
+  </aside>
+
+  <main class="view" id="view">
+    <div class="yearbar">
+      <span class="grow"></span>
+      <div class="yearpick" id="yearPick">
+        <button type="button" id="yearBtn" data-act="toggleYear" aria-haspopup="true">Mācību gads ▾</button>
+        <div id="yearMenu" class="yearmenu hidden"></div>
+      </div>
+    </div>
+    <div id="main"></div>
+  </main>
+</div>
+
+<datalist id="dl_groups"></datalist>
+<datalist id="dl_rel"><option value="Māte"><option value="Tēvs"><option value="Aizbildnis"><option value="Vecmāmiņa"><option value="Vectēvs"><option value="Brālis"><option value="Māsa"><option value="Audžuģimene"></datalist>
+
+<!-- ============ Personas kartīte (rediģēšana) ============ -->
+<dialog id="personDialog" class="wide">
+  <form id="personForm" novalidate>
+    <header class="dlg-head"><h2 id="personTitle">Persona</h2><button type="button" class="ghost" data-close="personDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body" id="personFields"></div>
+    <footer class="dlg-foot"><span class="muted small">Dzimšanas datums tiek aizpildīts no personas koda. Iezīmētie lauki ir jāpārbauda.</span><span class="grow"></span><button type="button" data-close="personDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Anketu ievade ============ -->
+<dialog id="scanDialog" class="full" aria-label="Anketas ievade">
+  <div class="scan">
+    <header class="scan-head">
+      <h2>📷 Anketas ievade</h2>
+      <div class="actions">
+        <label class="btn mainbtn">📂 Atvērt dokumentu<input type="file" id="scanFile" accept=".pdf,.docx,.edoc,.asice,.bdoc,image/*" hidden></label>
+        <label class="btn">📱 Kamera<input type="file" id="scanCam" accept="image/*" capture="environment" hidden></label>
+        <span class="vsep"></span>
+        <label class="inline">Veidne <select id="scanTpl"></select></label>
+        <button type="button" id="scanTplBtn" data-act="scanTplEdit" title="Iezīmēt dokumentā, kur atrodas katrs lauks">✎ Iezīmēt laukus</button>
+        <button type="button" id="scanRunBtn" data-act="scanRun" title="Nolasīt laukus no jauna">↻ Nolasīt vēlreiz</button>
+        <span id="scanSource" class="tag"></span>
+      </div>
+      <span class="grow"></span>
+      <button type="button" class="ghost" data-act="scanClose" aria-label="Aizvērt">✕</button>
+    </header>
+    <div id="scanMsg" class="scan-msg info" role="status" aria-live="polite"><span class="txt"></span><span class="bar hidden"><i></i></span></div>
+    <div class="scan-body">
+      <div id="scanViewer" class="viewer"></div>
+      <aside class="scan-side">
+        <div id="scanTplBar" class="tplbar hidden">
+          <b>Dokumentu nolasīšanas veidne</b>
+          <ol class="small"><li>Novelc taisnstūri ap vietu, kur rakstīta atbilde, nevis anketas paskaidrojums.</li><li>Zonai izvēlies personas kartītes lauku. Nosaukums redzams uz dokumenta.</li><li>Velc zonu, lai pārvietotu. Apakšējais stūris maina izmēru. Koordinātas ir lapas daļas.</li></ol>
+          <div class="field"><label for="tplName">Veidnes nosaukums</label><input id="tplName"></div>
+          <div class="small muted" id="tplCount"></div>
+          <div class="actions"><button type="button" class="mainbtn sm" data-act="scanTplSave">💾 Saglabāt veidni</button><button type="button" class="sm" data-act="scanTplCancel">Atcelt</button><button type="button" class="sm ghost danger" id="tplDelBtn" data-act="scanTplDelete">Dzēst veidni</button></div>
+        </div>
+        <div class="fieldgrid">
+          <div class="field"><label for="scanTarget">Kur ievadīt</label><select id="scanTarget"></select></div>
+          <div class="field" id="scanStatusWrap"><label for="scanStatus">Statuss</label><select id="scanStatus"><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option></select></div>
+        </div>
+        <form id="scanForm" autocomplete="off" novalidate><div id="scanFields"></div></form>
+      </aside>
+    </div>
+    <footer class="scan-foot">
+      <span class="muted small">Ritenītis — ritināt · Ctrl + ritenītis — tuvināt · klikšķis uz lauka izceļ tā zonu · bez veidnes lauki netiek aizpildīti</span>
+      <span class="grow"></span>
+      <button type="button" data-act="scanClose">Atcelt</button>
+      <button type="button" data-act="scanSave" data-arg="next">Apstiprināt un nākamā</button>
+      <button type="button" class="mainbtn" data-act="scanSave">Apstiprināt un aizpildīt kartīti</button>
+    </footer>
+  </div>
+</dialog>
+
+<!-- ============ Ziņa ============ -->
+<dialog id="msgDialog">
+  <header class="dlg-head"><h2 id="msgTitle">Ziņa</h2><button type="button" class="ghost" data-close="msgDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div class="fieldgrid">
+    <div class="field"><label for="msgTo">Saņēmējs</label><select id="msgTo"></select></div>
+    <div class="field"><label for="msgChannel">Kanāls</label><select id="msgChannel"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">E-pasts</option></select></div>
+    <div class="field"><label for="msgTpl">Veidne</label><select id="msgTpl"></select></div>
+    <div class="field" id="msgSubjWrap"><label for="msgSubj">Temats</label><input id="msgSubj"></div>
+    <div class="field wide"><label for="msgText">Teksts</label><textarea id="msgText" rows="7"></textarea></div>
+  </div><p class="muted small">Ziņa tiek atvērta WhatsApp, SMS vai e-pasta programmā. Loga atvēršana vēl nenozīmē, ka ziņa ir nosūtīta. Pēc nosūtīšanas spied “Es nosūtīju”, ja atsakies — “Atcelt”.</p></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="msgDialog">Aizvērt</button><button type="button" data-act="msgCopy">Kopēt tekstu</button><button type="button" id="msgCancelSend" class="hidden" data-act="msgCancelSend">Atcelt</button><button type="button" id="msgConfirm" class="hidden" data-act="msgConfirm">Es nosūtīju</button><button type="button" class="mainbtn" id="msgOpen" data-act="msgSend">Atvērt lietotnē</button></footer>
+</dialog>
+
+<!-- ============ Dokumenta skatītājs ============ -->
+<dialog id="viewDialog" class="xl">
+  <header class="dlg-head"><h2 id="viewName"></h2><div class="actions"><button data-act="viewTab">↗ Jaunā cilnē</button><button data-act="viewDownload">⬇ Lejupielādēt</button><button class="ghost" data-close="viewDialog" aria-label="Aizvērt">✕</button></div></header>
+  <div class="dlg-body" id="viewBody"></div>
+</dialog>
+
+<!-- ============ Dokuments ============ -->
+<dialog id="documentDialog">
+  <form id="documentForm">
+    <header class="dlg-head"><h2 id="docTitle">Dokuments</h2><button type="button" class="ghost" data-close="documentDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
+      <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
+      <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīra dokuments</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
+      <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
+      <div class="field"><label>Saņemts</label><input name="received" type="date"></div>
+      <div class="field"><label>Derīgs līdz</label><input name="expires" type="date"></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Piem., oriģināls sarkanajā mapē"></textarea></div>
+    </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="documentDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Ekipējums ============ -->
+<dialog id="equipmentDialog">
+  <form id="equipmentForm">
+    <header class="dlg-head"><h2 id="eqTitle">Izsniegt ekipējumu</h2><button type="button" class="ghost" data-close="equipmentDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label for="eqPerson">Persona</label><select id="eqPerson" name="personId" required></select></div>
+      <div class="field wide"><label>Priekšmets</label><input name="item" required placeholder="Forma, jaka, zābaki, mugursoma…" list="dl_items"></div>
+      <div class="field"><label>Inventāra nr.</label><input name="inventory"></div>
+      <div class="field"><label>Izmērs</label><input name="size" placeholder="piem., 52/176, 42, M"></div>
+      <div class="field"><label>Daudzums</label><input name="qty" type="number" min="1" value="1"></div>
+      <div class="field"><label>Izsniegts</label><input name="issued" type="date" required></div>
+      <div class="field"><label>Atdot līdz</label><input name="due" type="date"></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Stāvoklis, komplektācija u.c."></textarea></div>
+      <div class="field" id="eqReturnedWrap"><label>Atdots (datums)</label><input name="returned" type="date"></div>
+      <div class="field" id="eqRetNoteWrap"><label>Piezīme atdodot</label><input name="returnNote"></div>
+    </div><p class="small muted">Pēc izsniegšanas vai atdošanas pievieno atjaunotu MTL aprites lapu (personas cilnē “Ekipējums”).</p></div>
+    <footer class="dlg-foot"><button type="button" class="ghost danger" id="eqDel" data-act="delEq">Dzēst ierakstu</button><span class="grow"></span><button type="button" data-close="equipmentDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+<datalist id="dl_items"><option value="Formas jaka"><option value="Formas bikses"><option value="Zābaki"><option value="Cepure"><option value="Josta"><option value="Mugursoma"><option value="Guļammaiss"><option value="Paklājiņš"></datalist>
+
+<!-- ============ Paziņojumi, atverot rīku ============ -->
+<dialog id="noticeDialog" class="wide">
+  <header class="dlg-head"><h2>🔔 Paziņojumi</h2><button type="button" class="ghost" data-close="noticeDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body" id="noticeBody"></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="noticeAlerts">Visi uzdevumi →</button><button type="button" class="mainbtn" data-close="noticeDialog">Labi</button></footer>
+</dialog>
+
+<!-- ============ Arhivēšana ============ -->
+<dialog id="archiveDialog">
+  <form id="archiveForm">
+    <header class="dlg-head"><h2>Arhivēt personu</h2><button type="button" class="ghost" data-close="archiveDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><p class="muted">Arhivēšana neko nedzēš. Glabāšanas termiņš ir atgādinājums datu pārskatīšanai.</p><div id="archiveWarn"></div>
+      <div class="fieldgrid">
+        <div class="field"><label>Izstāšanās datums</label><input type="date" name="left" required></div>
+        <div class="field"><label>Glabāt (mēneši pēc izstāšanās)</label><input type="number" min="0" max="1200" name="months"></div>
+        <div class="field wide"><label>Iemesls</label><input name="reason" placeholder="Pabeidzis, pārcēlies, pašu vēlēšanās…"></div>
+      </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="archiveDialog">Atcelt</button><button class="mainbtn" type="submit">Arhivēt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Dokumenta sasaistes atjaunošana ============ -->
+<dialog id="relinkDialog" class="wide">
+  <header class="dlg-head"><h2>Atjaunot sasaisti</h2><button type="button" class="ghost" data-close="relinkDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p id="relinkName" class="small"></p>
+    <p class="muted small">Dokumenta ieraksts un vēsture paliek. Oriģinālais fails netiek pārvietots un netiek pārdēvēts.</p>
+    <input id="relinkQ" type="search" placeholder="Meklēt pieslēgtajās mapēs">
+    <div id="relinkList" class="tablewrap" style="max-height:280px"></div>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-act="relinkPick">Izvēlēties failu datorā</button><span class="grow"></span><button type="button" data-close="relinkDialog">Atcelt</button></footer>
+</dialog>
+
+<!-- ============ Reģistra ieraksta dzēšana ============ -->
+<dialog id="eraseDialog" class="wide">
+  <form id="eraseForm">
+    <header class="dlg-head"><h2 id="eraseTitle">Dzēst reģistra ierakstu</h2><button type="button" class="ghost" data-close="eraseDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body" id="eraseBody"></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="eraseDialog">Atcelt</button><button class="mainbtn danger" type="submit">Dzēst tikai reģistra ierakstu</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Imports ============ -->
+<dialog id="importDialog" class="wide">
+  <header class="dlg-head"><h2>Personu imports</h2><button type="button" class="ghost" data-close="importDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p class="muted small">.xlsx (pirmā darblapa) vai .csv — der arī e-klases eksports. Pirmajā rindā jābūt kolonnu nosaukumiem: vārds, uzvārds (vai “vārds uzvārds”), dzimšanas datums, personas kods, grupa, klase, skola, tālrunis, e-pasts, vecāks, vecāka tālrunis, vecāka e-pasts, piezīmes.</p>
+    <div class="fieldgrid"><div class="field"><label>Fails</label><input id="importFile" type="file" accept=".csv,.txt,.xlsx"></div>
+      <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div></div>
+    <p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
+  </div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="importDialog">Atcelt</button><button id="importConfirm" class="mainbtn" disabled>Importēt</button></footer>
+</dialog>
+
+<!-- ============ Piesaistīt failu ============ -->
+<dialog id="associateDialog">
+  <header class="dlg-head"><h2>Piesaistīt failu</h2><button type="button" class="ghost" data-close="associateDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><p id="associateName" class="small"></p><div class="fieldgrid">
+    <div class="field wide"><label>Persona</label><select id="associatePerson"></select></div>
+    <div class="field"><label>Kategorija</label><select id="associateKind"></select></div>
+    <div class="field"><label>Forma</label><select id="associateFormat"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks fails</option></select></div>
+  </div><p class="small muted">Tiek saglabāts ceļš un apraksts. Fails netiek pārvietots.</p></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="associateDialog">Atcelt</button><button class="mainbtn" id="associateConfirm">Piesaistīt</button></footer>
+</dialog>
+
+<!-- ============ Kontakti uz telefonu ============ -->
+<dialog id="vcardDialog" class="wide">
+  <header class="dlg-head"><h2 id="vcTitle">📇 Uz telefonu</h2><button type="button" class="ghost" data-close="vcardDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div class="vcgrid">
+    <div>
+      <p class="small muted" style="margin-top:0">Izvēlies kontaktu — blakus parādās tā QR kods. Ar ķeksīti atzīmētie tiek iekļauti .vcf failā.</p>
+      <div id="vcList"></div>
+      <div class="notice small" style="margin-top:12px"><b>Kā saglabāt:</b><br>📱 <b>QR</b> — atver telefona kameru, noskenē, spied “Saglabāt kontaktu”. Ja telefons sinhronizējas ar Google, kontakts būs arī Google kontaktos.<br>💻 <b>.vcf</b> — <a href="https://contacts.google.com/" target="_blank" rel="noopener">contacts.google.com</a> → Importēt → izvēlies failu. Kontakti nonāk etiķetēs <b>“Jaunsardze – jaunsargi”</b> un <b>“Jaunsardze – vecāki”</b>.<br>Katrā kontaktā ir arī saistītie cilvēki: bērnam — vecāku vārdi un numuri, vecākam — bērna vārds, grupa un numurs.</div>
+      <p id="vcDone" class="small good"></p>
+    </div>
+    <div class="vcqr" id="vcQr"></div>
+  </div></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="vcDownload">⬇ Lejupielādēt .vcf</button><button type="button" class="mainbtn" data-act="vcScanned">✓ Saglabāts telefonā</button></footer>
+</dialog>
+
+<input type="file" id="attachFile" multiple hidden>
+
+<dialog id="mkdirDialog">
+  <form id="mkdirForm">
+    <header class="dlg-head"><h2>Jauna mape</h2><button type="button" class="ghost" data-close="mkdirDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="mkdirName">Mapes nosaukums</label><input id="mkdirName" required placeholder="Piemēram, Iesniegumi"></div>
+      <div class="field"><label for="mkdirParent">Kur izveidot</label><select id="mkdirParent"></select></div>
+      <p class="muted small">Mape tiek izveidota šīs personas aktīvā mācību gada mapē. Esošas mapes netiek dzēstas.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="mkdirDialog">Atcelt</button><button class="mainbtn" type="submit">Izveidot</button></footer>
+  </form>
+</dialog>
+
+<dialog id="addFileDialog">
+  <form id="addFileForm">
+    <header class="dlg-head"><h2>Pievienot failu</h2><button type="button" class="ghost" data-close="addFileDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="addFileDir">Galamērķa mape</label><select id="addFileDir"></select></div>
+      <p class="muted small">Der PDF, DOCX, eDoc, JPG, PNG, XLSX, TXT un citi faili. Programmā tiek saglabāta kopija. Oriģināls datorā netiek pārvietots un netiek dzēsts.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="addFileDialog">Atcelt</button><button class="mainbtn" type="submit">Izvēlēties failus</button></footer>
+  </form>
+</dialog>
+
+<dialog id="renameEntryDialog">
+  <form id="renameEntryForm">
+    <header class="dlg-head"><h2 id="renameEntryTitle">Pārdēvēt</h2><button type="button" class="ghost" data-close="renameEntryDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="renameEntryName">Jaunais nosaukums</label><input id="renameEntryName" required></div>
+      <p class="muted small">Ja pārlūks nevar pārdēvēt droši, dokuments paliek savā vietā.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="renameEntryDialog">Atcelt</button><button class="mainbtn" type="submit">Pārdēvēt</button></footer>
+  </form>
+</dialog>
+
+<dialog id="moveFileDialog">
+  <form id="moveFileForm">
+    <header class="dlg-head"><h2>Pārvietot failu</h2><button type="button" class="ghost" data-close="moveFileDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <p id="moveFileLabel" class="small"></p>
+      <div class="field"><label for="moveFileDir">Uz kuru apakšmapi</label><select id="moveFileDir"></select></div>
+      <p class="muted small">Pārvietošana paliek šīs personas mācību gada mapē. Ja darbība neizdodas, fails netiek dzēsts.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="moveFileDialog">Atcelt</button><button class="mainbtn" type="submit">Pārvietot</button></footer>
+  </form>
+</dialog>
+
+<dialog id="addYearDialog">
+  <header class="dlg-head"><h2>Pievienot mācību gadu</h2><button type="button" class="ghost" data-close="addYearDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <div class="field"><label for="addYearStart">Sākuma gads</label><input id="addYearStart" type="number" min="1990" max="2500" step="1"></div>
+    <p id="addYearPreview" class="muted"></p>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="addYearDialog">Atcelt</button><button type="button" class="mainbtn" data-act="addYearOk">Pievienot</button></footer>
+</dialog>
+
+<dialog id="assignDialog">
+  <header class="dlg-head"><h2>Piesaistīt nepiesaistītos ierakstus</h2><button type="button" class="ghost" data-close="assignDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p id="assignInfo" class="small"></p>
+    <div class="field"><label for="assignYear">Mācību gads</label><select id="assignYear"></select></div>
+    <label class="check"><input type="checkbox" id="assignLoose" checked> Piesaistīt arī dokumentus un ekipējumu, kuriem nav datuma</label>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="assignDialog">Atcelt</button><button type="button" class="mainbtn" data-act="assignOk">Piesaistīt</button></footer>
+</dialog>
+
+<dialog id="moveDialog" class="wide">
+  <header class="dlg-head"><h2>Pārcelt no cita gada</h2><button type="button" class="ghost" data-close="moveDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p>Galamērķis: <b id="moveDest"></b></p>
+    <div class="fieldgrid">
+      <div class="field"><label for="moveFrom">No kura mācību gada pārcelt</label><select id="moveFrom"></select></div>
+      <div class="field"><label for="moveGroup">Grupa galamērķa gadā</label><input id="moveGroup" list="dl_groups" placeholder="Var atstāt tukšu"></div>
+    </div>
+    <input id="moveQ" type="search" placeholder="Meklēt pēc vārda un uzvārda">
+    <div class="actions"><button type="button" class="sm" data-act="moveAll">Atzīmēt visus</button><button type="button" class="sm" data-act="moveNone">Noņemt visas atzīmes</button><span id="moveCount" class="muted small"></span></div>
+    <div id="moveList" class="movelist"></div>
+    <label class="check"><input type="checkbox" id="moveActivate"> Aktivizēt arhivētās personas (bez šīs atzīmes tās paliek arhivētas)</label>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="moveDialog">Atcelt</button><button type="button" class="mainbtn" id="moveDo" data-act="moveDo">Pārcelt atlasītās personas</button></footer>
+</dialog>
+
+<!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
+<script src="app.bundle.js"></script></body>
+</html>

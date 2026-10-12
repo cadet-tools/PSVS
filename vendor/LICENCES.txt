@@ -1,0 +1,22 @@
+Lokālās bibliotēkas. Tās netiek ielādētas no interneta.
+
+qrcode-generator 1.4.4
+  https://github.com/kazuhikoarase/qrcode-generator
+  Licence: MIT
+
+PDF.js 3.11.174
+  https://github.com/mozilla/pdf.js
+  Licence: Apache-2.0
+  No file:// lapas PDF tiek lasīts bez atsevišķa worker, jo Chrome to no diska bieži bloķē.
+
+tesseract.js 5.1.1 un tesseract.js-core 5.1.0
+  https://github.com/naptha/tesseract.js
+  Licence: Apache-2.0
+
+Valodu modeļi lav un eng (traineddata 4.0.0)
+  https://github.com/naptha/tessdata
+  Licence: Apache-2.0
+
+Google Cloud Vision šajā mapē nav. Tas paliek izslēgts, kamēr lietotājs pats Iestatījumos neizvēlas citu dzinēju un neievada atslēgu.
+
+Tesseract.js 7.0.0 un tesseract.js-core 7.0.0 — Apache-2.0 (https://github.com/naptha/tesseract.js). Valodu dati lav/eng 4.0.0_best_int — Apache-2.0 (tesseract-ocr/tessdata).

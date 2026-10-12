@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CADET PERSONĀLS</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+  <!-- Navigācijas josla -->
+  <nav class="nav" aria-label="Galvenā navigācija">
+    <img class="logo" src="PS_LOGO.png" alt="CADET PERSONĀLS" title="CADET PERSONĀLS">
+    <button data-page="dashboard" title="Pārskats"><span>▦</span><small>Pārskats</small></button>
+    <button data-page="people" title="Personas"><span>♙</span><small>Personas</small></button>
+    <button data-page="comms" title="Saziņa"><span>✉</span><small>Saziņa</small></button>
+    <button data-page="documents" title="Dokumenti"><span>▤</span><small>Dokumenti</small></button>
+    <button data-page="equipment" title="Ekipējums"><span>▣</span><small>Ekipējums</small></button>
+    <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span>⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
+    <button data-page="archive" title="Arhīvs"><span>◷</span><small>Arhīvs</small></button>
+    <span class="grow"></span>
+    <button data-page="settings" title="Iestatījumi"><span>⚙</span><small>Iestatīj.</small></button>
+  </nav>
+
+  <!-- Ātrā personu sānjosla -->
+  <aside class="aside" aria-label="Personu saraksts">
+    <div class="aside-top"><h2>Personas <small id="sideCount" class="muted"></small></h2><button class="mainbtn sq" data-act="addPerson" title="Jauna persona">＋</button></div>
+    <input id="search" type="search" placeholder="Meklēt…  (Ctrl+K)" autocomplete="off">
+    <div class="side-filters"><select id="groupFilter" aria-label="Grupa"></select><label class="check small"><input type="checkbox" id="sideArchive"> Arhīvs</label></div>
+    <div class="sidebtns">
+      <button class="mainbtn" data-act="scan">📷 Ievadīt anketu</button>
+      <button data-act="import" title="Imports no Excel / CSV">⬆ Imports</button>
+    </div>
+    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><span id="rootLabel" class="small muted"></span><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi">📁</button></div>
+    <div id="restoreBox"></div>
+    <div id="sideList" class="sidelist"></div>
+  </aside>
+
+  <main class="view" id="view">
+    <div class="yearbar">
+      <span class="grow"></span>
+      <div class="yearpick" id="yearPick">
+        <button type="button" id="yearBtn" data-act="toggleYear" aria-haspopup="true">Mācību gads ▾</button>
+        <div id="yearMenu" class="yearmenu hidden"></div>
+      </div>
+    </div>
+    <div id="main"></div>
+  </main>
+</div>
+
+<datalist id="dl_groups"></datalist>
+<datalist id="dl_rel"><option value="Māte"><option value="Tēvs"><option value="Aizbildnis"><option value="Vecmāmiņa"><option value="Vectēvs"><option value="Brālis"><option value="Māsa"><option value="Audžuģimene"></datalist>
+
+<!-- ============ Personas kartīte (rediģēšana) ============ -->
+<dialog id="personDialog" class="wide">
+  <form id="personForm" novalidate>
+    <header class="dlg-head"><h2 id="personTitle">Persona</h2><button type="button" class="ghost" data-close="personDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body" id="personFields"></div>
+    <footer class="dlg-foot"><span class="muted small">Dzimšanas datums tiek aizpildīts no personas koda. Iezīmētie lauki ir jāpārbauda.</span><span class="grow"></span><button type="button" data-close="personDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Anketu ievade ============ -->
+<dialog id="scanDialog" class="full" aria-label="Anketas ievade">
+  <div class="scan">
+    <header class="scan-head">
+      <h2>📷 Anketas ievade</h2>
+      <div class="actions">
+        <label class="btn mainbtn">📂 Atvērt dokumentu<input type="file" id="scanFile" accept=".pdf,.docx,.edoc,.asice,.bdoc,image/*" hidden></label>
+        <label class="btn">📱 Kamera<input type="file" id="scanCam" accept="image/*" capture="environment" hidden></label>
+        <span class="vsep"></span>
+        <label class="inline">Veidne <select id="scanTpl"></select></label>
+        <button type="button" id="scanTplBtn" data-act="scanTplEdit" title="Iezīmēt dokumentā, kur atrodas katrs lauks">✎ Iezīmēt laukus</button>
+        <button type="button" id="scanRunBtn" data-act="scanRun" title="Nolasīt laukus no jauna">↻ Nolasīt vēlreiz</button>
+        <span id="scanSource" class="tag"></span>
+      </div>
+      <span class="grow"></span>
+      <button type="button" class="ghost" data-act="scanClose" aria-label="Aizvērt">✕</button>
+    </header>
+    <div id="scanMsg" class="scan-msg info" role="status" aria-live="polite"><span class="txt"></span><span class="bar hidden"><i></i></span></div>
+    <div class="scan-body">
+      <div id="scanViewer" class="viewer"></div>
+      <aside class="scan-side">
+        <div id="scanTplBar" class="tplbar hidden">
+          <b>Dokumentu nolasīšanas veidne</b>
+          <ol class="small"><li>Novelc taisnstūri ap vietu, kur rakstīta atbilde, nevis anketas paskaidrojums.</li><li>Zonai izvēlies personas kartītes lauku. Nosaukums redzams uz dokumenta.</li><li>Velc zonu, lai pārvietotu. Apakšējais stūris maina izmēru. Koordinātas ir lapas daļas.</li></ol>
+          <div class="field"><label for="tplName">Veidnes nosaukums</label><input id="tplName"></div>
+          <div class="small muted" id="tplCount"></div>
+          <div class="actions"><button type="button" class="mainbtn sm" data-act="scanTplSave">💾 Saglabāt veidni</button><button type="button" class="sm" data-act="scanTplCancel">Atcelt</button><button type="button" class="sm ghost danger" id="tplDelBtn" data-act="scanTplDelete">Dzēst veidni</button></div>
+        </div>
+        <div class="fieldgrid">
+          <div class="field"><label for="scanTarget">Kur ievadīt</label><select id="scanTarget"></select></div>
+          <div class="field" id="scanStatusWrap"><label for="scanStatus">Statuss</label><select id="scanStatus"><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option></select></div>
+        </div>
+        <form id="scanForm" autocomplete="off" novalidate><div id="scanFields"></div></form>
+      </aside>
+    </div>
+    <footer class="scan-foot">
+      <span class="muted small">Ritenītis — ritināt · Ctrl + ritenītis — tuvināt · klikšķis uz lauka izceļ tā zonu · bez veidnes lauki netiek aizpildīti</span>
+      <span class="grow"></span>
+      <button type="button" data-act="scanClose">Atcelt</button>
+      <button type="button" data-act="scanSave" data-arg="next">Apstiprināt un nākamā</button>
+      <button type="button" class="mainbtn" data-act="scanSave">Apstiprināt un aizpildīt kartīti</button>
+    </footer>
+  </div>
+</dialog>
+
+<!-- ============ Ziņa ============ -->
+<dialog id="msgDialog">
+  <header class="dlg-head"><h2 id="msgTitle">Ziņa</h2><button type="button" class="ghost" data-close="msgDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div class="fieldgrid">
+    <div class="field"><label for="msgTo">Saņēmējs</label><select id="msgTo"></select></div>
+    <div class="field"><label for="msgChannel">Kanāls</label><select id="msgChannel"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">E-pasts</option></select></div>
+    <div class="field"><label for="msgTpl">Veidne</label><select id="msgTpl"></select></div>
+    <div class="field" id="msgSubjWrap"><label for="msgSubj">Temats</label><input id="msgSubj"></div>
+    <div class="field wide"><label for="msgText">Teksts</label><textarea id="msgText" rows="7"></textarea></div>
+  </div><p class="muted small">Ziņa tiek atvērta WhatsApp, SMS vai e-pasta programmā. Loga atvēršana vēl nenozīmē, ka ziņa ir nosūtīta. Pēc nosūtīšanas spied “Es nosūtīju”, ja atsakies — “Atcelt”.</p></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="msgDialog">Aizvērt</button><button type="button" data-act="msgCopy">Kopēt tekstu</button><button type="button" id="msgCancelSend" class="hidden" data-act="msgCancelSend">Atcelt</button><button type="button" id="msgConfirm" class="hidden" data-act="msgConfirm">Es nosūtīju</button><button type="button" class="mainbtn" id="msgOpen" data-act="msgSend">Atvērt lietotnē</button></footer>
+</dialog>
+
+<!-- ============ Dokumenta skatītājs ============ -->
+<dialog id="viewDialog" class="xl">
+  <header class="dlg-head"><h2 id="viewName"></h2><div class="actions"><button data-act="viewTab">↗ Jaunā cilnē</button><button data-act="viewDownload">⬇ Lejupielādēt</button><button class="ghost" data-close="viewDialog" aria-label="Aizvērt">✕</button></div></header>
+  <div class="dlg-body" id="viewBody"></div>
+</dialog>
+
+<!-- ============ Dokuments ============ -->
+<dialog id="documentDialog">
+  <form id="documentForm">
+    <header class="dlg-head"><h2 id="docTitle">Dokuments</h2><button type="button" class="ghost" data-close="documentDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
+      <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
+      <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīra dokuments</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
+      <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
+      <div class="field"><label>Saņemts</label><input name="received" type="date"></div>
+      <div class="field"><label>Derīgs līdz</label><input name="expires" type="date"></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Piem., oriģināls sarkanajā mapē"></textarea></div>
+    </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="documentDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Ekipējums ============ -->
+<dialog id="equipmentDialog">
+  <form id="equipmentForm">
+    <header class="dlg-head"><h2 id="eqTitle">Izsniegt ekipējumu</h2><button type="button" class="ghost" data-close="equipmentDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label for="eqPerson">Persona</label><select id="eqPerson" name="personId" required></select></div>
+      <div class="field wide"><label>Priekšmets</label><input name="item" required placeholder="Forma, jaka, zābaki, mugursoma…" list="dl_items"></div>
+      <div class="field"><label>Inventāra nr.</label><input name="inventory"></div>
+      <div class="field"><label>Izmērs</label><input name="size" placeholder="piem., 52/176, 42, M"></div>
+      <div class="field"><label>Daudzums</label><input name="qty" type="number" min="1" value="1"></div>
+      <div class="field"><label>Izsniegts</label><input name="issued" type="date" required></div>
+      <div class="field"><label>Atdot līdz</label><input name="due" type="date"></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Stāvoklis, komplektācija u.c."></textarea></div>
+      <div class="field" id="eqReturnedWrap"><label>Atdots (datums)</label><input name="returned" type="date"></div>
+      <div class="field" id="eqRetNoteWrap"><label>Piezīme atdodot</label><input name="returnNote"></div>
+    </div><p class="small muted">Pēc izsniegšanas vai atdošanas pievieno atjaunotu MTL aprites lapu (personas cilnē “Ekipējums”).</p></div>
+    <footer class="dlg-foot"><button type="button" class="ghost danger" id="eqDel" data-act="delEq">Dzēst ierakstu</button><span class="grow"></span><button type="button" data-close="equipmentDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+<datalist id="dl_items"><option value="Formas jaka"><option value="Formas bikses"><option value="Zābaki"><option value="Cepure"><option value="Josta"><option value="Mugursoma"><option value="Guļammaiss"><option value="Paklājiņš"></datalist>
+
+<!-- ============ Paziņojumi, atverot rīku ============ -->
+<dialog id="noticeDialog" class="wide">
+  <header class="dlg-head"><h2>🔔 Paziņojumi</h2><button type="button" class="ghost" data-close="noticeDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body" id="noticeBody"></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="noticeAlerts">Visi uzdevumi →</button><button type="button" class="mainbtn" data-close="noticeDialog">Labi</button></footer>
+</dialog>
+
+<!-- ============ Arhivēšana ============ -->
+<dialog id="archiveDialog">
+  <form id="archiveForm">
+    <header class="dlg-head"><h2>Arhivēt personu</h2><button type="button" class="ghost" data-close="archiveDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><p class="muted">Arhivēšana neko nedzēš. Glabāšanas termiņš ir atgādinājums datu pārskatīšanai.</p><div id="archiveWarn"></div>
+      <div class="fieldgrid">
+        <div class="field"><label>Izstāšanās datums</label><input type="date" name="left" required></div>
+        <div class="field"><label>Glabāt (mēneši pēc izstāšanās)</label><input type="number" min="0" max="1200" name="months"></div>
+        <div class="field wide"><label>Iemesls</label><input name="reason" placeholder="Pabeidzis, pārcēlies, pašu vēlēšanās…"></div>
+      </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="archiveDialog">Atcelt</button><button class="mainbtn" type="submit">Arhivēt</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Dokumenta sasaistes atjaunošana ============ -->
+<dialog id="relinkDialog" class="wide">
+  <header class="dlg-head"><h2>Atjaunot sasaisti</h2><button type="button" class="ghost" data-close="relinkDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p id="relinkName" class="small"></p>
+    <p class="muted small">Dokumenta ieraksts un vēsture paliek. Oriģinālais fails netiek pārvietots un netiek pārdēvēts.</p>
+    <input id="relinkQ" type="search" placeholder="Meklēt pieslēgtajās mapēs">
+    <div id="relinkList" class="tablewrap" style="max-height:280px"></div>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-act="relinkPick">Izvēlēties failu datorā</button><span class="grow"></span><button type="button" data-close="relinkDialog">Atcelt</button></footer>
+</dialog>
+
+<!-- ============ Reģistra ieraksta dzēšana ============ -->
+<dialog id="eraseDialog" class="wide">
+  <form id="eraseForm">
+    <header class="dlg-head"><h2 id="eraseTitle">Dzēst reģistra ierakstu</h2><button type="button" class="ghost" data-close="eraseDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body" id="eraseBody"></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="eraseDialog">Atcelt</button><button class="mainbtn danger" type="submit">Dzēst tikai reģistra ierakstu</button></footer>
+  </form>
+</dialog>
+
+<!-- ============ Imports ============ -->
+<dialog id="importDialog" class="wide">
+  <header class="dlg-head"><h2>Personu imports</h2><button type="button" class="ghost" data-close="importDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p class="muted small">.xlsx (pirmā darblapa) vai .csv — der arī e-klases eksports. Pirmajā rindā jābūt kolonnu nosaukumiem: vārds, uzvārds (vai “vārds uzvārds”), dzimšanas datums, personas kods, grupa, klase, skola, tālrunis, e-pasts, vecāks, vecāka tālrunis, vecāka e-pasts, piezīmes.</p>
+    <div class="fieldgrid"><div class="field"><label>Fails</label><input id="importFile" type="file" accept=".csv,.txt,.xlsx"></div>
+      <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div></div>
+    <p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
+  </div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="importDialog">Atcelt</button><button id="importConfirm" class="mainbtn" disabled>Importēt</button></footer>
+</dialog>
+
+<!-- ============ Piesaistīt failu ============ -->
+<dialog id="associateDialog">
+  <header class="dlg-head"><h2>Piesaistīt failu</h2><button type="button" class="ghost" data-close="associateDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><p id="associateName" class="small"></p><div class="fieldgrid">
+    <div class="field wide"><label>Persona</label><select id="associatePerson"></select></div>
+    <div class="field"><label>Kategorija</label><select id="associateKind"></select></div>
+    <div class="field"><label>Forma</label><select id="associateFormat"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks fails</option></select></div>
+  </div><p class="small muted">Tiek saglabāts ceļš un apraksts. Fails netiek pārvietots.</p></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="associateDialog">Atcelt</button><button class="mainbtn" id="associateConfirm">Piesaistīt</button></footer>
+</dialog>
+
+<!-- ============ Kontakti uz telefonu ============ -->
+<dialog id="vcardDialog" class="wide">
+  <header class="dlg-head"><h2 id="vcTitle">📇 Uz telefonu</h2><button type="button" class="ghost" data-close="vcardDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div class="vcgrid">
+    <div>
+      <p class="small muted" style="margin-top:0">Izvēlies kontaktu — blakus parādās tā QR kods. Ar ķeksīti atzīmētie tiek iekļauti .vcf failā.</p>
+      <div id="vcList"></div>
+      <div class="notice small" style="margin-top:12px"><b>Kā saglabāt:</b><br>📱 <b>QR</b> — atver telefona kameru, noskenē, spied “Saglabāt kontaktu”. Ja telefons sinhronizējas ar Google, kontakts būs arī Google kontaktos.<br>💻 <b>.vcf</b> — <a href="https://contacts.google.com/" target="_blank" rel="noopener">contacts.google.com</a> → Importēt → izvēlies failu. Kontakti nonāk etiķetēs <b>“Jaunsardze – jaunsargi”</b> un <b>“Jaunsardze – vecāki”</b>.<br>Katrā kontaktā ir arī saistītie cilvēki: bērnam — vecāku vārdi un numuri, vecākam — bērna vārds, grupa un numurs.</div>
+      <p id="vcDone" class="small good"></p>
+    </div>
+    <div class="vcqr" id="vcQr"></div>
+  </div></div>
+  <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="vcDownload">⬇ Lejupielādēt .vcf</button><button type="button" class="mainbtn" data-act="vcScanned">✓ Saglabāts telefonā</button></footer>
+</dialog>
+
+<input type="file" id="attachFile" multiple hidden>
+
+<dialog id="mkdirDialog">
+  <form id="mkdirForm">
+    <header class="dlg-head"><h2>Jauna mape</h2><button type="button" class="ghost" data-close="mkdirDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="mkdirName">Mapes nosaukums</label><input id="mkdirName" required placeholder="Piemēram, Iesniegumi"></div>
+      <div class="field"><label for="mkdirParent">Kur izveidot</label><select id="mkdirParent"></select></div>
+      <p class="muted small">Mape tiek izveidota šīs personas aktīvā mācību gada mapē. Esošas mapes netiek dzēstas.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="mkdirDialog">Atcelt</button><button class="mainbtn" type="submit">Izveidot</button></footer>
+  </form>
+</dialog>
+
+<dialog id="addFileDialog">
+  <form id="addFileForm">
+    <header class="dlg-head"><h2>Pievienot failu</h2><button type="button" class="ghost" data-close="addFileDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="addFileDir">Galamērķa mape</label><select id="addFileDir"></select></div>
+      <p class="muted small">Der PDF, DOCX, eDoc, JPG, PNG, XLSX, TXT un citi faili. Programmā tiek saglabāta kopija. Oriģināls datorā netiek pārvietots un netiek dzēsts.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="addFileDialog">Atcelt</button><button class="mainbtn" type="submit">Izvēlēties failus</button></footer>
+  </form>
+</dialog>
+
+<dialog id="renameEntryDialog">
+  <form id="renameEntryForm">
+    <header class="dlg-head"><h2 id="renameEntryTitle">Pārdēvēt</h2><button type="button" class="ghost" data-close="renameEntryDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <div class="field"><label for="renameEntryName">Jaunais nosaukums</label><input id="renameEntryName" required></div>
+      <p class="muted small">Ja pārlūks nevar pārdēvēt droši, dokuments paliek savā vietā.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="renameEntryDialog">Atcelt</button><button class="mainbtn" type="submit">Pārdēvēt</button></footer>
+  </form>
+</dialog>
+
+<dialog id="moveFileDialog">
+  <form id="moveFileForm">
+    <header class="dlg-head"><h2>Pārvietot failu</h2><button type="button" class="ghost" data-close="moveFileDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body">
+      <p id="moveFileLabel" class="small"></p>
+      <div class="field"><label for="moveFileDir">Uz kuru apakšmapi</label><select id="moveFileDir"></select></div>
+      <p class="muted small">Pārvietošana paliek šīs personas mācību gada mapē. Ja darbība neizdodas, fails netiek dzēsts.</p>
+    </div>
+    <footer class="dlg-foot"><button type="button" data-close="moveFileDialog">Atcelt</button><button class="mainbtn" type="submit">Pārvietot</button></footer>
+  </form>
+</dialog>
+
+<dialog id="addYearDialog">
+  <header class="dlg-head"><h2>Pievienot mācību gadu</h2><button type="button" class="ghost" data-close="addYearDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <div class="field"><label for="addYearStart">Sākuma gads</label><input id="addYearStart" type="number" min="1990" max="2500" step="1"></div>
+    <p id="addYearPreview" class="muted"></p>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="addYearDialog">Atcelt</button><button type="button" class="mainbtn" data-act="addYearOk">Pievienot</button></footer>
+</dialog>
+
+<dialog id="assignDialog">
+  <header class="dlg-head"><h2>Piesaistīt nepiesaistītos ierakstus</h2><button type="button" class="ghost" data-close="assignDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p id="assignInfo" class="small"></p>
+    <div class="field"><label for="assignYear">Mācību gads</label><select id="assignYear"></select></div>
+    <label class="check"><input type="checkbox" id="assignLoose" checked> Piesaistīt arī dokumentus un ekipējumu, kuriem nav datuma</label>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="assignDialog">Atcelt</button><button type="button" class="mainbtn" data-act="assignOk">Piesaistīt</button></footer>
+</dialog>
+
+<dialog id="moveDialog" class="wide">
+  <header class="dlg-head"><h2>Pārcelt no cita gada</h2><button type="button" class="ghost" data-close="moveDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body">
+    <p>Galamērķis: <b id="moveDest"></b></p>
+    <div class="fieldgrid">
+      <div class="field"><label for="moveFrom">No kura mācību gada pārcelt</label><select id="moveFrom"></select></div>
+      <div class="field"><label for="moveGroup">Grupa galamērķa gadā</label><input id="moveGroup" list="dl_groups" placeholder="Var atstāt tukšu"></div>
+    </div>
+    <input id="moveQ" type="search" placeholder="Meklēt pēc vārda un uzvārda">
+    <div class="actions"><button type="button" class="sm" data-act="moveAll">Atzīmēt visus</button><button type="button" class="sm" data-act="moveNone">Noņemt visas atzīmes</button><span id="moveCount" class="muted small"></span></div>
+    <div id="moveList" class="movelist"></div>
+    <label class="check"><input type="checkbox" id="moveActivate"> Aktivizēt arhivētās personas (bez šīs atzīmes tās paliek arhivētas)</label>
+  </div>
+  <footer class="dlg-foot"><button type="button" data-close="moveDialog">Atcelt</button><button type="button" class="mainbtn" id="moveDo" data-act="moveDo">Pārcelt atlasītās personas</button></footer>
+</dialog>
+
+<!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
+<script src="js/core.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/people.js"></script>
+<script src="js/documents.js"></script>
+<script src="js/comms.js"></script>
+<script src="js/equipment.js"></script>
+<script src="js/contacts.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/importexport.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/years.js"></script>
+<script src="js/scan/reader.js"></script>
+<script src="js/scan/viewer.js"></script>
+<script src="js/scan/ocr.js"></script>
+<script src="js/scan/scan.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
