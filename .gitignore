@@ -1,0 +1,9 @@
+# Personu dati NEKAD nenonāk repozitorijā
+CADET_PERSONALS_DATI*.json
+*.raksta
+_rezerves/
+_arhivi/
+Rezerves_kopijas/
+Macibu_gadi/
+Dokumenti/
+!src/**
