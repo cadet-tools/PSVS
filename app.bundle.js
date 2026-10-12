@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.9.5';
+  CP.VERSION = '1.9.6';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4492,16 +4492,28 @@ window.CP = window.CP || {};
   };
 
   /* ---------------- Google Cloud Vision (pēc izvēles) ---------------- */
+  /** Biežākās Google kļūdas → ko darīt (Google Cloud konsolē, console.cloud.google.com/apis/credentials) */
+  function googleHelp(m) {
+    const t = String(m);
+    if (/API key not valid|API_KEY_INVALID/i.test(t)) return 'atslēga nav derīga. Pārbaudi, vai Iestatījumos ielīmēta pilna atslēga bez atstarpēm. (' + t + ')';
+    if (/method .* are blocked|API_KEY_SERVICE_BLOCKED/i.test(t)) return 'atslēgai nav atļauts izmantot Cloud Vision API. Google Cloud → APIs & Services → Credentials → atslēga → API restrictions → atzīmē “Cloud Vision API” → Save, pēc pāris minūtēm mēģini vēlreiz. (' + t + ')';
+    if (/referer|referrer|API_KEY_HTTP_REFERRER_BLOCKED/i.test(t)) return 'atslēga nav atļauta šai adresei. Credentials → atslēga → Website restrictions → pievieno https://cadet-tools.github.io/* (' + t + ')';
+    if (/has not been used|is disabled|SERVICE_DISABLED|not enabled/i.test(t)) return 'projektā nav ieslēgts Cloud Vision API. Atver console.cloud.google.com/apis/library/vision.googleapis.com → Enable. (' + t + ')';
+    if (/billing/i.test(t)) return 'projektam nav pievienots norēķinu konts (Google to prasa arī bezmaksas apjomam). (' + t + ')';
+    if (/quota|rate limit|RESOURCE_EXHAUSTED/i.test(t)) return 'pārsniegts pieprasījumu limits. Pagaidi vai pārbaudi kvotas. (' + t + ')';
+    if (/Failed to fetch|NetworkError/i.test(t)) return 'nav savienojuma ar Google (internets vai tīkla ierobežojums). (' + t + ')';
+    return t;
+  }
   async function googleWords(c, p) {
     if (S.db.settings.ocr.engine !== 'google') throw Error('Google Vision nav ieslēgts');
     const key = S.db.settings.ocr.googleKey; if (!key) throw Error('Iestatījumos nav ievadīta Google Vision API atslēga');
     const k = Math.min(1, 3000 / Math.max(c.width, c.height)), sc = canvas(c.width * k, c.height * k); sc.getContext('2d').drawImage(c, 0, 0, sc.width, sc.height);
-    const r = await fetch('https://vision.googleapis.com/v1/images:annotate?key=' + encodeURIComponent(key), {
+    const r = await fetch('https://vision.googleapis.com/v1/images:annotate?key=' + encodeURIComponent(key.trim()), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requests: [{ image: { content: sc.toDataURL('image/jpeg', 0.9).split(',')[1] }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }], imageContext: { languageHints: ['lv', 'en'] } }] })
     });
     const j = await r.json().catch(() => ({})), err = j.error || j.responses?.[0]?.error;
-    if (!r.ok || err) throw Error('Google Vision: ' + (err?.message || r.status));
+    if (!r.ok || err) throw Error('Google Vision: ' + googleHelp(err?.message || String(r.status)));
     const pg = j.responses?.[0]?.fullTextAnnotation?.pages?.[0]; if (!pg) return [];
     const W = pg.width, H = pg.height, out = [];
     for (const b of pg.blocks || []) for (const pa of b.paragraphs || []) for (const wd of pa.words || []) {

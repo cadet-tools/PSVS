@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.9.6 — 2026-10-12
+- Google Vision kļūdas tiek skaidrotas latviski ar konkrētu rīcību: atslēga nederīga, atslēgai nav atļauts Vision API, adreses ierobežojums, API nav ieslēgts, nav norēķinu konta, limits, nav savienojuma. Atslēgai tiek noņemtas nejaušas atstarpes.
+
 ## 1.9.5 — 2026-10-12 — Anketu nolasīšana atkal darbojas
 - **Bez veidnes** lauki atkal tiek atrasti automātiski pēc anketas etiķetēm. Iepriekšējā darba versijā tas bija izslēgts, un ar Google Vision dokuments netika pat nosūtīts. Word, eDoc un PDF ar tekstu nolasa precīzi, skenējumus atpazīst izvēlētais dzinējs.
 - **Google Vision** tagad tiešām tiek izmantots gan bez veidnes, gan ar veidni (zonu teksts no Google atpazītajiem vārdiem). Google kļūdas, piem. nederīga atslēga, API nav ieslēgts vai nav norēķinu konta, tiek parādītas ievades logā.
