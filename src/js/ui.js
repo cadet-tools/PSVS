@@ -66,6 +66,7 @@
   window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   CP.render = () => {
     if (CP.D2) CP.theme.apply();
+    if (S.root && !CP._watchLoaded && CP.watchReload) { CP._watchLoaded = true; CP.watchReload(); }
     renderNav(); renderSide();
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();

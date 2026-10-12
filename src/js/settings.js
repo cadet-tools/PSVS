@@ -13,6 +13,12 @@
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
       </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
+      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
+        <span>Ciparnīca</span><div class="actions"><span class="themepick" role="group" aria-label="Ciparnīca">${CP.WATCH_FACES.map(([k, l]) => `<button type="button" data-act="watchFace" data-arg="${k}" class="${w.face === k ? 'on' : ''}" aria-pressed="${w.face === k}">${l}</button>`).join('')}</span></div>
+        <span>Atgādināt par pauzi</span><div class="actions"><label class="check"><input type="checkbox" data-watch="remind" ${w.remind ? 'checked' : ''}> pēc</label><input type="number" class="w-num-in" min="10" max="180" step="5" data-watch="workMin" value="${w.workMin}" aria-label="Minūtes līdz pauzei"> <span class="small muted">min darba, pauze</span><input type="number" class="w-num-in" min="1" max="30" data-watch="breakMin" value="${w.breakMin}" aria-label="Pauzes minūtes"> <span class="small muted">min, atkārtot pēc</span><input type="number" class="w-num-in" min="1" max="60" data-watch="snoozeMin" value="${w.snoozeMin}" aria-label="Atkārtot pēc minūtēm"> <span class="small muted">min</span></div>
+        <span>Liels pulkstenis</span><div class="actions"><label class="check"><input type="checkbox" data-watch="idle" ${w.idle ? 'checked' : ''}> parādīt virs rīka, ja nav darbības</label><input type="number" class="w-num-in" min="1" max="60" data-watch="idleMin" value="${w.idleMin}" aria-label="Minūtes bez darbības"> <span class="small muted">min</span><button type="button" class="sm" data-act="watchBig">Parādīt tagad</button></div>
+        <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
+      </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -181,6 +187,15 @@
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.setTheme = v => { CP.theme.set(v); CP.render(); };
+  A.watchTestBeep = () => CP.watchBeep?.(2);
+  CP.changeHandlers.push(e => {
+    const k = e.target.dataset?.watch; if (!k) return false;
+    if (!e.target.isConnected) return true;
+    const v = e.target.type === 'checkbox' ? e.target.checked : Math.max(Number(e.target.min) || 1, Math.min(Number(e.target.max) || 999, Number(e.target.value) || 0));
+    if (CP.watchPrefs()[k] === v) return true;
+    setTimeout(() => { CP.setWatchPref(k, v); CP.render(); }, 0);   // pēc notikuma — lai lapas pārzīmēšana netraucē fokusa notikumiem
+    return true;
+  });
   A.setAccent = v => { CP.theme.setAccent(v); CP.render(); };
   CP.inputHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); return true; });   // dzīvs priekšskatījums
   CP.changeHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); CP.render(); return true; });

@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.12.0';
+  CP.VERSION = '1.13.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -1874,6 +1874,7 @@ window.CP = window.CP || {};
   window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   CP.render = () => {
     if (CP.D2) CP.theme.apply();
+    if (S.root && !CP._watchLoaded && CP.watchReload) { CP._watchLoaded = true; CP.watchReload(); }
     renderNav(); renderSide();
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();
@@ -3429,142 +3430,275 @@ window.CP = window.CP || {};
 
 /* ==== js/watch.js ==== */
 /* =====================================================================
-   Pārskata pulkstenis (taktiskā pulksteņa stilā) + darba laika taimeris.
-   - Laiks tiek skaitīts, kamēr rīks ir atvērts. Ja rīks bijis paslēpts/aizvērts ilgāk par 5 min — tā ir pauze, sākas jauns posms.
-   - Pēc 40 min nepārtraukta darba — paziņojums ar ieteikumu paņemt pauzi; “Sākt pauzi” skaita 5 min.
-   Stāvoklis glabājas pārlūkā (localStorage), ne datu failā.
+   Pārskata pulkstenis (taktiskā pulksteņa stilā)
+   Ciparnīcas: taktiskā, analogā, lielie cipari, nakts (sarkana).
+   Režīmi: laiks, hronometrs (ar apļiem), taimeris (nodarbībām, ar skaņas signālu).
+   Taustiņi uz korpusa: LIGHT — lielais skats, UP·MENU — ciparnīca, DOWN — režīms,
+   START·STOP — sākt/apturēt, BACK·LAP — aplis / atiestatīt.
+   Darba laiks: skaita, kamēr rīks atvērts; pēc N min atgādina par pauzi.
+   Bez darbības N min — pulkstenis lielā skatā virs rīka (paslēpj arī datus).
    ===================================================================== */
 (function (CP) {
   'use strict';
-  const S = CP.state, U = CP.util, A = CP.actions;
-  const WORK_MIN = 40, BREAK_MIN = 5, GAP_MIN = 5, SNOOZE_MIN = 10;
-  const KEY = 'cp-session';
-  const DAYS = ['Svētdiena', 'Pirmdiena', 'Otrdiena', 'Trešdiena', 'Ceturtdiena', 'Piektdiena', 'Sestdiena'];
-  const MONTHS = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
+  const S = CP.state, A = CP.actions;
   const pad = n => String(n).padStart(2, '0');
   const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+  const hmmss = ms => ms >= 3600000 ? `${Math.floor(ms / 3600000)}:${mmss(ms % 3600000)}` : mmss(ms);
+  const swFmt = ms => { const cs = Math.floor(ms / 10) % 100; return `${hmmss(ms)}.${pad(cs)}`; };
+  const DAYS = ['Svētdiena', 'Pirmdiena', 'Otrdiena', 'Trešdiena', 'Ceturtdiena', 'Piektdiena', 'Sestdiena'];
+  const MONTHS = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* ērtībai */ } } };
 
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
-  const save = st => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* tikai ērtībai */ } };
-  let st = load(); const now0 = Date.now();
-  if (!st || now0 - (st.last || 0) > GAP_MIN * 60000) st = { start: now0, last: now0, remindAt: now0 + WORK_MIN * 60000, breakEnd: 0 };
-  save(st);
-
-  /** Darba sesija: sākums no jauna (pēc pauzes) */
-  function restart(t = Date.now()) { st = { start: t, last: t, remindAt: t + WORK_MIN * 60000, breakEnd: 0 }; save(st); }
-
-  A.breakStart = () => { st.breakEnd = Date.now() + BREAK_MIN * 60000; save(st); paint(); CP.ui.toast(`Pauze ${BREAK_MIN} minūtes. Pastaigā, izstaipies, padzer ūdeni.`, 'ok', 8000); };
-  A.breakEnd = () => { restart(); paint(); };
-
-  function tick() {
-    const t = Date.now();
-    if (document.visibilityState === 'visible') {
-      if (t - st.last > GAP_MIN * 60000) restart(t);          // atgriezies pēc garākas prombūtnes — tā bija pauze
-      st.last = t;
-    }
-    if (st.breakEnd && t >= st.breakEnd) { restart(t); CP.ui.toast('Pauze beigusies. Labu darbu turpinot!', 'ok', 8000); }
-    if (!st.breakEnd && t >= st.remindAt && document.visibilityState === 'visible') {
-      st.remindAt = t + SNOOZE_MIN * 60000;
-      const min = Math.round((t - st.start) / 60000);
-      CP.ui.toast(`Labs darbs! Tu strādā jau ${min} min. Laiks paņemt īsu pauzi — acīm un mugurai tas noder.`, 'ok', 60000, { act: 'breakStart', label: `Sākt pauzi (${BREAK_MIN} min)` });
-    }
-    if (t % 15000 < 1000) save(st);
-    paint();
+  /* --- Iestatījumi (pārlūkā + datu failā, tāpat kā izskats) --- */
+  const DEF = { face: 'tactical', mode: 'time', workMin: 40, breakMin: 5, snoozeMin: 10, remind: true, idle: true, idleMin: 5, sound: true };
+  const FACES = [['tactical', 'Taktiskā'], ['analog', 'Analogā'], ['big', 'Lielie cipari'], ['night', 'Nakts']];
+  const MODES = [['time', 'Laiks'], ['stopwatch', 'Hronometrs'], ['timer', 'Taimeris']];
+  CP.WATCH_FACES = FACES; CP.WATCH_MODES = MODES;
+  function prefs() {
+    let p = {}; try { p = JSON.parse(ls.get('cp-watch') || 'null') || {}; } catch (e) { p = {}; }
+    const fromDb = S.db?.settings?.look?.watch || {};
+    return { ...DEF, ...fromDb, ...p };
   }
+  let P = prefs();
+  CP.watchPrefs = () => P;
+  CP.setWatchPref = (k, v) => {
+    P = { ...P, [k]: v };
+    ls.set('cp-watch', JSON.stringify(P));
+    const st = S.db?.settings; if (st) { st.look = { ...(st.look || {}), watch: { ...P } }; if (S.root) CP.store.changed({ silent: true }); }
+    if (k === 'workMin') { ses.remindAt = ses.start + P.workMin * 60000; saveSes(); }
+    rebuild();
+  };
 
-  /* --- Pulksteņa ciparnīca (SVG) --- */
-  const C = 150, R_CASE = 142, R_BEZEL = 128, R_FACE = 104;
+  /* --- Darba sesija --- */
+  const KEY = 'cp-session';
+  const loadSes = () => { try { return JSON.parse(ls.get(KEY) || 'null'); } catch (e) { return null; } };
+  const saveSes = () => ls.set(KEY, JSON.stringify(ses));
+  let ses = loadSes(); const t0 = Date.now();
+  if (!ses || t0 - (ses.last || 0) > 5 * 60000) ses = { start: t0, last: t0, remindAt: t0 + P.workMin * 60000, breakEnd: 0 };
+  saveSes();
+  function restart(t = Date.now()) { ses = { start: t, last: t, remindAt: t + P.workMin * 60000, breakEnd: 0 }; saveSes(); }
+  A.breakStart = () => { ses.breakEnd = Date.now() + P.breakMin * 60000; saveSes(); paint(true); CP.ui.toast(`Pauze ${P.breakMin} min. Pastaigā, izstaipies, padzer ūdeni.`, 'ok', 8000); };
+  A.breakEnd = () => { restart(); paint(true); };
+
+  /* --- Hronometrs un taimeris (tikai šajā cilnē) --- */
+  const sw = { run: false, t0: 0, acc: 0, laps: [] };
+  const swNow = () => sw.acc + (sw.run ? Date.now() - sw.t0 : 0);
+  const cd = { dur: 5 * 60000, end: 0, left: 5 * 60000, run: false, done: false };
+  const cdLeft = () => cd.run ? Math.max(0, cd.end - Date.now()) : cd.left;
+
+  A.watchMode = m => { CP.setWatchPref('mode', MODES.some(x => x[0] === m) ? m : MODES[(MODES.findIndex(x => x[0] === P.mode) + 1) % MODES.length][0]); };
+  A.watchFace = f => { CP.setWatchPref('face', FACES.some(x => x[0] === f) ? f : FACES[(FACES.findIndex(x => x[0] === P.face) + 1) % FACES.length][0]); };
+  A.watchStart = () => {
+    if (P.mode === 'time') { P = { ...P, mode: 'stopwatch' }; ls.set('cp-watch', JSON.stringify(P)); }
+    if (P.mode === 'stopwatch') { if (sw.run) { sw.acc += Date.now() - sw.t0; sw.run = false; } else { sw.t0 = Date.now(); sw.run = true; } }
+    else if (P.mode === 'timer') {
+      if (cd.done) { cd.done = false; cd.left = cd.dur; }
+      if (cd.run) { cd.left = Math.max(0, cd.end - Date.now()); cd.run = false; } else if (cd.left > 0) { cd.end = Date.now() + cd.left; cd.run = true; }
+    }
+    rebuild();
+  };
+  A.watchLap = () => {
+    if (P.mode === 'stopwatch') {
+      if (sw.run) { const tot = swNow(), prev = sw.laps[0]?.tot || 0; sw.laps.unshift({ n: sw.laps.length + 1, tot, split: tot - prev }); }
+      else { sw.acc = 0; sw.laps = []; }
+    } else if (P.mode === 'timer') { cd.run = false; cd.done = false; cd.left = cd.dur; }
+    rebuild();
+  };
+  A.watchSet = min => { const m = Math.max(0.25, Math.min(180, Number(min) || 0)); cd.dur = cd.left = Math.round(m * 60000); cd.run = false; cd.done = false; if (P.mode !== 'timer') CP.setWatchPref('mode', 'timer'); else rebuild(); };
+  A.watchBig = () => showBig(true);
+
+  /* --- Skaņa (WebAudio, bez failiem) --- */
+  let actx = null;
+  function beep(times = 3) {
+    if (!P.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < times; i++) {
+        const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.32;
+        o.type = 'square'; o.frequency.value = 1760; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.2);
+      }
+    } catch (e) { /* bez skaņas */ }
+  }
+  CP.watchBeep = beep;
+
+  /* --- SVG ģeometrija --- */
+  const C = 150, R_CASE = 142, R_BEZEL = 128, R_FACE = 104, R_ARC = 95;
+  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [C + r * Math.sin(a), C - r * Math.cos(a)]; };
+  const f1 = n => n.toFixed(1);
+  const arcPath = (from, to, r) => { const [x1, y1] = pt(from, r), [x2, y2] = pt(to, r); return `M${f1(x1)} ${f1(y1)} A${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${f1(x2)} ${f1(y2)}`; };
+  const BTN = [[-60, 'LIGHT', 'watchBig', 'Liels pulkstenis'], [-110, 'UP · MENU', 'watchFace', 'Mainīt ciparnīcu'], [-145, 'DOWN', 'watchMode', 'Mainīt režīmu'], [60, 'START · STOP', 'watchStart', 'Sākt / apturēt'], [120, 'BACK · LAP', 'watchLap', 'Aplis / atiestatīt']];
   function ticks() {
     let s = '';
     for (let i = 0; i < 60; i++) {
-      const a = i * 6 * Math.PI / 180, major = i % 5 === 0, r1 = R_BEZEL - (major ? 13 : 7), r2 = R_BEZEL - 2;
-      s += `<line x1="${(C + r1 * Math.sin(a)).toFixed(1)}" y1="${(C - r1 * Math.cos(a)).toFixed(1)}" x2="${(C + r2 * Math.sin(a)).toFixed(1)}" y2="${(C - r2 * Math.cos(a)).toFixed(1)}" class="${major ? 'tk-major' : 'tk'}"/>`;
+      const major = i % 5 === 0, [x1, y1] = pt(i * 6, R_BEZEL - (major ? 13 : 7)), [x2, y2] = pt(i * 6, R_BEZEL - 2);
+      s += `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" class="${major ? 'tk-major' : 'tk'}"/>`;
     }
     return s;
   }
-  // taustiņi korpusa malā (grādos no 12): LIGHT, UP, DOWN kreisajā pusē; START, BACK labajā
-  const BTN = [[-60, 'LIGHT'], [-110, 'UP · MENU'], [-145, 'DOWN'], [60, 'START · STOP'], [120, 'BACK · LAP']];
-  const pt = (deg, r) => { const a = deg * Math.PI / 180; return [C + r * Math.sin(a), C - r * Math.cos(a)]; };
-  function buttons() {
-    return BTN.map(([d]) => { const [x, y] = pt(d, R_CASE + 4); return `<rect class="w-btn" x="${(x - 9).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="18" height="10" rx="3" transform="rotate(${d + 90} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }).join('');
-  }
-  function bezelText() {
-    return BTN.map(([d, t], i) => {
-      const r = R_CASE - 7, span = 28, left = d < 0;
-      const [x1, y1] = pt(d - span / 2, r), [x2, y2] = pt(d + span / 2, r);
-      // apakšējā pusē teksts iet pretējā virzienā, lai būtu lasāms
-      const bottom = Math.abs(d) > 90;
-      const path = bottom ? `M${x2.toFixed(1)} ${y2.toFixed(1)} A${r} ${r} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}` : `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-      return `<path id="wbt${i}" d="${path}" fill="none"/><text class="w-engr${left ? '' : ''}"><textPath href="#wbt${i}" startOffset="50%" text-anchor="middle">${t}</textPath></text>`;
+  let uid = 0;
+  function caseSvg(inner, id) {
+    const btns = BTN.map(([d, , act, title]) => { const [x, y] = pt(d, R_CASE + 4); return `<g class="w-btnhit" data-act="${act}" role="button" aria-label="${title}"><title>${title}</title><circle cx="${f1(x)}" cy="${f1(y)}" r="16" fill="transparent"/><rect class="w-btn" x="${f1(x - 9)}" y="${f1(y - 5)}" width="18" height="10" rx="3" transform="rotate(${d + 90} ${f1(x)} ${f1(y)})"/></g>`; }).join('');
+    const txt = BTN.map(([d, t], i) => {
+      const r = R_CASE - 7, [x1, y1] = pt(d - 15, r), [x2, y2] = pt(d + 15, r), bottom = Math.abs(d) > 90;
+      const path = bottom ? `M${f1(x2)} ${f1(y2)} A${r} ${r} 0 0 0 ${f1(x1)} ${f1(y1)}` : `M${f1(x1)} ${f1(y1)} A${r} ${r} 0 0 1 ${f1(x2)} ${f1(y2)}`;
+      return `<path id="${id}t${i}" d="${path}" fill="none"/><text class="w-engr"><textPath href="#${id}t${i}" startOffset="50%" text-anchor="middle">${t}</textPath></text>`;
     }).join('');
+    return `<svg class="watch" viewBox="0 0 300 300" role="img" aria-label="Pulkstenis">
+      <defs><linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="st-a"/><stop offset=".5" class="st-b"/><stop offset="1" class="st-c"/></linearGradient>
+      <radialGradient id="${id}f" cx=".5" cy=".42" r=".65"><stop offset="0" class="fc-a"/><stop offset="1" class="fc-b"/></radialGradient></defs>
+      ${btns}<circle cx="${C}" cy="${C}" r="${R_CASE}" class="w-case" fill="url(#${id}s)"/><circle cx="${C}" cy="${C}" r="${R_BEZEL + 1}" class="w-bezel"/>${txt}
+      <g class="w-ticks">${ticks()}</g><circle cx="${C}" cy="${C}" r="${R_FACE}" class="w-face" fill="url(#${id}f)"/>${inner}</svg>`;
   }
-  // loki: kreisais (darbs) 205°→335°, labais (sekundes) 25°→155° — kā datu loki taktiskā pulkstenī
-  const arcPath = (from, to, r) => { const [x1, y1] = pt(from, r), [x2, y2] = pt(to, r); return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`; };
+  const arcs = () => `<path d="${arcPath(205, 335, R_ARC)}" class="w-track" pathLength="100"/><path data-w="arcA" d="${arcPath(205, 335, R_ARC)}" class="w-arc" pathLength="100" stroke-dasharray="0 100"/>
+    <path d="${arcPath(25, 155, R_ARC)}" class="w-track" pathLength="100"/><path data-w="arcB" d="${arcPath(25, 155, R_ARC)}" class="w-arc w-arc2" pathLength="100" stroke-dasharray="0 100"/>`;
+  /** Ciparnīcas iekšpuse atkarībā no ciparnīcas un režīma */
+  function faceInner() {
+    const f = P.face, m = P.mode;
+    if (f === 'analog') {
+      let nums = ''; for (const [h, n] of [[0, '12'], [90, '3'], [270, '9']]) { const [x, y] = pt(h, 82); nums += `<text x="${f1(x)}" y="${f1(y + 6)}" class="w-num">${n}</text>`; }
+      return `${nums}<text x="${C}" y="114" class="w-date" data-w="date"></text>
+        <text x="${C}" y="176" class="w-lbl" data-w="lbl"></text>
+        <rect x="${C - 44}" y="184" width="88" height="28" rx="7" class="w-win"/><text x="${C}" y="204" class="w-winv" data-w="small"></text>
+        <g data-w="hh"><line x1="${C}" y1="${C + 12}" x2="${C}" y2="${C - 52}" class="w-hand-h"/></g>
+        <g data-w="mm"><line x1="${C}" y1="${C + 16}" x2="${C}" y2="${C - 80}" class="w-hand-m"/></g>
+        <g data-w="ss"><line x1="${C}" y1="${C + 22}" x2="${C}" y2="${C - 88}" class="w-hand-s"/></g>
+        <circle cx="${C}" cy="${C}" r="5" class="w-pin"/>`;
+    }
+    if (f === 'big') {
+      return `<text x="${C}" y="104" class="w-date" data-w="date"></text>
+        <text x="${C}" y="${m === 'time' ? 170 : 164}" class="w-huge ${m === 'stopwatch' ? 'sw' : ''}" data-w="main"></text>
+        <text x="${C}" y="204" class="w-lbl" data-w="lbl"></text><text x="${C}" y="228" class="w-work" data-w="small"></text>`;
+    }
+    // taktiskā un nakts
+    return `${arcs()}<text x="${C}" y="98" class="w-date" data-w="date"></text>
+      <text x="${m === 'time' ? C - 10 : C}" y="160" class="w-time ${m === 'stopwatch' ? 'sw' : ''}" data-w="main"></text>
+      ${m === 'time' ? `<text x="${C + 63}" y="160" class="w-sec" data-w="sec"></text>` : ''}
+      <line x1="${C - 58}" y1="176" x2="${C + 58}" y2="176" class="w-rule"/>
+      <text x="${C}" y="198" class="w-lbl" data-w="lbl"></text><text x="${C}" y="222" class="w-work" data-w="small"></text>`;
+  }
+  const modeTabs = () => `<div class="w-modes" role="tablist" aria-label="Pulksteņa režīms">${MODES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${P.mode === k}" class="${P.mode === k ? 'on' : ''}" data-act="watchMode" data-arg="${k}">${l}</button>`).join('')}</div>`;
+  function controls() {
+    if (P.mode === 'stopwatch') return `<div class="w-ctl"><button type="button" class="mainbtn sm" data-act="watchStart">${sw.run ? 'Apturēt' : (swNow() ? 'Turpināt' : 'Sākt')}</button><button type="button" class="sm" data-act="watchLap">${sw.run ? 'Aplis' : 'Nulles'}</button></div>
+      ${sw.laps.length ? `<ol class="w-laps">${sw.laps.slice(0, 6).map(l => `<li><span>${l.n}.</span><b>${swFmt(l.split)}</b><small>${swFmt(l.tot)}</small></li>`).join('')}</ol>` : ''}`;
+    if (P.mode === 'timer') return `<div class="w-presets">${[1, 2, 3, 5, 10, 15].map(m => `<button type="button" class="sm ${cd.dur === m * 60000 ? 'on' : ''}" data-act="watchSet" data-arg="${m}">${m} min</button>`).join('')}<input type="number" min="0.25" max="180" step="0.5" id="wCustom" class="w-custom" placeholder="min" title="Savs laiks minūtēs" aria-label="Savs laiks minūtēs"></div>
+      <div class="w-ctl"><button type="button" class="mainbtn sm" data-act="watchStart">${cd.run ? 'Pauze' : cd.done ? 'Vēlreiz' : (cd.left < cd.dur ? 'Turpināt' : 'Sākt')}</button><button type="button" class="sm" data-act="watchLap">Atiestatīt</button></div>`;
+    return `<div class="w-foot" data-w="note"></div>`;
+  }
 
   CP.watch = {
     html() {
-      const rA = R_FACE - 9;
-      return `<section class="card watch-card" aria-label="Pulkstenis un darba laiks">
-        <svg class="watch" viewBox="0 0 300 300" role="img" aria-labelledby="wAria">
-          <title id="wAria">Pulkstenis</title>
-          <defs>
-            <linearGradient id="wSteel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="st-a"/><stop offset=".5" class="st-b"/><stop offset="1" class="st-c"/></linearGradient>
-            <radialGradient id="wFace" cx=".5" cy=".42" r=".65"><stop offset="0" class="fc-a"/><stop offset="1" class="fc-b"/></radialGradient>
-          </defs>
-          ${buttons()}
-          <circle cx="${C}" cy="${C}" r="${R_CASE}" class="w-case" fill="url(#wSteel)"/>
-          <circle cx="${C}" cy="${C}" r="${R_BEZEL + 1}" class="w-bezel"/>
-          ${bezelText()}
-          <g class="w-ticks">${ticks()}</g>
-          <circle cx="${C}" cy="${C}" r="${R_FACE}" class="w-face" fill="url(#wFace)"/>
-          <path d="${arcPath(205, 335, rA)}" class="w-track" pathLength="100"/>
-          <path id="wArcWork" d="${arcPath(205, 335, rA)}" class="w-arc" pathLength="100" stroke-dasharray="0 100"/>
-          <path d="${arcPath(25, 155, rA)}" class="w-track" pathLength="100"/>
-          <path id="wArcSec" d="${arcPath(25, 155, rA)}" class="w-arc w-arc2" pathLength="100" stroke-dasharray="0 100"/>
-          <text x="${C}" y="98" class="w-date" id="wDate"></text>
-          <text x="${C - 10}" y="160" class="w-time" id="wTime">--:--</text>
-          <text x="${C + 63}" y="160" class="w-sec" id="wSec">--</text>
-          <line x1="${C - 58}" y1="176" x2="${C + 58}" y2="176" class="w-rule"/>
-          <text x="${C}" y="198" class="w-lbl" id="wWorkLbl">Darbā</text>
-          <text x="${C}" y="222" class="w-work" id="wWork">00:00</text>
-        </svg>
-        <div class="watch-foot" id="wNote"></div>
+      return `<section class="card watch-card" data-face="${P.face}" data-mode="${P.mode}">
+        <div class="w-host">${caseSvg(faceInner(), 'w' + (++uid))}</div>
+        ${modeTabs()}<div class="w-panel">${controls()}</div>
       </section>`;
-    }
+    },
+    paint: () => paint(true)
   };
+  /** Pārzīmē pulksteņa kartīti (pēc režīma/ciparnīcas maiņas), nepārzīmējot visu lapu */
+  function rebuild() {
+    document.querySelectorAll('.watch-card').forEach(card => { const tmp = document.createElement('div'); tmp.innerHTML = CP.watch.html(); card.replaceWith(tmp.firstElementChild); });
+    const ov = document.getElementById('watchBig'); if (ov) ov.querySelector('.wb-host').innerHTML = caseSvg(faceInner(), 'wb' + (++uid));
+    paint(true);
+  }
 
-  function paint() {
-    const el = document.getElementById('wTime'); if (!el) return;
-    const d = new Date(), t = d.getTime();
-    el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    document.getElementById('wSec').textContent = pad(d.getSeconds());
-    document.getElementById('wDate').textContent = `${DAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`;
-    document.getElementById('wArcSec').setAttribute('stroke-dasharray', `${(d.getSeconds() / 59 * 100).toFixed(1)} 100`);
-    const work = document.getElementById('wWork'), lbl = document.getElementById('wWorkLbl'), arc = document.getElementById('wArcWork'), note = document.getElementById('wNote');
-    const card = el.closest('.watch-card');
-    if (st.breakEnd) {
-      const left = st.breakEnd - t;
-      lbl.textContent = 'Pauze'; work.textContent = mmss(left);
-      arc.setAttribute('stroke-dasharray', `${(100 - left / (BREAK_MIN * 600)).toFixed(1)} 100`);
-      card.dataset.state = 'break';
-      note.innerHTML = `<span>Pauze līdz ${new Date(st.breakEnd).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' })}</span><button class="sm ghost" data-act="breakEnd">Turpināt darbu</button>`;
-      return;
-    }
-    const ms = t - st.start, pct = Math.min(100, ms / (WORK_MIN * 600));
-    lbl.textContent = 'Darbā'; work.textContent = ms >= 3600000 ? `${Math.floor(ms / 3600000)}:${mmss(ms % 3600000)}` : mmss(ms);
-    arc.setAttribute('stroke-dasharray', `${pct.toFixed(1)} 100`);
-    const over = ms >= WORK_MIN * 60000;
-    card.dataset.state = over ? 'over' : '';
-    const key = over ? 'over' : 'work' + Math.floor(Math.max(0, WORK_MIN * 60000 - ms) / 60000);
-    if (note.dataset.k !== key) {
-      note.dataset.k = key;
-      note.innerHTML = over ? `<span>Laiks pauzei</span><button class="sm" data-act="breakStart">Sākt pauzi</button>` : `<span>Pauze pēc ${Math.max(1, Math.ceil((WORK_MIN * 60000 - ms) / 60000))} min</span>`;
+  /* --- Zīmēšana --- */
+  const set = (root, k, v) => root.querySelectorAll(`[data-w="${k}"]`).forEach(el => { if (el.textContent !== v) el.textContent = v; });
+  const attr = (root, k, a, v) => root.querySelectorAll(`[data-w="${k}"]`).forEach(el => el.setAttribute(a, v));
+  function paint(full) {
+    const roots = [...document.querySelectorAll('.watch-card, #watchBig')]; if (!roots.length) return;
+    const d = new Date(), t = d.getTime(), work = t - ses.start, onBreak = !!ses.breakEnd;
+    const workTxt = onBreak ? mmss(ses.breakEnd - t) : hmmss(work), workLbl = onBreak ? 'Pauze' : 'Darbā';
+    const workPct = onBreak ? 100 - (ses.breakEnd - t) / (P.breakMin * 600) : Math.min(100, work / (P.workMin * 600));
+    const over = !onBreak && work >= P.workMin * 60000;
+    const h = d.getHours() % 12, mi = d.getMinutes(), s = d.getSeconds();
+    for (const r of roots) {
+      r.dataset.face = P.face; r.dataset.mode = P.mode;
+      let state = onBreak ? 'break' : over ? 'over' : '';
+      set(r, 'date', `${DAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`);
+      attr(r, 'hh', 'transform', `rotate(${(h + mi / 60) * 30} ${C} ${C})`); attr(r, 'mm', 'transform', `rotate(${(mi + s / 60) * 6} ${C} ${C})`); attr(r, 'ss', 'transform', `rotate(${s * 6} ${C} ${C})`);
+      if (P.mode === 'time') {
+        set(r, 'main', `${pad(d.getHours())}:${pad(mi)}`); set(r, 'sec', pad(s));
+        set(r, 'lbl', workLbl); set(r, 'small', workTxt);
+        attr(r, 'arcA', 'stroke-dasharray', `${f1(workPct)} 100`); attr(r, 'arcB', 'stroke-dasharray', `${f1(s / 59 * 100)} 100`);
+      } else if (P.mode === 'stopwatch') {
+        const ms = swNow();
+        set(r, 'main', P.face === 'analog' ? swFmt(ms) : swFmt(ms));
+        set(r, 'lbl', sw.laps.length ? `Aplis ${sw.laps.length + 1}` : 'Hronometrs');
+        set(r, 'small', P.face === 'analog' ? swFmt(ms) : sw.laps.length ? swFmt(ms - sw.laps[0].tot) : (sw.run ? 'iet…' : 'START — sākt'));
+        attr(r, 'arcA', 'stroke-dasharray', `${f1((ms % 60000) / 600)} 100`); attr(r, 'arcB', 'stroke-dasharray', `${f1(workPct)} 100`);
+        state = sw.run ? 'run' : state;
+      } else {
+        const left = cdLeft(), txt = hmmss(Math.ceil(left / 1000) * 1000);
+        set(r, 'main', txt); set(r, 'lbl', cd.done ? 'Laiks beidzies!' : cd.run ? 'Taimeris' : 'Taimeris · gaida');
+        set(r, 'small', P.face === 'analog' ? txt : `no ${hmmss(cd.dur)}`);
+        attr(r, 'arcA', 'stroke-dasharray', `${f1(100 - left / cd.dur * 100)} 100`); attr(r, 'arcB', 'stroke-dasharray', `${f1(workPct)} 100`);
+        state = cd.done ? 'alarm' : cd.run ? 'run' : state;
+      }
+      if (P.face === 'analog' && P.mode === 'time') set(r, 'small', workTxt);
+      r.dataset.state = state;
+      const note = r.querySelector('[data-w="note"]');
+      if (note) {
+        const key = onBreak ? 'b' : over ? 'o' : (P.remind ? 'w' + Math.ceil((P.workMin * 60000 - work) / 60000) : 'n' + Math.floor(work / 60000));
+        if (full || note.dataset.k !== key) {
+          note.dataset.k = key;
+          note.innerHTML = onBreak ? `<span>Pauze līdz ${new Date(ses.breakEnd).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' })}</span><button type="button" class="sm ghost" data-act="breakEnd">Turpināt darbu</button>`
+            : over && P.remind ? `<span>Laiks pauzei</span><button type="button" class="sm" data-act="breakStart">Sākt pauzi</button>`
+            : P.remind ? `<span>Pauze pēc ${Math.max(1, Math.ceil((P.workMin * 60000 - work) / 60000))} min</span>` : `<span>Darbā ${Math.floor(work / 60000)} min</span>`;
+        }
+      }
     }
   }
-  CP.watch.paint = paint;
 
-  setInterval(tick, 1000);
+  /* --- Laika cikls --- */
+  let lastIdleCheck = 0;
+  function tick() {
+    const t = Date.now();
+    if (document.visibilityState === 'visible') { if (t - ses.last > 5 * 60000) restart(t); ses.last = t; }
+    if (ses.breakEnd && t >= ses.breakEnd) { restart(t); beep(2); CP.ui.toast('Pauze beigusies. Labu darbu turpinot!', 'ok', 8000); }
+    if (P.remind && !ses.breakEnd && t >= ses.remindAt && document.visibilityState === 'visible') {
+      ses.remindAt = t + P.snoozeMin * 60000;
+      CP.ui.toast(`Labs darbs! Tu strādā jau ${Math.round((t - ses.start) / 60000)} min. Laiks paņemt īsu pauzi — acīm un mugurai tas noder.`, 'ok', 60000, { act: 'breakStart', label: `Sākt pauzi (${P.breakMin} min)` });
+    }
+    if (cd.run && t >= cd.end) { cd.run = false; cd.left = 0; cd.done = true; beep(4); CP.ui.toast(`Taimeris: ${hmmss(cd.dur)} pagājis.`, 'warn', 15000); rebuild(); }
+    if (t % 15000 < 260) saveSes();
+    if (t - lastIdleCheck > 1000) { lastIdleCheck = t; idleCheck(t); }
+    paint(false);
+  }
+  setInterval(tick, 250);   // 4× sekundē — hronometra simtdaļām pietiek, slodze niecīga
   document.addEventListener('visibilitychange', tick);
+
+  /* --- Liels pulkstenis virs rīka (bez darbības N min vai ar LIGHT) --- */
+  let lastAct = Date.now();
+  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, e => {
+    lastAct = Date.now();
+    const ov = document.getElementById('watchBig'); if (!ov) return;
+    if (!ov.dataset.manual) { if (e.type !== 'pointermove' || Date.now() - Number(ov.dataset.shown || 0) > 600) hideBig(); }
+    else if (e.type === 'keydown' && e.key === 'Escape') hideBig();
+  }, { passive: true, capture: true }));
+  function idleCheck(t) {
+    if (!P.idle || document.getElementById('watchBig') || document.visibilityState !== 'visible') return;
+    if (t - lastAct >= P.idleMin * 60000) showBig(false);
+  }
+  function showBig(manual) {
+    if (document.getElementById('watchBig')) return;
+    const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
+    ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p>`;
+    ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
+    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on')); paint(true);
+  }
+  function hideBig() { document.getElementById('watchBig')?.remove(); }
+  CP.watchShowBig = showBig;
+
+  let customLast = '';
+  CP.changeHandlers.push(e => {
+    if (e.target.id !== 'wCustom') return false;
+    const v = e.target.value; if (!v || !e.target.isConnected || v === customLast) return true;
+    customLast = v; setTimeout(() => { A.watchSet(v); customLast = ''; }, 0);   // pēc notikuma — lai lauka aizvietošana netraucē fokusa notikumiem
+    return true;
+  });
+  /** Pēc datu ielādes — iestatījumi no datu faila, ja šajā pārlūkā savu vēl nav */
+  CP.watchReload = () => { if (!ls.get('cp-watch')) { P = prefs(); rebuild(); } };
 })(window.CP);
 
 
@@ -3811,6 +3945,12 @@ window.CP = window.CP || {};
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
       </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
+      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
+        <span>Ciparnīca</span><div class="actions"><span class="themepick" role="group" aria-label="Ciparnīca">${CP.WATCH_FACES.map(([k, l]) => `<button type="button" data-act="watchFace" data-arg="${k}" class="${w.face === k ? 'on' : ''}" aria-pressed="${w.face === k}">${l}</button>`).join('')}</span></div>
+        <span>Atgādināt par pauzi</span><div class="actions"><label class="check"><input type="checkbox" data-watch="remind" ${w.remind ? 'checked' : ''}> pēc</label><input type="number" class="w-num-in" min="10" max="180" step="5" data-watch="workMin" value="${w.workMin}" aria-label="Minūtes līdz pauzei"> <span class="small muted">min darba, pauze</span><input type="number" class="w-num-in" min="1" max="30" data-watch="breakMin" value="${w.breakMin}" aria-label="Pauzes minūtes"> <span class="small muted">min, atkārtot pēc</span><input type="number" class="w-num-in" min="1" max="60" data-watch="snoozeMin" value="${w.snoozeMin}" aria-label="Atkārtot pēc minūtēm"> <span class="small muted">min</span></div>
+        <span>Liels pulkstenis</span><div class="actions"><label class="check"><input type="checkbox" data-watch="idle" ${w.idle ? 'checked' : ''}> parādīt virs rīka, ja nav darbības</label><input type="number" class="w-num-in" min="1" max="60" data-watch="idleMin" value="${w.idleMin}" aria-label="Minūtes bez darbības"> <span class="small muted">min</span><button type="button" class="sm" data-act="watchBig">Parādīt tagad</button></div>
+        <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
+      </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -3979,6 +4119,15 @@ window.CP = window.CP || {};
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.setTheme = v => { CP.theme.set(v); CP.render(); };
+  A.watchTestBeep = () => CP.watchBeep?.(2);
+  CP.changeHandlers.push(e => {
+    const k = e.target.dataset?.watch; if (!k) return false;
+    if (!e.target.isConnected) return true;
+    const v = e.target.type === 'checkbox' ? e.target.checked : Math.max(Number(e.target.min) || 1, Math.min(Number(e.target.max) || 999, Number(e.target.value) || 0));
+    if (CP.watchPrefs()[k] === v) return true;
+    setTimeout(() => { CP.setWatchPref(k, v); CP.render(); }, 0);   // pēc notikuma — lai lapas pārzīmēšana netraucē fokusa notikumiem
+    return true;
+  });
   A.setAccent = v => { CP.theme.setAccent(v); CP.render(); };
   CP.inputHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); return true; });   // dzīvs priekšskatījums
   CP.changeHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); CP.render(); return true; });

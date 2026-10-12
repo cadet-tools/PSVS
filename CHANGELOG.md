@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.13.0 — 2026-10-13 — Pulkstenis: ciparnīcas, hronometrs, taimeris
+- Četras ciparnīcas: taktiskā, analogā, lielie cipari un nakts (sarkana uz melna).
+- Režīmi: **Laiks**, **Hronometrs** ar apļiem un starplaikiem, **Taimeris** nodarbībām (1–15 min vai savs laiks) ar skaņas signālu un mirgojošu ciparnīcu.
+- Pulksteņa taustiņi darbojas: START·STOP (sākt / apturēt), BACK·LAP (aplis / atiestatīt), UP·MENU (ciparnīca), DOWN (režīms), LIGHT (liels pulkstenis).
+- **Liels pulkstenis virs rīka**, ja N min nav darbības (noklusējumā 5). Tas paslēpj arī personu datus. Jebkura kustība vai taustiņš to aizver.
+- Iestatījumi → **Pulkstenis un pauzes**: ciparnīca, darba laiks līdz pauzei, pauzes garums, atkārtojums, lielais pulkstenis, skaņa.
+- Anketas zonu iezīmēšanā krusta kursors tagad ir sarkans.
+
 ## 1.12.0 — 2026-10-12 — Pulkstenis un pauzes
 - Pārskatā ir taktiskā pulksteņa stila ciparnīca. Tā rāda laiku, sekundes, datumu, darba laiku un divus progresa lokus, un tās krāsa pielāgojas tēmai un akcentam.
 - Darba laika taimeris: laiks tiek skaitīts, kamēr rīks ir atvērts. Pēc 40 min parādās paziņojums “Labs darbs! … Laiks paņemt īsu pauzi”. Poga “Sākt pauzi” skaita 5 min, un pēc tam sākas jauns posms. Ja rīks bijis aizvērts ilgāk par 5 min, tas tiek uzskatīts par pauzi.
