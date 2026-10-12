@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.10.1 — 2026-10-12
+- **Atpakaļ:** katrā lapā ir poga “← <iepriekšējā lapa>”. Darbojas arī pārlūka un peles “atpakaļ” poga, kā arī Alt + ←.
+- Navigācijas joslā vairs nav liekas horizontālās ritjoslas.
+- Apliecības sadaļā noņemti paskaidrojumi par neobligātumu.
+- **Dizains v2** (`/test/`): Iestatījumi → Izskats. Tēma: tumšā / gaišā / kā datorā. **Akcenta krāsa:** 11 gatavas krāsas un sava krāsa. No akcenta tiek atvasinātas pogas, izcēlumi, saites un viegls fona tonis. Teksta krāsa uz pogām tiek izvēlēta automātiski pēc kontrasta. Izskats glabājas pārlūkā un datu failā, tāpēc citā datorā tas ir tāds pats.
+- Kartītes cilnes ietilpst vienā rindā.
+
 ## 1.10.0 — 2026-10-12 — Jaunsarga apliecība; jauns izskats (testa versijā)
 - **Jaunsarga apliecība** personas kartītē (cilne “Apliecība”), neobligāta kā ekipējums. Tajā ir statuss (nav pieprasīta / pieprasīta / saņemta, jāpasniedz / izdota / nodota atpakaļ / nozaudēta), numurs, datumi (pieprasīta, izdota, derīga līdz), piezīmes un apliecības kopija (skenējums vai papīrs).
 - Brīdinājumi: izdota bez numura; derīgums beidzies vai beigsies 30 dienās; pieprasīta pirms vairāk nekā 60 dienām; saņemta, bet nav pasniegta; dalība beigusies, bet apliecība nav nodota; vienāds numurs divām personām. Izmaiņas redzamas vēsturē.

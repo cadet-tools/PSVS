@@ -51,6 +51,7 @@
     copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
     folderOpen: '<path d="M3.5 18V7a2 2 0 0 1 2-2h4l2 2.5h6a2 2 0 0 1 2 2v1.5"/><path d="M3.5 18l2.3-6.2a1.5 1.5 0 0 1 1.4-1h13.3a1 1 0 0 1 .9 1.4L19 17.6a2 2 0 0 1-1.8 1.4H5a1.5 1.5 0 0 1-1.5-1z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
     shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>'
   };
   CP.ICON_NAMES = Object.keys(P);
@@ -62,7 +63,7 @@
 
   /* Pogu sākuma simboli → ikonas (v2). Teksts paliek; simbols tiek aizstāts tikai vizuāli. */
   const EMO = { '＋': 'plus', '➕': 'plus', '⬇': 'download', '⚠': 'alert', '📎': 'clip', '✉': 'message', '🔓': 'unlock', '📁': 'folder', '📂': 'folderOpen', '📄': 'file', '💬': 'chat',
-    '📇': 'contactCard', '📷': 'scan', '↻': 'refresh', '⟳': 'refresh', '☎': 'phone', '📞': 'phone', '✎': 'edit', '📥': 'inbox', '⬆': 'upload', '📱': 'mobile', '💾': 'save', '↗': 'external', '🔔': 'bell', '📅': 'calendar', '⧉': 'copy', '🪪': 'idcard', '⇩': 'download' };
+    '📇': 'contactCard', '📷': 'scan', '↻': 'refresh', '⟳': 'refresh', '☎': 'phone', '📞': 'phone', '✎': 'edit', '📥': 'inbox', '⬆': 'upload', '📱': 'mobile', '💾': 'save', '↗': 'external', '🔔': 'bell', '📅': 'calendar', '⧉': 'copy', '🪪': 'idcard', '⇩': 'download', '←': 'back' };
   const EMO_RE = new RegExp('^\\s*(' + Object.keys(EMO).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\uFE0F?\\s*');
   CP.iconize = (root = document) => {
     if (!CP.D2) return;
@@ -75,13 +76,36 @@
   };
 
   /* --- Tēma: tumšā (noklusējums) / gaišā / kā sistēmā. Pārlūkā, nevis datu failā. --- */
+  /* Izskats glabājas pārlūkā (ātrai ielādei) un datu failā (lai citā datorā ir tāds pats). */
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* ērtībai */ } } };
+  const look = () => (CP.state && CP.state.db && CP.state.db.settings && CP.state.db.settings.look) || {};
+  function remember(k, v) {
+    ls.set('cp-' + k, v);
+    const st = CP.state?.db?.settings; if (!st) return;
+    st.look = { ...(st.look || {}), [k]: v };
+    if (CP.state.root) CP.store.changed({ silent: true });
+  }
+  const HEX = /^#[0-9a-f]{6}$/i;
+  CP.ACCENTS = [['#3ccf7e', 'Zaļš'], ['#7cb342', 'Meža'], ['#2ec4b6', 'Tirkīzs'], ['#4f9cff', 'Zils'], ['#7c83ff', 'Indigo'], ['#a879ff', 'Violets'], ['#f472b6', 'Rozā'], ['#ef5b5b', 'Sarkans'], ['#ff9f43', 'Oranžs'], ['#e6b422', 'Zelts'], ['#94a3a0', 'Pelēks']];
+  /** Teksta krāsa uz akcenta pogas: balta vai tumša pēc kontrasta (WCAG relatīvais spilgtums) */
+  function inkFor(hex, factor) {
+    // pogas fons = akcents × factor (sajaukts ar melnu): 0,72 tumšajā, 0,88 gaišajā tēmā
+    const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255 * factor).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    return 1.05 / (L + 0.05) >= 3.2 ? '#ffffff' : '#0e1512';
+  }
   CP.theme = {
-    get() { try { return localStorage.getItem('cp-theme') || 'dark'; } catch (e) { return 'dark'; } },
-    set(v) { try { localStorage.setItem('cp-theme', v); } catch (e) { /* tikai ērtībai */ } CP.theme.apply(); },
+    get() { return ls.get('cp-theme') || look().theme || 'dark'; },
+    set(v) { remember('theme', v); CP.theme.apply(); },
+    accent() { const v = ls.get('cp-accent') || look().accent || CP.ACCENTS[0][0]; return HEX.test(v) ? v : CP.ACCENTS[0][0]; },
+    setAccent(v) { if (!HEX.test(v)) return; remember('accent', v.toLowerCase()); CP.theme.apply(); },
     apply() {
       if (!CP.D2) return;
       const v = CP.theme.get(), light = v === 'light' || (v === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
-      document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      const root = document.documentElement, acc = CP.theme.accent();
+      root.dataset.theme = light ? 'light' : 'dark';
+      root.style.setProperty('--acc', acc);
+      root.style.setProperty('--accent-ink', inkFor(acc, light ? 0.88 : 0.72));
       const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = light ? '#f3f6f4' : '#0b1219';
     }
   };

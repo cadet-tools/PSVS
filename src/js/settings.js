@@ -9,7 +9,10 @@
     render() {
       const s = S.db.settings, o = s.ocr;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
-      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}">${l}</button>`).join('')}</span><span class="small muted">Tēma tiek atcerēta šajā pārlūkā.</span></div></section>` : ''}
+      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
+        <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
+        <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
+      </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -178,6 +181,9 @@
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.setTheme = v => { CP.theme.set(v); CP.render(); };
+  A.setAccent = v => { CP.theme.setAccent(v); CP.render(); };
+  CP.inputHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); return true; });   // dzīvs priekšskatījums
+  CP.changeHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); CP.render(); return true; });
   A.restoreRoot = () => CP.store.restoreRoot();
   A.retryRestore = () => CP.store.retryRestore();
   A.bootNew = () => CP.store.bootNew();

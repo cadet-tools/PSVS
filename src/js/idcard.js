@@ -61,14 +61,14 @@
         ['Izdota', U.fmtDate(c.issued)],
         ['Derīga līdz', c.validUntil ? `${esc(U.fmtDate(c.validUntil))}${U.daysTo(c.validUntil) < 0 ? ' <span class="pill bad">beidzies</span>' : ''}` : '', true],
         ['Piezīmes', c.notes || '']
-      ]) : `<p class="muted">Apliecības dati nav ievadīti. Tas nav obligāti — aizpildi, kad apliecību pieprasi vai izsniedz.</p>`;
+      ]) : `<p class="muted">Apliecības dati nav ievadīti.</p>`;
       return `<section class="card ${al.some(a => a.sev > 0) ? 'dupcard' : ''}"><h3>${CP.ic('idcard', '🪪')} Jaunsarga apliecība
           <span class="right actions"><button class="sm mainbtn" data-act="editIdCard" data-arg="${p.id}">${c && c.status && c.status !== 'none' ? '✎ Labot' : '＋ Ievadīt datus'}</button></span></h3>
         ${al.length ? al.map(a => `<p class="${a.sev ? 'warn' : 'muted'}">${a.sev ? '⚠' : 'ℹ'} ${esc(a.msg.replace(U.full(p) + ': ', ''))}</p>`).join('') : ''}
         ${rows}</section>
         <section class="card"><h3>Apliecības kopija
           <span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(KIND)}">📎 Pievienot skenējumu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(KIND)}">📄 Papīra</button></span></h3>
-        ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota. Skenējums nav obligāts.</p>'}</section>`;
+        ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota.</p>'}</section>`;
     }
   };
 

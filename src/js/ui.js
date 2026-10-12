@@ -35,13 +35,37 @@
   };
 
   /* --- Maršrutēšana --- */
+  /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
+  const navStack = [];
+  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs' };
+  const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
+    const view = U.$('view');
+    const same = S.page === page && (page !== 'person' || !opts.person || opts.person === S.selected);
+    if (!opts.back && !same) {
+      navStack.push({ page: S.page, person: S.selected, tab: S.tab, scroll: view ? view.scrollTop : 0, archived: S.list?.status === 'archived' });
+      if (navStack.length > 40) navStack.shift();
+      try { history.pushState({ cp: navStack.length }, ''); } catch (e) { /* nav būtiski */ }
+    }
     S.page = page;
     if (opts.person) { S.selected = opts.person; S.tab = opts.tab || 'overview'; }
     CP.render();
-    U.$('view').scrollTop = 0;
+    if (view) view.scrollTop = opts.scroll || 0;
   };
+  function doBack() {
+    const prev = navStack.pop(); if (!prev) return false;
+    if (prev.page === 'people' && S.list) S.list.status = prev.archived ? 'archived' : (S.list.status === 'archived' ? 'current' : S.list.status);
+    ui.go(prev.page, { back: true, person: prev.page === 'person' ? prev.person : '', tab: prev.tab, scroll: prev.scroll });
+    return true;
+  }
+  ui.backBtn = () => {
+    const prev = navStack[navStack.length - 1]; if (!prev) return '';
+    return `<button type="button" class="ghost sm backbtn" data-act="goBack" title="Atpakaļ (Alt + ←)">← ${U.esc(placeName(prev))}</button>`;
+  };
+  CP.actions.goBack = () => { if (!navStack.length) return; try { history.back(); } catch (e) { doBack(); } };
+  window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   CP.render = () => {
+    if (CP.D2) CP.theme.apply();
     renderNav(); renderSide();
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();
@@ -92,7 +116,7 @@
   function hue(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
   ui.status = s => `<span class="status s-${s}">${CP.STATUSES[s] || s}</span>`;
   ui.pageHead = (title, sub = '', actions = '') =>
-    `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
+    `<header class="page-head"><div>${ui.backBtn()}<h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
   ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */

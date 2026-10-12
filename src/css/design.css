@@ -10,28 +10,39 @@
 /* --- Tumšā tēma --- */
 html.d2 {
   color-scheme: dark;
-  --bg: #0e1513; --rail: #0b1210; --side: #111a17; --panel: #16201d; --panel2: #1c2824; --field: #0f1816;
-  --edge: #24332e; --edge2: #33463f; --txt: #edf3ef; --muted: #93a69e; --line: #212f2a;
-  --teal: #3ccf7e; --teal-d: #1f9d55; --teal-b: #2bb463; --accent-ink: #ffffff; --accent-soft: #3ccf7e1f;
+  --acc: #3ccf7e;
+  /* fons un virsmas — neitrāli tumši toņi ar vieglu akcenta nokrāsu */
+  --bg: color-mix(in srgb, var(--acc) 5%, #0b0f0e); --rail: color-mix(in srgb, var(--acc) 4%, #090c0b); --side: color-mix(in srgb, var(--acc) 5%, #0e1211);
+  --panel: color-mix(in srgb, var(--acc) 6%, #131817); --panel2: color-mix(in srgb, var(--acc) 8%, #181e1c); --field: color-mix(in srgb, var(--acc) 4%, #0d1110);
+  --edge: color-mix(in srgb, var(--acc) 12%, #1f2624); --edge2: color-mix(in srgb, var(--acc) 16%, #2b3431); --line: color-mix(in srgb, var(--acc) 9%, #1a201e);
+  --txt: #edf3ef; --muted: #98a6a0;
+  /* akcents */
+  --teal: var(--acc); --teal-d: color-mix(in srgb, var(--acc) 72%, #000); --teal-b: color-mix(in srgb, var(--acc) 84%, #000); --accent-ink: #ffffff; --accent-soft: color-mix(in srgb, var(--acc) 14%, transparent);
+  --head: color-mix(in srgb, var(--acc) 45%, #e6efe9); --link: color-mix(in srgb, var(--acc) 65%, #ffffff); --sel: color-mix(in srgb, var(--acc) 15%, var(--panel));
   --amber: #f3c069; --orange: #f0a35e; --red: #f08a8a; --green: #7fe0aa; --wa: #1f8f55;
-  --btn: #1f2c28; --btn-h: #28382f; --btn-edge: #34483f; --head: #c8e9d6; --link: #8fd9b0; --label: #b2c3bc;
+  --btn: color-mix(in srgb, var(--acc) 7%, #1b2120); --btn-h: color-mix(in srgb, var(--acc) 11%, #232a28); --btn-edge: color-mix(in srgb, var(--acc) 14%, #2e3734); --label: #b4c0bb;
   --ok-bg: #173a29; --ok-tx: #9fe8c0; --warn-bg: #352a17; --warn-tx: #f6d6a0; --warn-edge: #7d6331; --bad-bg: #3d1f22; --bad-tx: #ffb4b4; --bad-edge: #8a4848;
-  --info-bg: #182c3b; --info-tx: #b3d6f0; --info-edge: #36607f; --hover: #ffffff0d; --sel: #1c3a2c;
-  --dlg: #17221f; --toast: #1d4a35; --toast-edge: #2e7a55; --viewer: #2c3532; --hero: linear-gradient(135deg, #17352a 0%, var(--panel) 70%);
+  --info-bg: #182c3b; --info-tx: #b3d6f0; --info-edge: #36607f; --hover: #ffffff0d;
+  --dlg: color-mix(in srgb, var(--acc) 6%, #151a19); --toast: color-mix(in srgb, var(--acc) 25%, #121716); --toast-edge: color-mix(in srgb, var(--acc) 50%, #121716); --viewer: #2c3532;
+  --hero: linear-gradient(135deg, color-mix(in srgb, var(--acc) 17%, var(--panel)) 0%, var(--panel) 70%);
   --r: 16px; --r-sm: 10px; --shadow: 0 18px 50px #0009; --lift: 0 1px 0 #ffffff08 inset;
   --t-green: #3ccf7e; --t-blue: #5aa9ff; --t-amber: #f3b443; --t-violet: #a993ff; --t-olive: #a7c957; --t-red: #f27272; --t-slate: #9fb3ad;
 }
 /* --- Gaišā tēma --- */
 html.d2[data-theme="light"] {
   color-scheme: light;
-  --bg: #f1f4f2; --rail: #ffffff; --side: #f8faf9; --panel: #ffffff; --panel2: #f4f7f5; --field: #ffffff;
-  --edge: #e2e8e4; --edge2: #cdd7d1; --txt: #17221d; --muted: #5f6e67; --line: #e9eeeb;
-  --teal: #149a4a; --teal-d: #16a34f; --teal-b: #128c44; --accent-ink: #ffffff; --accent-soft: #16a34f17;
+  --bg: color-mix(in srgb, var(--acc) 5%, #f1f3f2); --rail: #ffffff; --side: color-mix(in srgb, var(--acc) 3%, #f8f9f9);
+  --panel: #ffffff; --panel2: color-mix(in srgb, var(--acc) 4%, #f4f6f5); --field: #ffffff;
+  --edge: color-mix(in srgb, var(--acc) 8%, #e1e5e3); --edge2: color-mix(in srgb, var(--acc) 10%, #cfd5d2); --line: color-mix(in srgb, var(--acc) 5%, #e9ecea);
+  --txt: #17221d; --muted: #5f6b66;
+  --teal: color-mix(in srgb, var(--acc) 82%, #000); --teal-d: color-mix(in srgb, var(--acc) 88%, #000); --teal-b: color-mix(in srgb, var(--acc) 76%, #000); --accent-soft: color-mix(in srgb, var(--acc) 12%, transparent);
+  --head: color-mix(in srgb, var(--acc) 55%, #10201a); --link: color-mix(in srgb, var(--acc) 70%, #000); --sel: color-mix(in srgb, var(--acc) 12%, #ffffff);
   --amber: #9a6700; --orange: #b85b0e; --red: #c23b3b; --green: #12813f; --wa: #1f8f55;
-  --btn: #ffffff; --btn-h: #f0f4f2; --btn-edge: #d3dcd7; --head: #1d5a38; --link: #10783b; --label: #4f5d57;
+  --btn: #ffffff; --btn-h: color-mix(in srgb, var(--acc) 5%, #f2f4f3); --btn-edge: color-mix(in srgb, var(--acc) 10%, #d3d9d6); --label: #4f5b56;
   --ok-bg: #e3f6ea; --ok-tx: #13703a; --warn-bg: #fdf3dc; --warn-tx: #7d5400; --warn-edge: #edd18f; --bad-bg: #fde7e7; --bad-tx: #a62c2c; --bad-edge: #f0b5b5;
-  --info-bg: #e8f1fb; --info-tx: #24527c; --info-edge: #b9d2ec; --hover: #0000000a; --sel: #e4f4ea;
-  --dlg: #ffffff; --toast: #e6f6ec; --toast-edge: #9fd8b5; --viewer: #dfe5e2; --hero: linear-gradient(135deg, #e5f6eb 0%, #ffffff 70%);
+  --info-bg: #e8f1fb; --info-tx: #24527c; --info-edge: #b9d2ec; --hover: #0000000a;
+  --dlg: #ffffff; --toast: color-mix(in srgb, var(--acc) 12%, #ffffff); --toast-edge: color-mix(in srgb, var(--acc) 40%, #ffffff); --viewer: #dfe5e2;
+  --hero: linear-gradient(135deg, color-mix(in srgb, var(--acc) 13%, #ffffff) 0%, #ffffff 70%);
   --shadow: 0 18px 50px #1b2b2233; --lift: 0 1px 2px #1b2b220f;
   --t-green: #16a34f; --t-blue: #2a7de1; --t-amber: #c98a00; --t-violet: #7357e6; --t-olive: #6b8f12; --t-red: #d64545; --t-slate: #61716a;
 }
@@ -57,13 +68,13 @@ html.d2 input:focus, html.d2 textarea:focus, html.d2 select:focus { border-color
 html.d2 button:focus-visible, html.d2 .btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 1px; border-color: var(--teal) }
 
 /* --- Navigācijas josla: ikonas ar maigu “pill” fonu aktīvajai --- */
-html.d2 .nav { gap: 6px; padding-top: 14px }
-html.d2 .nav button { background: transparent; border: 0; width: 62px; padding: 8px 0 6px; border-radius: 14px; box-shadow: none; gap: 3px; font-weight: 600 }
+html.d2 .nav { gap: 6px; padding-top: 14px; overflow-x: hidden }
+html.d2 .nav button { background: transparent; border: 0; width: 58px; padding: 8px 0 6px; border-radius: 14px; box-shadow: none; gap: 3px; font-weight: 600 }
 html.d2 .nav button span .ic, html.d2 .nav button .ic { width: 22px; height: 22px }
 html.d2 .nav button small { font-size: 10.5px; letter-spacing: .01em }
 html.d2 .nav button:hover { background: var(--hover) }
 html.d2 .nav button.active { background: var(--accent-soft); color: var(--teal) }
-html.d2 .nav button.active::before { content: ''; position: absolute; left: -6px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--teal) }
+html.d2 .nav button.active::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--teal) }
 html.d2 .badge { background: var(--t-red); top: 4px; right: 10px }
 html.d2 .logo { border-radius: 14px }
 
@@ -122,8 +133,8 @@ html.d2 .alert .al-ic .ic { width: 17px; height: 17px }
 
 /* --- Kartītes cilnes --- */
 html.d2 .tabs { gap: 0; border-bottom-color: var(--edge); flex-wrap: wrap }
-html.d2 .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; box-shadow: none; border-radius: 10px 10px 0 0; padding: 9px 11px; gap: 6px; font-weight: 650; flex: none }
-html.d2 .tabs button .ic { width: 16px; height: 16px; opacity: .8 }
+html.d2 .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; box-shadow: none; border-radius: 10px 10px 0 0; padding: 9px 6px; gap: 5px; font-size: 12.5px; font-weight: 650; flex: none }
+html.d2 .tabs button .ic { width: 15px; height: 15px; opacity: .8 }
 html.d2 .tabs button:hover { background: var(--hover) }
 html.d2 .tabs button.active { color: var(--txt); border-bottom-color: var(--teal) } html.d2 .tabs button.active .ic { color: var(--teal); opacity: 1 }
 
@@ -157,3 +168,14 @@ html.d2 button > .ic + *, html.d2 .btn > .ic { margin-right: 0 }
 html.d2 button.sm .ic, html.d2 .btn.sm .ic { width: 15px; height: 15px; vertical-align: -2px }
 html.d2 h2 > .ic { width: 22px; height: 22px; color: var(--teal); margin-right: 6px }
 html.d2 b > .ic { width: 15px; height: 15px; margin-right: 4px }
+
+/* akcenta krāsas izvēle */
+html.d2 .swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+html.d2 .swatch { width: 34px; height: 34px; padding: 0; border-radius: 11px; background: var(--sw); border: 2px solid transparent; box-shadow: inset 0 0 0 1px #0002; justify-content: center }
+html.d2 .swatch:hover { background: var(--sw); transform: translateY(-1px) }
+html.d2 .swatch.on, html.d2 button.swatch.on { background: var(--sw); border-color: var(--txt); box-shadow: 0 0 0 3px var(--accent-soft) }
+html.d2 .swatch.on::after { content: '✓'; color: #fff; font-weight: 800; text-shadow: 0 1px 2px #0008 }
+html.d2 .swatch.custom { position: relative; overflow: hidden; background: conic-gradient(#f44, #fd4, #4d6, #4cf, #84f, #f4c, #f44) }
+html.d2 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100% }
+html.d2 .lookrow { display: grid; grid-template-columns: 110px 1fr; gap: 12px 16px; align-items: center }
+html.d2 .lookrow > span { color: var(--muted); font-weight: 600 }

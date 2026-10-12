@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.10.0';
+  CP.VERSION = '1.10.1';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -664,6 +664,7 @@ window.CP = window.CP || {};
     copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
     folderOpen: '<path d="M3.5 18V7a2 2 0 0 1 2-2h4l2 2.5h6a2 2 0 0 1 2 2v1.5"/><path d="M3.5 18l2.3-6.2a1.5 1.5 0 0 1 1.4-1h13.3a1 1 0 0 1 .9 1.4L19 17.6a2 2 0 0 1-1.8 1.4H5a1.5 1.5 0 0 1-1.5-1z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
     shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>'
   };
   CP.ICON_NAMES = Object.keys(P);
@@ -675,7 +676,7 @@ window.CP = window.CP || {};
 
   /* Pogu sākuma simboli → ikonas (v2). Teksts paliek; simbols tiek aizstāts tikai vizuāli. */
   const EMO = { '＋': 'plus', '➕': 'plus', '⬇': 'download', '⚠': 'alert', '📎': 'clip', '✉': 'message', '🔓': 'unlock', '📁': 'folder', '📂': 'folderOpen', '📄': 'file', '💬': 'chat',
-    '📇': 'contactCard', '📷': 'scan', '↻': 'refresh', '⟳': 'refresh', '☎': 'phone', '📞': 'phone', '✎': 'edit', '📥': 'inbox', '⬆': 'upload', '📱': 'mobile', '💾': 'save', '↗': 'external', '🔔': 'bell', '📅': 'calendar', '⧉': 'copy', '🪪': 'idcard', '⇩': 'download' };
+    '📇': 'contactCard', '📷': 'scan', '↻': 'refresh', '⟳': 'refresh', '☎': 'phone', '📞': 'phone', '✎': 'edit', '📥': 'inbox', '⬆': 'upload', '📱': 'mobile', '💾': 'save', '↗': 'external', '🔔': 'bell', '📅': 'calendar', '⧉': 'copy', '🪪': 'idcard', '⇩': 'download', '←': 'back' };
   const EMO_RE = new RegExp('^\\s*(' + Object.keys(EMO).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\uFE0F?\\s*');
   CP.iconize = (root = document) => {
     if (!CP.D2) return;
@@ -688,13 +689,36 @@ window.CP = window.CP || {};
   };
 
   /* --- Tēma: tumšā (noklusējums) / gaišā / kā sistēmā. Pārlūkā, nevis datu failā. --- */
+  /* Izskats glabājas pārlūkā (ātrai ielādei) un datu failā (lai citā datorā ir tāds pats). */
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* ērtībai */ } } };
+  const look = () => (CP.state && CP.state.db && CP.state.db.settings && CP.state.db.settings.look) || {};
+  function remember(k, v) {
+    ls.set('cp-' + k, v);
+    const st = CP.state?.db?.settings; if (!st) return;
+    st.look = { ...(st.look || {}), [k]: v };
+    if (CP.state.root) CP.store.changed({ silent: true });
+  }
+  const HEX = /^#[0-9a-f]{6}$/i;
+  CP.ACCENTS = [['#3ccf7e', 'Zaļš'], ['#7cb342', 'Meža'], ['#2ec4b6', 'Tirkīzs'], ['#4f9cff', 'Zils'], ['#7c83ff', 'Indigo'], ['#a879ff', 'Violets'], ['#f472b6', 'Rozā'], ['#ef5b5b', 'Sarkans'], ['#ff9f43', 'Oranžs'], ['#e6b422', 'Zelts'], ['#94a3a0', 'Pelēks']];
+  /** Teksta krāsa uz akcenta pogas: balta vai tumša pēc kontrasta (WCAG relatīvais spilgtums) */
+  function inkFor(hex, factor) {
+    // pogas fons = akcents × factor (sajaukts ar melnu): 0,72 tumšajā, 0,88 gaišajā tēmā
+    const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255 * factor).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const L = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    return 1.05 / (L + 0.05) >= 3.2 ? '#ffffff' : '#0e1512';
+  }
   CP.theme = {
-    get() { try { return localStorage.getItem('cp-theme') || 'dark'; } catch (e) { return 'dark'; } },
-    set(v) { try { localStorage.setItem('cp-theme', v); } catch (e) { /* tikai ērtībai */ } CP.theme.apply(); },
+    get() { return ls.get('cp-theme') || look().theme || 'dark'; },
+    set(v) { remember('theme', v); CP.theme.apply(); },
+    accent() { const v = ls.get('cp-accent') || look().accent || CP.ACCENTS[0][0]; return HEX.test(v) ? v : CP.ACCENTS[0][0]; },
+    setAccent(v) { if (!HEX.test(v)) return; remember('accent', v.toLowerCase()); CP.theme.apply(); },
     apply() {
       if (!CP.D2) return;
       const v = CP.theme.get(), light = v === 'light' || (v === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
-      document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      const root = document.documentElement, acc = CP.theme.accent();
+      root.dataset.theme = light ? 'light' : 'dark';
+      root.style.setProperty('--acc', acc);
+      root.style.setProperty('--accent-ink', inkFor(acc, light ? 0.88 : 0.72));
       const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = light ? '#f3f6f4' : '#0b1219';
     }
   };
@@ -1818,13 +1842,37 @@ window.CP = window.CP || {};
   };
 
   /* --- Maršrutēšana --- */
+  /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
+  const navStack = [];
+  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs' };
+  const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
+    const view = U.$('view');
+    const same = S.page === page && (page !== 'person' || !opts.person || opts.person === S.selected);
+    if (!opts.back && !same) {
+      navStack.push({ page: S.page, person: S.selected, tab: S.tab, scroll: view ? view.scrollTop : 0, archived: S.list?.status === 'archived' });
+      if (navStack.length > 40) navStack.shift();
+      try { history.pushState({ cp: navStack.length }, ''); } catch (e) { /* nav būtiski */ }
+    }
     S.page = page;
     if (opts.person) { S.selected = opts.person; S.tab = opts.tab || 'overview'; }
     CP.render();
-    U.$('view').scrollTop = 0;
+    if (view) view.scrollTop = opts.scroll || 0;
   };
+  function doBack() {
+    const prev = navStack.pop(); if (!prev) return false;
+    if (prev.page === 'people' && S.list) S.list.status = prev.archived ? 'archived' : (S.list.status === 'archived' ? 'current' : S.list.status);
+    ui.go(prev.page, { back: true, person: prev.page === 'person' ? prev.person : '', tab: prev.tab, scroll: prev.scroll });
+    return true;
+  }
+  ui.backBtn = () => {
+    const prev = navStack[navStack.length - 1]; if (!prev) return '';
+    return `<button type="button" class="ghost sm backbtn" data-act="goBack" title="Atpakaļ (Alt + ←)">← ${U.esc(placeName(prev))}</button>`;
+  };
+  CP.actions.goBack = () => { if (!navStack.length) return; try { history.back(); } catch (e) { doBack(); } };
+  window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   CP.render = () => {
+    if (CP.D2) CP.theme.apply();
     renderNav(); renderSide();
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();
@@ -1875,7 +1923,7 @@ window.CP = window.CP || {};
   function hue(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
   ui.status = s => `<span class="status s-${s}">${CP.STATUSES[s] || s}</span>`;
   ui.pageHead = (title, sub = '', actions = '') =>
-    `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
+    `<header class="page-head"><div>${ui.backBtn()}<h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
   ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */
@@ -2096,7 +2144,7 @@ window.CP = window.CP || {};
       const miss = D.missingDocs(p), docs = D.docsOf(p), fam = D.family(p).length + S.db.relations.filter(r => r.a === p.id || r.b === p.id).length;
       const openTasks = S.db.tasks.filter(t => t.personId === p.id && !t.done).length, eq = D.openEquipment(p).length;
       const sub = [`<span class="tag">${esc(U.yearLabel(D.activeYear()))}</span>`, D.groupOf(p) && `<span class="tag">${esc(D.groupOf(p))}</span>`, p.birth && `${U.age(p.birth)} g.`, [p.school, p.schoolClass].filter(Boolean).map(esc).join(', ')].filter(Boolean).join(' · ');
-      const head = `<header class="person-head">${ui.avatar(p, 'lg')}<div class="ph-main"><h1>${esc(U.full(p))} ${ui.status(D.partStatus(p))}</h1><p class="muted">${sub || 'Nav grupas'}</p></div>
+      const head = `${ui.backBtn()}<header class="person-head">${ui.avatar(p, 'lg')}<div class="ph-main"><h1>${esc(U.full(p))} ${ui.status(D.partStatus(p))}</h1><p class="muted">${sub || 'Nav grupas'}</p></div>
         <div class="actions">
           <button data-act="msg" data-arg="${p.id}">✉ Ziņa</button>
           <button data-act="edit" data-arg="${p.id}">✎ Rediģēt</button>
@@ -3223,14 +3271,14 @@ window.CP = window.CP || {};
         ['Izdota', U.fmtDate(c.issued)],
         ['Derīga līdz', c.validUntil ? `${esc(U.fmtDate(c.validUntil))}${U.daysTo(c.validUntil) < 0 ? ' <span class="pill bad">beidzies</span>' : ''}` : '', true],
         ['Piezīmes', c.notes || '']
-      ]) : `<p class="muted">Apliecības dati nav ievadīti. Tas nav obligāti — aizpildi, kad apliecību pieprasi vai izsniedz.</p>`;
+      ]) : `<p class="muted">Apliecības dati nav ievadīti.</p>`;
       return `<section class="card ${al.some(a => a.sev > 0) ? 'dupcard' : ''}"><h3>${CP.ic('idcard', '🪪')} Jaunsarga apliecība
           <span class="right actions"><button class="sm mainbtn" data-act="editIdCard" data-arg="${p.id}">${c && c.status && c.status !== 'none' ? '✎ Labot' : '＋ Ievadīt datus'}</button></span></h3>
         ${al.length ? al.map(a => `<p class="${a.sev ? 'warn' : 'muted'}">${a.sev ? '⚠' : 'ℹ'} ${esc(a.msg.replace(U.full(p) + ': ', ''))}</p>`).join('') : ''}
         ${rows}</section>
         <section class="card"><h3>Apliecības kopija
           <span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(KIND)}">📎 Pievienot skenējumu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(KIND)}">📄 Papīra</button></span></h3>
-        ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota. Skenējums nav obligāts.</p>'}</section>`;
+        ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota.</p>'}</section>`;
     }
   };
 
@@ -3615,7 +3663,10 @@ window.CP = window.CP || {};
     render() {
       const s = S.db.settings, o = s.ocr;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
-      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}">${l}</button>`).join('')}</span><span class="small muted">Tēma tiek atcerēta šajā pārlūkā.</span></div></section>` : ''}
+      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
+        <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
+        <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
+      </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -3784,6 +3835,9 @@ window.CP = window.CP || {};
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.setTheme = v => { CP.theme.set(v); CP.render(); };
+  A.setAccent = v => { CP.theme.setAccent(v); CP.render(); };
+  CP.inputHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); return true; });   // dzīvs priekšskatījums
+  CP.changeHandlers.push(e => { if (e.target.id !== 'accentPick') return false; CP.theme.setAccent(e.target.value); CP.render(); return true; });
   A.restoreRoot = () => CP.store.restoreRoot();
   A.retryRestore = () => CP.store.retryRestore();
   A.bootNew = () => CP.store.bootNew();

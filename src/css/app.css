@@ -46,7 +46,7 @@ label.inline { display: inline-flex; align-items: center; gap: 6px; white-space:
 
 /* --- Izkārtojums --- */
 .app { display: grid; grid-template-columns: 72px 280px minmax(0, 1fr); height: 100vh }
-.nav { background: var(--rail); border-right: 1px solid var(--edge); padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow-y: auto }
+.nav { background: var(--rail); border-right: 1px solid var(--edge); padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow-y: auto; overflow-x: hidden }
 .nav button { width: 60px; flex-direction: column; gap: 1px; border: 0; background: transparent; padding: 7px 0; position: relative; color: var(--muted) }
 .nav button span { font-size: 19px; line-height: 1.1 } .nav button small { font-size: 10px }
 .nav button:hover { background: #ffffff0d; color: var(--txt) }
@@ -292,3 +292,4 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
 .bootidx{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--muted)}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--edge2);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.backbtn{margin:-4px 0 6px -9px;color:var(--muted);font-weight:600}.backbtn:hover{color:var(--txt)}
