@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.13.1 — 2026-10-13
+- Iestatījumos izvēlētā ciparnīca iezīmējas uzreiz.
+- Pārskata kartītes ir sakārtotas: ikona augšā, cipars un nosaukums kopā apakšā.
+
 ## 1.13.0 — 2026-10-13 — Pulkstenis: ciparnīcas, hronometrs, taimeris
 - Četras ciparnīcas: taktiskā, analogā, lielie cipari un nakts (sarkana uz melna).
 - Režīmi: **Laiks**, **Hronometrs** ar apļiem un starplaikiem, **Taimeris** nodarbībām (1–15 min vai savs laiks) ar skaņas signālu un mirgojošu ciparnīcu.

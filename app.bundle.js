@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.13.0';
+  CP.VERSION = '1.13.1';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -3467,6 +3467,7 @@ window.CP = window.CP || {};
     const st = S.db?.settings; if (st) { st.look = { ...(st.look || {}), watch: { ...P } }; if (S.root) CP.store.changed({ silent: true }); }
     if (k === 'workMin') { ses.remindAt = ses.start + P.workMin * 60000; saveSes(); }
     rebuild();
+    if (S.page === 'settings') CP.render();   // lai izvēlētā poga iezīmējas uzreiz
   };
 
   /* --- Darba sesija --- */

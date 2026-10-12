@@ -36,6 +36,7 @@
     const st = S.db?.settings; if (st) { st.look = { ...(st.look || {}), watch: { ...P } }; if (S.root) CP.store.changed({ silent: true }); }
     if (k === 'workMin') { ses.remindAt = ses.start + P.workMin * 60000; saveSes(); }
     rebuild();
+    if (S.page === 'settings') CP.render();   // lai izvēlētā poga iezīmējas uzreiz
   };
 
   /* --- Darba sesija --- */
