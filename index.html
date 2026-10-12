@@ -10,6 +10,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
+<meta name="cp-design" content="v2">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CADET PERSONĀLS</title>
 <style>
@@ -309,6 +310,23 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
 @keyframes spin{to{transform:rotate(360deg)}}
 .backbtn{margin:-4px 0 6px -9px;color:var(--muted);font-weight:600}.backbtn:hover{color:var(--txt)}
 
+/* Par rīku */
+.about-hero{display:flex;gap:22px;align-items:center;padding:24px 26px}
+.about-hero h1{margin-bottom:6px}
+.about-logo{width:84px;height:84px;border-radius:20px;flex:none;object-fit:contain}
+.about-lead{font-size:16px;line-height:1.55;max-width:62ch;margin-bottom:8px}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:14px}.about-grid>.card{margin:0}
+.about-list{margin:0;padding-left:20px;line-height:1.7}
+.steps{list-style:none;counter-reset:st;margin:0;padding:0;display:grid;gap:4px}
+.steps li{counter-increment:st;position:relative;padding:10px 0 10px 46px;border-bottom:1px solid var(--line,#22343f)}.steps li:last-child{border-bottom:0}
+.steps li::before{content:counter(st);position:absolute;left:0;top:10px;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:var(--accent-soft,#55b5a122);color:var(--teal)}
+.steps li p{margin:3px 0 0;color:var(--muted);line-height:1.55;max-width:75ch}
+.feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.feat-item{display:flex;gap:12px;align-items:flex-start}.feat-item p{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.feat-ic{width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft,#55b5a122);color:var(--teal)}
+.feat-ic .ic{width:19px;height:19px}
+@media (max-width:640px){.about-hero{flex-direction:column;align-items:flex-start}}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -506,6 +524,7 @@ html.d2 .lookrow > span { color: var(--muted); font-weight: 600 }
     <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span data-ic="bell">⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
     <button data-page="archive" title="Arhīvs"><span data-ic="archive">◷</span><small>Arhīvs</small></button>
     <span class="grow"></span>
+    <button data-page="about" title="Par rīku un kā sākt"><span data-ic="info">ⓘ</span><small>Par rīku</small></button>
     <button data-page="settings" title="Iestatījumi"><span data-ic="sliders">⚙</span><small>Iestatīj.</small></button>
   </nav>
 

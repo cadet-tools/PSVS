@@ -45,7 +45,7 @@ def build(channel, out, vendor_rel, design=''):
 
 # Dizaina karogs: CP_DESIGN_STABLE / CP_DESIGN_TEST (piem. 'v2'); testa kanālam pēc noklusējuma v2
 build('stable', repo, 'vendor/', os.environ.get('CP_DESIGN_STABLE', ''))
-build('test', f'{repo}/test', '../vendor/', os.environ.get('CP_DESIGN_TEST', 'v2'))
+build('test', f'{repo}/test', '../vendor/', os.environ.get('CP_DESIGN_TEST', ''))   # dizaina karogs nāk no src/index.html
 
 # kopīgais vendor
 v = f'{repo}/vendor'

@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.11.0 — 2026-10-12 — Jaunais izskats visiem; “Par rīku”
+- Dizains v2 tagad ir arī stabilajā un lokālajā versijā: ikonas, krāsu flīzes, tumšā un gaišā tēma, akcenta krāsa (Iestatījumi → Izskats).
+- Jauna sadaļa **Par rīku** (navigācijā ⓘ): kam rīks paredzēts, kur glabājas dati, 8 soļi, kā sākt lietot, ko rīks prot, izstrādātājs Jānis Eglis.
+
 ## 1.10.1 — 2026-10-12
 - **Atpakaļ:** katrā lapā ir poga “← <iepriekšējā lapa>”. Darbojas arī pārlūka un peles “atpakaļ” poga, kā arī Alt + ←.
 - Navigācijas joslā vairs nav liekas horizontālās ritjoslas.
