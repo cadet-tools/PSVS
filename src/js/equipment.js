@@ -31,7 +31,7 @@
       : m.state === 'outdated' ? `<p class="warn">⚠ Ekipējumā ir izmaiņas (${U.fmtDateTime(m.lastChange)}), bet jauna MTL lapa nav pievienota. Pēdējā lapa: ${U.fmtDate(last.received)}.</p>`
       : m.state === 'ok' ? `<p class="good">✓ MTL lapa ir aktuāla (${U.fmtDate(last.received)}).</p>`
       : `<p class="muted small">Nav izsniegta ekipējuma — MTL lapa nav nepieciešama.</p>`;
-    return `<section class="card ${m.state === 'missing' || m.state === 'outdated' ? 'dupcard' : ''}"><h3>MTL aprites lapa
+    return `<section class="card ${m.state === 'missing' || m.state === 'outdated' ? 'dupcard' : ''}"><h3>${CP.ic('clipboard')}MTL aprites lapa
         <span class="right actions"><button class="sm mainbtn" data-act="attach" data-arg="${p.id}|${esc(D.MTL)}">📎 Pievienot ${last ? 'jaunu ' : ''}lapu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(D.MTL)}">📄 Papīra</button></span></h3>
       ${status}
       ${m.all.length ? m.all.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : ''}</section>`;
@@ -40,7 +40,7 @@
 
   eq.personTab = p => {
     const arr = S.db.equipment.filter(e => e.personId === p.id).sort((a, b) => (a.returned ? 1 : 0) - (b.returned ? 1 : 0) || String(b.issued).localeCompare(String(a.issued)));
-    return mtlCard(p) + `<section class="card"><h3>Ekipējums <button class="sm mainbtn right" data-act="addEq" data-arg="${p.id}">＋ Izsniegt</button></h3>${table(arr, false)}</section>`;
+    return mtlCard(p) + `<section class="card"><h3>${CP.ic('backpack')}Ekipējums <button class="sm mainbtn right" data-act="addEq" data-arg="${p.id}">＋ Izsniegt</button></h3>${table(arr, false)}</section>`;
   };
   CP.pages.equipment = {
     render() {

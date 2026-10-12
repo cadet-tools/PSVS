@@ -99,7 +99,8 @@
   };
 
   /* =================== Personas kartiņa =================== */
-  const TABS = [['overview', 'Pārskats'], ['data', 'Visi dati'], ['docs', 'Dokumenti'], ['history', 'Vēsture'], ['relations', 'Saistības'], ['equipment', 'Ekipējums']];
+  const TABS = [['overview', 'Pārskats'], ['data', 'Visi dati'], ['docs', 'Dokumenti'], ['history', 'Vēsture'], ['relations', 'Saistības'], ['equipment', 'Ekipējums'], ['idcard', 'Apliecība']];
+  const TAB_IC = { overview: 'layout', data: 'list', docs: 'file', history: 'clock', relations: 'link', equipment: 'backpack', idcard: 'idcard' };
 
   CP.pages.person = {
     render() {
@@ -119,8 +120,8 @@
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
           ${ui.saveBtn()}</div></header>`;
-      const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '' };
-      const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
+      const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' };
+      const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';
       if (S.tab === 'overview') body = overview(p, miss);
       else if (S.tab === 'data') body = allData(p);
@@ -128,6 +129,7 @@
       else if (S.tab === 'history') body = history(p);
       else if (S.tab === 'relations') body = relations(p);
       else if (S.tab === 'equipment') body = CP.equipment.personTab(p);
+      else if (S.tab === 'idcard') body = CP.idcard.personTab(p);
       return `<div class="page">${head}<div class="person-layout"><div class="pl-main">${tabs}${body}</div><aside class="pl-side">${side(p, miss)}</aside></div></div>`;
     }
   };
@@ -198,7 +200,7 @@
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
   const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
-  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' };
+  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība'};
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });

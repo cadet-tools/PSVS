@@ -9,6 +9,7 @@
     render() {
       const s = S.db.settings, o = s.ocr;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
+      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}">${l}</button>`).join('')}</span><span class="small muted">Tēma tiek atcerēta šajā pārlūkā.</span></div></section>` : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -176,6 +177,7 @@
   };
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
+  A.setTheme = v => { CP.theme.set(v); CP.render(); };
   A.restoreRoot = () => CP.store.restoreRoot();
   A.retryRestore = () => CP.store.retryRestore();
   A.bootNew = () => CP.store.bootNew();

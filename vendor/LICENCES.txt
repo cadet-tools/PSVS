@@ -19,4 +19,6 @@ Valodu modeļi lav un eng (traineddata 4.0.0)
 
 Google Cloud Vision šajā mapē nav. Tas paliek izslēgts, kamēr lietotājs pats Iestatījumos neizvēlas citu dzinēju un neievada atslēgu.
 
+Manrope (Mikhail Sharanda) — SIL Open Font License 1.1, vendor/fonts/OFL.txt
+
 Tesseract.js 7.0.0 un tesseract.js-core 7.0.0 — Apache-2.0 (https://github.com/naptha/tesseract.js). Valodu dati lav/eng 4.0.0_best_int — Apache-2.0 (tesseract-ocr/tessdata).

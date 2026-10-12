@@ -308,6 +308,166 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--edge2);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* =====================================================================
+   Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
+   Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
+   līniju ikonām kategorijām (personas, dokumenti, ekipējums, brīdinājumi).
+   Tēmas: tumšā (noklusējums) un gaišā — tikai mainīgie atšķiras.
+   ===================================================================== */
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 200 800; font-display: swap; src: url("vendor/fonts/manrope-latin-ext-wght-normal.woff2") format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 200 800; font-display: swap; src: url("vendor/fonts/manrope-latin-wght-normal.woff2") format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* --- Tumšā tēma --- */
+html.d2 {
+  color-scheme: dark;
+  --bg: #0e1513; --rail: #0b1210; --side: #111a17; --panel: #16201d; --panel2: #1c2824; --field: #0f1816;
+  --edge: #24332e; --edge2: #33463f; --txt: #edf3ef; --muted: #93a69e; --line: #212f2a;
+  --teal: #3ccf7e; --teal-d: #1f9d55; --teal-b: #2bb463; --accent-ink: #ffffff; --accent-soft: #3ccf7e1f;
+  --amber: #f3c069; --orange: #f0a35e; --red: #f08a8a; --green: #7fe0aa; --wa: #1f8f55;
+  --btn: #1f2c28; --btn-h: #28382f; --btn-edge: #34483f; --head: #c8e9d6; --link: #8fd9b0; --label: #b2c3bc;
+  --ok-bg: #173a29; --ok-tx: #9fe8c0; --warn-bg: #352a17; --warn-tx: #f6d6a0; --warn-edge: #7d6331; --bad-bg: #3d1f22; --bad-tx: #ffb4b4; --bad-edge: #8a4848;
+  --info-bg: #182c3b; --info-tx: #b3d6f0; --info-edge: #36607f; --hover: #ffffff0d; --sel: #1c3a2c;
+  --dlg: #17221f; --toast: #1d4a35; --toast-edge: #2e7a55; --viewer: #2c3532; --hero: linear-gradient(135deg, #17352a 0%, var(--panel) 70%);
+  --r: 16px; --r-sm: 10px; --shadow: 0 18px 50px #0009; --lift: 0 1px 0 #ffffff08 inset;
+  --t-green: #3ccf7e; --t-blue: #5aa9ff; --t-amber: #f3b443; --t-violet: #a993ff; --t-olive: #a7c957; --t-red: #f27272; --t-slate: #9fb3ad;
+}
+/* --- Gaišā tēma --- */
+html.d2[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f1f4f2; --rail: #ffffff; --side: #f8faf9; --panel: #ffffff; --panel2: #f4f7f5; --field: #ffffff;
+  --edge: #e2e8e4; --edge2: #cdd7d1; --txt: #17221d; --muted: #5f6e67; --line: #e9eeeb;
+  --teal: #149a4a; --teal-d: #16a34f; --teal-b: #128c44; --accent-ink: #ffffff; --accent-soft: #16a34f17;
+  --amber: #9a6700; --orange: #b85b0e; --red: #c23b3b; --green: #12813f; --wa: #1f8f55;
+  --btn: #ffffff; --btn-h: #f0f4f2; --btn-edge: #d3dcd7; --head: #1d5a38; --link: #10783b; --label: #4f5d57;
+  --ok-bg: #e3f6ea; --ok-tx: #13703a; --warn-bg: #fdf3dc; --warn-tx: #7d5400; --warn-edge: #edd18f; --bad-bg: #fde7e7; --bad-tx: #a62c2c; --bad-edge: #f0b5b5;
+  --info-bg: #e8f1fb; --info-tx: #24527c; --info-edge: #b9d2ec; --hover: #0000000a; --sel: #e4f4ea;
+  --dlg: #ffffff; --toast: #e6f6ec; --toast-edge: #9fd8b5; --viewer: #dfe5e2; --hero: linear-gradient(135deg, #e5f6eb 0%, #ffffff 70%);
+  --shadow: 0 18px 50px #1b2b2233; --lift: 0 1px 2px #1b2b220f;
+  --t-green: #16a34f; --t-blue: #2a7de1; --t-amber: #c98a00; --t-violet: #7357e6; --t-olive: #6b8f12; --t-red: #d64545; --t-slate: #61716a;
+}
+
+/* --- Pamati --- */
+html.d2 body { font-family: 'Manrope', system-ui, 'Segoe UI', sans-serif; font-size: 14px; letter-spacing: -.003em; font-feature-settings: 'tnum' 1 }
+html.d2 h1 { font-size: 26px; font-weight: 750; letter-spacing: -.02em }
+html.d2 h2 { font-weight: 720; letter-spacing: -.01em } html.d2 h3 { font-weight: 700 }
+html.d2 h4 { color: var(--head) } html.d2 a { color: var(--link) }
+html.d2 label { color: var(--label) }
+html.d2 .ic { width: 18px; height: 18px; flex: none; display: inline-block; vertical-align: -3px }
+html.d2 h3 > .ic { width: 20px; height: 20px; color: var(--teal) }
+
+/* --- Pogas un lauki --- */
+html.d2 button, html.d2 .btn { background: var(--btn); border-color: var(--btn-edge); border-radius: 11px; font-weight: 600; box-shadow: var(--lift); transition: background .12s, border-color .12s }
+html.d2 button:hover, html.d2 .btn:hover { background: var(--btn-h) }
+html.d2 .mainbtn { background: var(--teal-d); border-color: var(--teal-b); color: var(--accent-ink) } html.d2 .mainbtn:hover { background: var(--teal-b) }
+html.d2 .ghost { background: transparent; border-color: transparent; box-shadow: none } html.d2 .ghost:hover { background: var(--hover) }
+html.d2 .danger { color: var(--red) }
+html.d2 button.on { background: var(--warn-bg); border-color: var(--amber) }
+html.d2 input, html.d2 textarea, html.d2 select { color: var(--txt); border-radius: 11px; border-color: var(--edge2) }
+html.d2 input:focus, html.d2 textarea:focus, html.d2 select:focus { border-color: var(--teal); outline: 3px solid var(--accent-soft); outline-offset: 0 }
+html.d2 button:focus-visible, html.d2 .btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 1px; border-color: var(--teal) }
+
+/* --- Navigācijas josla: ikonas ar maigu “pill” fonu aktīvajai --- */
+html.d2 .nav { gap: 6px; padding-top: 14px }
+html.d2 .nav button { background: transparent; border: 0; width: 62px; padding: 8px 0 6px; border-radius: 14px; box-shadow: none; gap: 3px; font-weight: 600 }
+html.d2 .nav button span .ic, html.d2 .nav button .ic { width: 22px; height: 22px }
+html.d2 .nav button small { font-size: 10.5px; letter-spacing: .01em }
+html.d2 .nav button:hover { background: var(--hover) }
+html.d2 .nav button.active { background: var(--accent-soft); color: var(--teal) }
+html.d2 .nav button.active::before { content: ''; position: absolute; left: -6px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--teal) }
+html.d2 .badge { background: var(--t-red); top: 4px; right: 10px }
+html.d2 .logo { border-radius: 14px }
+
+/* --- Sānjosla --- */
+html.d2 .aside { gap: 10px }
+html.d2 .person { border-radius: 12px; background: transparent; border-color: transparent; box-shadow: none } html.d2 .person:hover { background: var(--hover) } html.d2 .person.active { background: var(--sel) }
+html.d2 .yearbar { background: color-mix(in srgb, var(--bg) 88%, transparent) }
+html.d2 .yearmenu { background: var(--dlg) } html.d2 .yearmenu button.on { background: var(--ok-bg) }
+
+/* --- Kartītes --- */
+html.d2 .card { border-radius: var(--r); box-shadow: var(--lift); padding: 18px 20px }
+html.d2 .hero { background: var(--hero); border-color: color-mix(in srgb, var(--teal) 35%, var(--edge)) }
+html.d2 .notice { background: var(--warn-bg); border-color: var(--warn-edge); color: var(--warn-tx) }
+html.d2 .dl dt, html.d2 .dl dd, html.d2 .row, html.d2 .table th, html.d2 .table td, html.d2 .contact, html.d2 .tl { border-bottom-color: var(--line) }
+html.d2 .table th { background: var(--panel2); color: var(--muted) }
+html.d2 .table tbody tr:hover { background: var(--hover) } html.d2 .table tr.sel, html.d2 .bulkbar { background: var(--sel) } html.d2 .bulkbar { border-color: color-mix(in srgb, var(--teal) 40%, var(--edge)) }
+html.d2 .tag { background: var(--panel2); color: var(--muted); border: 1px solid var(--edge) }
+html.d2 .tl-ic { background: var(--panel2) }
+html.d2 .contact .c-how { color: var(--muted) }
+html.d2 .menu-list { background: var(--dlg) } html.d2 .menu-list button { box-shadow: none } html.d2 .menu-list button:hover { background: var(--hover) }
+
+/* --- Statusi, pilles, čipi — viena semantiskā palete --- */
+html.d2 .pill.ok, html.d2 .tag.ok, html.d2 .chip.ok, html.d2 .req.ok, html.d2 .s-active { background: var(--ok-bg); color: var(--ok-tx); border-color: color-mix(in srgb, var(--ok-tx) 35%, transparent) }
+html.d2 .pill.warn, html.d2 .tag.warn, html.d2 .chip.miss, html.d2 .req.miss, html.d2 .s-paused, html.d2 .duphint.bad { background: var(--warn-bg); color: var(--warn-tx); border-color: var(--warn-edge) }
+html.d2 .pill.bad { background: var(--bad-bg); color: var(--bad-tx) }
+html.d2 .s-candidate { background: var(--info-bg); color: var(--info-tx); border-color: var(--info-edge) }
+html.d2 .s-archived { background: var(--panel2); color: var(--muted); border-color: var(--edge2) }
+html.d2 .chipbtn.on, html.d2 .vw-pn.on { background: var(--accent-soft); border-color: var(--teal); color: var(--teal) }
+html.d2 .count { color: #2a1f08 }
+html.d2 .alert.bad .grow { color: var(--bad-tx) } html.d2 .alert.warn .grow { color: var(--warn-tx) }
+html.d2 .dupcard { border-color: var(--warn-edge) }
+html.d2 .sugg { background: var(--warn-bg); border-color: var(--warn-edge); color: var(--warn-tx) } html.d2 .sugg small { color: var(--muted) } html.d2 .sugg b { color: var(--txt) }
+html.d2 .field.auto input, html.d2 .field.auto select, html.d2 .field.auto textarea { border-color: var(--amber); background: var(--warn-bg) }
+html.d2 .fs legend { color: var(--head) }
+html.d2 .pinnote { color: var(--warn-tx) }
+
+/* --- Pārskata statistika: krāsu flīzes ar ikonām --- */
+html.d2 .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px }
+html.d2 .stat { --tone: var(--t-slate); display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto; column-gap: 14px; align-items: center; padding: 16px; border-radius: var(--r); box-shadow: var(--lift) }
+html.d2 .stat[data-tone="green"] { --tone: var(--t-green) } html.d2 .stat[data-tone="blue"] { --tone: var(--t-blue) } html.d2 .stat[data-tone="amber"] { --tone: var(--t-amber) }
+html.d2 .stat[data-tone="violet"] { --tone: var(--t-violet) } html.d2 .stat[data-tone="olive"] { --tone: var(--t-olive) } html.d2 .stat[data-tone="red"] { --tone: var(--t-red) }
+html.d2 .stat > .ic { grid-row: 1 / span 2; width: 44px; height: 44px; padding: 11px; border-radius: 13px; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent) }
+html.d2 .stat span { grid-column: 2; grid-row: 2; font-size: 12.5px; font-weight: 600; line-height: 1.25 }
+html.d2 .stat strong { grid-column: 2; grid-row: 1; font-size: 30px; font-weight: 780; letter-spacing: -.03em; line-height: 1 }
+html.d2 .stat:hover { border-color: color-mix(in srgb, var(--tone) 45%, var(--edge)); background: var(--panel) }
+
+/* --- Ātrās darbības --- */
+html.d2 .quick { gap: 10px; padding: 14px }
+html.d2 .quick > button, html.d2 .quick > .btn { padding: 9px 14px }
+html.d2 .quick .ic { width: 18px; height: 18px }
+
+/* --- Brīdinājumu rindas: ikona tonētā aplī --- */
+html.d2 .alert .al-ic { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--panel2); color: var(--muted) }
+html.d2 .alert.warn .al-ic { background: var(--warn-bg); color: var(--amber) } html.d2 .alert.bad .al-ic { background: var(--bad-bg); color: var(--red) }
+html.d2 .alert .al-ic .ic { width: 17px; height: 17px }
+
+/* --- Kartītes cilnes --- */
+html.d2 .tabs { gap: 0; border-bottom-color: var(--edge); flex-wrap: wrap }
+html.d2 .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; box-shadow: none; border-radius: 10px 10px 0 0; padding: 9px 11px; gap: 6px; font-weight: 650; flex: none }
+html.d2 .tabs button .ic { width: 16px; height: 16px; opacity: .8 }
+html.d2 .tabs button:hover { background: var(--hover) }
+html.d2 .tabs button.active { color: var(--txt); border-bottom-color: var(--teal) } html.d2 .tabs button.active .ic { color: var(--teal); opacity: 1 }
+
+/* --- Avatāri: maigāki, saskaņā ar tēmu --- */
+html.d2 .avatar { border-radius: 12px; font-weight: 700 }
+html.d2[data-theme="light"] .avatar { background: hsl(var(--h) 55% 92%); color: hsl(var(--h) 45% 30%) }
+html.d2 .avatar.lg { border-radius: 20px }
+
+/* --- Dialogi, paziņojumi --- */
+html.d2 dialog { background: var(--dlg); color: var(--txt); border-color: var(--edge2); border-radius: 20px }
+html.d2[data-theme="light"] dialog::backdrop { background: #1b2b2266 }
+html.d2 .toast { background: var(--toast); border-color: var(--toast-edge); color: var(--txt); border-radius: 14px }
+html.d2 .toast.warn { background: var(--warn-bg); border-color: var(--warn-edge) } html.d2 .toast.err { background: var(--bad-bg); border-color: var(--bad-edge) }
+html.d2 .scan-msg.info { background: var(--info-bg); color: var(--info-tx) } html.d2 .scan-msg.ok { background: var(--ok-bg); color: var(--ok-tx) }
+html.d2 .scan-msg.warn { background: var(--warn-bg); color: var(--warn-tx) } html.d2 .scan-msg.err { background: var(--bad-bg); color: var(--bad-tx) }
+html.d2 .scan-side { background: var(--panel) } html.d2 .vw-tools { background: var(--panel2) } html.d2 .vw-scroll { background: var(--viewer) }
+html.d2 .tplbar { background: var(--warn-bg); border-color: var(--warn-edge) }
+html.d2 .vcrow:has(input[type=radio]:checked) { background: var(--ok-bg) }
+html.d2 .netwarn { background: var(--warn-bg); border-color: var(--warn-edge); color: var(--warn-tx) }
+html.d2 .bootidx { background: var(--panel) }
+
+/* --- Tēmas izvēle Iestatījumos --- */
+html.d2 .themepick { display: inline-flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--edge); border-radius: 13px }
+html.d2 .themepick button { box-shadow: none; border-color: transparent; background: transparent }
+html.d2 .themepick button.on { background: var(--panel); border-color: var(--edge2); color: var(--teal) }
+
+@media (prefers-reduced-motion: reduce) { html.d2 * { transition: none !important; animation: none !important } }
+
+/* pogas ar ikonām: vienmērīga atstarpe; ikonas bez teksta — kvadrātiskas */
+html.d2 button > .ic + *, html.d2 .btn > .ic { margin-right: 0 }
+html.d2 button.sm .ic, html.d2 .btn.sm .ic { width: 15px; height: 15px; vertical-align: -2px }
+html.d2 h2 > .ic { width: 22px; height: 22px; color: var(--teal); margin-right: 6px }
+html.d2 b > .ic { width: 15px; height: 15px; margin-right: 4px }
+
 </style>
 </head>
 <body>
@@ -315,27 +475,27 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
   <!-- Navigācijas josla -->
   <nav class="nav" aria-label="Galvenā navigācija">
     <img class="logo" src="PS_LOGO.png" alt="CADET PERSONĀLS" title="CADET PERSONĀLS">
-    <button data-page="dashboard" title="Pārskats"><span>▦</span><small>Pārskats</small></button>
-    <button data-page="people" title="Personas"><span>♙</span><small>Personas</small></button>
-    <button data-page="comms" title="Saziņa"><span>✉</span><small>Saziņa</small></button>
-    <button data-page="documents" title="Dokumenti"><span>▤</span><small>Dokumenti</small></button>
-    <button data-page="equipment" title="Ekipējums"><span>▣</span><small>Ekipējums</small></button>
-    <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span>⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
-    <button data-page="archive" title="Arhīvs"><span>◷</span><small>Arhīvs</small></button>
+    <button data-page="dashboard" title="Pārskats"><span data-ic="grid">▦</span><small>Pārskats</small></button>
+    <button data-page="people" title="Personas"><span data-ic="users">♙</span><small>Personas</small></button>
+    <button data-page="comms" title="Saziņa"><span data-ic="message">✉</span><small>Saziņa</small></button>
+    <button data-page="documents" title="Dokumenti"><span data-ic="file">▤</span><small>Dokumenti</small></button>
+    <button data-page="equipment" title="Ekipējums"><span data-ic="backpack">▣</span><small>Ekipējums</small></button>
+    <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span data-ic="bell">⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
+    <button data-page="archive" title="Arhīvs"><span data-ic="archive">◷</span><small>Arhīvs</small></button>
     <span class="grow"></span>
-    <button data-page="settings" title="Iestatījumi"><span>⚙</span><small>Iestatīj.</small></button>
+    <button data-page="settings" title="Iestatījumi"><span data-ic="sliders">⚙</span><small>Iestatīj.</small></button>
   </nav>
 
   <!-- Ātrā personu sānjosla -->
   <aside class="aside" aria-label="Personu saraksts">
-    <div class="aside-top"><h2>Personas <small id="sideCount" class="muted"></small></h2><button class="mainbtn sq" data-act="addPerson" title="Jauna persona">＋</button></div>
+    <div class="aside-top"><h2>Personas <small id="sideCount" class="muted"></small></h2><button class="mainbtn sq" data-act="addPerson" title="Jauna persona"><span data-ic="plus">＋</span></button></div>
     <input id="search" type="search" placeholder="Meklēt…  (Ctrl+K)" autocomplete="off">
     <div class="side-filters"><select id="groupFilter" aria-label="Grupa"></select><label class="check small"><input type="checkbox" id="sideArchive"> Arhīvs</label></div>
     <div class="sidebtns">
-      <button class="mainbtn" data-act="scan">📷 Ievadīt anketu</button>
-      <button data-act="import" title="Imports no Excel / CSV">⬆ Imports</button>
+      <button class="mainbtn" data-act="scan"><span data-ic="scan">📷</span> Ievadīt anketu</button>
+      <button data-act="import" title="Imports no Excel / CSV"><span data-ic="upload">⬆</span> Imports</button>
     </div>
-    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><span id="rootLabel" class="small muted"></span><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi">📁</button></div>
+    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><span id="rootLabel" class="small muted"></span><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi"><span data-ic="folder">📁</span></button></div>
     <div id="restoreBox"></div>
     <div id="sideList" class="sidelist"></div>
   </aside>
@@ -400,7 +560,7 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
       </aside>
     </div>
     <footer class="scan-foot">
-      <span class="muted small">Ritenītis — ritināt · Ctrl + ritenītis — tuvināt · klikšķis uz lauka izceļ tā zonu · bez veidnes lauki netiek aizpildīti</span>
+      <span class="muted small">Ritenītis — ritināt · Ctrl + ritenītis — tuvināt · klikšķis uz lauka izceļ tā zonu · bez veidnes lauki tiek atrasti automātiski pēc etiķetēm</span>
       <span class="grow"></span>
       <button type="button" data-act="scanClose">Atcelt</button>
       <button type="button" data-act="scanSave" data-arg="next">Apstiprināt un nākamā</button>
@@ -465,6 +625,24 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
   </form>
 </dialog>
 <datalist id="dl_items"><option value="Formas jaka"><option value="Formas bikses"><option value="Zābaki"><option value="Cepure"><option value="Josta"><option value="Mugursoma"><option value="Guļammaiss"><option value="Paklājiņš"></datalist>
+
+<!-- ============ Jaunsarga apliecība ============ -->
+<dialog id="idCardDialog">
+  <form id="idCardForm">
+    <header class="dlg-head"><h2 id="idCardTitle">Jaunsarga apliecība</h2><button type="button" class="ghost" data-close="idCardDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label>Statuss</label><select name="status">
+        <option value="none">Nav pieprasīta</option><option value="requested">Pieprasīta</option><option value="ready">Saņemta, jāpasniedz jaunsargam</option>
+        <option value="issued">Izdota jaunsargam</option><option value="returned">Nodota atpakaļ</option><option value="lost">Nozaudēta</option></select></div>
+      <div class="field" data-when="ready issued returned lost"><label>Apliecības numurs</label><input name="number" autocomplete="off" placeholder="piem., JS 012345"></div>
+      <div class="field" data-when="requested ready issued returned lost"><label>Pieprasīta</label><input name="requested" type="date"></div>
+      <div class="field" data-when="issued returned lost"><label>Izdota</label><input name="issued" type="date"></div>
+      <div class="field" data-when="ready issued"><label>Derīga līdz</label><input name="validUntil" type="date"></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Kas pasniedza, kad nodota atpakaļ, nozaudēšanas apstākļi u.c."></textarea></div>
+    </div><p id="idCardHint" class="small"></p><p class="small muted">Nav obligāti. Apliecības kopiju var pievienot cilnē “Apliecība”.</p></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="idCardDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
 
 <!-- ============ Paziņojumi, atverot rīku ============ -->
 <dialog id="noticeDialog" class="wide">

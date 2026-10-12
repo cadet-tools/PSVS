@@ -93,7 +93,7 @@
   ui.status = s => `<span class="status s-${s}">${CP.STATUSES[s] || s}</span>`;
   ui.pageHead = (title, sub = '', actions = '') =>
     `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
-  ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">💾 Saglabāt</button>`;
+  ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */
   ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}</dd>`).join('')}</dl>`;

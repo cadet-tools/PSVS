@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 17 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 19 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.9.7';
+  CP.VERSION = '1.10.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -307,7 +307,7 @@ window.CP = window.CP || {};
     waMode: 'web',
     autosave: true,
     retentionDefault: 12,
-    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
+    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
@@ -349,6 +349,7 @@ window.CP = window.CP || {};
     }
     // Jauni noklusētie rīki tiek pievienoti vienreiz (ja lietotājs tos izdzēš — atpakaļ netiek likti)
     const added = d.settings.toolsAdded = [...(raw.settings?.toolsAdded || (raw.settings ? [] : ['dvs']))];
+    if (!added.includes('kind-idcard')) { if (!d.settings.docKinds.includes('Jaunsarga apliecība')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Jaunsarga apliecība'); added.push('kind-idcard'); }
     if (!added.includes('dvs')) { if (!d.settings.tools.some(t => /dvs\.mod\.gov\.lv/i.test(t.url || ''))) d.settings.tools.push({ name: 'DVS', url: 'https://dvs.mod.gov.lv/' }); added.push('dvs'); }
     if (d.settings.ocr.engine !== 'google') d.settings.ocr.engine = d.settings.ocr.engine || 'tesseract';
     let seq = Number(d.nextFolderSeq) || 1;
@@ -597,6 +598,7 @@ window.CP = window.CP || {};
         if (m.state === 'missing') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: izsniegts ekipējums, bet nav MTL aprites lapas`, when: '' });
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
+      if (D.idCardAlerts) for (const r of D.idCardAlerts(roster.filter(p => p.status !== 'archived' || p.idCard?.status === 'issued'))) push(r);
       for (const g of D.phoneConflicts()) if (g.suspicious && g.entries.some(e => D.inYear(e.p))) {
         const who = [...new Map(g.entries.map(e => [e.p.id, e.p])).values()];
         push({ kind: 'phone', personId: who[0].id, sev: 1, msg: `Tālrunis ${U.prettyPhone(g.num)} norādīts dažādām personām: ${g.entries.map(e => e.f === 'phone' ? `${U.full(e.p)} (jaunietis)` : `${e.p[e.f.replace('Phone', 'Name')] || '?'} (${e.role}, ${U.full(e.p)})`).join('; ')}`, when: '' });
@@ -605,6 +607,108 @@ window.CP = window.CP || {};
     return a.sort((x, y) => y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
   };
   CP.data = D;
+})(window.CP);
+
+
+/* ==== js/icons.js ==== */
+/* =====================================================================
+   Ikonas un tēma (dizains v2).
+   Vienots līniju ikonu komplekts — 24×24, apaļi gali, krāsa = currentColor.
+   Ieslēdzas ar <meta name="cp-design" content="v2">; bez tā rīks izskatās kā līdz šim.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const P = {
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.8a3.2 3.2 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2"/>',
+    message: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><path d="M8 8.5h8M8 11.5h5"/>',
+    file: '<path d="M6.5 2.8h7L18.5 8v11.2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V4.8a2 2 0 0 1 2-2z"/><path d="M13.5 2.8V8h5M8 12.5h7M8 16h5"/>',
+    files: '<path d="M8 6.5V5a2 2 0 0 1 2-2h6l4 4v9.5a2 2 0 0 1-2 2h-1.5"/><path d="M5.5 7h6l3.5 3.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>',
+    fileAlert: '<path d="M6.5 2.8h7L18.5 8v11.2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V4.8a2 2 0 0 1 2-2z"/><path d="M13.5 2.8V8h5M11.5 11v4M11.5 17.8v.1"/>',
+    backpack: '<path d="M6.5 8.5a5.5 5.5 0 0 1 11 0v11a1.5 1.5 0 0 1-1.5 1.5H8a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M9.5 6.5V5a2.5 2.5 0 0 1 5 0v1.5M6.5 13.5h11M10 13.5v2.5h4v-2.5"/>',
+    bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    archive: '<rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5M10 12.5h4"/>',
+    sliders: '<path d="M4 7h9M17.5 7H20M4 17h2.5M11 17h9"/><circle cx="15.2" cy="7" r="2.3"/><circle cx="8.8" cy="17" r="2.3"/>',
+    scan: '<path d="M3.5 8V6A2.5 2.5 0 0 1 6 3.5h2M16 3.5h2A2.5 2.5 0 0 1 20.5 6v2M20.5 16v2a2.5 2.5 0 0 1-2.5 2.5h-2M8 20.5H6A2.5 2.5 0 0 1 3.5 18v-2M7 12h10"/>',
+    userPlus: '<circle cx="10" cy="8" r="3.8"/><path d="M3 20c.7-3.8 3.6-5.8 7-5.8 1.4 0 2.7.3 3.8 1M18 14v6M15 17h6"/>',
+    userCheck: '<circle cx="10" cy="8" r="3.8"/><path d="M3 20c.7-3.8 3.6-5.8 7-5.8 1.6 0 3 .4 4.1 1.2M15 18l2 2 4-4.5"/>',
+    userClock: '<circle cx="10" cy="8" r="3.8"/><path d="M3 20c.7-3.8 3.6-5.8 7-5.8"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M17.5 16v1.7l1.1.8"/>',
+    megaphone: '<path d="M3.5 10v4a1 1 0 0 0 1 1H7l7 4.5v-15L7 9H4.5a1 1 0 0 0-1 1z"/><path d="M17.5 9a4 4 0 0 1 0 6M7.5 15l1 5"/>',
+    upload: '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4.5 15v3A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-3"/>',
+    external: '<path d="M14 4h6v6M20 4l-8.5 8.5M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
+    layout: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 9.5h17M9.5 9.5v11"/>',
+    list: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    idcard: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.2 16c.5-1.6 1.8-2.4 3.3-2.4s2.8.8 3.3 2.4M14.5 10h4.5M14.5 13.5h3"/>',
+    clipboard: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5v-.7a1.3 1.3 0 0 1 1.3-1.3h3.4A1.3 1.3 0 0 1 15 3.8v.7M8.5 11l1.5 1.5 3-3M8.5 16.5h7"/>',
+    phone: '<path d="M5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16 16 0 0 1 3 5.7 2 2 0 0 1 5 3.5z"/>',
+    task: '<rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="m8 12 3 3 5-6"/>',
+    cake: '<path d="M4 20.5h16M5 20.5v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7M5 15.5c1.2 1 2.3 1 3.5 0s2.3-1 3.5 0 2.3 1 3.5 0 2.3-1 3.5 0M12 11.5V8"/><path d="M12 5.8c-.9-1-.9-2.1 0-3.3.9 1.2.9 2.3 0 3.3z"/>',
+    adult: '<circle cx="12" cy="12" r="8.5"/><text x="12" y="15.3" text-anchor="middle" font-size="8.6" font-weight="800" fill="currentColor" stroke="none">18</text>',
+    camera: '<path d="M4.5 7.5h3L9 5h6l1.5 2.5h3A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V9a1.5 1.5 0 0 1 1.5-1.5z"/><circle cx="12" cy="13" r="3.5"/>',
+    folder: '<path d="M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+    save: '<path d="M5 3.5h11l3.5 3.5v11.5a2 2 0 0 1-2 2H5a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M8 3.5v5h7v-5M7.5 20.5v-6h9v6"/>',
+    edit: '<path d="M14.5 5.5l4 4M4 20l1-4.5L15.8 4.7a1.8 1.8 0 0 1 2.5 0l1 1a1.8 1.8 0 0 1 0 2.5L8.5 19z"/>',
+    chat: '<path d="M20.5 11.5a8 8 0 0 1-11.8 7L3.5 20l1.5-4.8A8 8 0 1 1 20.5 11.5z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/>',
+    contactCard: '<rect x="4" y="3" width="15" height="18" rx="2.5"/><circle cx="11.5" cy="10" r="2.6"/><path d="M7.5 17c.6-2 2.1-3 4-3s3.4 1 4 3M19 7h1.5M19 12h1.5"/>',
+    clip: '<path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/>',
+    unlock: '<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 7.7-1.5M12 14.5v2.5"/>',
+    refresh: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/>',
+    download: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4.5 15v3A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-3"/>',
+    alert: '<path d="M10.3 4.2 2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.5M12 17.2v.1"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+    inbox: '<path d="M3.5 13.5 6 5.5a1.5 1.5 0 0 1 1.4-1h9.2a1.5 1.5 0 0 1 1.4 1l2.5 8v4.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 13.5h5l1 2.5h5l1-2.5h5"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    mobile: '<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
+    folderOpen: '<path d="M3.5 18V7a2 2 0 0 1 2-2h4l2 2.5h6a2 2 0 0 1 2 2v1.5"/><path d="M3.5 18l2.3-6.2a1.5 1.5 0 0 1 1.4-1h13.3a1 1 0 0 1 .9 1.4L19 17.6a2 2 0 0 1-1.8 1.4H5a1.5 1.5 0 0 1-1.5-1z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>'
+  };
+  CP.ICON_NAMES = Object.keys(P);
+  CP.D2 = ((document.querySelector('meta[name="cp-design"]') || {}).content || '') === 'v2';
+  /** Ikona kā SVG (dizainā v2) vai iepriekšējais simbols (fallback) */
+  CP.ic = (name, fallback = '') => CP.D2 && P[name] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[name]}</svg>` : fallback;
+  /** Statiskajā HTML: <span data-ic="grid">▦</span> → ikona */
+  CP.hydrateIcons = (root = document) => { if (!CP.D2) return; root.querySelectorAll('[data-ic]').forEach(el => { if (!el.dataset.icDone) { el.innerHTML = CP.ic(el.dataset.ic, el.innerHTML); el.dataset.icDone = '1'; } }); };
+
+  /* Pogu sākuma simboli → ikonas (v2). Teksts paliek; simbols tiek aizstāts tikai vizuāli. */
+  const EMO = { '＋': 'plus', '➕': 'plus', '⬇': 'download', '⚠': 'alert', '📎': 'clip', '✉': 'message', '🔓': 'unlock', '📁': 'folder', '📂': 'folderOpen', '📄': 'file', '💬': 'chat',
+    '📇': 'contactCard', '📷': 'scan', '↻': 'refresh', '⟳': 'refresh', '☎': 'phone', '📞': 'phone', '✎': 'edit', '📥': 'inbox', '⬆': 'upload', '📱': 'mobile', '💾': 'save', '↗': 'external', '🔔': 'bell', '📅': 'calendar', '⧉': 'copy', '🪪': 'idcard', '⇩': 'download' };
+  const EMO_RE = new RegExp('^\\s*(' + Object.keys(EMO).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\uFE0F?\\s*');
+  CP.iconize = (root = document) => {
+    if (!CP.D2) return;
+    root.querySelectorAll('button, a.btn, .btn, label.btn, h2, h3, b').forEach(el => {
+      const t = el.firstChild; if (!t || t.nodeType !== 3) return;
+      const m = t.nodeValue.match(EMO_RE); if (!m) return;
+      t.nodeValue = t.nodeValue.slice(m[0].length);
+      el.insertAdjacentHTML('afterbegin', CP.ic(EMO[m[1]]) + (t.nodeValue.trim() ? '' : ''));
+    });
+  };
+
+  /* --- Tēma: tumšā (noklusējums) / gaišā / kā sistēmā. Pārlūkā, nevis datu failā. --- */
+  CP.theme = {
+    get() { try { return localStorage.getItem('cp-theme') || 'dark'; } catch (e) { return 'dark'; } },
+    set(v) { try { localStorage.setItem('cp-theme', v); } catch (e) { /* tikai ērtībai */ } CP.theme.apply(); },
+    apply() {
+      if (!CP.D2) return;
+      const v = CP.theme.get(), light = v === 'light' || (v === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+      document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = light ? '#f3f6f4' : '#0b1219';
+    }
+  };
+  if (CP.D2) {
+    document.documentElement.classList.add('d2');
+    CP.theme.apply();
+    try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => CP.theme.get() === 'auto' && CP.theme.apply()); } catch (e) { /* vecs pārlūks */ }
+    CP.hydrateIcons();
+    // pēc katras pārzīmēšanas (lapas, dialogi, paziņojumi)
+    let pend = false;
+    new MutationObserver(() => { if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; CP.hydrateIcons(); CP.iconize(); }); }).observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', () => CP.iconize());
+    setTimeout(() => CP.iconize(), 0);
+  }
 })(window.CP);
 
 
@@ -1772,7 +1876,7 @@ window.CP = window.CP || {};
   ui.status = s => `<span class="status s-${s}">${CP.STATUSES[s] || s}</span>`;
   ui.pageHead = (title, sub = '', actions = '') =>
     `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="actions">${actions}</div></header>`;
-  ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">💾 Saglabāt</button>`;
+  ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */
   ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}</dd>`).join('')}</dl>`;
@@ -1982,7 +2086,8 @@ window.CP = window.CP || {};
   };
 
   /* =================== Personas kartiņa =================== */
-  const TABS = [['overview', 'Pārskats'], ['data', 'Visi dati'], ['docs', 'Dokumenti'], ['history', 'Vēsture'], ['relations', 'Saistības'], ['equipment', 'Ekipējums']];
+  const TABS = [['overview', 'Pārskats'], ['data', 'Visi dati'], ['docs', 'Dokumenti'], ['history', 'Vēsture'], ['relations', 'Saistības'], ['equipment', 'Ekipējums'], ['idcard', 'Apliecība']];
+  const TAB_IC = { overview: 'layout', data: 'list', docs: 'file', history: 'clock', relations: 'link', equipment: 'backpack', idcard: 'idcard' };
 
   CP.pages.person = {
     render() {
@@ -2002,8 +2107,8 @@ window.CP = window.CP || {};
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
           ${ui.saveBtn()}</div></header>`;
-      const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '' };
-      const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
+      const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' };
+      const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';
       if (S.tab === 'overview') body = overview(p, miss);
       else if (S.tab === 'data') body = allData(p);
@@ -2011,6 +2116,7 @@ window.CP = window.CP || {};
       else if (S.tab === 'history') body = history(p);
       else if (S.tab === 'relations') body = relations(p);
       else if (S.tab === 'equipment') body = CP.equipment.personTab(p);
+      else if (S.tab === 'idcard') body = CP.idcard.personTab(p);
       return `<div class="page">${head}<div class="person-layout"><div class="pl-main">${tabs}${body}</div><aside class="pl-side">${side(p, miss)}</aside></div></div>`;
     }
   };
@@ -2081,7 +2187,7 @@ window.CP = window.CP || {};
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
   const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
-  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' };
+  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība'};
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });
@@ -2989,7 +3095,7 @@ window.CP = window.CP || {};
       : m.state === 'outdated' ? `<p class="warn">⚠ Ekipējumā ir izmaiņas (${U.fmtDateTime(m.lastChange)}), bet jauna MTL lapa nav pievienota. Pēdējā lapa: ${U.fmtDate(last.received)}.</p>`
       : m.state === 'ok' ? `<p class="good">✓ MTL lapa ir aktuāla (${U.fmtDate(last.received)}).</p>`
       : `<p class="muted small">Nav izsniegta ekipējuma — MTL lapa nav nepieciešama.</p>`;
-    return `<section class="card ${m.state === 'missing' || m.state === 'outdated' ? 'dupcard' : ''}"><h3>MTL aprites lapa
+    return `<section class="card ${m.state === 'missing' || m.state === 'outdated' ? 'dupcard' : ''}"><h3>${CP.ic('clipboard')}MTL aprites lapa
         <span class="right actions"><button class="sm mainbtn" data-act="attach" data-arg="${p.id}|${esc(D.MTL)}">📎 Pievienot ${last ? 'jaunu ' : ''}lapu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(D.MTL)}">📄 Papīra</button></span></h3>
       ${status}
       ${m.all.length ? m.all.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : ''}</section>`;
@@ -2998,7 +3104,7 @@ window.CP = window.CP || {};
 
   eq.personTab = p => {
     const arr = S.db.equipment.filter(e => e.personId === p.id).sort((a, b) => (a.returned ? 1 : 0) - (b.returned ? 1 : 0) || String(b.issued).localeCompare(String(a.issued)));
-    return mtlCard(p) + `<section class="card"><h3>Ekipējums <button class="sm mainbtn right" data-act="addEq" data-arg="${p.id}">＋ Izsniegt</button></h3>${table(arr, false)}</section>`;
+    return mtlCard(p) + `<section class="card"><h3>${CP.ic('backpack')}Ekipējums <button class="sm mainbtn right" data-act="addEq" data-arg="${p.id}">＋ Izsniegt</button></h3>${table(arr, false)}</section>`;
   };
   CP.pages.equipment = {
     render() {
@@ -3050,6 +3156,126 @@ window.CP = window.CP || {};
     if (m && (m.state === 'missing' || m.state === 'outdated')) ui.toast(m.state === 'missing' ? 'Ekipējums izsniegts — pievieno MTL aprites lapu.' : 'Ekipējumā izmaiņas — pievieno atjaunotu MTL aprites lapu.', 'warn', 10000, { label: '📎 Pievienot MTL', act: 'attach', arg: `${pid}|${D.MTL}` });
   }
   CP.equipment = eq;
+})(window.CP);
+
+
+/* ==== js/idcard.js ==== */
+/* =====================================================================
+   Jaunsarga apliecība — neobligāta, tāpat kā ekipējums.
+   Glabājas personas ierakstā: p.idCard = { status, number, requested, issued, validUntil, notes, changedAt }
+   Skenējums — parasts dokuments ar veidu “Jaunsarga apliecība”.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const KIND = D.IDCARD = 'Jaunsarga apliecība';
+  const ST = D.IDCARD_STATUS = {
+    none: { l: 'Nav pieprasīta', c: '' },
+    requested: { l: 'Pieprasīta', c: 'warn' },
+    ready: { l: 'Saņemta, jāpasniedz', c: 'warn' },
+    issued: { l: 'Izdota', c: 'ok' },
+    returned: { l: 'Nodota atpakaļ', c: '' },
+    lost: { l: 'Nozaudēta', c: 'bad' }
+  };
+  const card = p => p?.idCard || null;
+  const scans = p => S.db.documents.filter(d => d.personId === p.id && d.kind === KIND).sort((a, b) => String(b.received || b.addedAt || '').localeCompare(String(a.received || a.addedAt || '')));
+  const numKey = n => String(n || '').replace(/\s+/g, '').toUpperCase();
+
+  /** Cita persona ar to pašu numuru */
+  D.idCardDuplicate = (num, selfId) => { const k = numKey(num); return k ? S.db.people.find(x => x.id !== selfId && numKey(x.idCard?.number) === k) : null; };
+
+  /** Brīdinājumi (izsauc D.alerts pašreizējā mācību gadā) */
+  D.idCardAlerts = roster => {
+    const out = [];
+    for (const p of roster) {
+      const c = card(p); if (!c || !c.status || c.status === 'none') continue;
+      const who = U.full(p);
+      if ((c.status === 'issued' || c.status === 'ready') && !String(c.number || '').trim()) out.push({ kind: 'idcard', personId: p.id, sev: 1, msg: `${who}: apliecība ${c.status === 'issued' ? 'izdota' : 'saņemta'}, bet nav ievadīts numurs`, when: '' });
+      if (c.status === 'issued' && c.validUntil) {
+        const d = U.daysTo(c.validUntil);
+        if (d < 0) out.push({ kind: 'idcard', personId: p.id, sev: 1, msg: `${who}: jaunsarga apliecībai beidzies derīgums`, when: c.validUntil });
+        else if (d <= 30) out.push({ kind: 'idcard', personId: p.id, sev: 0, msg: `${who}: apliecība derīga vēl ${d} d.`, when: c.validUntil });
+      }
+      if (c.status === 'requested' && c.requested && U.daysTo(c.requested) < -60) out.push({ kind: 'idcard', personId: p.id, sev: 0, msg: `${who}: apliecība pieprasīta pirms ${-U.daysTo(c.requested)} dienām, vēl nav saņemta`, when: c.requested });
+      if (c.status === 'ready') out.push({ kind: 'idcard', personId: p.id, sev: 0, msg: `${who}: apliecība saņemta — jāpasniedz jaunsargam`, when: '' });
+      if (c.status === 'issued' && (p.status === 'archived' || p.status === 'paused')) out.push({ kind: 'idcard', personId: p.id, sev: 1, msg: `${who}: dalība beigusies, bet apliecība nav nodota atpakaļ`, when: '' });
+      if (c.status === 'issued' && c.number && D.idCardDuplicate(c.number, p.id)) out.push({ kind: 'idcard', personId: p.id, sev: 1, msg: `${who}: apliecības nr. ${c.number} ievadīts arī citai personai`, when: '' });
+    }
+    return out;
+  };
+
+  /** Īss statuss (cilnes skaitītājam / sarakstiem) */
+  D.idCardBadge = p => {
+    const c = card(p); if (!c || !c.status || c.status === 'none') return '';
+    const bad = D.idCardAlerts([p]).some(a => a.sev > 0);
+    return bad ? '<span class="warn">⚠</span>' : c.status === 'issued' ? '✓' : '•';
+  };
+
+  /** Personas cilne “Apliecība” */
+  CP.idcard = {
+    personTab(p) {
+      const c = card(p), st = ST[c?.status || 'none'] || ST.none, sc = scans(p), al = D.idCardAlerts([p]);
+      const dup = c?.number ? D.idCardDuplicate(c.number, p.id) : null;
+      const rows = c && c.status && c.status !== 'none' ? ui.dl([
+        ['Statuss', `<span class="pill ${st.c}">${esc(st.l)}</span>`, true],
+        ['Apliecības numurs', c.number ? `<b class="mono">${esc(c.number)}</b>${dup ? ` <span class="pill bad">sakrīt ar: ${esc(U.full(dup))}</span>` : ''}` : '<span class="muted">nav ievadīts</span>', true],
+        ['Pieprasīta', U.fmtDate(c.requested)],
+        ['Izdota', U.fmtDate(c.issued)],
+        ['Derīga līdz', c.validUntil ? `${esc(U.fmtDate(c.validUntil))}${U.daysTo(c.validUntil) < 0 ? ' <span class="pill bad">beidzies</span>' : ''}` : '', true],
+        ['Piezīmes', c.notes || '']
+      ]) : `<p class="muted">Apliecības dati nav ievadīti. Tas nav obligāti — aizpildi, kad apliecību pieprasi vai izsniedz.</p>`;
+      return `<section class="card ${al.some(a => a.sev > 0) ? 'dupcard' : ''}"><h3>${CP.ic('idcard', '🪪')} Jaunsarga apliecība
+          <span class="right actions"><button class="sm mainbtn" data-act="editIdCard" data-arg="${p.id}">${c && c.status && c.status !== 'none' ? '✎ Labot' : '＋ Ievadīt datus'}</button></span></h3>
+        ${al.length ? al.map(a => `<p class="${a.sev ? 'warn' : 'muted'}">${a.sev ? '⚠' : 'ℹ'} ${esc(a.msg.replace(U.full(p) + ': ', ''))}</p>`).join('') : ''}
+        ${rows}</section>
+        <section class="card"><h3>Apliecības kopija
+          <span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(KIND)}">📎 Pievienot skenējumu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(KIND)}">📄 Papīra</button></span></h3>
+        ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota. Skenējums nav obligāts.</p>'}</section>`;
+    }
+  };
+
+  /* --- Labošanas logs --- */
+  const f = U.$('idCardForm'), fld = n => f.querySelector(`[name="${n}"]`);
+  function syncFields() {
+    const s = fld('status').value;
+    U.qsa('#idCardForm [data-when]').forEach(el => el.classList.toggle('hidden', !el.dataset.when.split(' ').includes(s)));
+    const dup = D.idCardDuplicate(fld('number').value, f.dataset.pid);
+    U.$('idCardHint').innerHTML = dup ? `<span class="warn">⚠ Šis numurs jau ievadīts: ${esc(U.full(dup))}</span>` : '';
+  }
+  A.editIdCard = pid => {
+    const p = D.person(pid); if (!p) return;
+    const c = card(p) || {};
+    f.reset(); f.dataset.pid = pid;
+    U.$('idCardTitle').textContent = 'Jaunsarga apliecība — ' + U.full(p);
+    for (const k of ['status', 'number', 'requested', 'issued', 'validUntil', 'notes']) fld(k).value = c[k] || (k === 'status' ? 'none' : '');
+    syncFields(); U.$('idCardDialog').showModal(); fld('status').focus();
+  };
+  f.addEventListener('change', e => {
+    if (e.target.name === 'status') {   // ērtībai — šodienas datums, ja vēl nav
+      const s = e.target.value;
+      if (s === 'requested' && !fld('requested').value) fld('requested').value = U.iso();
+      if (s === 'issued' && !fld('issued').value) fld('issued').value = U.iso();
+    }
+    syncFields();
+  });
+  f.addEventListener('input', e => { if (e.target.name === 'number') syncFields(); });
+  f.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const p = D.person(f.dataset.pid); if (!p) return;
+    const o = Object.fromEntries(new FormData(f)); for (const k in o) o[k] = String(o[k] || '').trim();
+    if ((o.status === 'issued' || o.status === 'ready') && !o.number && !confirm('Apliecības numurs nav ievadīts. Saglabāt tāpat?')) return;
+    const dup = D.idCardDuplicate(o.number, p.id);
+    if (dup && !confirm(`Numurs ${o.number} jau ievadīts personai ${U.full(dup)}. Saglabāt tāpat?`)) return;
+    const prev = p.idCard || {}, changed = Object.keys(o).filter(k => String(prev[k] || '') !== o[k]);
+    if (changed.length) {
+      p.idCard = { ...prev, ...o, changedAt: U.now() };
+      p.updatedAt = U.now();
+      D.audit(p.id, 'idcard', [ST[o.status]?.l || o.status, ...(o.number && changed.includes('number') ? ['nr. ' + o.number] : [])]);
+      CP.store.changed();
+    }
+    U.$('idCardDialog').close();
+    if (changed.includes('status') && o.status === 'issued' && !scans(p).length) ui.toast('Apliecība atzīmēta kā izdota. Ja vēlies, pievieno tās kopiju.', 'ok', 9000, { act: 'attach', arg: `${p.id}|${KIND}`, label: '📎 Pievienot' });
+  });
 })(window.CP);
 
 
@@ -3159,7 +3385,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: '▣', phone: '☎', task: '☐', retention: '🗄', birthday: '🎂', adult: '🔞', equipment: '▣', document: '📄' };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}</div>`;
@@ -3191,19 +3417,19 @@ window.CP = window.CP || {};
         ${start}
         ${CP.years?.banner() || ''}
         <div class="stats">
-          <button class="stat" data-act="openList" data-arg="active"><span>Aktīvie</span><strong>${cnt('active')}</strong></button>
-          <button class="stat" data-act="openList" data-arg="candidate"><span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
-          <button class="stat" data-act="openList" data-arg="missing"><span>Trūkst dokumentu</span><strong class="${miss.length ? 'warn' : ''}">${miss.length}</strong></button>
-          <button class="stat" data-page="documents"><span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
-          <button class="stat" data-page="equipment"><span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && D.inYear(D.person(x.personId))).length}</strong></button>
-          <button class="stat" data-page="alerts"><span>Uzdevumi un brīdinājumi</span><strong class="${al.some(a => a.sev > 1) ? 'red' : al.length ? 'warn' : ''}">${al.length}</strong></button>
+          <button class="stat" data-tone="green" data-act="openList" data-arg="active">${CP.ic('userCheck')}<span>Aktīvie</span><strong>${cnt('active')}</strong></button>
+          <button class="stat" data-tone="blue" data-act="openList" data-arg="candidate">${CP.ic('userClock')}<span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
+          <button class="stat" data-tone="amber" data-act="openList" data-arg="missing">${CP.ic('fileAlert')}<span>Trūkst dokumentu</span><strong class="${miss.length ? 'warn' : ''}">${miss.length}</strong></button>
+          <button class="stat" data-tone="violet" data-page="documents">${CP.ic('files')}<span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
+          <button class="stat" data-tone="olive" data-page="equipment">${CP.ic('backpack')}<span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && D.inYear(D.person(x.personId))).length}</strong></button>
+          <button class="stat" data-tone="red" data-page="alerts">${CP.ic('bell')}<span>Uzdevumi un brīdinājumi</span><strong class="${al.some(a => a.sev > 1) ? 'red' : al.length ? 'warn' : ''}">${al.length}</strong></button>
         </div>
-        <section class="card quick"><button class="mainbtn" data-act="scan">📷 Ievadīt no anketas</button><button data-act="addPerson">＋ Jauna persona</button><button data-page="comms">✉ Ziņa grupai</button><button data-act="import">⬆ Imports no Excel / e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">↗ ${esc(t.name)}</a>`).join('')}</section>
+        <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel / e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
         <div class="cards2">
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
           <section class="card"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 8).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}</section>
           <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
+          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
         </div></div>`;
     }
   };
@@ -3389,6 +3615,7 @@ window.CP = window.CP || {};
     render() {
       const s = S.db.settings, o = s.ocr;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION} · datu shēma v${CP.SCHEMA}`, ui.saveBtn())}
+      ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}">${l}</button>`).join('')}</span><span class="small muted">Tēma tiek atcerēta šajā pārlūkā.</span></div></section>` : ''}
       <section class="card"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
@@ -3556,6 +3783,7 @@ window.CP = window.CP || {};
   };
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
+  A.setTheme = v => { CP.theme.set(v); CP.render(); };
   A.restoreRoot = () => CP.store.restoreRoot();
   A.retryRestore = () => CP.store.retryRestore();
   A.bootNew = () => CP.store.bootNew();

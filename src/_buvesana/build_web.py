@@ -16,7 +16,7 @@ CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
        "connect-src 'self' blob: data: https://vision.googleapis.com; worker-src 'self' blob:; frame-src 'self' blob:; "
        "object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'")
 
-def build(channel, out, vendor_rel):
+def build(channel, out, vendor_rel, design=''):
     tmp = out + '.__tmp'
     subprocess.run([sys.executable, '-I', os.path.join(here, 'build.py'), src, tmp], check=True, stdout=subprocess.DEVNULL)
     os.makedirs(out, exist_ok=True)
@@ -27,7 +27,10 @@ def build(channel, out, vendor_rel):
             '<meta name="theme-color" content="#0b1219">\n<link rel="manifest" href="manifest.webmanifest">\n'
             '<link rel="icon" href="icons/icon-192.png">\n<link rel="apple-touch-icon" href="icons/icon-192.png">\n')
     html = html.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n' + head, 1)
-    if channel == 'test': html = html.replace('<title>CADET PERSONĀLS</title>', '<title>CADET PERSONĀLS (TESTS)</title>')
+    if channel == 'test':
+        html = html.replace('<title>CADET PERSONĀLS</title>', '<title>CADET PERSONĀLS (TESTS)</title>')
+    if design: html = html.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n<meta name="cp-design" content="' + design + '">', 1)
+    html = html.replace('url("vendor/', 'url("' + vendor_rel)
     open(f'{out}/index.html', 'w', encoding='utf-8').write(html)
     shutil.rmtree(tmp)
     name = 'CADET PERSONĀLS' + (' (TESTS)' if channel == 'test' else '')
@@ -40,8 +43,9 @@ def build(channel, out, vendor_rel):
     sw = sw.replace('__CACHE__', f'cadet-{channel}-{ver}').replace('__PREFIX__', f'cadet-{channel}-')
     open(f'{out}/sw.js', 'w', encoding='utf-8').write(sw)
 
-build('stable', repo, 'vendor/')
-build('test', f'{repo}/test', '../vendor/')
+# Dizaina karogs: CP_DESIGN_STABLE / CP_DESIGN_TEST (piem. 'v2'); testa kanālam pēc noklusējuma v2
+build('stable', repo, 'vendor/', os.environ.get('CP_DESIGN_STABLE', ''))
+build('test', f'{repo}/test', '../vendor/', os.environ.get('CP_DESIGN_TEST', 'v2'))
 
 # kopīgais vendor
 v = f'{repo}/vendor'

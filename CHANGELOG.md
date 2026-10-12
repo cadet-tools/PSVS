@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.10.0 — 2026-10-12 — Jaunsarga apliecība; jauns izskats (testa versijā)
+- **Jaunsarga apliecība** personas kartītē (cilne “Apliecība”), neobligāta kā ekipējums. Tajā ir statuss (nav pieprasīta / pieprasīta / saņemta, jāpasniedz / izdota / nodota atpakaļ / nozaudēta), numurs, datumi (pieprasīta, izdota, derīga līdz), piezīmes un apliecības kopija (skenējums vai papīrs).
+- Brīdinājumi: izdota bez numura; derīgums beidzies vai beigsies 30 dienās; pieprasīta pirms vairāk nekā 60 dienām; saņemta, bet nav pasniegta; dalība beigusies, bet apliecība nav nodota; vienāds numurs divām personām. Izmaiņas redzamas vēsturē.
+- Dokumentu veidos pievienots “Jaunsarga apliecība”.
+- **Dizains v2** (pagaidām tikai `/test/`): vienots līniju ikonu komplekts, statistika krāsu flīzēs, Manrope burti (iekļauti rīkā), gaišā un tumšā tēma (Iestatījumi → Izskats). Tīmekļa versijai bez ārējiem serveriem.
+
 ## 1.9.7 — 2026-10-12 — Droši atjauninājumi
 - Pirms datu faila pārveidošanas uz jaunāku datu shēmu `_rezerves` mapē automātiski tiek saglabāta oriģināla kopija (`DATI_pirms_atjauninasanas_vX-vY_….json`).
 - Ja datu failu saglabājusi jaunāka rīka versija, bet atvērta vecāka (piem. no keša vai zibatmiņas), dati tiek atvērti tikai apskatei un saglabāšana ir atslēgta, lai tos nesabojātu.

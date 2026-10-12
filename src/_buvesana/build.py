@@ -14,8 +14,14 @@ def repl(m):
     r = '<script src="app.bundle.js"></script>' if first else ''
     first = False; return r
 html = re.sub(r'<script src="js/[^"]+"></script>\n?', repl, html)
-css = open(f'{src}/css/app.css', encoding='utf-8').read()
-html = html.replace('<link rel="stylesheet" href="css/app.css">', '<style>\n' + css + '\n</style>')
+links = re.findall(r'<link rel="stylesheet" href="(css/[^"]+)">\n?', html)
+css = '\n'.join(open(f'{src}/{l}', encoding='utf-8').read() for l in links)
+first_css = True
+def css_repl(m):
+    global first_css
+    r = '<style>\n' + css + '\n</style>\n' if first_css else ''
+    first_css = False; return r
+html = re.sub(r'<link rel="stylesheet" href="css/[^"]+">\n?', css_repl, html)
 open(f'{out}/index.html', 'w', encoding='utf-8').write(html)
 im = Image.open(f'{src}/PS_LOGO.png'); im.thumbnail((192, 192), Image.LANCZOS)
 im = im.quantize(colors=256, method=Image.FASTOCTREE) if im.mode == 'RGBA' else im
