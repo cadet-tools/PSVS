@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.9.4 — 2026-10-12 — Mierīgs starts
+- Rīka atvēršana vairs nerada “nesaglabātas izmaiņas” un nepārraksta datu failu. Pēdējās atvēršanas datums (vecuma izmaiņu paziņojumiem) tagad glabājas pārlūkā.
+- Startā vairs nerāda “Pieslēdz datu mapi”, ja mape jau ir atcerēta. Tā vietā redzams **“Atver datu mapi”** ar progresa joslu un soļiem: meklē mapi, pārbauda piekļuvi, pārbauda pieejamību, nolasa datu failu, mācību gadu mapes. Ja mape atbild lēni, parādās “uzgaidi”.
+- Ja mapi neizdodas atvērt, tiek parādīts konkrēts iemesls un ieteikumi: mape nav atrasta, mapē nav datu faila vai mape neatbild. Pieejamās pogas ir **↻ Mēģināt vēlreiz**, **Izvēlēties citu mapi** un ievilkšana. Ja trūkst datu faila, tukša uzskaite automātiski vairs netiek izveidota.
+- Pēc ielādes dokumentu indeksēšana notiek fonā ar skaitītāju, un ar personām var strādāt uzreiz.
+- Jaunai mapei datu fails tiek izveidots uzreiz pēc pieslēgšanas.
+
 ## 1.9.3 — 2026-10-12 — Tīmekļa versija (GitHub Pages)
 - Programmu var atvērt no `https://cadet-tools.github.io/PSVS/`. Dati paliek datora mapē, ko izvēlas katrs lietotājs. Tīkla ceļa (`\\jicfs01`) problēma šai versijai neattiecas.
 - Teksta atpazīšana (Tesseract 7, latviešu + angļu) ir iekļauta pašā rīkā. Tīmekļa versija nesazinās ar ārējiem serveriem; to nodrošina drošības politika (CSP). Izņēmums ir Google Vision, ja to ieslēdz ar savu atslēgu.

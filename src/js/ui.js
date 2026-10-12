@@ -25,9 +25,12 @@
 
   ui.updateSaveState = () => {
     const lbl = U.$('rootLabel');
+    const B = S.boot;
     if (lbl) lbl.innerHTML = S.root
-      ? `<span class="dotstate ${S.conflict ? 'err' : S.dirty ? 'warn' : 'ok'}"></span>${U.esc(S.rootName)} · ${S.conflict ? 'konflikts' : S.dirty ? 'nesaglabāts' : 'saglabāts'}`
-      : 'Datu mape nav izvēlēta';
+      ? `<span class="dotstate ${S.conflict ? 'err' : S.dirty ? 'warn' : 'ok'}"></span>${U.esc(S.rootName)} · ${S.conflict ? 'konflikts' : S.dirty ? 'nesaglabāts' : B?.step === 'index' ? 'indeksē…' : 'saglabāts'}`
+      : B && !B.error ? `<span class="spin"></span> Atver ${B.name ? '“' + U.esc(B.name) + '”' : 'datu mapi'}…`
+      : B?.error ? '<span class="dotstate err"></span> Mape nav pieejama'
+      : S.pendingRoot ? 'Jāapstiprina piekļuve' : 'Datu mape nav izvēlēta';
     U.qsa('[data-act="save"]').forEach(b => { b.classList.toggle('pending', S.dirty); });
   };
 
@@ -52,7 +55,7 @@
     const l = CP.store.diag?.last;
     const net = CP.store.netPath ? `<div class="netwarn">⚠ ${U.esc(CP.store.netPathMsg())}<br><span class="small muted">Pašreizējā adrese: ${U.esc(decodeURI(location.href))}</span></div>` : '';
     return net + `<div class="rootdrop" data-rootdrop="1"><b>⇩ Ievelc datu mapi šeit</b><span class="small muted">Atver File Explorer, satver mapi (piem. “CADET PERSONALS”) un ievelc to šajā laukā. Darbojas arī tad, ja mapes dialogs rāda kļūdu.</span></div>`
-      + (l && l.error ? `<p class="small err-text">Pēdējā kļūda (${U.esc(l.via)} → ${U.esc(l.step)}${l.ms != null ? ', ' + l.ms + ' ms' : ''}): ${U.esc(l.error)}</p>` : '');
+      + (l && l.error && !S.boot?.error ? `<p class="small err-text">Pēdējā kļūda (${U.esc(l.via)} → ${U.esc(l.step)}${l.ms != null ? ', ' + l.ms + ' ms' : ''}): ${U.esc(l.error)}</p>` : '');
   };
 
   function renderNav() {
@@ -80,7 +83,7 @@
       return `<button class="person ${S.page === 'person' && S.selected === p.id ? 'active' : ''} ${p.status === 'archived' ? 'archived' : ''}" data-person="${p.id}">
         ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${U.esc(D.groupOf(p) || 'Bez grupas')}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
         ${miss ? `<span class="dot" title="Trūkst dokumentu: ${miss}"></span>` : ''}</button>`;
-    }).join('') || `<p class="muted small pad">${S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
+    }).join('') || `<p class="muted small pad">${S.boot && !S.root ? (S.boot.error ? 'Datu mape nav pieejama' : 'Gaida datu mapi…') : S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
   }
   ui.renderSide = renderSide;
 

@@ -15,10 +15,23 @@
       const miss = cur.map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length).sort((a, b) => b.m.length - a.m.length || U.cmp(U.sortName(a.p), U.sortName(b.p)));
       const cnt = s => cur.filter(p => D.partStatus(p) === s).length;
       const recent = [...S.db.audit].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 8);
-      const start = !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.</p>
+      const B = S.boot;
+      const start = B && !S.root && !B.error ? `<section class="card hero boot"><h2>Atver datu mapi${B.name ? ` “${esc(B.name)}”` : ''}</h2>
+          <div class="bootbar"><span style="width:${Math.max(4, B.pct || 0)}%"></span></div>
+          <p><b>${esc(B.msg || 'Lūdzu, uzgaidi…')}</b></p>
+          <p class="muted small">${esc(B.detail || 'Pārbauda mapes pieejamību. Tīkla mapei vai zibatmiņai tas var aizņemt kādu brīdi — lūdzu, uzgaidi.')}</p></section>`
+        : B && B.error && !S.root ? `<section class="card hero booterr"><h2>⚠ ${esc(B.title)}</h2>
+          <ul class="hints">${B.hints.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          ${B.errText ? `<p class="small muted">Tehniski: ${esc(B.errText)}</p>` : ''}
+          <div class="actions"><button class="mainbtn" data-act="retryRestore">↻ Mēģināt vēlreiz</button>${B.error === 'nodata' ? '<button data-act="bootNew">Sākt jaunu uzskaiti šeit</button>' : ''}<button data-act="pickRoot">📁 Izvēlēties citu mapi</button></div>
+          ${ui.rootDrop()}</section>`
+        : !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>${S.pendingRoot ? `Mape <b>“${esc(S.pendingRoot.name)}”</b> ir atrasta. Chrome drošības dēļ pēc pārlūka restartēšanas lūdz apstiprināt piekļuvi — spied pogu zemāk.` : 'Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.'}</p>
         <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : `<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>`}</div>
         ${ui.rootDrop()}
-        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>` : '';
+        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>`
+        : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
+      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
+      if (!S.root && B && B.step !== 'index') return `<div class="page">${head}${start}</div>`;   // kamēr mape atveras vai nav pieejama — tikai statuss
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
         ${start}
         ${CP.years?.banner() || ''}
@@ -40,8 +53,11 @@
     }
   };
   /* --- Paziņojumi katru reizi, atverot rīku --- */
-  CP.notices = () => {
-    const st = S.db.settings, today = U.iso(), last = st.lastVisit || '';
+  CP.notices = async () => {
+    // Pēdējās atvēršanas datums glabājas pārlūkā (IndexedDB), lai rīka atvēršana neradītu “nesaglabātas izmaiņas”
+    const st = S.db.settings, today = U.iso(), key = 'lastVisit:' + (S.rootName || '');
+    let last = '';
+    try { last = (await CP.store.idbGet(key)) || st.lastVisit || ''; } catch (e) { last = st.lastVisit || ''; }
     const ages = [];
     if (last && last < today && D.activeYear() === U.schoolYear()) for (const p of D.peopleInYear().filter(D.isCurrent)) {
       if (!p.birth) continue;
@@ -51,7 +67,7 @@
       if (ageNow > ageThen) ages.push({ p, age: ageNow });
     }
     const al = D.alerts(), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
-    st.lastVisit = today; CP.store.changed({ silent: true });
+    try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
     const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =

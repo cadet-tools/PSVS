@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.9.3';
+  CP.VERSION = '1.9.4';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -1106,7 +1106,10 @@ window.CP = window.CP || {};
     return true;
   };
   store.loadRoot = async h => {
-    let db;
+    let db, isNew = false;
+    if (!S.boot || S.boot.error) S.boot = { name: h.name };
+    S.boot.name = h.name; S.boot.error = null;
+    store.bootStep(50, `Nolasa datu failu no “${h.name}”…`);
     try {
       const fh = await h.getFileHandle(CP.DATAFILE);
       const stamp = await readStamp(fh);
@@ -1124,35 +1127,89 @@ window.CP = window.CP || {};
       S.loadedRevision = db.revision || 0;
       CP.ui.toast(`Ielādēts: ${db.people.length} personas`, 'ok');
     } catch (e) {
-      if (e.name !== 'NotFoundError') { CP.ui.toast('Neizdevās nolasīt datu failu: ' + e.message + '. Fails netika mainīts.', 'err', 15000); return; }
+      if (e.name !== 'NotFoundError') { bootFail('other', h, Object.assign(Error('datu fails: ' + e.message + '. Fails netika mainīts.'), { name: e.name })); return; }
       db = CP.migrate(CP.blank());
       S.fileStamp = 0;
       S.loadedRevision = 0;
-      CP.ui.toast('Jauna datu mape — datu fails tiks izveidots pēc pirmās izmaiņas', 'ok');
+      isNew = true;
     }
     S.db = db; S.root = h; S.rootName = h.name; S.pendingRoot = null; S.dirty = false; S.conflict = false; S.conflictNotified = false; S.rev = 0;
     S.roots = [{ id: 'main', name: h.name, handle: h, ok: true }];
     S.index = [];
     S.selected = db.people.find(CP.data.isCurrent)?.id || '';
+    store.bootStep(65, 'Sagatavo uzskaiti…');
     try { await store.idbSet('root', h); }
     catch (e) { CP.ui.toast('Datu mape ir atvērta, bet to neizdevās atcerēties nākamajai reizei: ' + e.message, 'warn', 10000); }
     await restoreSources();
+    store.bootStep(75, 'Pārbauda mācību gadu mapes…');
     try { await store.ensureYearFolders(); }
     catch (e) { CP.ui.toast('Mācību gadu mapes neizdevās izveidot: ' + e.message, 'warn', 10000); }
+    if (isNew) {   // jaunai mapei datu fails tiek izveidots uzreiz — nākamreiz mape tiek atpazīta kā uzskaites mape
+      const okSave = await store.save(true);
+      CP.ui.toast(okSave === false ? 'Jaunā datu mape pieslēgta, bet datu failu neizdevās izveidot — pārbaudi rakstīšanas tiesības.' : `Jauna uzskaite izveidota mapē “${h.name}”`, okSave === false ? 'warn' : 'ok', 8000);
+    }
+    S.boot = { step: 'index', name: h.name, count: 0 };      // dati jau redzami; dokumenti indeksējas fonā
     S.page = 'dashboard'; CP.render();
     await store.scanAll();
-    CP.notices?.();
+    S.boot = null; CP.render();
+    await CP.notices?.();
   };
+  /* --- Starts: atcerētās mapes pārbaude ar progresu (S.boot) --- */
+  const boot = (o) => { S.boot = o ? { ...(S.boot || {}), ...o } : null; CP.render(); };
+  store.bootStep = (pct, msg) => { if (S.boot && !S.boot.error) { S.boot.pct = pct; S.boot.msg = msg; S.boot.detail = ''; CP.render(); } };
+  /** Gaida solījumu; pēc 8 s parāda “tīkla mape atbild lēni”, pēc 90 s atsakās. */
+  function slow(pr, label) {
+    let t1, t2;
+    return Promise.race([
+      pr,
+      new Promise((_, rej) => {
+        t1 = setTimeout(() => { if (S.boot && !S.boot.error) { S.boot.detail = 'Mape atbild lēni (tīkla disks vai zibatmiņa). Lūdzu, uzgaidi…'; CP.render(); } }, 8000);
+        t2 = setTimeout(() => rej(Object.assign(Error(label + ' neatbildēja 90 sekundēs'), { name: 'TimeoutError' })), 90000);
+      })
+    ]).finally(() => { clearTimeout(t1); clearTimeout(t2); });
+  }
+  function bootFail(kind, h, e) {
+    const name = h?.name || S.boot?.name || 'datu mape';
+    const T = {
+      gone: { title: `Datu mapi “${name}” neizdevās atrast`, hints: ['Pārbaudi, vai mape nav pārdēvēta, pārvietota vai izdzēsta.', 'Ja mape ir tīklā vai zibatmiņā — pārbaudi tīkla savienojumu vai ievieto zibatmiņu un spied “Mēģināt vēlreiz”.', 'Ja mape tagad ir citur — ievelc to šeit vai izvēlies no jauna. Dati un dokumentu saites saglabāsies.'] },
+      nodata: { title: `Mapē “${name}” nav datu faila`, hints: [`Mapē nav faila ${CP.DATAFILE}. Varbūt tas pārvietots vai pārdēvēts?`, 'Ja izvēlēta nepareiza mape — izvēlies pareizo vai ievelc to šeit.', 'Ja šī tiešām ir jauna mape — spied “Sākt jaunu uzskaiti šeit”.'] },
+      timeout: { title: `Mape “${name}” neatbild`, hints: ['Tīkla disks vai zibatmiņa nav pieejama vai ļoti lēna.', 'Pārbaudi savienojumu un spied “Mēģināt vēlreiz”.'] },
+      other: { title: `Datu mapi “${name}” neizdevās atvērt`, hints: ['Spied “Mēģināt vēlreiz”. Ja neizdodas — izvēlies mapi no jauna vai ievelc to šeit.', 'Kļūdas tekstu vari nosūtīt atbalstam.'] }
+    }[kind];
+    S.bootHandle = h || null;
+    note('starts', kind, e || null);
+    boot({ error: kind, title: T.title, hints: T.hints, errText: e ? errText(e) : '', pct: 100 });
+  }
   store.tryRestore = async () => {
+    boot({ step: 'idb', pct: 5, msg: 'Meklē atcerēto datu mapi…', error: null, detail: '' });
     let h = null;
     try { h = await store.idbGet('root'); }
-    catch (e) { CP.ui.toast('Neizdevās nolasīt atcerēto datu mapi: ' + e.message, 'err'); return; }
-    if (!h) return;
-    try {
-      const perm = h.queryPermission ? await h.queryPermission({ mode: 'readwrite' }) : 'granted';
-      if (perm === 'granted') { await store.loadRoot(h); return; }
-    } catch (e) { CP.ui.toast('Mapi neizdevās atjaunot: ' + e.message, 'warn'); }
-    S.pendingRoot = h; CP.render();
+    catch (e) { bootFail('other', null, e); return; }
+    if (!h) { boot(null); return; }
+    S.boot.name = h.name;
+    store.bootStep(15, `Pārbauda piekļuvi mapei “${h.name}”…`);
+    let perm = 'prompt';
+    try { perm = h.queryPermission ? await slow(h.queryPermission({ mode: 'readwrite' }), 'Atļauju pārbaude') : 'granted'; }
+    catch (e) { if (e.name === 'TimeoutError') return bootFail('timeout', h, e); perm = 'prompt'; }
+    if (perm !== 'granted') { S.pendingRoot = h; boot(null); return; }   // Chrome prasa apstiprinājumu — poga “Atļaut piekļuvi”
+    store.bootStep(30, `Pārbauda, vai mape “${h.name}” ir pieejama…`);
+    try { await slow(h.getFileHandle(CP.DATAFILE), 'Mape'); }
+    catch (e) {
+      if (e.name === 'TimeoutError') return bootFail('timeout', h, e);
+      if (e.name !== 'NotFoundError') return bootFail('other', h, e);
+      // nav faila VAI nav pašas mapes — pārbauda mapi
+      try { const it = h.values(); await slow(it.next(), 'Mape'); return bootFail('nodata', h, null); }
+      catch (e2) { return bootFail(e2.name === 'TimeoutError' ? 'timeout' : 'gone', h, e2); }
+    }
+    try { await store.loadRoot(h); }
+    catch (e) { bootFail(e.name === 'TimeoutError' ? 'timeout' : 'other', h, e); }
+  };
+  store.retryRestore = () => { S.bootHandle = null; return store.tryRestore(); };
+  store.bootNew = async () => {
+    const h = S.bootHandle; if (!h) return;
+    if (!confirm(`Sākt jaunu, tukšu uzskaiti mapē “${h.name}”?\n\nEsošie faili netiks dzēsti. Datu fails tiks izveidots pēc pirmās izmaiņas.`)) return;
+    boot({ error: null, pct: 40, msg: 'Sagatavo jaunu uzskaiti…' });
+    await store.loadRoot(h);
   };
   store.restoreRoot = () => {
     const h = S.pendingRoot; if (!h) return;
@@ -1221,13 +1278,21 @@ window.CP = window.CP || {};
     }
     S.index = out; CP.render();
   };
+  function bootCount(n) {
+    if (S.boot?.step !== 'index') return;
+    S.boot.count = n;
+    const el = document.getElementById('bootIdxN'); if (el) el.textContent = n;
+  }
   async function walk(folder, path, src, depth, out) {
     if (depth > 32 || out.length > 20000) return;
     for await (const [name, h] of folder.entries()) {
       if (name.startsWith('.') || name.startsWith('~$') || name === '_rezerves' || name === '_arhivi' || name === '_atjaunosana' || name.endsWith('.raksta')) continue;
       const rel = path ? path + '/' + name : name;
       if (h.kind === 'directory') await walk(h, rel, src, depth + 1, out);
-      else if (name !== CP.DATAFILE) out.push({ sourceId: src.id, sourceName: src.name, path: rel, name, handle: h, ext: (name.split('.').pop() || '').toLowerCase(), n: U.norm(rel) });
+      else if (name !== CP.DATAFILE) {
+        out.push({ sourceId: src.id, sourceName: src.name, path: rel, name, handle: h, ext: (name.split('.').pop() || '').toLowerCase(), n: U.norm(rel) });
+        if (out.length % 25 === 0) bootCount(out.length);
+      }
     }
   }
   store.addExtra = async () => {
@@ -1630,9 +1695,12 @@ window.CP = window.CP || {};
 
   ui.updateSaveState = () => {
     const lbl = U.$('rootLabel');
+    const B = S.boot;
     if (lbl) lbl.innerHTML = S.root
-      ? `<span class="dotstate ${S.conflict ? 'err' : S.dirty ? 'warn' : 'ok'}"></span>${U.esc(S.rootName)} · ${S.conflict ? 'konflikts' : S.dirty ? 'nesaglabāts' : 'saglabāts'}`
-      : 'Datu mape nav izvēlēta';
+      ? `<span class="dotstate ${S.conflict ? 'err' : S.dirty ? 'warn' : 'ok'}"></span>${U.esc(S.rootName)} · ${S.conflict ? 'konflikts' : S.dirty ? 'nesaglabāts' : B?.step === 'index' ? 'indeksē…' : 'saglabāts'}`
+      : B && !B.error ? `<span class="spin"></span> Atver ${B.name ? '“' + U.esc(B.name) + '”' : 'datu mapi'}…`
+      : B?.error ? '<span class="dotstate err"></span> Mape nav pieejama'
+      : S.pendingRoot ? 'Jāapstiprina piekļuve' : 'Datu mape nav izvēlēta';
     U.qsa('[data-act="save"]').forEach(b => { b.classList.toggle('pending', S.dirty); });
   };
 
@@ -1657,7 +1725,7 @@ window.CP = window.CP || {};
     const l = CP.store.diag?.last;
     const net = CP.store.netPath ? `<div class="netwarn">⚠ ${U.esc(CP.store.netPathMsg())}<br><span class="small muted">Pašreizējā adrese: ${U.esc(decodeURI(location.href))}</span></div>` : '';
     return net + `<div class="rootdrop" data-rootdrop="1"><b>⇩ Ievelc datu mapi šeit</b><span class="small muted">Atver File Explorer, satver mapi (piem. “CADET PERSONALS”) un ievelc to šajā laukā. Darbojas arī tad, ja mapes dialogs rāda kļūdu.</span></div>`
-      + (l && l.error ? `<p class="small err-text">Pēdējā kļūda (${U.esc(l.via)} → ${U.esc(l.step)}${l.ms != null ? ', ' + l.ms + ' ms' : ''}): ${U.esc(l.error)}</p>` : '');
+      + (l && l.error && !S.boot?.error ? `<p class="small err-text">Pēdējā kļūda (${U.esc(l.via)} → ${U.esc(l.step)}${l.ms != null ? ', ' + l.ms + ' ms' : ''}): ${U.esc(l.error)}</p>` : '');
   };
 
   function renderNav() {
@@ -1685,7 +1753,7 @@ window.CP = window.CP || {};
       return `<button class="person ${S.page === 'person' && S.selected === p.id ? 'active' : ''} ${p.status === 'archived' ? 'archived' : ''}" data-person="${p.id}">
         ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${U.esc(D.groupOf(p) || 'Bez grupas')}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
         ${miss ? `<span class="dot" title="Trūkst dokumentu: ${miss}"></span>` : ''}</button>`;
-    }).join('') || `<p class="muted small pad">${S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
+    }).join('') || `<p class="muted small pad">${S.boot && !S.root ? (S.boot.error ? 'Datu mape nav pieejama' : 'Gaida datu mapi…') : S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
   }
   ui.renderSide = renderSide;
 
@@ -3093,10 +3161,23 @@ window.CP = window.CP || {};
       const miss = cur.map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length).sort((a, b) => b.m.length - a.m.length || U.cmp(U.sortName(a.p), U.sortName(b.p)));
       const cnt = s => cur.filter(p => D.partStatus(p) === s).length;
       const recent = [...S.db.audit].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 8);
-      const start = !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.</p>
+      const B = S.boot;
+      const start = B && !S.root && !B.error ? `<section class="card hero boot"><h2>Atver datu mapi${B.name ? ` “${esc(B.name)}”` : ''}</h2>
+          <div class="bootbar"><span style="width:${Math.max(4, B.pct || 0)}%"></span></div>
+          <p><b>${esc(B.msg || 'Lūdzu, uzgaidi…')}</b></p>
+          <p class="muted small">${esc(B.detail || 'Pārbauda mapes pieejamību. Tīkla mapei vai zibatmiņai tas var aizņemt kādu brīdi — lūdzu, uzgaidi.')}</p></section>`
+        : B && B.error && !S.root ? `<section class="card hero booterr"><h2>⚠ ${esc(B.title)}</h2>
+          <ul class="hints">${B.hints.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          ${B.errText ? `<p class="small muted">Tehniski: ${esc(B.errText)}</p>` : ''}
+          <div class="actions"><button class="mainbtn" data-act="retryRestore">↻ Mēģināt vēlreiz</button>${B.error === 'nodata' ? '<button data-act="bootNew">Sākt jaunu uzskaiti šeit</button>' : ''}<button data-act="pickRoot">📁 Izvēlēties citu mapi</button></div>
+          ${ui.rootDrop()}</section>`
+        : !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>${S.pendingRoot ? `Mape <b>“${esc(S.pendingRoot.name)}”</b> ir atrasta. Chrome drošības dēļ pēc pārlūka restartēšanas lūdz apstiprināt piekļuvi — spied pogu zemāk.` : 'Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.'}</p>
         <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : `<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>`}</div>
         ${ui.rootDrop()}
-        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>` : '';
+        <p class="muted small">Dati tiek glabāti tikai tavā datorā (JSON failā bez šifrēšanas) — tos aizsargā datora konta un mapes tiesības.</p></section>`
+        : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
+      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
+      if (!S.root && B && B.step !== 'index') return `<div class="page">${head}${start}</div>`;   // kamēr mape atveras vai nav pieejama — tikai statuss
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
         ${start}
         ${CP.years?.banner() || ''}
@@ -3118,8 +3199,11 @@ window.CP = window.CP || {};
     }
   };
   /* --- Paziņojumi katru reizi, atverot rīku --- */
-  CP.notices = () => {
-    const st = S.db.settings, today = U.iso(), last = st.lastVisit || '';
+  CP.notices = async () => {
+    // Pēdējās atvēršanas datums glabājas pārlūkā (IndexedDB), lai rīka atvēršana neradītu “nesaglabātas izmaiņas”
+    const st = S.db.settings, today = U.iso(), key = 'lastVisit:' + (S.rootName || '');
+    let last = '';
+    try { last = (await CP.store.idbGet(key)) || st.lastVisit || ''; } catch (e) { last = st.lastVisit || ''; }
     const ages = [];
     if (last && last < today && D.activeYear() === U.schoolYear()) for (const p of D.peopleInYear().filter(D.isCurrent)) {
       if (!p.birth) continue;
@@ -3129,7 +3213,7 @@ window.CP = window.CP || {};
       if (ageNow > ageThen) ages.push({ p, age: ageNow });
     }
     const al = D.alerts(), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
-    st.lastVisit = today; CP.store.changed({ silent: true });
+    try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
     const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =
@@ -3464,6 +3548,8 @@ window.CP = window.CP || {};
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.restoreRoot = () => CP.store.restoreRoot();
+  A.retryRestore = () => CP.store.retryRestore();
+  A.bootNew = () => CP.store.bootNew();
   A.createYear = () => CP.store.createYear();
   A.save = () => CP.store.save(false);
 })(window.CP);

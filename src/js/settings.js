@@ -177,6 +177,8 @@
   A.reconnectSource = id => CP.store.reconnectSource(id);
   A.pickRoot = () => CP.store.pickRoot();
   A.restoreRoot = () => CP.store.restoreRoot();
+  A.retryRestore = () => CP.store.retryRestore();
+  A.bootNew = () => CP.store.bootNew();
   A.createYear = () => CP.store.createYear();
   A.save = () => CP.store.save(false);
 })(window.CP);
