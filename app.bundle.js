@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.9.6';
+  CP.VERSION = '1.9.7';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -663,7 +663,7 @@ window.CP = window.CP || {};
     store.schedule();
   };
   const autosave = U.debounce(() => store.save(true), 1000);
-  store.schedule = () => { if (S.root && S.db.settings.autosave && !S.conflict) autosave(); };
+  store.schedule = () => { if (S.root && S.db.settings.autosave && !S.conflict && !S.newerFile) autosave(); };
 
   /** Cita cilne vai ārējs labojums: laika zīmogs vai revīzijas numurs nesakrīt. */
   store.fileChanged = (loadedStamp, loadedRev, fileStamp, fileRev) => {
@@ -734,6 +734,10 @@ window.CP = window.CP || {};
   }
 
   async function performSave(silent) {
+    if (S.newerFile) {
+      CP.ui.toast(`Datu failu saglabājusi jaunāka CADET PERSONĀLS versija (datu shēma v${S.newerFile}, šai versijai v${CP.SCHEMA}). Lai dati netiktu sabojāti, saglabāšana ir atslēgta. Pārlādē lapu (Ctrl+F5) vai atver jaunāko versiju.`, 'err', 20000);
+      return false;
+    }
     if (!S.root) {
       CP.ui.toast(silent ? 'Dati nav saglabāti — nav piekļuves datu mapei' : 'Vispirms izvēlies datu mapi', silent ? 'err' : 'warn', 8000);
       CP.ui.updateSaveState();
@@ -1115,17 +1119,22 @@ window.CP = window.CP || {};
       const stamp = await readStamp(fh);
       if (!stamp.parseOk) throw Error(stamp.empty ? 'datu fails ir tukšs' : 'neatbilstošs datu faila formāts');
       const parsed = JSON.parse(stamp.text);
-      if ((parsed.version || 0) < 6 && (parsed.people || []).length) {
+      const fileVer = parsed.version || 0;
+      // Datu fails no JAUNĀKAS rīka versijas — atver tikai lasīšanai, lai vecāks kods to nesabojātu
+      S.newerFile = fileVer > CP.SCHEMA ? fileVer : 0;
+      // Pirms jebkuras datu pārveidošanas uz jaunu shēmu — kopija ar oriģinālo saturu
+      if (fileVer < CP.SCHEMA && (parsed.people || []).length) {
         const prevRoot = S.root; S.root = h;
-        const bak = await backupText(stamp.text, { name: `DATI_pirms_macibu_gadiem_${U.stamp()}.json` });
+        const bak = await backupText(stamp.text, { name: `DATI_pirms_atjauninasanas_v${fileVer}-v${CP.SCHEMA}_${U.stamp()}.json` });
         S.root = prevRoot;
-        if (!bak.ok) CP.ui.toast('Rezerves kopiju pirms mācību gadu migrācijas neizdevās izveidot: ' + (bak.error || ''), 'warn', 12000);
+        if (!bak.ok) CP.ui.toast('Rezerves kopiju pirms datu atjaunināšanas neizdevās izveidot: ' + (bak.error || ''), 'warn', 12000);
       }
       db = CP.migrate(parsed);
       CP.validateDb(db);
       S.fileStamp = stamp.lastModified;
       S.loadedRevision = db.revision || 0;
-      CP.ui.toast(`Ielādēts: ${db.people.length} personas`, 'ok');
+      if (S.newerFile) CP.ui.toast(`Uzmanību: šo datu failu saglabājusi jaunāka rīka versija. Dati atvērti tikai apskatei — saglabāšana atslēgta. Pārlādē lapu ar Ctrl+F5, lai ielādētu jaunāko versiju.`, 'err', 30000);
+      else CP.ui.toast(`Ielādēts: ${db.people.length} personas`, 'ok');
     } catch (e) {
       if (e.name !== 'NotFoundError') { bootFail('other', h, Object.assign(Error('datu fails: ' + e.message + '. Fails netika mainīts.'), { name: e.name })); return; }
       db = CP.migrate(CP.blank());

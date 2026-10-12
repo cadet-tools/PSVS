@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.9.7 — 2026-10-12 — Droši atjauninājumi
+- Pirms datu faila pārveidošanas uz jaunāku datu shēmu `_rezerves` mapē automātiski tiek saglabāta oriģināla kopija (`DATI_pirms_atjauninasanas_vX-vY_….json`).
+- Ja datu failu saglabājusi jaunāka rīka versija, bet atvērta vecāka (piem. no keša vai zibatmiņas), dati tiek atvērti tikai apskatei un saglabāšana ir atslēgta, lai tos nesabojātu.
+- Lauki, ko šī versija nepazīst, datu failā tiek saglabāti neskarti.
+
 ## 1.9.6 — 2026-10-12
 - Google Vision kļūdas tiek skaidrotas latviski ar konkrētu rīcību: atslēga nederīga, atslēgai nav atļauts Vision API, adreses ierobežojums, API nav ieslēgts, nav norēķinu konta, limits, nav savienojuma. Atslēgai tiek noņemtas nejaušas atstarpes.
 
