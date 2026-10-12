@@ -56,7 +56,7 @@
           <label class="btn sm">Importēt JSON<input id="tplImport" type="file" accept="application/json,.json" hidden></label>
         </div>
         ${s.formTemplates.length ? s.formTemplates.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b> <small class="muted">${t.zones.length} zonas</small>${s.activeTemplate === t.id ? ' <span class="tag">pēdējā lietotā</span>' : ''}</div><button class="sm" data-act="tplEdit" data-arg="${t.id}">Rediģēt</button><button class="sm" data-act="tplDup" data-arg="${t.id}">Dublēt</button><button class="sm ghost" data-act="tplDelete" data-arg="${t.id}">Dzēst</button></div>`).join('') : '<p class="muted small">Nav veidņu. Izveido pirmo: augšupielādē skenētas anketas paraugu un iezīmē zonas.</p>'}
-        <p class="muted small">Bez veidnes personas lauki netiek aizpildīti. Veidne glabā tikai nosaukumu un zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus. Tā paliek datu failā pēc Chrome aizvēršanas. Word un eDoc teksts ir redzams, bet zonas tiem netiek lietotas.</p></section>
+        <p class="muted small">Bez veidnes lauki tiek atrasti automātiski pēc anketas etiķetēm (Word, eDoc un PDF ar tekstu — precīzi; skenējumi — ar izvēlēto dzinēju). Veidne glabā tikai zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus.</p></section>
 
       <section class="card"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>

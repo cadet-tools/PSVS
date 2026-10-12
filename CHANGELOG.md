@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.9.5 — 2026-10-12 — Anketu nolasīšana atkal darbojas
+- **Bez veidnes** lauki atkal tiek atrasti automātiski pēc anketas etiķetēm. Iepriekšējā darba versijā tas bija izslēgts, un ar Google Vision dokuments netika pat nosūtīts. Word, eDoc un PDF ar tekstu nolasa precīzi, skenējumus atpazīst izvēlētais dzinējs.
+- **Google Vision** tagad tiešām tiek izmantots gan bez veidnes, gan ar veidni (zonu teksts no Google atpazītajiem vārdiem). Google kļūdas, piem. nederīga atslēga, API nav ieslēgts vai nav norēķinu konta, tiek parādītas ievades logā.
+- Personas kods rūtiņās vienmēr tiek nolasīts pa cipariem lokāli, arī ar Google. Tas ir izturīgs pret plašāk vai šaurāk iezīmētu zonu. Labots gadījums, kad kļūdains nolasījums nejauši izturēja kontrolcipara pārbaudi.
+- Otrā kārta neskaidrajiem laukiem (Tesseract): kods, tālrunis, e-pasts un datums tiek atpazīti vēlreiz savā apgabalā.
+- “Vārds Uzvārds” vienā rindā vai zonā tiek sadalīts vārdā un uzvārdā. Anketas paskaidrojumi, piem. “(vārds, uzvārds)”, vērtībās neiekļūst.
+- Kā iepriekš, viss nolasītais vispirms nonāk pārbaudes formā, un kartītē tikai pēc saglabāšanas.
+
 ## 1.9.4 — 2026-10-12 — Mierīgs starts
 - Rīka atvēršana vairs nerada “nesaglabātas izmaiņas” un nepārraksta datu failu. Pēdējās atvēršanas datums (vecuma izmaiņu paziņojumiem) tagad glabājas pārlūkā.
 - Startā vairs nerāda “Pieslēdz datu mapi”, ja mape jau ir atcerēta. Tā vietā redzams **“Atver datu mapi”** ar progresa joslu un soļiem: meklē mapi, pārbauda piekļuvi, pārbauda pieejamību, nolasa datu failu, mācību gadu mapes. Ja mape atbild lēni, parādās “uzgaidi”.

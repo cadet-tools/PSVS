@@ -199,7 +199,20 @@
   };
   /** Lauka apgabala atkārtota atpazīšana (tikai lokālajam dzinējam) */
   ocr.region = async (pages, box, field) => (ocr.engine() === 'google' || !pages[box.page || 0]) ? null : tessRegion(pages[box.page || 0], box, field);
-  ocr.boxedDigits = async (pages, box) => (ocr.engine() === 'google' || !pages[box.page || 0]) ? null : tessBoxedDigits(pages[box.page || 0], box);
+  // Rūtiņās rakstīti cipari vienmēr tiek nolasīti lokāli (pa vienam) — arī ja izvēlēts Google Vision
+  ocr.boxedDigits = async (pages, box) => {
+    const pg = pages[box.page || 0]; if (!pg) return null;
+    const valid = r => { const dg = (r?.text || '').replace(/\D/g, ''); return dg.length === 11 && U.checkCode(dg); };
+    let first = null;
+    // zona var būt iezīmēta plašāk vai šaurāk par rūtiņām — mēģina dažus apgabalus, ņem pirmo ar derīgu kontrolciparu
+    for (const [dx, dy] of [[0, 0], [-0.006, -0.003], [-0.012, -0.005], [0.006, 0.003], [-0.02, -0.006]]) {
+      const b = { ...box, x: box.x - dx, y: box.y - dy, w: Math.max(0.02, box.w + 2 * dx), h: Math.max(0.008, box.h + 2 * dy) };
+      const r = await tessBoxedDigits(pg, b);
+      if (valid(r)) return r;
+      if (!first) first = r;
+    }
+    return first;
+  };
 
   /* ---------------- Tīrīšana un pārbaude ---------------- */
   const TLDS = ['lv', 'com', 'net', 'org', 'eu', 'ee', 'lt', 'de', 'uk', 'ru', 'io', 'info', 'edu', 'gov', 'fi', 'se', 'no'];

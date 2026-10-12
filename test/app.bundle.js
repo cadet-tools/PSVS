@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.9.4';
+  CP.VERSION = '1.9.5';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -3427,7 +3427,7 @@ window.CP = window.CP || {};
           <label class="btn sm">Importēt JSON<input id="tplImport" type="file" accept="application/json,.json" hidden></label>
         </div>
         ${s.formTemplates.length ? s.formTemplates.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b> <small class="muted">${t.zones.length} zonas</small>${s.activeTemplate === t.id ? ' <span class="tag">pēdējā lietotā</span>' : ''}</div><button class="sm" data-act="tplEdit" data-arg="${t.id}">Rediģēt</button><button class="sm" data-act="tplDup" data-arg="${t.id}">Dublēt</button><button class="sm ghost" data-act="tplDelete" data-arg="${t.id}">Dzēst</button></div>`).join('') : '<p class="muted small">Nav veidņu. Izveido pirmo: augšupielādē skenētas anketas paraugu un iezīmē zonas.</p>'}
-        <p class="muted small">Bez veidnes personas lauki netiek aizpildīti. Veidne glabā tikai nosaukumu un zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus. Tā paliek datu failā pēc Chrome aizvēršanas. Word un eDoc teksts ir redzams, bet zonas tiem netiek lietotas.</p></section>
+        <p class="muted small">Bez veidnes lauki tiek atrasti automātiski pēc anketas etiķetēm (Word, eDoc un PDF ar tekstu — precīzi; skenējumi — ar izvēlēto dzinēju). Veidne glabā tikai zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus.</p></section>
 
       <section class="card"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>
@@ -4525,7 +4525,20 @@ window.CP = window.CP || {};
   };
   /** Lauka apgabala atkārtota atpazīšana (tikai lokālajam dzinējam) */
   ocr.region = async (pages, box, field) => (ocr.engine() === 'google' || !pages[box.page || 0]) ? null : tessRegion(pages[box.page || 0], box, field);
-  ocr.boxedDigits = async (pages, box) => (ocr.engine() === 'google' || !pages[box.page || 0]) ? null : tessBoxedDigits(pages[box.page || 0], box);
+  // Rūtiņās rakstīti cipari vienmēr tiek nolasīti lokāli (pa vienam) — arī ja izvēlēts Google Vision
+  ocr.boxedDigits = async (pages, box) => {
+    const pg = pages[box.page || 0]; if (!pg) return null;
+    const valid = r => { const dg = (r?.text || '').replace(/\D/g, ''); return dg.length === 11 && U.checkCode(dg); };
+    let first = null;
+    // zona var būt iezīmēta plašāk vai šaurāk par rūtiņām — mēģina dažus apgabalus, ņem pirmo ar derīgu kontrolciparu
+    for (const [dx, dy] of [[0, 0], [-0.006, -0.003], [-0.012, -0.005], [0.006, 0.003], [-0.02, -0.006]]) {
+      const b = { ...box, x: box.x - dx, y: box.y - dy, w: Math.max(0.02, box.w + 2 * dx), h: Math.max(0.008, box.h + 2 * dy) };
+      const r = await tessBoxedDigits(pg, b);
+      if (valid(r)) return r;
+      if (!first) first = r;
+    }
+    return first;
+  };
 
   /* ---------------- Tīrīšana un pārbaude ---------------- */
   const TLDS = ['lv', 'com', 'net', 'org', 'eu', 'ee', 'lt', 'de', 'uk', 'ru', 'io', 'info', 'edu', 'gov', 'fi', 'se', 'no'];
@@ -4626,7 +4639,7 @@ window.CP = window.CP || {};
     U.$('scanTarget').value = target; fillFromPerson(target);
     tplOptions(); selectTpl(S.db.settings.activeTemplate);
     U.$('scanDialog').showModal();
-    msg('Atver dokumentu. Bez veidnes lauki netiek aizpildīti. Ar veidni tiek nolasītas tikai iezīmētās zonas, un kartītē dati nonāk pēc apstiprinājuma.', 'info');
+    msg('Atver dokumentu. Lauki tiek atrasti automātiski pēc anketas etiķetēm; ar veidni — tikai iezīmētās zonas. Kartītē dati nonāk tikai pēc tavas pārbaudes un saglabāšanas.', 'info');
     if (opts.file) loadFile(opts.file);
   };
   scan.openWith = (file, target) => A.scan(null, null, null, { file, target });
@@ -4708,6 +4721,11 @@ window.CP = window.CP || {};
         if (re.test(s)) { s = s.replace(re, '').trim(); changed = true; }
       }
     }
+    // paskaidrojumi iekavās vai beigās, piem. “Kalniņš (vārds, uzvārds)”
+    s = s.replace(/[(\[]([^)\]]*)[)\]]/g, (m, x) => isInstruction(fieldKey, x) ? ' ' : m).replace(/\s+/g, ' ').trim();
+    let ws = s.split(' ');
+    while (ws.length > 1 && CAPTION_WORDS.has(U.norm(ws[ws.length - 1]).replace(/[^a-z]/g, ''))) ws.pop();
+    s = ws.join(' ').replace(/[,;:\-–]+$/, '').trim();
     return isInstruction(fieldKey, s) ? '' : s;
   }
   function consentValue(raw) {
@@ -4719,37 +4737,78 @@ window.CP = window.CP || {};
   function activeZones() {
     return ((SC.editing ? SC.draft : SC.tpl)?.zones || []).filter(z => CP.FIELD[z.f] && !CP.FIELD[z.f].noScan);
   }
-  async function showTextOnly(d) {
-    if (d.kind !== 'docx' && d.source !== 'text' && d.pages?.length && d.source !== 'ocr' && CP.ocr.engine() !== 'google') {
-      d.words = await CP.ocr.pageWords(d.pages, (t, p) => msg(t + '…', 'busy', p));
-      d.source = 'ocr';
-    }
-    SC.lines = d.kind === 'docx' ? [] : CP.reader.lines(d.words || []);
-    SC.res = { values: {} };
-    redraw();
-    msg('Dokuments ir atvērts. Personas lauki nav aizpildīti, jo veidne nav izvēlēta. Izvēlies veidni, izveido jaunu vai ievadi datus pats. Klikšķis uz teksta ieliek to izvēlētajā laukā.', 'info');
+  /** Vārdi no visas lapas: Word/PDF teksts — precīzi; skenējums — izvēlētais dzinējs (Tesseract vai Google Vision). */
+  async function ensureWords(d) {
+    if (d.kind === 'docx' || d.source === 'docx' || d.source === 'ocr' || !d.pages?.length) return;
+    if (d.source === 'text' && (d.words || []).length > 15) return;
+    const g = CP.ocr.engine() === 'google';
+    d.words = await CP.ocr.pageWords(d.pages, (t, p) => msg((g ? t : t) + '…', 'busy', p));
+    d.source = 'ocr';
   }
+  /** 2. kārta: nedrošos laukus atpazīst vēlreiz tikai to apgabalā, ar atļautajiem simboliem */
+  async function refine(ex) {
+    const min = S.db.settings.ocr.minConf, V = ex.values;
+    const REFINE = ['personalCode', 'phone', 'email', 'date', 'fullname', 'schoolClass'];   // adreses pirmajā kārtā parasti jau ir labākas
+    const todo = Object.entries(V).filter(([k, v]) => REFINE.includes(CP.FIELD[k]?.v) && v.box && !v.zoned && (v.boxed || !(CP.ocr.clean(k, v.raw).ok && v.conf >= min)));
+    // vārds un uzvārds parasti nāk no viena apgabala
+    if (V.first?.box && V.first.box === V.last?.box && !V.first.zoned && !(CP.ocr.clean('first', V.first.raw).ok && CP.ocr.clean('last', V.last.raw).ok && V.first.conf >= min)) todo.push(['_name', V.first]);
+    let i = 0;
+    for (const [k, v] of todo) {
+      msg(`Precizē laukus (${++i}/${todo.length})…`, 'busy', i / todo.length);
+      const field = k === '_name' ? 'parentName' : k;
+      if (v.boxed) {   // personas kods rūtiņās — vispirms katrs cipars atsevišķi
+        const bd = await CP.ocr.boxedDigits(SC.doc.pages, v.box);
+        if (bd && CP.ocr.clean(k, bd.text).ok) { Object.assign(v, { raw: bd.text, conf: 92 }); continue; }
+      }
+      const r = await CP.ocr.region(SC.doc.pages, v.box, field) || { text: '', conf: 0 };
+      if (!r.text) continue;
+      if (k === '_name') {
+        const c = CP.ocr.clean('parentName', r.text); if (!c.ok || r.conf < v.conf) continue;
+        const parts = c.value.split(' '); V.first = { ...V.first, raw: parts[0], conf: r.conf }; V.last = { ...V.last, raw: parts.slice(1).join(' '), conf: r.conf }; continue;
+      }
+      const c1 = CP.ocr.clean(k, v.raw), c2 = CP.ocr.clean(k, r.text), best = r;
+      if (c2.ok && (v.raw || '').trim() && (!c1.ok || best.conf > v.conf)) Object.assign(v, { raw: best.text, conf: CP.FIELD[k].v === 'personalCode' ? Math.max(best.conf, 90) : best.conf });
+      // tukšam laukam pieņem tikai stingri pārbaudāmu vērtību (kods, tālrunis, e-pasts, datums)
+      else if (!(v.raw || '').trim() && c2.ok && ['personalCode', 'phone', 'email', 'date'].includes(CP.FIELD[k].v)) Object.assign(v, { raw: best.text, conf: CP.FIELD[k].v === 'personalCode' ? 90 : best.conf });
+    }
+  }
+
+  const filledCount = ex => Object.values(ex?.values || {}).filter(v => (v?.raw || '').trim()).length;
   async function read() {
     const d = SC.doc; if (!d) return msg('Vispirms atver dokumentu', 'warn');
     if (SC.busy) return; SC.busy = true; buttons();
     try {
       if (SC.editing) { redraw(); msg('Iezīmē zonas un katrai izvēlies personas kartītes lauku.', 'info'); return; }
-      const zones = activeZones();
-      if (d.kind === 'docx' || d.source === 'docx') {
-        SC.res = { values: {} }; SC.lines = []; redraw();
-        msg('Word un eDoc teksts ir redzams. Lauki netiek aizpildīti automātiski, un zonas šiem failiem netiek lietotas. Ievadi datus pats.', 'info');
+      const zones = d.kind === 'docx' || d.source === 'docx' ? [] : activeZones();
+      if (CP.ocr.engine() === 'google' && d.kind !== 'docx' && d.source !== 'docx') msg('Sūta lapas attēlu uz Google Vision…', 'busy', 0.1);
+      if (zones.length) {
+        // Veidne: tikai iezīmētās zonas. Google gadījumā — no Google atpazītajiem vārdiem zonā.
+        if (CP.ocr.engine() === 'google') await ensureWords(d);
+        const values = {};
+        let i = 0;
+        for (const z of zones) {
+          msg(`Nolasa zonu ${++i}/${zones.length}…`, 'busy', i / zones.length);
+          values[z.f] = await readZone(z.f, z);
+        }
+        if (d.pages?.length && d.source !== 'text') d.source = 'ocr';
+        SC.res = { values }; SC.lines = CP.reader.lines(d.words || []);
+        applyZones(values);
         return;
       }
-      if (!zones.length) { await showTextOnly(d); return; }
-      const values = {};
-      let i = 0;
-      for (const z of zones) {
-        msg(`Nolasa zonu ${++i}/${zones.length}…`, 'busy', i / zones.length);
-        values[z.f] = await readZone(z.f, z);
+      // Bez veidnes: lasītājs pēc etiķetēm un izkārtojuma (Jaunsardzes anketa vai vispārīgs profils)
+      await ensureWords(d);
+      let ex = CP.reader.extract(d);
+      if (d.source === 'text' && filledCount(ex) < 3 && d.pages?.length) {   // PDF teksta slānī nav aizpildījuma — droši vien skenējums
+        d.words = []; d.source = 'none'; await ensureWords(d); ex = CP.reader.extract(d);
       }
-      if (d.pages?.length && d.source !== 'text') d.source = 'ocr';
-      SC.res = { values }; SC.lines = [];
-      applyZones(values);
+      if (d.source === 'ocr') await refine(ex);   // Google gadījumā darbojas tikai rūtiņu cipari (lokāli)   // 2. kārta: rūtiņas pa cipariem, neskaidrie lauki atkārtoti
+      SC.res = ex; SC.lines = d.kind === 'docx' ? [] : CP.reader.lines(d.words || []);
+      if (!filledCount(ex)) {
+        redraw();
+        msg(`Dokuments atvērts, bet automātiski atrast laukus neizdevās${(d.words || []).length < 10 ? ' (dokumentā gandrīz nav atpazīta teksta)' : ''}. Klikšķini uz teksta dokumentā, lai ieliktu to aktīvajā laukā, vai izveido veidni (✎).`, 'warn');
+        return;
+      }
+      applyZones(ex.values, true);
     } catch (e) { msg(e.message, 'err'); console.error(e); }
     finally { SC.busy = false; buttons(); }
   }
@@ -4762,7 +4821,19 @@ window.CP = window.CP || {};
     hint.innerHTML = html || '';
   }
   /** Ieliek pārbaudes formā tikai zonas rezultātu, kas iztur lauka pārbaudi un nav anketas paskaidrojums. */
-  function applyZones(values) {
+  /** “Vārds Uzvārds” vienā zonā/rindā → sadala vārdā un uzvārdā */
+  function splitName(values, fk, lk) {
+    const F = values[fk], L = values[lk];
+    const rf = stripCaption(fk, F?.raw || ''), rl = stripCaption(lk, L?.raw || '');
+    const same = rf && rl && U.norm(rf) === U.norm(rl);
+    if (!rf || (rl && !same)) return;
+    const parts = rf.split(/\s+/).filter(Boolean); if (parts.length < 2 || parts.length > 4) return;
+    values[fk] = { ...F, raw: parts[0] };
+    values[lk] = { ...(L || F), raw: parts.slice(1).join(' ') };
+  }
+  function applyZones(values, auto) {
+    values = { ...(values || {}) };
+    splitName(values, 'first', 'last');
     let filled = 0, missed = 0, check = 0;
     for (const [k, v] of Object.entries(values || {})) {
       const el = form.elements[k]; if (!el || !v) continue;
@@ -4793,8 +4864,8 @@ window.CP = window.CP || {};
     }
     if (filled || check) SC.saved = false;
     redraw();
-    const name = SC.tpl ? `Veidne “${SC.tpl.name}”. ` : '';
-    msg(`${name}Pārbaudē no zonām: ${filled} lauki${check ? `, ${check} neskaidri un nav ievietoti` : ''}${missed ? `, ${missed} nav atpazīti` : ''}. Kartītē dati nonāk pēc apstiprinājuma.`, check || missed ? 'warn' : 'ok');
+    const name = auto ? 'Atrasts automātiski. ' : SC.tpl ? `Veidne “${SC.tpl.name}”. ` : '';
+    msg(`${name}${auto ? 'Aizpildīti' : 'No zonām'}: ${filled} lauki${check ? `, ${check} neskaidri un nav ievietoti` : ''}${missed ? `, ${missed} nav atpazīti` : ''}. Kartītē dati nonāk pēc apstiprinājuma.`, check || missed ? 'warn' : 'ok');
   }
   A.scanUse = k => {
     const f = SC.found[k], el = form.elements[k]; if (!f || !el) return;
@@ -4825,7 +4896,7 @@ window.CP = window.CP || {};
     return CP.FIELDS.filter(f => !f.noScan).map(f => ({ k: f.k, l: (sec[f.s] ? sec[f.s] + ' — ' : '') + f.l }));
   }
   function tplOptions() {
-    U.$('scanTpl').innerHTML = '<option value="">Bez veidnes — laukus neaizpildīt</option>' + tpls().map(t => `<option value="${t.id}">${esc(t.name)} · ${t.zones.length} zonas</option>`).join('');
+    U.$('scanTpl').innerHTML = '<option value="">Automātiski (pēc etiķetēm)</option>' + tpls().map(t => `<option value="${t.id}">${esc(t.name)} · ${t.zones.length} zonas</option>`).join('');
   }
   function selectTpl(id) { SC.tpl = tpls().find(t => t.id === id) || null; U.$('scanTpl').value = SC.tpl?.id || ''; buttons(); if (SC.doc && !SC.editing) redraw(); }
   function zonesNow() {
@@ -4844,21 +4915,23 @@ window.CP = window.CP || {};
   async function readZoneNow(k, z) {
     const d = SC.doc;
     const box = { page: z.page || 0, x: +z.x, y: +z.y, w: +z.w, h: +z.h };
-    if (d.source === 'text') {
+    const fromWords = () => {
       const ws = (d.words || []).filter(w => w.p === box.page && (w.x0 + w.x1) / 2 >= box.x && (w.x0 + w.x1) / 2 <= box.x + box.w && (w.y0 + w.y1) / 2 >= box.y && (w.y0 + w.y1) / 2 <= box.y + box.h);
       return { raw: ws.map(w => w.t).join(' ').trim(), conf: ws.length ? Math.min(...ws.map(w => w.conf ?? 100)) : 0, box, zoned: true };
-    }
-    if (!d.pages?.length || CP.ocr.engine() === 'google') return { raw: '', conf: 0, box, zoned: true };
-    if (CP.FIELD[k]?.v === 'personalCode') {
+    };
+    if (d.source === 'text') return fromWords();                       // PDF ar teksta slāni — precīzi
+    if (!d.pages?.length) return { raw: '', conf: 0, box, zoned: true };
+    if (CP.FIELD[k]?.v === 'personalCode') {                            // rūtiņas — pa cipariem, lokāli
       const bd = await CP.ocr.boxedDigits(d.pages, box);
       if (bd?.text && CP.ocr.clean(k, bd.text).ok) return { raw: bd.text, conf: 92, box, zoned: true };
     }
+    if (CP.ocr.engine() === 'google') return fromWords();               // Google Vision vārdi zonā
     const r = await CP.ocr.region(d.pages, box, k) || { text: '', conf: 0 };
     return { raw: r.text || '', conf: r.conf || 0, box, zoned: true };
   }
   A.scanTplEdit = () => {
     if (!SC.doc) return msg('Vispirms atver dokumenta paraugu — skenētu PDF vai attēlu.', 'warn');
-    if (SC.doc.kind === 'docx') return msg('Zonas ir skenētiem PDF un attēliem. Word teksts paliek redzams, bet lauki netiek aizpildīti automātiski.', 'info');
+    if (SC.doc.kind === 'docx') return msg('Zonas ir skenētiem PDF un attēliem. Word un eDoc anketas tiek nolasītas precīzi automātiski.', 'info');
     SC.editing = true;
     SC.draft = SC.tpl ? JSON.parse(JSON.stringify(SC.tpl)) : { id: '', name: `Veidne ${tpls().length + 1}`, zones: [] };
     delete SC.draft.anchors;
