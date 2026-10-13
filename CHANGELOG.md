@@ -1,5 +1,14 @@
 # Izmaiņu vēsture
 
+## 1.14.4 — 2026-10-13 — Imports no instruktoru Excel tabulām
+- Vecāka vārds un tālrunis vienā šūnā (“Vecāku vārds, uzvārds, tel.Nr.”) tiek sadalīts. Ja šūnā ir divi vecāki, otrs kļūst par 2. pārstāvi.
+- Jaunas atpazītās kolonnas: vecāka personas kods, “e-adrese” (e-pasts), statuss (Jaunsargs/Kandidāts) un jaunsarga apliecības numurs.
+- Pārējās kolonnas, piem., Līgums, Līguma NR., Ārsta zīme, MTL un Solījums, tiek ierakstītas personas piezīmēs. To var izslēgt. Aprēķinu kolonnas (vecums, “Šodienas…”) tiek izlaistas.
+- Ja kolonnā “Vārds, Uzvārds” ir divi vārdi un uzvārds, uzvārds ir pēdējais vārds. Teksts iekavās pie vārda nonāk piezīmēs.
+- Tālruņi Excel zinātniskajā pierakstā (2.9E7) un ar “.0” tiek nolasīti pareizi. “NAV DATI” tiek uzskatīts par tukšu lauku. No aizklāta personas koda (piem., 010312-*****) tiek paņemts tikai dzimšanas datums.
+- Izvēle **Statuss importētajiem**: darblapai ar nosaukumu “neaktīvi” automātiski tiek iestatīts statuss “Pārtraukts”.
+- Ir redzams, cik rindu izlaists, jo tajās trūkst vārda vai uzvārda, un kuras tās ir.
+
 ## 1.14.3 — 2026-10-13 — Elastīgāks Excel imports
 - Kolonnu nosaukumi vairs nav jāliek pirmajā rindā. Rīks pats atrod darblapu un rindu ar nosaukumiem pirmajās 30 rindās, tostarp divu rindu virsrakstu, piem., “Vecāks” virs “Vārds, uzvārds” un “Tālrunis”.
 - Atpazīst arī līdzīgus nosaukumus, piem., “Jaunsarga vārds”, “Pers. kods”, “Dzim. dat.”, “Tālr.” un “Dzīvesvieta”.

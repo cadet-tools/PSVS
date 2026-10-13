@@ -70,7 +70,8 @@
     name: ['vardsuzvards', 'uzvardsvards', 'pilnsvards', 'fullname', 'name', 'skolens', 'audzeknis', 'izglitojamais', 'jaunsargs', 'dalibnieks', 'jaunsargavardsuzvards'],
     birth: ['dzimsanasdatums', 'dzimsanasdiena', 'dzimdat', 'dzimdatums', 'birth', 'dob', 'dzimis'], personalCode: ['personaskods', 'pk', 'perskods'],
     group: ['grupa', 'group', 'vieniba', 'nodala', 'apakvieniba'], schoolClass: ['klase', 'kurss', 'class'], school: ['skola', 'macibuiestade', 'izglitibasiestade'],
-    phone: ['talrunis', 'telefons', 'phone', 'mobilais', 'talr', 'tel', 'telnr', 'talrnr'], email: ['epasts', 'email', 'epastaadrese', 'mail'],
+    phone: ['talrunis', 'telefons', 'phone', 'mobilais', 'talr', 'tel', 'telnr', 'talrnr'], email: ['epasts', 'email', 'epastaadrese', 'mail', 'eadrese'],
+    parentCode: ['vecakapersonaskods', 'vecakupersonaskods', 'parstavjapersonaskods'], status: ['statuss', 'status'], idCardNo: ['apliecibasnr', 'apliecibasnumurs', 'jsapliecibasnr', 'apliecibanr'],
     parentName: ['vecaks', 'vecaki', 'vecakavardsuzvards', 'vecakavards', 'likumiskaisparstavis', 'parstavis', 'aizbildnis'],
     mother: ['mate', 'matesvardsuzvards'], motherPhone: ['matestalrunis', 'matestalr'], father: ['tevs', 'tevavardsuzvards'], fatherPhone: ['tevatalrunis', 'tevatalr'],
     other: ['citaatbildigapersona'], otherPhone: ['citaspersonastalrunis'],
@@ -78,17 +79,18 @@
     addressDeclared: ['deklaretaadrese', 'adrese', 'dzivesvieta'], addressActual: ['faktiskaadrese', 'faktiskadzivesvieta'], notes: ['piezimes', 'notes', 'komentars', 'komentari']
   };
   const FUZZY = {
-    personalCode: /personas?kod|perskod/, parentPhone: /(vecak|parstav|aizbild).*(talr|telef|mob|tel)|(talr|telef).*(vecak|parstav)/, parentEmail: /(vecak|parstav|aizbild).*(epast|mail)/,
+    parentCode: /(vecak|parstav).*(kod|^pk)/, status: /^statuss/, idCardNo: /aplieci.*(nr|num)/,
+    personalCode: /^(?!.*(vecak|parstav)).*(personas?kod|perskod)/, parentPhone: /^(?!.*vard)(.*(vecak|parstav|aizbild).*(talr|telef|mob|tel)|.*(talr|telef).*(vecak|parstav))/, parentEmail: /(vecak|parstav|aizbild).*(epast|mail)/,
     parentName: /vecak|parstav|aizbild/, motherPhone: /^mates.*(talr|telef|mob|tel)/, mother: /^mate($|s)/, fatherPhone: /^teva.*(talr|telef|mob|tel)/, father: /^tev(s|a)/,
-    birth: /dzim(?!um)/, addressActual: /fakt.*(adres|dzivesv)|(adres|dzivesv).*fakt/, addressDeclared: /adres|dzivesviet/, email: /epast|mail/, phone: /talr|telef|phone|mobil/,
+    birth: /dzim(?!um)/, addressActual: /fakt.*(adres|dzivesv)|(adres|dzivesv).*fakt/, addressDeclared: /^(?!e(adres|past)).*(adres|dzivesviet)/, email: /epast|mail|^eadres/, phone: /talr|telef|phone|mobil/,
     schoolClass: /klase|kurss|class/, school: /skola|macibuiestad|izglitibasiestad/, group: /grupa|vieniba|nodala|group/, notes: /piezim|komentar|note/,
     other: /citaatbildig|aizbildn.*vard/, otherPhone: /cit.*persona.*(talr|telef)/,
     name: /vardsuzvards|uzvardsvards|pilnsvards|fullname/, last: /uzvard|surname|lastname/, first: /vards|firstname/
   };
-  const PRIORITY = ['personalCode', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
+  const PRIORITY = ['parentCode', 'idCardNo', 'status', 'personalCode', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
   const MAP_FIELDS = [['first', 'Vārds'], ['last', 'Uzvārds'], ['name', 'Vārds un uzvārds vienā kolonnā'], ['birth', 'Dzimšanas datums'], ['personalCode', 'Personas kods'], ['group', 'Grupa'], ['school', 'Skola'], ['schoolClass', 'Klase'],
-    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'],
-    ['mother', 'Māte'], ['motherPhone', 'Mātes tālrunis'], ['father', 'Tēvs'], ['fatherPhone', 'Tēva tālrunis'], ['other', 'Cita atbildīgā persona'], ['otherPhone', 'Citas personas tālrunis'], ['notes', 'Piezīmes']];
+    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'], ['parentCode', 'Vecāka personas kods'],
+    ['mother', 'Māte'], ['motherPhone', 'Mātes tālrunis'], ['father', 'Tēvs'], ['fatherPhone', 'Tēva tālrunis'], ['other', 'Cita atbildīgā persona'], ['otherPhone', 'Citas personas tālrunis'], ['status', 'Statuss'], ['idCardNo', 'Jaunsarga apliecības nr.'], ['notes', 'Piezīmes']];
   const colName = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
   /** Virsraksta šūnas rindā r: savs teksts un (ja ir) virsraksts rindā virs tās (apvienotām šūnām — no kreisās) */
   function headerCells(rows, r) {
@@ -129,21 +131,48 @@
     }
     return best.score < 0 ? 0 : best.r;
   }
+  /** “Vārds Uzvārds 26123456, Otrs Vecāks 29123456” → [{ name, phone }] */
+  const PHONE_RE = /(\+?371[\s-]?)?\b[2-9](?:[\s-]?\d){7}\b/g;
+  function splitContacts(text) {
+    const t = String(text || '').replace(/\r/g, ''), out = []; let last = 0, m;
+    PHONE_RE.lastIndex = 0;
+    while ((m = PHONE_RE.exec(t))) {
+      const name = t.slice(last, m.index).replace(/^[\s,;:\-–\/|]+|[\s,;:\-–\/|(]+$/g, '').replace(/\b(tel|tālr|mob)\.?\s*(nr\.?)?$/i, '').trim();
+      out.push({ name, phone: m[0].replace(/[\s-]/g, '') }); last = m.index + m[0].length;
+    }
+    const rest = t.slice(last).replace(/^[\s,;:\-–\/|)]+/, '').trim();
+    if (rest && /\p{L}{2}/u.test(rest)) out.push({ name: rest, phone: '' });
+    return out.filter(x => x.name || x.phone).map(x => ({ name: x.name.replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' '), phone: x.phone }));
+  }
+  /** Kolonnas, ko neliek piezīmēs (aprēķini, numerācija) */
+  const SKIP_EXTRA = /^(npk|nr|nrpk|n)$|sodienas|^gadi$|^menesi$|^vecums$|^dienas$/;
+  const EMPTYISH = /^(nav|navdati|nezinams|-+|—)$/;
   /** Excel datums kā skaitlis (piem. 40620) → ISO */
   const excelDate = v => /^\d{4,5}(\.\d+)?$/.test(v) && Number(v) > 3000 && Number(v) < 80000 ? new Date(Date.UTC(1899, 11, 30) + Math.round(Number(v)) * 864e5).toISOString().slice(0, 10) : '';
-  function rowsToPeople(rows, headerRow, map) {
+  function rowsToPeople(rows, headerRow, map, opts = {}) {
     if (!rows.length) return [];
     const idx = {}; for (const k of Object.keys(ALIASES)) idx[k] = k in map ? map[k] : -1;
     if (idx.first < 0 && idx.name < 0) throw Error('nav norādīta kolonna ar vārdu');
     const H = headerCells(rows, headerRow).map(h => h.own);
-    const out = [];
-    for (const r of rows.slice(headerRow + 1)) {
+    const nameReversed = idx.name >= 0 && /^uzvards/.test(H[idx.name] || '');
+    const out = [], skipped = [], used = new Set(Object.values(map));
+    const extraCols = opts.extra ? H.map((h, c) => ({ c, h, label: headerCells(rows, headerRow)[c].text })).filter(x => x.h && !used.has(x.c) && !SKIP_EXTRA.test(x.h)) : [];
+    io.lastSkipped = skipped;
+    for (let ri = headerRow + 1; ri < rows.length; ri++) {
+      const r = rows[ri], rn = ri + 1;
       // e-klases palīgs pirms +, -, = un @ liek apostrofu (Excel aizsardzība) — to noņem
-      const val = k => idx[k] < 0 ? '' : String(r[idx[k]] ?? '').trim().replace(/^'(?=[=+\-@])/, '');
+      const cleanV = v => { v = String(v ?? '').trim().replace(/^'(?=[=+\-@])/, '').replace(/^(\d+)\.0+$/, '$1'); if (/^\d(\.\d+)?e\+?\d{1,2}$/i.test(v)) v = String(Math.round(Number(v))); return EMPTYISH.test(hdr(v)) ? '' : v; };
+      const val = k => idx[k] < 0 ? '' : cleanV(r[idx[k]]);
       if (idx.first >= 0 && hdr(val('first')) === H[idx.first]) continue;   // atkārtots virsraksts
       let first = val('first'), last = val('last');
-      if (!first && val('name')) { const parts = val('name').split(/\s+/); first = parts.shift() || ''; last = parts.join(' '); }
-      if (!first || !last) continue;
+      let nameNote = '';
+      if (!first && val('name')) {
+        // “Anna Marija Ozola” → vārdi: Anna Marija, uzvārds: Ozola; “(…)” pie vārda → piezīmēs
+        const raw = val('name').replace(/\s*\(([^)]*)\)\s*/g, (m0, x) => { nameNote = x.trim(); return ' '; }).replace(/\s*\n\s*/g, ' ').trim();
+        const parts = raw.split(/\s+/).filter(Boolean);
+        if (nameReversed) { last = parts.shift() || ''; first = parts.join(' '); } else { last = parts.length > 1 ? parts.pop() : ''; first = parts.join(' '); }
+      }
+      if (!first || !last) { if (first || last) skipped.push(rn); continue; }
       const p = { first, last, status: 'active', retentionMonths: S.db.settings.retentionDefault };
       for (const k of ['personalCode', 'group', 'schoolClass', 'school', 'phone', 'email', 'parentName', 'parentPhone', 'parentEmail', 'addressDeclared', 'addressActual', 'notes']) p[k] = val(k);
       if (U.norm(p.addressActual) === U.norm(p.addressDeclared)) p.addressActual = '';
@@ -155,11 +184,37 @@
         const second = fam.find((x, i) => i !== i1);
         if (second) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
       }
+      // vārds un tālrunis vienā šūnā (arī divi vecāki vienā šūnā)
+      if (/\d{6}/.test(p.parentName || '') || /\p{L}{2}/u.test(p.parentPhone || '')) {
+        const cs = [...splitContacts(p.parentName), ...(/\p{L}{2}/u.test(p.parentPhone || '') ? splitContacts(p.parentPhone) : [])];
+        if (/\p{L}{2}/u.test(p.parentPhone || '')) p.parentPhone = '';
+        if (cs.length) {
+          const a = cs[0]; p.parentName = a.name || (/\d{6}/.test(p.parentName) ? '' : p.parentName); p.parentPhone = p.parentPhone || a.phone;
+          const b = cs.slice(1).find(x => U.norm(x.name) !== U.norm(a.name) || (x.phone && x.phone !== a.phone));
+          if (b && !p.parent2Name) { p.parent2Name = b.name; p.parent2Phone = b.phone; }
+        }
+      } else if (/^\+?\d[\d\s-]{6,}$/.test(p.parentName || '')) { p.parentPhone = p.parentPhone || p.parentName.replace(/[\s-]/g, ''); p.parentName = ''; }
+      if (p.phone) p.phone = p.phone.replace(/\s*\n\s*/g, ', ');
+      const pc = val('parentCode'); if (pc && U.codeDigits(pc).length === 11) p.parentCode = U.fmtCode(pc);
+      const stv = U.norm(val('status')); if (stv) p.status = /kandid/.test(stv) ? 'candidate' : /neaktiv|partrauk|izstaj|pauze/.test(stv) ? 'paused' : 'active';
+      if (opts.status) p.status = opts.status;
+      const icn = val('idCardNo'); if (icn && /\d/.test(icn)) p.idCard = { status: 'issued', number: icn.replace(/^nr\.?\s*/i, 'Nr. ').trim(), changedAt: U.now() };
+      if (extraCols.length) {
+        const ex = extraCols.map(x => [x.label, cleanV(r[x.c])]).filter(([, v]) => v).map(([l, v]) => `${l.replace(/\s+/g, ' ').replace(/[.:]+$/, '')}: ${v.replace(/\s*\n\s*/g, ' ')}`);
+        if (ex.length) p.notes = [p.notes, 'No Excel — ' + ex.join('; ')].filter(Boolean).join('\n');
+      }
+      if (nameNote) p.notes = [p.notes, 'Pie vārda: ' + nameNote].filter(Boolean).join('\n');
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
       if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
+      let pcBirth = '';
+      if (p.personalCode && U.codeDigits(p.personalCode).length !== 11) {   // nepilns / aizklāts kods (piem. 010312-*****) — paturam tikai dzimšanas datumu
+        const m6 = /^(\d{2})(\d{2})(\d{2})/.exec(U.codeDigits(p.personalCode));
+        if (m6) { const yy = Number(m6[3]), y = yy <= new Date().getFullYear() % 100 ? 2000 + yy : 1900 + yy; pcBirth = U.parseDate(`${m6[1]}.${m6[2]}.${y}`); }
+        delete p.personalCode;
+      }
       if (p.personalCode && U.codeDigits(p.personalCode).length === 11) p.personalCode = U.fmtCode(p.personalCode);
       if (p.phone && /^\d{8}$/.test(p.phone) === false && /^\d+(\.0+)?$/.test(p.phone)) p.phone = p.phone.replace(/\.0+$/, '');
-      p.birth = excelDate(val('birth')) || U.parseDate(val('birth')) || U.birthFromCode(p.personalCode);
+      p.birth = excelDate(val('birth')) || U.parseDate(val('birth')) || U.birthFromCode(p.personalCode) || pcBirth;
       const dd = D.duplicates(p); p._dup = dd.length > 0; p._match = dd.length === 1 ? dd[0].id : '';
       out.push(p);
     }
@@ -169,7 +224,7 @@
   let pending = [];
   A.import = mode => {
     impMode(mode === 'eklase' ? 'eklase' : 'file');
-    U.$('importFile').value = ''; U.$('importPreview').innerHTML = ''; U.$('importMap').innerHTML = ''; imp = null; U.$('importStatus').textContent = ''; U.$('importConfirm').disabled = true; U.$('importGroup').value = S.db.settings.stickyGroup || '';
+    U.$('importFile').value = ''; U.$('importPreview').innerHTML = ''; U.$('importMap').innerHTML = ''; U.$('importStatusSel').value = ''; imp = null; U.$('importStatus').textContent = ''; U.$('importConfirm').disabled = true; U.$('importGroup').value = S.db.settings.stickyGroup || '';
     ui.datalists(); pending = []; U.$('importDialog').showModal();
   };
   U.$('importFile').addEventListener('change', async e => {
@@ -187,12 +242,14 @@
   });
   /* --- Kolonnu sasaiste: darblapa, virsrakstu rinda, kolonnas (lietotājs var labot) --- */
   let imp = null;
-  function selectSheet(i) { imp.sheet = i; selectHeader(detectHeader(imp.sheets[i].rows)); }
+  function selectSheet(i) { imp.sheet = i; U.$('importStatusSel').value = /neaktiv|izstaj|bijus/i.test(U.norm(imp.sheets[i].name)) ? 'paused' : ''; selectHeader(detectHeader(imp.sheets[i].rows)); }
   function selectHeader(r) { imp.headerRow = r; imp.map = mapHeader(imp.sheets[imp.sheet].rows, r); rebuild(); }
   function rebuild() {
     const rows = imp.sheets[imp.sheet].rows;
-    try { pending = hasName(imp.map) ? rowsToPeople(rows, imp.headerRow, imp.map) : []; } catch (e) { pending = []; }
+    try { pending = hasName(imp.map) ? rowsToPeople(rows, imp.headerRow, imp.map, { extra: U.$('importExtra').checked, status: U.$('importStatusSel').value }) : []; } catch (e) { pending = []; io.lastSkipped = []; }
     renderMap(); showPreview();
+    const sk = io.lastSkipped || [];
+    if (sk.length) U.$('importStatus').insertAdjacentHTML('beforeend', ` <span class="warn">${sk.length} ${sk.length === 1 ? 'rinda izlaista' : 'rindas izlaistas'}: trūkst vārda vai uzvārda (${sk.slice(0, 8).map(n => n + '.').join(', ')}${sk.length > 8 ? ' …' : ''} rinda). Ja uzvārds ir citā kolonnā, norādi to zemāk.</span>`);
     if (!hasName(imp.map)) U.$('importStatus').innerHTML = '<span class="warn">Neatradu kolonnu ar vārdu. Izvēlies pareizo virsrakstu rindu vai zemāk norādi, kurā kolonnā ir vārds un uzvārds.</span>';
   }
   function renderMap() {
@@ -214,6 +271,7 @@
   U.$('importDialog').addEventListener('change', e => {
     const t = e.target; if (!imp) return;
     if (t.id === 'impSheet') selectSheet(Number(t.value));
+    else if (t.id === 'importExtra' || t.id === 'importStatusSel') rebuild();
     else if (t.id === 'impHeader') selectHeader(Number(t.value));
     else if (t.dataset.impcol) {
       const k = t.dataset.impcol, v = t.value;
