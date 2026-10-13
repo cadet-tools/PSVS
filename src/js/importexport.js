@@ -20,55 +20,127 @@
     }
     row.push(cell); if (row.some(v => v !== '')) out.push(row); return out;
   }
-  async function unzip(file) {
-    const z = await U.unzip(await file.arrayBuffer(), n => n === 'xl/sharedStrings.xml' || /^xl\/worksheets\/sheet\d+\.xml$/.test(n)), out = new Map(), dec = new TextDecoder();
-    for (const [k, fn] of z) out.set(k, async () => dec.decode(await fn()));
-    return out;
-  }
   const xml = raw => { const x = new DOMParser().parseFromString(raw, 'application/xml'); if (x.querySelector('parsererror')) throw Error('nevar nolasīt Excel XML'); return x; };
   const tags = (n, t) => [...n.getElementsByTagNameNS('*', t)];
+  const RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  /** Visas darblapas: [{ name, rows }] (secībā, kā Excel cilnēs) */
   async function parseXlsx(file) {
-    const z = await unzip(file); let strings = [];
-    if (z.has('xl/sharedStrings.xml')) strings = tags(xml(await z.get('xl/sharedStrings.xml')()), 'si').map(si => tags(si, 't').map(t => t.textContent).join(''));
-    const sheet = [...z.keys()].filter(x => /sheet\d+\.xml$/.test(x)).sort((a, b) => Number(a.match(/(\d+)\.xml/)[1]) - Number(b.match(/(\d+)\.xml/)[1]))[0];
-    if (!sheet) throw Error('XLSX nesatur darblapas');
-    const out = [];
-    for (const row of tags(xml(await z.get(sheet)()), 'row')) {
-      const arr = [];
-      for (const c of tags(row, 'c')) {
-        const letters = (c.getAttribute('r') || 'A').match(/^[A-Z]+/i)?.[0] || 'A'; let idx = 0;
-        for (const ch of letters.toUpperCase()) idx = idx * 26 + ch.charCodeAt(0) - 64; idx--; if (idx < 0 || idx > 500) continue;
-        let v = tags(c, 'v')[0]?.textContent || ''; const t = c.getAttribute('t');
-        if (t === 's') v = strings[Number(v)] || ''; if (t === 'inlineStr') v = tags(c, 't').map(e => e.textContent).join('');
-        arr[idx] = v;
+    const want = n => n === 'xl/sharedStrings.xml' || n === 'xl/workbook.xml' || n === 'xl/_rels/workbook.xml.rels' || /^xl\/worksheets\/sheet\d+\.xml$/.test(n);
+    const z = await U.unzip(await file.arrayBuffer(), want), dec = new TextDecoder();
+    const txt = async n => z.has(n) ? dec.decode(await z.get(n)()) : '';
+    let strings = [];
+    if (z.has('xl/sharedStrings.xml')) strings = tags(xml(await txt('xl/sharedStrings.xml')), 'si').map(si => tags(si, 't').map(t => t.textContent).join(''));
+    let order = [];
+    const wb = await txt('xl/workbook.xml'), rels = await txt('xl/_rels/workbook.xml.rels');
+    if (wb && rels) {
+      const rm = {}; for (const r of tags(xml(rels), 'Relationship')) rm[r.getAttribute('Id')] = r.getAttribute('Target') || '';
+      for (const sh of tags(xml(wb), 'sheet')) {
+        const t = (rm[sh.getAttributeNS(RNS, 'id') || sh.getAttribute('r:id')] || '').replace(/^\/?(xl\/)?/, '');
+        if (t) order.push({ name: sh.getAttribute('name') || t, path: 'xl/' + t, hidden: (sh.getAttribute('state') || 'visible') !== 'visible' });
       }
-      out.push(Array.from(arr, v => v ?? '')); if (out.length > 5000) throw Error('maksimums 5000 rindas');
     }
+    if (!order.length) order = [...z.keys()].filter(x => /sheet\d+\.xml$/.test(x)).sort((a, b) => Number(a.match(/(\d+)\.xml/)[1]) - Number(b.match(/(\d+)\.xml/)[1])).map((path, i) => ({ name: `Lapa ${i + 1}`, path }));
+    const out = [];
+    for (const sh of order) {
+      if (!z.has(sh.path)) continue;
+      const rows = [];
+      for (const row of tags(xml(await txt(sh.path)), 'row')) {
+        const arr = [], rn = Number(row.getAttribute('r')) || rows.length + 1;
+        for (const c of tags(row, 'c')) {
+          const letters = (c.getAttribute('r') || 'A').match(/^[A-Z]+/i)?.[0] || 'A'; let idx = 0;
+          for (const ch of letters.toUpperCase()) idx = idx * 26 + ch.charCodeAt(0) - 64; idx--; if (idx < 0 || idx > 500) continue;
+          let v = tags(c, 'v')[0]?.textContent || ''; const t = c.getAttribute('t');
+          if (t === 's') v = strings[Number(v)] || ''; if (t === 'inlineStr') v = tags(c, 't').map(e => e.textContent).join('');
+          arr[idx] = v;
+        }
+        while (rows.length < rn - 1 && rows.length < 5000) rows.push([]);   // tukšās rindas saglabā numerāciju
+        rows.push(Array.from(arr, v => v ?? '')); if (rows.length > 5000) throw Error('maksimums 5000 rindas darblapā');
+      }
+      out.push({ name: sh.name, hidden: sh.hidden, rows });
+    }
+    if (!out.length) throw Error('XLSX nesatur darblapas');
     return out;
   }
 
   const hdr = s => U.norm(s).replace(/[^a-z0-9]/g, '');
+  /* Kolonnu atpazīšana: vispirms precīzi nosaukumi, tad līdzīgi (piem. “Jaunsarga vārds”, “Vecāka tālr.”).
+     Virsrakstu rindu meklē pirmajās 30 rindās; der arī divu rindu virsraksts (“Vecāks” virs “Vārds” / “Tālrunis”). */
   const ALIASES = {
-    first: ['vards', 'firstname', 'first', 'skolenavards'], last: ['uzvards', 'lastname', 'last', 'skolenauzvards'],
-    name: ['vardsuzvards', 'uzvardsvards', 'pilnsvards', 'fullname', 'name', 'skolens', 'audzeknis', 'izglitojamais'],
-    birth: ['dzimsanasdatums', 'dzimsanasdiena', 'dzimdat', 'birth', 'dob'], personalCode: ['personaskods', 'pk'],
-    group: ['grupa', 'group', 'vieniba', 'nodala'], schoolClass: ['klase', 'kurss', 'class'], school: ['skola', 'macibuiestade', 'izglitibasiestade'],
-    phone: ['talrunis', 'telefons', 'phone', 'mobilais', 'talr'], email: ['epasts', 'email', 'epastaadrese'],
-    parentName: ['vecaks', 'vecakavardsuzvards', 'vecakavards', 'likumiskaisparstavis', 'parstavis'],
-    mother: ['mate'], motherPhone: ['matestalrunis'], father: ['tevs'], fatherPhone: ['tevatalrunis'],
+    first: ['vards', 'firstname', 'first', 'skolenavards', 'jaunsargavards', 'dalibniekavards'], last: ['uzvards', 'lastname', 'last', 'skolenauzvards', 'jaunsargauzvards', 'dalibniekauzvards'],
+    name: ['vardsuzvards', 'uzvardsvards', 'pilnsvards', 'fullname', 'name', 'skolens', 'audzeknis', 'izglitojamais', 'jaunsargs', 'dalibnieks', 'jaunsargavardsuzvards'],
+    birth: ['dzimsanasdatums', 'dzimsanasdiena', 'dzimdat', 'dzimdatums', 'birth', 'dob', 'dzimis'], personalCode: ['personaskods', 'pk', 'perskods'],
+    group: ['grupa', 'group', 'vieniba', 'nodala', 'apakvieniba'], schoolClass: ['klase', 'kurss', 'class'], school: ['skola', 'macibuiestade', 'izglitibasiestade'],
+    phone: ['talrunis', 'telefons', 'phone', 'mobilais', 'talr', 'tel', 'telnr', 'talrnr'], email: ['epasts', 'email', 'epastaadrese', 'mail'],
+    parentName: ['vecaks', 'vecaki', 'vecakavardsuzvards', 'vecakavards', 'likumiskaisparstavis', 'parstavis', 'aizbildnis'],
+    mother: ['mate', 'matesvardsuzvards'], motherPhone: ['matestalrunis', 'matestalr'], father: ['tevs', 'tevavardsuzvards'], fatherPhone: ['tevatalrunis', 'tevatalr'],
     other: ['citaatbildigapersona'], otherPhone: ['citaspersonastalrunis'],
-    parentPhone: ['vecakatalrunis', 'vecakutalrunis', 'vecakatelefons', 'parstavjatalrunis'], parentEmail: ['vecakaepasts', 'vecakuepasts', 'parstavjaepasts'],
-    addressDeclared: ['deklaretaadrese', 'adrese'], addressActual: ['faktiskaadrese'], notes: ['piezimes', 'notes', 'komentars']
+    parentPhone: ['vecakatalrunis', 'vecakutalrunis', 'vecakatelefons', 'parstavjatalrunis', 'vecakatalr'], parentEmail: ['vecakaepasts', 'vecakuepasts', 'parstavjaepasts'],
+    addressDeclared: ['deklaretaadrese', 'adrese', 'dzivesvieta'], addressActual: ['faktiskaadrese', 'faktiskadzivesvieta'], notes: ['piezimes', 'notes', 'komentars', 'komentari']
   };
-  function rowsToPeople(rows) {
+  const FUZZY = {
+    personalCode: /personas?kod|perskod/, parentPhone: /(vecak|parstav|aizbild).*(talr|telef|mob|tel)|(talr|telef).*(vecak|parstav)/, parentEmail: /(vecak|parstav|aizbild).*(epast|mail)/,
+    parentName: /vecak|parstav|aizbild/, motherPhone: /^mates.*(talr|telef|mob|tel)/, mother: /^mate($|s)/, fatherPhone: /^teva.*(talr|telef|mob|tel)/, father: /^tev(s|a)/,
+    birth: /dzim(?!um)/, addressActual: /fakt.*(adres|dzivesv)|(adres|dzivesv).*fakt/, addressDeclared: /adres|dzivesviet/, email: /epast|mail/, phone: /talr|telef|phone|mobil/,
+    schoolClass: /klase|kurss|class/, school: /skola|macibuiestad|izglitibasiestad/, group: /grupa|vieniba|nodala|group/, notes: /piezim|komentar|note/,
+    other: /citaatbildig|aizbildn.*vard/, otherPhone: /cit.*persona.*(talr|telef)/,
+    name: /vardsuzvards|uzvardsvards|pilnsvards|fullname/, last: /uzvard|surname|lastname/, first: /vards|firstname/
+  };
+  const PRIORITY = ['personalCode', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
+  const MAP_FIELDS = [['first', 'Vārds'], ['last', 'Uzvārds'], ['name', 'Vārds un uzvārds vienā kolonnā'], ['birth', 'Dzimšanas datums'], ['personalCode', 'Personas kods'], ['group', 'Grupa'], ['school', 'Skola'], ['schoolClass', 'Klase'],
+    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'],
+    ['mother', 'Māte'], ['motherPhone', 'Mātes tālrunis'], ['father', 'Tēvs'], ['fatherPhone', 'Tēva tālrunis'], ['other', 'Cita atbildīgā persona'], ['otherPhone', 'Citas personas tālrunis'], ['notes', 'Piezīmes']];
+  const colName = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  /** Virsraksta šūnas rindā r: savs teksts un (ja ir) virsraksts rindā virs tās (apvienotām šūnām — no kreisās) */
+  function headerCells(rows, r) {
+    const cur = rows[r] || [], prev = r > 0 ? rows[r - 1] || [] : [], n = Math.max(cur.length, prev.length), out = []; let carry = '';
+    for (let c = 0; c < n; c++) {
+      const own = String(cur[c] ?? '').trim(), up = String(prev[c] ?? '').trim();
+      if (up) carry = up;
+      // vertikāli apvienots virsraksts: šūna tukša, nosaukums ir rindā virs tās
+      if (!own && up) out.push({ text: up, own: hdr(up), up: '' });
+      else out.push({ text: own, own: hdr(own), up: own ? hdr(up || carry) : '' });
+    }
+    return out;
+  }
+  /** Divu rindu virsraksts: “Vecāks/Māte/Tēvs” virs “Vārds/Tālrunis/E-pasts” */
+  function groupedField(up, own) {
+    const who = /vecak|parstav|aizbild/.test(up) ? 'parent' : /^mate/.test(up) ? 'mother' : /^tev/.test(up) ? 'father' : '';
+    if (!who) return '';
+    const what = /talr|telef|mob|^tel/.test(own) ? 'Phone' : /epast|mail/.test(own) ? 'Email' : /vard/.test(own) ? 'Name' : '';
+    if (!what) return '';
+    if (who === 'parent') return 'parent' + what;
+    return what === 'Name' ? who : what === 'Phone' ? who + 'Phone' : '';
+  }
+  function mapHeader(rows, r) {
+    const H = headerCells(rows, r), map = {}, used = new Set();
+    const take = (k, c) => { if (c >= 0 && !(k in map) && !used.has(c)) { map[k] = c; used.add(c); return true; } return false; };
+    H.forEach((h, c) => { if (h.own && h.up) { const g = groupedField(h.up, h.own); if (g) take(g, c); } });
+    for (const k of PRIORITY) take(k, H.findIndex((h, c) => !used.has(c) && h.own && ALIASES[k].includes(h.own)));
+    for (const k of PRIORITY) if (!(k in map)) take(k, H.findIndex((h, c) => !used.has(c) && h.own && h.own.length > 1 && FUZZY[k].test(h.own)));
+    if ('name' in map && 'first' in map && 'last' in map) { used.delete(map.name); delete map.name; }
+    return map;
+  }
+  const hasName = m => ('first' in m && 'last' in m) || 'name' in m || ('first' in m);
+  function detectHeader(rows) {
+    let best = { r: 0, score: -1 };
+    for (let r = 0; r < Math.min(30, rows.length); r++) {
+      const m = mapHeader(rows, r), score = Object.keys(m).length + (hasName(m) ? 5 : 0);
+      if (score > best.score && Object.keys(m).length >= 2 && hasName(m)) best = { r, score };
+    }
+    return best.score < 0 ? 0 : best.r;
+  }
+  /** Excel datums kā skaitlis (piem. 40620) → ISO */
+  const excelDate = v => /^\d{4,5}(\.\d+)?$/.test(v) && Number(v) > 3000 && Number(v) < 80000 ? new Date(Date.UTC(1899, 11, 30) + Math.round(Number(v)) * 864e5).toISOString().slice(0, 10) : '';
+  function rowsToPeople(rows, headerRow, map) {
     if (!rows.length) return [];
-    const header = rows[0].map(hdr), idx = {};
-    for (const [k, arr] of Object.entries(ALIASES)) idx[k] = header.findIndex(x => arr.includes(x));
-    if (idx.first < 0 && idx.name < 0) throw Error('neatradu kolonnu “Vārds” vai “Vārds uzvārds” pirmajā rindā');
+    const idx = {}; for (const k of Object.keys(ALIASES)) idx[k] = k in map ? map[k] : -1;
+    if (idx.first < 0 && idx.name < 0) throw Error('nav norādīta kolonna ar vārdu');
+    const H = headerCells(rows, headerRow).map(h => h.own);
     const out = [];
-    for (const r of rows.slice(1)) {
+    for (const r of rows.slice(headerRow + 1)) {
       // e-klases palīgs pirms +, -, = un @ liek apostrofu (Excel aizsardzība) — to noņem
       const val = k => idx[k] < 0 ? '' : String(r[idx[k]] ?? '').trim().replace(/^'(?=[=+\-@])/, '');
+      if (idx.first >= 0 && hdr(val('first')) === H[idx.first]) continue;   // atkārtots virsraksts
       let first = val('first'), last = val('last');
       if (!first && val('name')) { const parts = val('name').split(/\s+/); first = parts.shift() || ''; last = parts.join(' '); }
       if (!first || !last) continue;
@@ -84,8 +156,10 @@
         if (second) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
       }
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
+      if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
       if (p.personalCode && U.codeDigits(p.personalCode).length === 11) p.personalCode = U.fmtCode(p.personalCode);
-      p.birth = U.parseDate(val('birth')) || U.birthFromCode(p.personalCode);
+      if (p.phone && /^\d{8}$/.test(p.phone) === false && /^\d+(\.0+)?$/.test(p.phone)) p.phone = p.phone.replace(/\.0+$/, '');
+      p.birth = excelDate(val('birth')) || U.parseDate(val('birth')) || U.birthFromCode(p.personalCode);
       const dd = D.duplicates(p); p._dup = dd.length > 0; p._match = dd.length === 1 ? dd[0].id : '';
       out.push(p);
     }
@@ -95,17 +169,59 @@
   let pending = [];
   A.import = mode => {
     impMode(mode === 'eklase' ? 'eklase' : 'file');
-    U.$('importFile').value = ''; U.$('importPreview').innerHTML = ''; U.$('importStatus').textContent = ''; U.$('importConfirm').disabled = true; U.$('importGroup').value = S.db.settings.stickyGroup || '';
+    U.$('importFile').value = ''; U.$('importPreview').innerHTML = ''; U.$('importMap').innerHTML = ''; imp = null; U.$('importStatus').textContent = ''; U.$('importConfirm').disabled = true; U.$('importGroup').value = S.db.settings.stickyGroup || '';
     ui.datalists(); pending = []; U.$('importDialog').showModal();
   };
   U.$('importFile').addEventListener('change', async e => {
     try {
       const f = e.target.files?.[0]; if (!f) return; if (f.size > 15 * 1024 * 1024) throw Error('fails pārsniedz 15 MB');
-      const rows = /\.xlsx$/i.test(f.name) ? await parseXlsx(f) : /\.(csv|txt)$/i.test(f.name) ? parseCSV(await f.text()) : null;
-      if (!rows) throw Error('atbalstīti .xlsx un .csv faili');
-      pending = rowsToPeople(rows);
-      showPreview();
-    } catch (err) { U.$('importStatus').innerHTML = `<span class="red">Kļūda: ${esc(err.message)}</span>`; }
+      if (/\.xls$/i.test(f.name)) throw Error('vecais .xls formāts netiek atbalstīts. Excel atver failu un saglabā to kā .xlsx (Fails → Saglabāt kā → Excel darbgrāmata).');
+      const sheets = /\.xlsx$/i.test(f.name) ? await parseXlsx(f) : /\.(csv|txt)$/i.test(f.name) ? [{ name: f.name, rows: parseCSV(await f.text()) }] : null;
+      if (!sheets) throw Error('atbalstīti .xlsx un .csv faili');
+      imp = { sheets, sheet: 0, headerRow: 0, map: {} };
+      // pirmā darblapa, kurā atrodas vārdu kolonna
+      let found = -1;
+      for (let i = 0; i < sheets.length && found < 0; i++) { if (sheets[i].hidden) continue; const r = detectHeader(sheets[i].rows); if (hasName(mapHeader(sheets[i].rows, r))) found = i; }
+      selectSheet(found < 0 ? 0 : found);
+    } catch (err) { imp = null; U.$('importMap').innerHTML = ''; U.$('importPreview').innerHTML = ''; U.$('importStatus').innerHTML = `<span class="red">Kļūda: ${esc(err.message)}</span>`; }
+  });
+  /* --- Kolonnu sasaiste: darblapa, virsrakstu rinda, kolonnas (lietotājs var labot) --- */
+  let imp = null;
+  function selectSheet(i) { imp.sheet = i; selectHeader(detectHeader(imp.sheets[i].rows)); }
+  function selectHeader(r) { imp.headerRow = r; imp.map = mapHeader(imp.sheets[imp.sheet].rows, r); rebuild(); }
+  function rebuild() {
+    const rows = imp.sheets[imp.sheet].rows;
+    try { pending = hasName(imp.map) ? rowsToPeople(rows, imp.headerRow, imp.map) : []; } catch (e) { pending = []; }
+    renderMap(); showPreview();
+    if (!hasName(imp.map)) U.$('importStatus').innerHTML = '<span class="warn">Neatradu kolonnu ar vārdu. Izvēlies pareizo virsrakstu rindu vai zemāk norādi, kurā kolonnā ir vārds un uzvārds.</span>';
+  }
+  function renderMap() {
+    const sh = imp.sheets[imp.sheet], rows = sh.rows, H = headerCells(rows, imp.headerRow);
+    const cell = v => String(v ?? '').trim();
+    const rowLabel = r => `${r + 1}. rinda: ${(rows[r] || []).map(cell).filter(Boolean).slice(0, 6).join(' | ').slice(0, 90) || '(tukša)'}`;
+    const cols = H.map((h, c) => ({ c, label: `${colName(c)} · ${(h.text || '').slice(0, 40) || '(bez virsraksta)'}` })).filter((x, c) => H[c].text || rows.slice(imp.headerRow + 1, imp.headerRow + 20).some(r => cell(r[c])));
+    const n = Object.keys(imp.map).length, ok = hasName(imp.map);
+    U.$('importMap').innerHTML = `<div class="imp-map">
+      <div class="fieldgrid">
+        ${imp.sheets.length > 1 ? `<div class="field"><label>Darblapa</label><select id="impSheet">${imp.sheets.map((s, i) => `<option value="${i}" ${i === imp.sheet ? 'selected' : ''}>${esc(s.name)}${s.hidden ? ' (paslēpta)' : ''}</option>`).join('')}</select></div>` : ''}
+        <div class="field ${imp.sheets.length > 1 ? '' : 'wide'}"><label>Rinda ar kolonnu nosaukumiem</label><select id="impHeader">${rows.slice(0, 30).map((r, i) => `<option value="${i}" ${i === imp.headerRow ? 'selected' : ''}>${esc(rowLabel(i))}</option>`).join('')}</select></div>
+      </div>
+      <details ${ok && !imp.open ? '' : 'open'} class="small" id="impColsBox"><summary>Atpazītas <b>${n}</b> kolonnas — pārbaudi vai labo</summary>
+        <div class="imp-cols">${MAP_FIELDS.map(([k, l]) => `<label><span>${esc(l)}</span><select data-impcol="${k}"><option value="">— neimportēt —</option>${cols.map(x => `<option value="${x.c}" ${imp.map[k] === x.c ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></label>`).join('')}</div>
+      </details></div>`;
+  }
+  U.$('importDialog').addEventListener('toggle', e => { if (imp && e.target.id === 'impColsBox') imp.open = e.target.open; }, true);
+  U.$('importDialog').addEventListener('change', e => {
+    const t = e.target; if (!imp) return;
+    if (t.id === 'impSheet') selectSheet(Number(t.value));
+    else if (t.id === 'impHeader') selectHeader(Number(t.value));
+    else if (t.dataset.impcol) {
+      const k = t.dataset.impcol, v = t.value;
+      imp.open = true;
+      if (v === '') delete imp.map[k];
+      else { const c = Number(v); for (const x of Object.keys(imp.map)) if (imp.map[x] === c) delete imp.map[x]; imp.map[k] = c; }
+      rebuild();
+    }
   });
   const fillOn = () => U.$('importFill').checked;
   // vecāku lauki tiek papildināti tikai kopā ar to pašu personu (lai saistība/tālrunis nepieliptu citam vecākam)

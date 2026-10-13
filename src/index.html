@@ -249,7 +249,7 @@
   <header class="dlg-head"><h2>Personu imports</h2><button type="button" class="ghost" data-close="importDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body">
     <div class="tabs imp-tabs"><button type="button" data-imp="file" class="active">Excel / CSV fails</button><button type="button" data-imp="eklase">No e-klases</button></div>
-    <div id="impFileHelp"><p class="muted small">.xlsx (pirmā darblapa) vai .csv. Pirmajā rindā jābūt kolonnu nosaukumiem: vārds, uzvārds (vai “vārds uzvārds”), dzimšanas datums, personas kods, grupa, klase, skola, tālrunis, e-pasts, vecāks, vecāka tālrunis, vecāka e-pasts, adrese, piezīmes.</p></div>
+    <div id="impFileHelp"><p class="muted small">Der tavs esošais Excel (.xlsx) vai .csv fails. Kolonnu nosaukumi nav obligāti jāliek pirmajā rindā: rīks pats atradīs darblapu un rindu ar nosaukumiem (piem., vārds, uzvārds, dzimšanas datums, personas kods, grupa, tālrunis, vecāks, vecāka tālrunis, adrese). Pēc faila izvēles pārbaudi, kuras kolonnas atpazītas, un, ja vajag, izlabo.</p></div>
     <div id="impEklaseHelp" hidden>
       <p class="small" style="margin-top:0">E-klasei nav lejupielādes pogas skolēnu personas datiem, tāpēc rīkā ir <b>eksporta palīgs</b>. Tas e-klasē atver nelielu paneli, nolasa atvērtās personas lietas laukus un saglabā CSV failu tavā datorā. Dati netiek sūtīti nekur citur.</p>
       <ol class="imp-steps small">
@@ -269,7 +269,7 @@
     <div class="fieldgrid"><div class="field"><label>Fails</label><input id="importFile" type="file" accept=".csv,.txt,.xlsx"></div>
       <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div>
       <div class="field wide"><label class="check"><input type="checkbox" id="importFill" checked> Personām, kas jau ir uzskaitē, papildināt tukšos laukus (esošie dati netiek mainīti)</label></div></div>
-    <p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
+    <div id="importMap"></div><p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
   </div>
   <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="importDialog">Atcelt</button><button id="importConfirm" class="mainbtn" disabled>Importēt</button></footer>
 </dialog>

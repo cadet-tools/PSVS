@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.14.3 — 2026-10-13 — Elastīgāks Excel imports
+- Kolonnu nosaukumi vairs nav jāliek pirmajā rindā. Rīks pats atrod darblapu un rindu ar nosaukumiem pirmajās 30 rindās, tostarp divu rindu virsrakstu, piem., “Vecāks” virs “Vārds, uzvārds” un “Tālrunis”.
+- Atpazīst arī līdzīgus nosaukumus, piem., “Jaunsarga vārds”, “Pers. kods”, “Dzim. dat.”, “Tālr.” un “Dzīvesvieta”.
+- Importa logā redzams, kura darblapa, rinda un kolonnas ir atpazītas. Katru no tām var nomainīt ar roku.
+- Excel datumi (šūnas ar datuma formātu) tiek nolasīti pareizi. Ja Excel personas kodam nogriezis sākuma nulli, tā tiek atjaunota. Atkārtota virsrakstu rinda tabulas vidū tiek izlaista.
+- Vecajam .xls formātam ir skaidrs paziņojums, kā failu saglabāt kā .xlsx.
+
 ## 1.14.2 — 2026-10-13
 - Pēc atjauninājuma lapa un programma vienmēr ielādējas kopā. Iepriekš pārlūks dažas minūtes varēja lietot iepriekšējo programmu, un jaunās pogas (piem., cilne “No e-klases”) nereaģēja.
 
