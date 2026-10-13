@@ -183,8 +183,8 @@
         ['Ārkārtas kontakts', [p.emergencyName, p.emergencyPhone && U.prettyPhone(p.emergencyPhone)].filter(Boolean).join(' · ')]])}
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
       <section class="card"><h3>Pēdējā aktivitāte <button class="ghost sm right" data-tab="history">Viss →</button></h3>${recent.length ? recent.map(timelineRow).join('') : '<p class="muted small">Vēl nav ierakstu.</p>'}</section>
-      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${noteBox('year', p.id, e.yearId, e.note, 'Piezīme par šo gadu', 1)}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
-      <section class="card wide"><h3>Piezīmes</h3>${noteBox('person', p.id, '', p.notes, 'Piezīmes par personu (piem., veselība, īpaši norādījumi, vienošanās)…', Math.min(10, Math.max(2, String(p.notes || '').split('\n').length + 1)))}</section>
+      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
+      <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
     </div>`;
   }
 
@@ -208,6 +208,8 @@
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });
+    for (const n of p.noteLog || []) items.push({ at: n.at, type: 'note', text: n.text, grp: 'notes' });
+    for (const e of D.enrollmentsOf(p.id)) for (const n of e.noteLog || []) items.push({ at: n.at, type: 'note', text: `${U.yearLabel(e.yearId)}: ${n.text}`, grp: 'notes' });
     for (const a of S.db.audit) if (a.personId === p.id) items.push({ at: a.at, type: 'audit', text: (AUDIT[a.action] || a.action) + (a.fields?.length ? ': ' + a.fields.join(', ') : ''), grp: 'changes' });
     for (const t of S.db.tasks) if (t.personId === p.id) items.push({ at: t.createdAt, type: 'task', task: t, grp: 'tasks' });
     return items.sort((a, b) => String(b.at).localeCompare(String(a.at)));
@@ -221,46 +223,84 @@
   function history(p) {
     const f = S.historyFilter, all = timeline(p), items = f === 'all' ? all : all.filter(i => i.grp === f);
     const chip = (k, t) => `<button class="chipbtn ${f === k ? 'on' : ''}" data-act="histFilter" data-arg="${k}">${t}</button>`;
-    return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
+    return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" data-autogrow rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
         <div class="actions"><label class="inline">Atgādināt <input type="date" id="noteDue"></label><span class="muted small">Ar datumu ieraksts kļūst par uzdevumu. Enter — pievienot, Shift+Enter — jauna rinda.</span><span class="grow"></span><button class="mainbtn" data-act="addNote" data-arg="${p.id}">Pievienot</button></div></div></section>
       <section class="card"><div class="chips" style="margin-bottom:10px">${chip('all', 'Viss')}${chip('comms', 'Saziņa')}${chip('notes', 'Piezīmes')}${chip('tasks', 'Uzdevumi')}${chip('changes', 'Izmaiņas')}</div>
       ${items.map(timelineRow).join('') || '<p class="muted small">Nav ierakstu.</p>'}</section>`;
   }
-  /* --- Piezīmju lauks ar pogu “Saglabāt”: Enter saglabā, Shift+Enter — jauna rinda, iziešana no lauka arī saglabā --- */
-  function noteBox(kind, pid, yearId, value, ph, rows = 2) {
-    return `<div class="notebox" data-nb="${esc(kind)}|${esc(pid)}|${esc(yearId || '')}"><textarea data-notebox rows="${rows}" placeholder="${esc(ph)}">${esc(value || '')}</textarea>
-      <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda</small><span class="grow"></span><span class="nb-state small"></span><button type="button" class="sm mainbtn" data-act="noteSave">Saglabāt</button></div></div>`;
+  /* --- Piezīmju žurnāls: katrs saglabātais ieraksts ir atsevišķs, to var labot vai dzēst.
+         Enter — saglabāt, Shift+Enter — jauna rinda, Esc — atcelt labošanu. Lauki izplešas pēc teksta. --- */
+  const drafts = {};
+  const jList = (kind, pid, yearId, create) => {
+    const o = kind === 'year' ? (S.db.enrollments || []).find(x => x.personId === pid && x.yearId === yearId) : D.person(pid);
+    if (!o) return null; if (create && !Array.isArray(o.noteLog)) o.noteLog = []; return o.noteLog || [];
+  };
+  function journal(kind, pid, yearId, ph) {
+    const key = `${kind}|${pid}|${yearId || ''}`, list = [...(jList(kind, pid, yearId) || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const entry = n => S.jEdit === n.id
+      ? `<div class="jentry editing" data-jid="${n.id}"><textarea data-autogrow data-jedit rows="2">${esc(n.text)}</textarea>
+          <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda · Esc — atcelt</small><span class="grow"></span><button type="button" class="sm ghost" data-act="jCancel">Atcelt</button><button type="button" class="sm mainbtn" data-act="jSave" data-arg="${n.id}">Saglabāt</button></div></div>`
+      : `<div class="jentry" data-jid="${n.id}"><div class="jmeta small muted">${n.dateOnly ? esc(U.fmtDate(String(n.at).slice(0, 10))) + ' · agrāk ievadīta' : esc(U.fmtDateTime(n.at))}${n.editedAt ? ` · labots ${esc(U.fmtDateTime(n.editedAt))}` : ''}<span class="grow"></span>
+          <button type="button" class="sm ghost" data-act="jEdit" data-arg="${n.id}" title="Labot">${CP.ic('edit', '✎')}</button><button type="button" class="sm ghost danger" data-act="jDel" data-arg="${n.id}" title="Dzēst">✕</button></div><div class="jtext pre">${esc(n.text)}</div></div>`;
+    return `<div class="journal" data-j="${esc(key)}"><div class="notebox"><textarea data-autogrow data-jnew rows="1" placeholder="${esc(ph)}">${esc(drafts[key] || '')}</textarea>
+        <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda</small><span class="grow"></span><button type="button" class="sm mainbtn" data-act="jAdd">Pievienot</button></div></div>
+      ${list.length ? `<div class="jlist">${list.map(entry).join('')}</div>` : ''}</div>`;
   }
-  CP.noteBox = noteBox;
-  function saveBox(box) {
-    if (!box) return;
-    const [kind, pid, yearId] = box.dataset.nb.split('|'), ta = box.querySelector('textarea'), v = ta.value.replace(/\s+$/, ''), p = D.person(pid);
-    const st = box.querySelector('.nb-state'); if (!p) return;
-    if (kind === 'year') {
-      const r = (S.db.enrollments || []).find(x => x.personId === pid && x.yearId === yearId); if (!r) return;
-      if ((r.note || '') !== v) { r.note = v; D.audit(pid, 'update', ['Piezīme par ' + U.yearLabel(yearId)]); }
-    } else if ((p.notes || '') !== v) { p.notes = v; p.updatedAt = U.now(); D.audit(pid, 'update', ['Piezīmes']); }
-    CP.store.changed({ silent: true });
-    box.classList.remove('dirty'); st.textContent = 'Saglabāts ✓'; st.className = 'nb-state small ok';
-    clearTimeout(box._t); box._t = setTimeout(() => { if (!box.classList.contains('dirty')) st.textContent = ''; }, 4000);
+  CP.journal = journal;
+  const jKey = el => el.closest('.journal')?.dataset.j.split('|');
+  let refocus = null;
+  function jAdd(el) {
+    const box = el.closest('.journal'), [kind, pid, yearId] = jKey(el), ta = box.querySelector('[data-jnew]'), t = ta.value.replace(/\s+$/, '').replace(/^\s+/, '');
+    if (!t) { ta.focus(); return; }
+    const list = jList(kind, pid, yearId, true); if (!list) return;
+    list.push({ id: U.uid(), at: U.now(), text: t });
+    delete drafts[box.dataset.j]; refocus = box.dataset.j;
+    D.audit(pid, 'update', [kind === 'year' ? 'Piezīme par ' + U.yearLabel(yearId) : 'Piezīme']);
+    CP.store.changed(); ui.toast('Piezīme saglabāta', 'ok', 2000);
   }
-  A.noteSave = (arg, el) => saveBox(el.closest('.notebox'));
+  function jSave(el, id) {
+    const [kind, pid, yearId] = jKey(el), list = jList(kind, pid, yearId) || [], n = list.find(x => x.id === id), ta = el.closest('.jentry').querySelector('[data-jedit]');
+    if (!n) return; const t = ta.value.trim(); if (!t) return jDel(el, id);
+    if (t !== n.text) { n.text = t; n.editedAt = U.now(); D.audit(pid, 'update', ['Piezīme labota']); }
+    S.jEdit = null; CP.store.changed();
+  }
+  function jDel(el, id) {
+    const [kind, pid, yearId] = jKey(el), list = jList(kind, pid, yearId) || [], i = list.findIndex(x => x.id === id);
+    if (i < 0 || !confirm('Dzēst šo piezīmi?')) return;
+    list.splice(i, 1); S.jEdit = null; D.audit(pid, 'update', ['Piezīme dzēsta']); CP.store.changed();
+  }
+  A.jAdd = (arg, el) => jAdd(el);
+  A.jEdit = id => { S.jEdit = id; CP.render(); const t = U.qs(`.jentry[data-jid="${id}"] [data-jedit]`); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); grow(t); } };
+  A.jSave = (id, el) => jSave(el, id);
+  A.jCancel = () => { S.jEdit = null; CP.render(); };
+  A.jDel = (id, el) => jDel(el, id);
   CP.inputHandlers.push(e => {
-    const t = e.target; if (!t.matches?.('[data-notebox]')) return false;
-    const box = t.closest('.notebox'), st = box.querySelector('.nb-state');
-    box.classList.add('dirty'); st.textContent = 'Nav saglabāts'; st.className = 'nb-state small warn'; return true;
+    const t = e.target; if (!t.matches?.('[data-jnew],[data-jedit]')) return false;
+    if (t.matches('[data-jnew]')) drafts[t.closest('.journal').dataset.j] = t.value;
+    return true;
   });
   document.addEventListener('keydown', e => {
-    const t = e.target; if (e.key !== 'Enter' || e.shiftKey || e.isComposing || !t.matches?.('[data-notebox]')) return;
-    e.preventDefault(); saveBox(t.closest('.notebox'));
+    const t = e.target; if (!t.matches?.('[data-jnew],[data-jedit]')) return;
+    if (e.key === 'Escape' && t.matches('[data-jedit]')) { e.preventDefault(); A.jCancel(); return; }
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    if (t.matches('[data-jnew]')) jAdd(t); else jSave(t, t.closest('.jentry').dataset.jid);
   });
-  document.addEventListener('focusout', e => { const t = e.target; if (t.matches?.('[data-notebox]') && t.closest('.notebox')?.classList.contains('dirty')) saveBox(t.closest('.notebox')); });
+  /* Automātiski augoši teksta lauki */
+  const NATIVE = typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content');
+  function grow(t) { if (NATIVE || !t) return; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, window.innerHeight * 0.6) + 'px'; }
+  document.addEventListener('input', e => { if (e.target.matches?.('textarea[data-autogrow], #noteText')) grow(e.target); }, true);
+  CP.afterRender = CP.afterRender || [];
+  CP.afterRender.push(() => {
+    if (!NATIVE) U.qsa('textarea[data-autogrow], #noteText').forEach(grow);
+    if (refocus) { const b = U.qs(`.journal[data-j="${CSS.escape(refocus)}"] [data-jnew]`); refocus = null; b?.focus(); }
+  });
 
   A.histFilter = k => { S.historyFilter = k; CP.render(); };
   A.addNote = pid => {
     const t = U.$('noteText').value.trim(), due = U.$('noteDue').value; if (!t) return U.$('noteText').focus();
     if (due) S.db.tasks.push({ id: U.uid(), personId: pid, text: t, due, done: false, createdAt: U.now() });
-    else D.log(pid, 'note', t);
+    else { const p = D.person(pid); if (p) (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: t }); }
     CP.store.changed(); ui.toast(due ? 'Uzdevums pievienots' : 'Ieraksts pievienots', 'ok', 2500);
   };
   A.taskDone = id => { const t = S.db.tasks.find(x => x.id === id); if (t) { t.done = !t.done; t.doneAt = t.done ? U.now() : null; CP.store.changed(); } };

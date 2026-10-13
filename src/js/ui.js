@@ -71,6 +71,7 @@
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();
     pg.after?.();
+    for (const f of CP.afterRender || []) { try { f(); } catch (e) { console.error(e); } }
     CP.years?.paint();
     ui.updateSaveState();
   };

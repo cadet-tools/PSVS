@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 26 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 27 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,8 +11,8 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.15.1';
-  CP.SCHEMA = 6;
+  CP.VERSION = '1.16.0';
+  CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
   CP.WEB = /^https?:$/.test(location.protocol);
@@ -298,7 +298,7 @@ window.CP = window.CP || {};
     { k: 'photoConsent', l: 'Foto/video publicēšana', s: 'admin', t: 'select', opts: [['', 'Nav zināms'], ['yes', 'Piekrīt'], ['no', 'Nepiekrīt']] },
     { k: 'photoConsentDate', l: 'Piekrišanas datums', s: 'admin', t: 'date', v: 'date' },
     { k: 'retentionMonths', l: 'Glabāšana pēc izstāšanās (mēn.)', s: 'admin', t: 'number', noScan: 1 },
-    { k: 'notes', l: 'Piezīmes', s: 'admin', t: 'textarea', wide: 1 }
+    { k: 'notes', l: 'Jauna piezīme (tiks pievienota piezīmju žurnālam)', s: 'admin', t: 'textarea', wide: 1 }
   ];
   CP.FIELD = Object.fromEntries(CP.FIELDS.map(f => [f.k, f]));
 
@@ -338,6 +338,20 @@ window.CP = window.CP || {};
   });
 
   /** Migrē datus no 0.2 (v2), 0.3 (v3), v4 un vecākām versijām uz v5. Nekas netiek dzēsts. */
+  /** Piezīmes kā ierakstu žurnāls: p.noteLog / enrollment.noteLog = [{ id, at, text, editedAt }].
+      Teksts, kas nonāk p.notes (imports, anketa, rediģēšanas logs) vai e.note, tiek pārnests uz žurnālu. */
+  CP.flushNotes = (d, old) => {
+    let n = 0;
+    const move = (o, key, at) => {
+      const t = String(o[key] ?? '').trim(); if (o[key] !== undefined && !t) { delete o[key]; return; } if (!t) return;
+      const e = { id: U.uid(), at: U.now(), text: t };
+      if (old && at) { e.at = /^\d{4}-\d{2}-\d{2}$/.test(at) ? at + 'T12:00:00' : at; e.dateOnly = true; }   // agrāk ievadīta: precīzs laiks nav zināms
+      (o.noteLog = Array.isArray(o.noteLog) ? o.noteLog : []).push(e); delete o[key]; n++;
+    };
+    for (const p of d.people || []) if (p.notes !== undefined) move(p, 'notes', p.updatedAt || p.createdAt);
+    for (const e of d.enrollments || []) if (e.note !== undefined) move(e, 'note', e.at ? String(e.at) : '');
+    return n;
+  };
   CP.migrate = raw => {
     const def = CP.defaultSettings();
     const d = { ...CP.blank(), ...raw };
@@ -397,6 +411,7 @@ window.CP = window.CP || {};
     for (const eq of d.equipment) stampYear(eq, 'issued', 'changedAt');
     for (const t of d.tasks) stampYear(t, 'due', 'createdAt');
     for (const l of d.log) stampYear(l, 'at');
+    CP.flushNotes(d, true);
     d.version = CP.SCHEMA;
     return d;
   };
@@ -789,6 +804,7 @@ window.CP = window.CP || {};
 
   /* --- Izmaiņu reģistrēšana un saglabāšana --- */
   store.changed = (opts = {}) => {
+    if (S.db && CP.flushNotes) CP.flushNotes(S.db);
     S.dirty = true;
     S.rev = (S.rev || 0) + 1;
     if (!opts.silent) CP.render();
@@ -1883,6 +1899,7 @@ window.CP = window.CP || {};
     const pg = CP.pages[S.page] || CP.pages.dashboard;
     U.$('main').innerHTML = pg.render();
     pg.after?.();
+    for (const f of CP.afterRender || []) { try { f(); } catch (e) { console.error(e); } }
     CP.years?.paint();
     ui.updateSaveState();
   };
@@ -2224,8 +2241,8 @@ window.CP = window.CP || {};
         ['Ārkārtas kontakts', [p.emergencyName, p.emergencyPhone && U.prettyPhone(p.emergencyPhone)].filter(Boolean).join(' · ')]])}
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
       <section class="card"><h3>Pēdējā aktivitāte <button class="ghost sm right" data-tab="history">Viss →</button></h3>${recent.length ? recent.map(timelineRow).join('') : '<p class="muted small">Vēl nav ierakstu.</p>'}</section>
-      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${noteBox('year', p.id, e.yearId, e.note, 'Piezīme par šo gadu', 1)}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
-      <section class="card wide"><h3>Piezīmes</h3>${noteBox('person', p.id, '', p.notes, 'Piezīmes par personu (piem., veselība, īpaši norādījumi, vienošanās)…', Math.min(10, Math.max(2, String(p.notes || '').split('\n').length + 1)))}</section>
+      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
+      <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
     </div>`;
   }
 
@@ -2249,6 +2266,8 @@ window.CP = window.CP || {};
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });
+    for (const n of p.noteLog || []) items.push({ at: n.at, type: 'note', text: n.text, grp: 'notes' });
+    for (const e of D.enrollmentsOf(p.id)) for (const n of e.noteLog || []) items.push({ at: n.at, type: 'note', text: `${U.yearLabel(e.yearId)}: ${n.text}`, grp: 'notes' });
     for (const a of S.db.audit) if (a.personId === p.id) items.push({ at: a.at, type: 'audit', text: (AUDIT[a.action] || a.action) + (a.fields?.length ? ': ' + a.fields.join(', ') : ''), grp: 'changes' });
     for (const t of S.db.tasks) if (t.personId === p.id) items.push({ at: t.createdAt, type: 'task', task: t, grp: 'tasks' });
     return items.sort((a, b) => String(b.at).localeCompare(String(a.at)));
@@ -2262,46 +2281,84 @@ window.CP = window.CP || {};
   function history(p) {
     const f = S.historyFilter, all = timeline(p), items = f === 'all' ? all : all.filter(i => i.grp === f);
     const chip = (k, t) => `<button class="chipbtn ${f === k ? 'on' : ''}" data-act="histFilter" data-arg="${k}">${t}</button>`;
-    return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
+    return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" data-autogrow rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
         <div class="actions"><label class="inline">Atgādināt <input type="date" id="noteDue"></label><span class="muted small">Ar datumu ieraksts kļūst par uzdevumu. Enter — pievienot, Shift+Enter — jauna rinda.</span><span class="grow"></span><button class="mainbtn" data-act="addNote" data-arg="${p.id}">Pievienot</button></div></div></section>
       <section class="card"><div class="chips" style="margin-bottom:10px">${chip('all', 'Viss')}${chip('comms', 'Saziņa')}${chip('notes', 'Piezīmes')}${chip('tasks', 'Uzdevumi')}${chip('changes', 'Izmaiņas')}</div>
       ${items.map(timelineRow).join('') || '<p class="muted small">Nav ierakstu.</p>'}</section>`;
   }
-  /* --- Piezīmju lauks ar pogu “Saglabāt”: Enter saglabā, Shift+Enter — jauna rinda, iziešana no lauka arī saglabā --- */
-  function noteBox(kind, pid, yearId, value, ph, rows = 2) {
-    return `<div class="notebox" data-nb="${esc(kind)}|${esc(pid)}|${esc(yearId || '')}"><textarea data-notebox rows="${rows}" placeholder="${esc(ph)}">${esc(value || '')}</textarea>
-      <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda</small><span class="grow"></span><span class="nb-state small"></span><button type="button" class="sm mainbtn" data-act="noteSave">Saglabāt</button></div></div>`;
+  /* --- Piezīmju žurnāls: katrs saglabātais ieraksts ir atsevišķs, to var labot vai dzēst.
+         Enter — saglabāt, Shift+Enter — jauna rinda, Esc — atcelt labošanu. Lauki izplešas pēc teksta. --- */
+  const drafts = {};
+  const jList = (kind, pid, yearId, create) => {
+    const o = kind === 'year' ? (S.db.enrollments || []).find(x => x.personId === pid && x.yearId === yearId) : D.person(pid);
+    if (!o) return null; if (create && !Array.isArray(o.noteLog)) o.noteLog = []; return o.noteLog || [];
+  };
+  function journal(kind, pid, yearId, ph) {
+    const key = `${kind}|${pid}|${yearId || ''}`, list = [...(jList(kind, pid, yearId) || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const entry = n => S.jEdit === n.id
+      ? `<div class="jentry editing" data-jid="${n.id}"><textarea data-autogrow data-jedit rows="2">${esc(n.text)}</textarea>
+          <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda · Esc — atcelt</small><span class="grow"></span><button type="button" class="sm ghost" data-act="jCancel">Atcelt</button><button type="button" class="sm mainbtn" data-act="jSave" data-arg="${n.id}">Saglabāt</button></div></div>`
+      : `<div class="jentry" data-jid="${n.id}"><div class="jmeta small muted">${n.dateOnly ? esc(U.fmtDate(String(n.at).slice(0, 10))) + ' · agrāk ievadīta' : esc(U.fmtDateTime(n.at))}${n.editedAt ? ` · labots ${esc(U.fmtDateTime(n.editedAt))}` : ''}<span class="grow"></span>
+          <button type="button" class="sm ghost" data-act="jEdit" data-arg="${n.id}" title="Labot">${CP.ic('edit', '✎')}</button><button type="button" class="sm ghost danger" data-act="jDel" data-arg="${n.id}" title="Dzēst">✕</button></div><div class="jtext pre">${esc(n.text)}</div></div>`;
+    return `<div class="journal" data-j="${esc(key)}"><div class="notebox"><textarea data-autogrow data-jnew rows="1" placeholder="${esc(ph)}">${esc(drafts[key] || '')}</textarea>
+        <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda</small><span class="grow"></span><button type="button" class="sm mainbtn" data-act="jAdd">Pievienot</button></div></div>
+      ${list.length ? `<div class="jlist">${list.map(entry).join('')}</div>` : ''}</div>`;
   }
-  CP.noteBox = noteBox;
-  function saveBox(box) {
-    if (!box) return;
-    const [kind, pid, yearId] = box.dataset.nb.split('|'), ta = box.querySelector('textarea'), v = ta.value.replace(/\s+$/, ''), p = D.person(pid);
-    const st = box.querySelector('.nb-state'); if (!p) return;
-    if (kind === 'year') {
-      const r = (S.db.enrollments || []).find(x => x.personId === pid && x.yearId === yearId); if (!r) return;
-      if ((r.note || '') !== v) { r.note = v; D.audit(pid, 'update', ['Piezīme par ' + U.yearLabel(yearId)]); }
-    } else if ((p.notes || '') !== v) { p.notes = v; p.updatedAt = U.now(); D.audit(pid, 'update', ['Piezīmes']); }
-    CP.store.changed({ silent: true });
-    box.classList.remove('dirty'); st.textContent = 'Saglabāts ✓'; st.className = 'nb-state small ok';
-    clearTimeout(box._t); box._t = setTimeout(() => { if (!box.classList.contains('dirty')) st.textContent = ''; }, 4000);
+  CP.journal = journal;
+  const jKey = el => el.closest('.journal')?.dataset.j.split('|');
+  let refocus = null;
+  function jAdd(el) {
+    const box = el.closest('.journal'), [kind, pid, yearId] = jKey(el), ta = box.querySelector('[data-jnew]'), t = ta.value.replace(/\s+$/, '').replace(/^\s+/, '');
+    if (!t) { ta.focus(); return; }
+    const list = jList(kind, pid, yearId, true); if (!list) return;
+    list.push({ id: U.uid(), at: U.now(), text: t });
+    delete drafts[box.dataset.j]; refocus = box.dataset.j;
+    D.audit(pid, 'update', [kind === 'year' ? 'Piezīme par ' + U.yearLabel(yearId) : 'Piezīme']);
+    CP.store.changed(); ui.toast('Piezīme saglabāta', 'ok', 2000);
   }
-  A.noteSave = (arg, el) => saveBox(el.closest('.notebox'));
+  function jSave(el, id) {
+    const [kind, pid, yearId] = jKey(el), list = jList(kind, pid, yearId) || [], n = list.find(x => x.id === id), ta = el.closest('.jentry').querySelector('[data-jedit]');
+    if (!n) return; const t = ta.value.trim(); if (!t) return jDel(el, id);
+    if (t !== n.text) { n.text = t; n.editedAt = U.now(); D.audit(pid, 'update', ['Piezīme labota']); }
+    S.jEdit = null; CP.store.changed();
+  }
+  function jDel(el, id) {
+    const [kind, pid, yearId] = jKey(el), list = jList(kind, pid, yearId) || [], i = list.findIndex(x => x.id === id);
+    if (i < 0 || !confirm('Dzēst šo piezīmi?')) return;
+    list.splice(i, 1); S.jEdit = null; D.audit(pid, 'update', ['Piezīme dzēsta']); CP.store.changed();
+  }
+  A.jAdd = (arg, el) => jAdd(el);
+  A.jEdit = id => { S.jEdit = id; CP.render(); const t = U.qs(`.jentry[data-jid="${id}"] [data-jedit]`); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); grow(t); } };
+  A.jSave = (id, el) => jSave(el, id);
+  A.jCancel = () => { S.jEdit = null; CP.render(); };
+  A.jDel = (id, el) => jDel(el, id);
   CP.inputHandlers.push(e => {
-    const t = e.target; if (!t.matches?.('[data-notebox]')) return false;
-    const box = t.closest('.notebox'), st = box.querySelector('.nb-state');
-    box.classList.add('dirty'); st.textContent = 'Nav saglabāts'; st.className = 'nb-state small warn'; return true;
+    const t = e.target; if (!t.matches?.('[data-jnew],[data-jedit]')) return false;
+    if (t.matches('[data-jnew]')) drafts[t.closest('.journal').dataset.j] = t.value;
+    return true;
   });
   document.addEventListener('keydown', e => {
-    const t = e.target; if (e.key !== 'Enter' || e.shiftKey || e.isComposing || !t.matches?.('[data-notebox]')) return;
-    e.preventDefault(); saveBox(t.closest('.notebox'));
+    const t = e.target; if (!t.matches?.('[data-jnew],[data-jedit]')) return;
+    if (e.key === 'Escape' && t.matches('[data-jedit]')) { e.preventDefault(); A.jCancel(); return; }
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    if (t.matches('[data-jnew]')) jAdd(t); else jSave(t, t.closest('.jentry').dataset.jid);
   });
-  document.addEventListener('focusout', e => { const t = e.target; if (t.matches?.('[data-notebox]') && t.closest('.notebox')?.classList.contains('dirty')) saveBox(t.closest('.notebox')); });
+  /* Automātiski augoši teksta lauki */
+  const NATIVE = typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content');
+  function grow(t) { if (NATIVE || !t) return; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, window.innerHeight * 0.6) + 'px'; }
+  document.addEventListener('input', e => { if (e.target.matches?.('textarea[data-autogrow], #noteText')) grow(e.target); }, true);
+  CP.afterRender = CP.afterRender || [];
+  CP.afterRender.push(() => {
+    if (!NATIVE) U.qsa('textarea[data-autogrow], #noteText').forEach(grow);
+    if (refocus) { const b = U.qs(`.journal[data-j="${CSS.escape(refocus)}"] [data-jnew]`); refocus = null; b?.focus(); }
+  });
 
   A.histFilter = k => { S.historyFilter = k; CP.render(); };
   A.addNote = pid => {
     const t = U.$('noteText').value.trim(), due = U.$('noteDue').value; if (!t) return U.$('noteText').focus();
     if (due) S.db.tasks.push({ id: U.uid(), personId: pid, text: t, due, done: false, createdAt: U.now() });
-    else D.log(pid, 'note', t);
+    else { const p = D.person(pid); if (p) (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: t }); }
     CP.store.changed(); ui.toast(due ? 'Uzdevums pievienots' : 'Ieraksts pievienots', 'ok', 2500);
   };
   A.taskDone = id => { const t = S.db.tasks.find(x => x.id === id); if (t) { t.done = !t.done; t.doneAt = t.done ? U.now() : null; CP.store.changed(); } };
@@ -4633,10 +4690,100 @@ window.CP = window.CP || {};
           <div class="feat">${FEATURES.map(([i, t, d]) => `<div class="feat-item"><span class="feat-ic">${ic(i)}</span><div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
         </section>
 
+        <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
+          <div class="actions"><button class="sm" data-act="newsAll">Visi atjauninājumi</button></div></section>
         <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><p><b>Jānis Eglis</b></p></section>
       </div>`;
     }
   };
+})(window.CP);
+
+
+/* ==== js/whatsnew.js ==== */
+/* =====================================================================
+   Jaunumi — atjauninājumu žurnāls lietotājam.
+   Pēc atjauninājuma, pirmo reizi atverot rīku, tiek parādīti jaunumi kopš
+   iepriekš redzētās versijas. Pilns saraksts: “Par rīku” → Atjauninājumu žurnāls.
+   Jauns ieraksts → saraksta SĀKUMĀ (jaunākais pirmais).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, esc = U.esc;
+  const NEWS = [
+    { v: '1.16.0', date: '2026-10-13', title: 'Piezīmju žurnāls un jaunumi', items: [
+      'Piezīmes kartītē un piezīmes par mācību gadu tagad ir **ierakstu žurnāls**. Katra saglabātā piezīme parādās atsevišķi ar datumu, un to var **labot ✎** vai **dzēst ✕**.',
+      'Teksta lauki izplešas paši, kamēr raksti. **Enter** saglabā, **Shift+Enter** sāk jaunu rindu.',
+      'Agrāk ievadītās piezīmes, arī piezīmes no Excel importa, ir pārnestas uz žurnālu. Pirms pārnešanas rīks pats saglabāja datu rezerves kopiju.',
+      'Šis logs: pēc katra atjauninājuma šeit būs īss jaunumu apraksts. Visi jaunumi ir sadaļā **Par rīku**.'
+    ] },
+    { v: '1.15.0', date: '2026-10-13', title: 'Atzīmes “ievadīts DVS” un “ievadīts e-klasē”', items: [
+      'Personas kartītē ir sadaļa **Reģistrācija**. Kamēr nav atzīmēts, ka persona ievadīta DVS un e-klasē, pārskatā redzams brīdinājums.',
+      'Personu sarakstā atlasītajām personām var atzīmēt **✓ DVS** vai **✓ e-klase** uzreiz visām.',
+      'Iestatījumos var izslēgt sistēmu, kurai nav jāseko.'
+    ] },
+    { v: '1.14.4', date: '2026-10-13', title: 'Imports no tava Excel saraksta', items: [
+      'Kolonnu nosaukumiem nav jābūt pirmajā rindā. Rīks pats atrod pareizo darblapu un rindu, un kolonnas var pārbaudīt un labot.',
+      'Vecāka vārds un tālrunis vienā šūnā tiek sadalīti. Tiek nolasīts arī vecāka personas kods, apliecības numurs un statuss.',
+      'Kolonnas, piem., Līgums, Ārsta zīme un MTL, tiek ierakstītas piezīmēs, lai nekas nepazustu.'
+    ] },
+    { v: '1.14.1', date: '2026-10-13', title: 'Imports no e-klases', items: [
+      'Importa logā ir cilne **No e-klases** ar soli pa solim instrukciju un eksporta palīgu.',
+      'Personām, kas jau ir uzskaitē, imports var papildināt tukšos laukus. Esošie dati netiek mainīti.'
+    ] },
+    { v: '1.14.0', date: '2026-10-13', title: 'Veidlapas: instruktāžas lapa un nometnes žurnāls', items: [
+      'Jauna sadaļa **Veidlapas**: izvēlies dalībniekus, un rīks sagatavo drukāšanai gatavu PDF.',
+      'Ja dalībniekam trūkst anketas, līguma vai ārsta izziņas, rīkā tiek parādīts brīdinājums. Uz veidlapas tas netiek drukāts.',
+      'Nometnes darbinieki un audzinātāji tiek saglabāti nākamajām reizēm. Var izmantot arī savu Word veidni.'
+    ] },
+    { v: '1.13.0', date: '2026-10-13', title: 'Pulkstenis, hronometrs un taimeris', items: [
+      'Pārskatā ir pulkstenis ar četrām ciparnīcām, hronometru un taimeri nodarbībām.',
+      'Pēc 40 min darba rīks atgādina paņemt pauzi.'
+    ] },
+    { v: '1.11.0', date: '2026-10-12', title: 'Jaunais izskats', items: [
+      'Gaišā un tumšā tēma un akcenta krāsa: **Iestatījumi → Izskats**.',
+      'Jaunsarga apliecības sadaļa personas kartītē.'
+    ] }
+  ];
+  CP.NEWS = NEWS;
+  const cmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
+  const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  const KEY = 'cp-news-seen';
+  const getSeen = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
+  const setSeen = v => { try { localStorage.setItem(KEY, v); } catch (e) { /* */ } };
+
+  const block = n => `<section class="news-item"><h4>${esc(n.title)} <small class="muted">${esc(n.v)} · ${esc(U.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${md(i)}</li>`).join('')}</ul></section>`;
+  function show(list, title = 'Jaunumi rīkā') {
+    let d = U.$('newsDialog');
+    if (!d) { d = document.createElement('dialog'); d.id = 'newsDialog'; d.className = 'wide'; document.body.appendChild(d); }
+    d.innerHTML = `<header class="dlg-head"><h2>${CP.ic('bell', '🔔')} ${esc(title)}</h2><button type="button" class="ghost" data-close="newsDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body news">${list.map(block).join('')}</div>
+      <footer class="dlg-foot"><button type="button" class="ghost" data-act="newsAll">Visi atjauninājumi</button><span class="grow"></span><button type="button" class="mainbtn" data-close="newsDialog">Sapratu</button></footer>`;
+    if (!d.open) d.showModal();
+  }
+  CP.actions.newsAll = () => show(NEWS, 'Atjauninājumu žurnāls');
+  /** Pēc atjauninājuma — vienreiz, kad dati ielādēti */
+  let checked = false;
+  function check() {
+    if (checked || !S.root || !S.db || U.qs('dialog[open]')) return;
+    checked = true;
+    let seen = getSeen();
+    if (!seen) {
+      if (!(S.db.people || []).length) { setSeen(CP.VERSION); return; }   // jauns lietotājs — nav ko rādīt
+      seen = '1.13.1';
+    }
+    const fresh = NEWS.filter(n => cmp(n.v, seen) > 0 && cmp(n.v, CP.VERSION) <= 0);
+    if (!fresh.length) { setSeen(CP.VERSION); return; }
+    // gaida, kamēr citi logi (piem., paziņojumi) aizvērti; par redzētu atzīmē tikai pēc parādīšanas
+    let tries = 0;
+    const tick = () => {
+      if (U.qs('dialog[open]')) { if (++tries < 600) setTimeout(tick, 1000); return; }
+      show(fresh, fresh.length === 1 ? `Jaunumi — ${fresh[0].v}` : 'Jaunumi kopš pēdējās reizes'); setSeen(CP.VERSION);
+    };
+    setTimeout(tick, 600);
+  }
+  CP.afterRender = CP.afterRender || [];
+  CP.afterRender.push(check);
+  CP.news = { show, list: NEWS, html: () => NEWS.map(block).join('') };
 })(window.CP);
 
 

@@ -45,6 +45,7 @@
 
   /* --- Izmaiņu reģistrēšana un saglabāšana --- */
   store.changed = (opts = {}) => {
+    if (S.db && CP.flushNotes) CP.flushNotes(S.db);
     S.dirty = true;
     S.rev = (S.rev || 0) + 1;
     if (!opts.silent) CP.render();

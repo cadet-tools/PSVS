@@ -8,8 +8,8 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.15.1';
-  CP.SCHEMA = 6;
+  CP.VERSION = '1.16.0';
+  CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
   CP.WEB = /^https?:$/.test(location.protocol);
@@ -295,7 +295,7 @@ window.CP = window.CP || {};
     { k: 'photoConsent', l: 'Foto/video publicēšana', s: 'admin', t: 'select', opts: [['', 'Nav zināms'], ['yes', 'Piekrīt'], ['no', 'Nepiekrīt']] },
     { k: 'photoConsentDate', l: 'Piekrišanas datums', s: 'admin', t: 'date', v: 'date' },
     { k: 'retentionMonths', l: 'Glabāšana pēc izstāšanās (mēn.)', s: 'admin', t: 'number', noScan: 1 },
-    { k: 'notes', l: 'Piezīmes', s: 'admin', t: 'textarea', wide: 1 }
+    { k: 'notes', l: 'Jauna piezīme (tiks pievienota piezīmju žurnālam)', s: 'admin', t: 'textarea', wide: 1 }
   ];
   CP.FIELD = Object.fromEntries(CP.FIELDS.map(f => [f.k, f]));
 
@@ -335,6 +335,20 @@ window.CP = window.CP || {};
   });
 
   /** Migrē datus no 0.2 (v2), 0.3 (v3), v4 un vecākām versijām uz v5. Nekas netiek dzēsts. */
+  /** Piezīmes kā ierakstu žurnāls: p.noteLog / enrollment.noteLog = [{ id, at, text, editedAt }].
+      Teksts, kas nonāk p.notes (imports, anketa, rediģēšanas logs) vai e.note, tiek pārnests uz žurnālu. */
+  CP.flushNotes = (d, old) => {
+    let n = 0;
+    const move = (o, key, at) => {
+      const t = String(o[key] ?? '').trim(); if (o[key] !== undefined && !t) { delete o[key]; return; } if (!t) return;
+      const e = { id: U.uid(), at: U.now(), text: t };
+      if (old && at) { e.at = /^\d{4}-\d{2}-\d{2}$/.test(at) ? at + 'T12:00:00' : at; e.dateOnly = true; }   // agrāk ievadīta: precīzs laiks nav zināms
+      (o.noteLog = Array.isArray(o.noteLog) ? o.noteLog : []).push(e); delete o[key]; n++;
+    };
+    for (const p of d.people || []) if (p.notes !== undefined) move(p, 'notes', p.updatedAt || p.createdAt);
+    for (const e of d.enrollments || []) if (e.note !== undefined) move(e, 'note', e.at ? String(e.at) : '');
+    return n;
+  };
   CP.migrate = raw => {
     const def = CP.defaultSettings();
     const d = { ...CP.blank(), ...raw };
@@ -394,6 +408,7 @@ window.CP = window.CP || {};
     for (const eq of d.equipment) stampYear(eq, 'issued', 'changedAt');
     for (const t of d.tasks) stampYear(t, 'due', 'createdAt');
     for (const l of d.log) stampYear(l, 'at');
+    CP.flushNotes(d, true);
     d.version = CP.SCHEMA;
     return d;
   };

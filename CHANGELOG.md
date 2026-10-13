@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.16.0 — 2026-10-13 — Piezīmju žurnāls un jaunumu logs
+- Personas piezīmes un piezīmes par mācību gadu tagad ir ierakstu žurnāls. Katrs ieraksts ir atsevišķs, ar datumu, un to var labot (✎) vai dzēst (✕). Ja ieraksts labots, redzams arī labošanas datums. Piezīmes redzamas arī cilnē Vēsture.
+- Teksta lauki izplešas vertikāli, kamēr raksti. Enter saglabā, Shift+Enter sāk jaunu rindu, un Esc atceļ labošanu.
+- Teksts, kas nonāk piezīmēs no Excel importa, anketas vai rediģēšanas loga, tiek pievienots žurnālam kā jauns ieraksts.
+- Datu faila versija 7. Esošās piezīmes tiek automātiski pārnestas uz žurnālu, un pirms tam tiek saglabāta rezerves kopija `_rezerves/DATI_pirms_atjauninasanas_v6-v7_….json`.
+- **Jaunumi**: pirmo reizi pēc atjauninājuma tiek parādīts īss apraksts par jaunumiem. Pilns atjauninājumu žurnāls ir sadaļā Par rīku.
+
 ## 1.15.1 — 2026-10-13 — Piezīmes ar pogu “Saglabāt”
 - Personas kartītē vienmēr ir lauks **Piezīmes**. Piezīmi par mācību gadu un piezīmi par personu tagad var rakstīt vairākās rindās.
 - Pie katra lauka ir poga **Saglabāt**. **Enter** saglabā, un **Shift+Enter** sāk jaunu rindu. Tiek parādīts statuss “Nav saglabāts” vai “Saglabāts ✓”. Ja iziet no lauka, piezīme arī tiek saglabāta.
