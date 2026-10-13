@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.15.0';
+  CP.VERSION = '1.15.1';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -2224,8 +2224,8 @@ window.CP = window.CP || {};
         ['Ārkārtas kontakts', [p.emergencyName, p.emergencyPhone && U.prettyPhone(p.emergencyPhone)].filter(Boolean).join(' · ')]])}
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
       <section class="card"><h3>Pēdējā aktivitāte <button class="ghost sm right" data-tab="history">Viss →</button></h3>${recent.length ? recent.map(timelineRow).join('') : '<p class="muted small">Vēl nav ierakstu.</p>'}</section>
-      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div><input data-year-note="${esc(p.id)}" data-year-id="${esc(e.yearId)}" value="${esc(e.note || '')}" placeholder="Piezīme par šo gadu"></div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
-      ${p.notes ? `<section class="card wide"><h3>Piezīmes</h3><p class="pre">${esc(p.notes)}</p></section>` : ''}
+      <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${noteBox('year', p.id, e.yearId, e.note, 'Piezīme par šo gadu', 1)}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
+      <section class="card wide"><h3>Piezīmes</h3>${noteBox('person', p.id, '', p.notes, 'Piezīmes par personu (piem., veselība, īpaši norādījumi, vienošanās)…', Math.min(10, Math.max(2, String(p.notes || '').split('\n').length + 1)))}</section>
     </div>`;
   }
 
@@ -2263,16 +2263,46 @@ window.CP = window.CP || {};
     const f = S.historyFilter, all = timeline(p), items = f === 'all' ? all : all.filter(i => i.grp === f);
     const chip = (k, t) => `<button class="chipbtn ${f === k ? 'on' : ''}" data-act="histFilter" data-arg="${k}">${t}</button>`;
     return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
-        <div class="actions"><label class="inline">Atgādināt <input type="date" id="noteDue"></label><span class="muted small">Ar datumu ieraksts kļūst par uzdevumu.</span><span class="grow"></span><button class="mainbtn" data-act="addNote" data-arg="${p.id}">Pievienot</button></div></div></section>
+        <div class="actions"><label class="inline">Atgādināt <input type="date" id="noteDue"></label><span class="muted small">Ar datumu ieraksts kļūst par uzdevumu. Enter — pievienot, Shift+Enter — jauna rinda.</span><span class="grow"></span><button class="mainbtn" data-act="addNote" data-arg="${p.id}">Pievienot</button></div></div></section>
       <section class="card"><div class="chips" style="margin-bottom:10px">${chip('all', 'Viss')}${chip('comms', 'Saziņa')}${chip('notes', 'Piezīmes')}${chip('tasks', 'Uzdevumi')}${chip('changes', 'Izmaiņas')}</div>
       ${items.map(timelineRow).join('') || '<p class="muted small">Nav ierakstu.</p>'}</section>`;
   }
+  /* --- Piezīmju lauks ar pogu “Saglabāt”: Enter saglabā, Shift+Enter — jauna rinda, iziešana no lauka arī saglabā --- */
+  function noteBox(kind, pid, yearId, value, ph, rows = 2) {
+    return `<div class="notebox" data-nb="${esc(kind)}|${esc(pid)}|${esc(yearId || '')}"><textarea data-notebox rows="${rows}" placeholder="${esc(ph)}">${esc(value || '')}</textarea>
+      <div class="notebox-bar"><small class="muted">Enter — saglabāt · Shift+Enter — jauna rinda</small><span class="grow"></span><span class="nb-state small"></span><button type="button" class="sm mainbtn" data-act="noteSave">Saglabāt</button></div></div>`;
+  }
+  CP.noteBox = noteBox;
+  function saveBox(box) {
+    if (!box) return;
+    const [kind, pid, yearId] = box.dataset.nb.split('|'), ta = box.querySelector('textarea'), v = ta.value.replace(/\s+$/, ''), p = D.person(pid);
+    const st = box.querySelector('.nb-state'); if (!p) return;
+    if (kind === 'year') {
+      const r = (S.db.enrollments || []).find(x => x.personId === pid && x.yearId === yearId); if (!r) return;
+      if ((r.note || '') !== v) { r.note = v; D.audit(pid, 'update', ['Piezīme par ' + U.yearLabel(yearId)]); }
+    } else if ((p.notes || '') !== v) { p.notes = v; p.updatedAt = U.now(); D.audit(pid, 'update', ['Piezīmes']); }
+    CP.store.changed({ silent: true });
+    box.classList.remove('dirty'); st.textContent = 'Saglabāts ✓'; st.className = 'nb-state small ok';
+    clearTimeout(box._t); box._t = setTimeout(() => { if (!box.classList.contains('dirty')) st.textContent = ''; }, 4000);
+  }
+  A.noteSave = (arg, el) => saveBox(el.closest('.notebox'));
+  CP.inputHandlers.push(e => {
+    const t = e.target; if (!t.matches?.('[data-notebox]')) return false;
+    const box = t.closest('.notebox'), st = box.querySelector('.nb-state');
+    box.classList.add('dirty'); st.textContent = 'Nav saglabāts'; st.className = 'nb-state small warn'; return true;
+  });
+  document.addEventListener('keydown', e => {
+    const t = e.target; if (e.key !== 'Enter' || e.shiftKey || e.isComposing || !t.matches?.('[data-notebox]')) return;
+    e.preventDefault(); saveBox(t.closest('.notebox'));
+  });
+  document.addEventListener('focusout', e => { const t = e.target; if (t.matches?.('[data-notebox]') && t.closest('.notebox')?.classList.contains('dirty')) saveBox(t.closest('.notebox')); });
+
   A.histFilter = k => { S.historyFilter = k; CP.render(); };
   A.addNote = pid => {
     const t = U.$('noteText').value.trim(), due = U.$('noteDue').value; if (!t) return U.$('noteText').focus();
     if (due) S.db.tasks.push({ id: U.uid(), personId: pid, text: t, due, done: false, createdAt: U.now() });
     else D.log(pid, 'note', t);
-    CP.store.changed();
+    CP.store.changed(); ui.toast(due ? 'Uzdevums pievienots' : 'Ieraksts pievienots', 'ok', 2500);
   };
   A.taskDone = id => { const t = S.db.tasks.find(x => x.id === id); if (t) { t.done = !t.done; t.doneAt = t.done ? U.now() : null; CP.store.changed(); } };
 
@@ -4802,12 +4832,6 @@ window.CP = window.CP || {};
     ui.toast(`Pārceltas ${added.length} personas.${skipped.length ? ' Jau bija šajā gadā: ' + skipped.join(', ') : ''}`, skipped.length ? 'warn' : 'ok', 9000);
   };
 
-  CP.inputHandlers.push(e => {
-    if (e.target.dataset.yearNote == null) return false;
-    const eRec = (S.db.enrollments || []).find(x => x.personId === e.target.dataset.yearNote && x.yearId === e.target.dataset.yearId);
-    if (eRec) { eRec.note = e.target.value; CP.store.changed({ silent: true }); }
-    return true;
-  });
 })(window.CP);
 
 
@@ -6841,7 +6865,7 @@ window.CP = window.CP || {};
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); CP.store.save(false); return; }
     if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing && !U.qs('dialog[open]'))) { e.preventDefault(); U.$('search').focus(); U.$('search').select(); return; }
-    if (e.key === 'Enter' && e.target.id === 'noteText' && (e.ctrlKey || e.metaKey)) A.addNote(S.selected);
+    if (e.key === 'Enter' && e.target.id === 'noteText' && !e.shiftKey && !e.isComposing) { e.preventDefault(); A.addNote(S.selected); }
   });
   /* Datu mapes ievilkšana no File Explorer. Reģistrēts pēc documents.js / viewer.js — ja tie notikumu
      jau apstrādāja (defaultPrevented), šeit to neaiztiek. Bez datu mapes mapi var ievilkt jebkur logā.

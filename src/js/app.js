@@ -40,7 +40,7 @@
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); CP.store.save(false); return; }
     if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing && !U.qs('dialog[open]'))) { e.preventDefault(); U.$('search').focus(); U.$('search').select(); return; }
-    if (e.key === 'Enter' && e.target.id === 'noteText' && (e.ctrlKey || e.metaKey)) A.addNote(S.selected);
+    if (e.key === 'Enter' && e.target.id === 'noteText' && !e.shiftKey && !e.isComposing) { e.preventDefault(); A.addNote(S.selected); }
   });
   /* Datu mapes ievilkšana no File Explorer. Reģistrēts pēc documents.js / viewer.js — ja tie notikumu
      jau apstrādāja (defaultPrevented), šeit to neaiztiek. Bez datu mapes mapi var ievilkt jebkur logā.

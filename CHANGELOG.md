@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.15.1 — 2026-10-13 — Piezīmes ar pogu “Saglabāt”
+- Personas kartītē vienmēr ir lauks **Piezīmes**. Piezīmi par mācību gadu un piezīmi par personu tagad var rakstīt vairākās rindās.
+- Pie katra lauka ir poga **Saglabāt**. **Enter** saglabā, un **Shift+Enter** sāk jaunu rindu. Tiek parādīts statuss “Nav saglabāts” vai “Saglabāts ✓”. Ja iziet no lauka, piezīme arī tiek saglabāta.
+- Vēstures ierakstā **Enter** pievieno ierakstu, un **Shift+Enter** sāk jaunu rindu. Pēc pievienošanas parādās apstiprinājums.
+
 ## 1.15.0 — 2026-10-13 — Atzīmes “ievadīts DVS” un “ievadīts e-klasē”
 - Personas kartītē ir jauna sadaļa **Reģistrācija** ar atzīmēm DVS un e-klase. Kopā ar atzīmi tiek saglabāts datums.
 - Kamēr persona nav atzīmēta, pārskatā un uzdevumos redzams brīdinājums. Tas attiecas uz aktīvajiem un kandidātiem, bet ne uz pārtrauktajiem un arhivētajiem.

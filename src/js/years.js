@@ -189,10 +189,4 @@
     ui.toast(`Pārceltas ${added.length} personas.${skipped.length ? ' Jau bija šajā gadā: ' + skipped.join(', ') : ''}`, skipped.length ? 'warn' : 'ok', 9000);
   };
 
-  CP.inputHandlers.push(e => {
-    if (e.target.dataset.yearNote == null) return false;
-    const eRec = (S.db.enrollments || []).find(x => x.personId === e.target.dataset.yearNote && x.yearId === e.target.dataset.yearId);
-    if (eRec) { eRec.note = e.target.value; CP.store.changed({ silent: true }); }
-    return true;
-  });
 })(window.CP);

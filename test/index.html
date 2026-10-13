@@ -413,6 +413,9 @@ kbd{font:12px ui-monospace,monospace;padding:1px 5px;border:1px solid var(--edge
 .imp-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 14px;margin-top:8px}.imp-cols label{display:flex;flex-direction:column;gap:2px}.imp-cols span{color:var(--muted)}
 .reg-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer}.reg-row:hover{background:var(--hover,rgba(127,127,127,.08))}
 .reg-row.miss b{color:var(--amber,#f0b429)}.reg-row.ok b{color:var(--teal)}
+.notebox{margin-top:6px}.notebox textarea{width:100%;resize:vertical;min-height:38px}
+.notebox-bar{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}.nb-state.ok{color:var(--teal)}.nb-state.warn{color:var(--amber,#f0b429)}
+.notebox.dirty textarea{border-color:var(--amber,#f0b429)}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -982,5 +985,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.15.0"></script></body>
+<script src="app.bundle.js?v=1.15.1"></script></body>
 </html>
