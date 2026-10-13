@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.14.2 — 2026-10-13
+- Pēc atjauninājuma lapa un programma vienmēr ielādējas kopā. Iepriekš pārlūks dažas minūtes varēja lietot iepriekšējo programmu, un jaunās pogas (piem., cilne “No e-klases”) nereaģēja.
+
 ## 1.14.1 — 2026-10-13 — Imports no e-klases
 - Importa logā ir jauna cilne **No e-klases** ar soli pa solim instrukciju un pogu **Kopēt eksporta palīgu**. Palīgu ielīmē e-klases cilnē, un tas savāc atvērto skolēnu personas lietas CSV failā tavā datorā.
 - Ja e-klase pārlādē lapu, jau savāktās personas nepazūd. Palīgu ielīmē vēlreiz, un saraksts atjaunojas.

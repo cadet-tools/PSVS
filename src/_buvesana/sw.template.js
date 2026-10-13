@@ -12,7 +12,7 @@ self.addEventListener('fetch', e => {
   const isCode = req.mode === 'navigate' || /\/(index\.html|app\.bundle\.js|manifest\.webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
   if (isCode) {
     // tīkls vispirms — atjauninājumi pienāk uzreiz; bez interneta — no keša
-    e.respondWith(fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html'))));
   } else {
     // bibliotēkas (pdf.js, atpazīšana, ikonas) — kešs vispirms

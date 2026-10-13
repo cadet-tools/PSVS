@@ -31,6 +31,8 @@ def build(channel, out, vendor_rel, design=''):
         html = html.replace('<title>CADET PERSONĀLS</title>', '<title>CADET PERSONĀLS (TESTS)</title>')
     if design: html = html.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n<meta name="cp-design" content="' + design + '">', 1)
     html = html.replace('url("vendor/', 'url("' + vendor_rel)
+    # versija adresē: lapa un programma vienmēr ielādējas kā pāris (nav vecas programmas no pārlūka keša)
+    html = html.replace('src="app.bundle.js"', f'src="app.bundle.js?v={ver}"')
     open(f'{out}/index.html', 'w', encoding='utf-8').write(html)
     shutil.rmtree(tmp)
     name = 'CADET PERSONĀLS' + (' (TESTS)' if channel == 'test' else '')

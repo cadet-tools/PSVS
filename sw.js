@@ -1,6 +1,6 @@
 /* CADET PERSONĀLS — bezsaistes kešs. Kešo TIKAI programmas failus (kodu, bibliotēkas).
    Personu dati un dokumenti caur šo nekad neiet: tie tiek lasīti tieši no datora mapes. */
-const CACHE = 'cadet-stable-1.14.1', PREFIX = 'cadet-stable-';
+const CACHE = 'cadet-stable-1.14.2', PREFIX = 'cadet-stable-';
 const CORE = ['./', 'index.html', 'app.bundle.js', 'PS_LOGO.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
@@ -12,7 +12,7 @@ self.addEventListener('fetch', e => {
   const isCode = req.mode === 'navigate' || /\/(index\.html|app\.bundle\.js|manifest\.webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
   if (isCode) {
     // tīkls vispirms — atjauninājumi pienāk uzreiz; bez interneta — no keša
-    e.respondWith(fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html'))));
   } else {
     // bibliotēkas (pdf.js, atpazīšana, ikonas) — kešs vispirms
