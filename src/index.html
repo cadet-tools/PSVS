@@ -248,9 +248,27 @@
 <dialog id="importDialog" class="wide">
   <header class="dlg-head"><h2>Personu imports</h2><button type="button" class="ghost" data-close="importDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body">
-    <p class="muted small">.xlsx (pirmā darblapa) vai .csv — der arī e-klases eksports. Pirmajā rindā jābūt kolonnu nosaukumiem: vārds, uzvārds (vai “vārds uzvārds”), dzimšanas datums, personas kods, grupa, klase, skola, tālrunis, e-pasts, vecāks, vecāka tālrunis, vecāka e-pasts, piezīmes.</p>
+    <div class="tabs imp-tabs"><button type="button" data-imp="file" class="active">Excel / CSV fails</button><button type="button" data-imp="eklase">No e-klases</button></div>
+    <div id="impFileHelp"><p class="muted small">.xlsx (pirmā darblapa) vai .csv. Pirmajā rindā jābūt kolonnu nosaukumiem: vārds, uzvārds (vai “vārds uzvārds”), dzimšanas datums, personas kods, grupa, klase, skola, tālrunis, e-pasts, vecāks, vecāka tālrunis, vecāka e-pasts, adrese, piezīmes.</p></div>
+    <div id="impEklaseHelp" hidden>
+      <p class="small" style="margin-top:0">E-klasei nav lejupielādes pogas skolēnu personas datiem, tāpēc rīkā ir <b>eksporta palīgs</b>. Tas e-klasē atver nelielu paneli, nolasa atvērtās personas lietas laukus un saglabā CSV failu tavā datorā. Dati netiek sūtīti nekur citur.</p>
+      <ol class="imp-steps small">
+        <li><b>Atver e-klasi</b> datorā Chrome vai Edge pārlūkā, pieslēdzies un atver pirmā skolēna <b>personas lietu</b>.</li>
+        <li>Šeit nospied <button type="button" class="sm mainbtn" id="impCopyScript">Kopēt eksporta palīgu</button></li>
+        <li>E-klases cilnē nospied <kbd>F12</kbd> (vai <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>J</kbd>) un atver cilni <b>Console</b>. Ielīmē ar <kbd>Ctrl</kbd>+<kbd>V</kbd> un nospied <kbd>Enter</kbd>.<br><span class="muted">Ja pārlūks pirmo reizi neļauj ielīmēt, ieraksti tur tekstu, ko tas prasa (piem., <code>allow pasting</code>), nospied <kbd>Enter</kbd> un ielīmē vēlreiz.</span></li>
+        <li>Lapas labajā pusē parādās panelis <b>CADET PERSONĀLS</b>. Ja vēlies, ieraksti <b>Grupu</b> un <b>Skolu</b>. Tās tiks pievienotas visiem savāktajiem skolēniem.</li>
+        <li>Katram skolēnam atver viņa personas lietu un spied <b>+ Pievienot personu</b>. Skaitītājs “Savāktas personas” palielinās.<br><span class="muted">Ja e-klase pārlādē lapu un panelis pazūd, ielīmē palīgu vēlreiz. Jau savāktās personas atjaunosies.</span></li>
+        <li>Spied <b>Lejupielādēt CSV</b>. Lejupielādēs parādās fails <code>CADET_PERSONALS_EKLASE_….csv</code>.</li>
+        <li>Izvēlies šo failu zemāk, pārbaudi sarakstu un spied <b>Importēt</b>.</li>
+        <li>Pēc importa <b>izdzēs CSV failu</b> no Lejupielādēm, jo tajā ir personas kodi.</li>
+      </ol>
+      <p class="small muted">No e-klases tiek pārņemts: vārds, uzvārds, personas kods, dzimšanas datums, tālrunis, e-pasts, deklarētā un faktiskā adrese, vecāki (māte, tēvs vai cita atbildīgā persona) un viņu tālruņi. Personas lietas numurs, ieskaitīšanas datums un dzimšanas apliecības numurs netiek importēti.<br>
+      Ja panelī parādās “Neatpazīstu personas lietu”, pārbaudi, vai ir atvērta tieši skolēna personas lieta. Ja kļūda atkārtojas, e-klase ir mainījusi lapas izkārtojumu, un palīgs jāatjauno.</p>
+      <details class="small"><summary>Rādīt eksporta palīga kodu</summary><textarea id="impScript" readonly rows="6" style="width:100%;font:12px monospace;margin-top:6px"></textarea></details>
+    </div>
     <div class="fieldgrid"><div class="field"><label>Fails</label><input id="importFile" type="file" accept=".csv,.txt,.xlsx"></div>
-      <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div></div>
+      <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div>
+      <div class="field wide"><label class="check"><input type="checkbox" id="importFill" checked> Personām, kas jau ir uzskaitē, papildināt tukšos laukus (esošie dati netiek mainīti)</label></div></div>
     <p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
   </div>
   <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="importDialog">Atcelt</button><button id="importConfirm" class="mainbtn" disabled>Importēt</button></footer>
@@ -378,6 +396,7 @@
 <script src="js/contacts.js"></script>
 <script src="js/watch.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/eklase.js"></script>
 <script src="js/importexport.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/about.js"></script>

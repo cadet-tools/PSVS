@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.14.1 — 2026-10-13 — Imports no e-klases
+- Importa logā ir jauna cilne **No e-klases** ar soli pa solim instrukciju un pogu **Kopēt eksporta palīgu**. Palīgu ielīmē e-klases cilnē, un tas savāc atvērto skolēnu personas lietas CSV failā tavā datorā.
+- Ja e-klase pārlādē lapu, jau savāktās personas nepazūd. Palīgu ielīmē vēlreiz, un saraksts atjaunojas.
+- Imports saprot e-klases kolonnas: deklarētā un faktiskā adrese; māte, tēvs vai cita atbildīgā persona (kļūst par 1. un 2. pārstāvi kopā ar saistību un tālruņiem).
+- Personām, kas jau ir uzskaitē, var papildināt tukšos laukus. Esošie dati netiek mainīti.
+- Pārskatā ir poga **No e-klases**.
+
 ## 1.14.0 — 2026-10-13 — Veidlapas: instruktāžas lapa un nometnes žurnāls
 - Jauna sadaļa **Veidlapas**. Tajā ir pasākumu saraksts, darbinieku un audzinātāju saraksts un savas Word veidnes.
 - **Drošības instruktāžas lapa**: nosaukums, norises datumi (teksts “2026. gada 17.–18. oktobris” veidojas pats), instruktāžas datums, grupa, amats un vārds. Dalībniekus var izvēlēties pa vienam, visus, ar meklēšanu vai pēc grupas. Datums tiek ierakstīts katrā rindā.

@@ -83,7 +83,7 @@
         <p class="muted small">Saites, kas parādās personas kartiņā. Saitē var izmantot {vārds} {uzvārds} {pilns} {tālrunis} {epasts} {grupa} {klase} {skola}. Personas kods un adrese netiek nodoti.</p>
         ${s.tools.map((t, i) => `<div class="inline-form"><input data-tool="${i}:name" value="${esc(t.name)}" placeholder="Nosaukums" style="max-width:180px"><input data-tool="${i}:url" value="${esc(t.url)}" placeholder="https://…"><button class="sm ghost" data-act="delTool" data-arg="${i}">✕</button></div>`).join('')}
         <button class="sm" data-act="addTool">＋ Pievienot rīku</button>
-        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> tai nav publiskas saskarnes, ko var izmantot no lokālas programmas. Kartiņā ir saite uz e-klasi; skolēnu sarakstus var importēt no e-klases Excel eksporta (⬆ Imports) un eksportēt atpakaļ CSV.</p></section></div>`;
+        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section></div>`;
     }
   };
 

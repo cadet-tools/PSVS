@@ -389,3 +389,7 @@ html[data-theme="light"] .watch-card,html[data-theme="light"] .watch-big{--w-cas
 .ev-staff{padding:5px 0}
 .ev-row .feat-ic{flex:none}
 .print-frame{position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+/* e-klases imports */
+.imp-steps{margin:6px 0 10px;padding-left:22px;line-height:1.55}.imp-steps li{margin:0 0 7px}.imp-steps button{margin-left:4px;vertical-align:middle}
+kbd{font:12px ui-monospace,monospace;padding:1px 5px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;background:var(--panel2,rgba(127,127,127,.12))}
+#impEklaseHelp code{font-size:12px}
