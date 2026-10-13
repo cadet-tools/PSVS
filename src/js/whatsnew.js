@@ -8,6 +8,10 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.16.1', date: '2026-10-13', title: 'Statuss: Kandidāts / Jaunsargs', items: [
+      'Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs**. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.',
+      'Pievienojot jaunu personu, statusu var izvēlēties uzreiz pie vārda un uzvārda.'
+    ] },
     { v: '1.16.0', date: '2026-10-13', title: 'Piezīmju žurnāls un jaunumi', items: [
       'Piezīmes kartītē un piezīmes par mācību gadu tagad ir **ierakstu žurnāls**. Katra saglabātā piezīme parādās atsevišķi ar datumu, un to var **labot ✎** vai **dzēst ✕**.',
       'Teksta lauki izplešas paši, kamēr raksti. **Enter** saglabā, **Shift+Enter** sāk jaunu rindu.',

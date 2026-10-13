@@ -8,7 +8,7 @@
   const esc = U.esc;
 
   /* =================== Saraksts =================== */
-  const STATUS_FILTERS = [['current', 'Visi aktuālie'], ['active', 'Aktīvie'], ['candidate', 'Kandidāti'], ['paused', 'Pārtrauktie'], ['archived', 'Arhīvs'], ['all', 'Visi ieraksti']];
+  const STATUS_FILTERS = [['current', 'Visi aktuālie'], ['active', 'Jaunsargi'], ['candidate', 'Kandidāti'], ['paused', 'Pārtrauktie'], ['archived', 'Arhīvs'], ['all', 'Visi ieraksti']];
 
   function listRows() {
     const L = S.list, q = U.norm(L.q).replace(/ /g, ''), last = D.lastContact();
@@ -33,7 +33,7 @@
     const bulk = L.sel.size ? `<div class="bulkbar"><b>Atlasītas ${L.sel.size}</b>
       <button class="sm" data-act="bulkMsg">✉ Ziņa</button>
       <button class="sm" data-act="bulkGroup">Mainīt grupu…</button>
-      <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
+      <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
       <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītie ievadīti DVS">✓ DVS</button>
       <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
@@ -408,7 +408,7 @@
     e.preventDefault(); const f = e.currentTarget, p = D.person(f.dataset.pid); if (!p) return;
     archive(p, Object.fromEntries(new FormData(f))); U.$('archiveDialog').close(); CP.store.changed(); ui.toast('Persona pārvietota uz arhīvu', 'ok');
   });
-  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu kā aktīvu?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
   A.erase = pid => {
     const p = D.person(pid); if (!p) return;
     const db = S.db;

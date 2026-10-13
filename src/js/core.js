@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.16.0';
+  CP.VERSION = '1.16.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -255,7 +255,7 @@ window.CP = window.CP || {};
   CP.util = U;
 
   /* ---------------- Datu shēma ---------------- */
-  CP.STATUSES = { candidate: 'Kandidāts', active: 'Aktīvs', paused: 'Pārtraukts', archived: 'Arhīvā' };
+  CP.STATUSES = { candidate: 'Kandidāts', active: 'Jaunsargs', paused: 'Pārtraukts', archived: 'Arhīvā' };
   CP.COMM_STATUS = { prepared: 'Sagatavots', opened: 'Atvērts ārējā lietotnē', confirmed: 'Lietotājs apstiprinājis nosūtīšanu', cancelled: 'Atcelts' };
   CP.FILE_STATUS = { available: 'Pieejams', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
 
@@ -267,9 +267,9 @@ window.CP = window.CP || {};
   CP.FIELDS = [
     { k: 'first', l: 'Vārds', s: 'basic', req: 1, v: 'name' },
     { k: 'last', l: 'Uzvārds', s: 'basic', req: 1, v: 'name' },
+    { k: 'status', l: 'Statuss', s: 'basic', t: 'select', opts: [['candidate', 'Kandidāts'], ['active', 'Jaunsargs'], ['paused', 'Pārtraukts']], noScan: 1 },
     { k: 'personalCode', l: 'Personas kods', s: 'basic', v: 'personalCode', sens: 1, ph: '000000-00000' },
     { k: 'birth', l: 'Dzimšanas datums', s: 'basic', t: 'date', v: 'date' },
-    { k: 'status', l: 'Statuss', s: 'study', t: 'select', opts: [['candidate', 'Kandidāts'], ['active', 'Aktīvs'], ['paused', 'Pārtraukts']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
     { k: 'school', l: 'Mācību iestāde', s: 'study' },

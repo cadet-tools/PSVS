@@ -699,7 +699,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
         </div>
         <div class="fieldgrid">
           <div class="field"><label for="scanTarget">Kur ievadīt</label><select id="scanTarget"></select></div>
-          <div class="field" id="scanStatusWrap"><label for="scanStatus">Statuss</label><select id="scanStatus"><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option></select></div>
+          <div class="field" id="scanStatusWrap"><label for="scanStatus">Statuss</label><select id="scanStatus"><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option></select></div>
         </div>
         <form id="scanForm" autocomplete="off" novalidate><div id="scanFields"></div></form>
       </aside>
@@ -873,7 +873,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
     </div>
     <div class="fieldgrid"><div class="field"><label>Fails</label><input id="importFile" type="file" accept=".csv,.txt,.xlsx"></div>
       <div class="field"><label>Grupa tiem, kam tā nav norādīta</label><input id="importGroup" list="dl_groups" placeholder="nav obligāti"></div>
-      <div class="field"><label>Statuss importētajiem</label><select id="importStatusSel"><option value="">No faila (ja nav — Aktīvs)</option><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select></div>
+      <div class="field"><label>Statuss importētajiem</label><select id="importStatusSel"><option value="">No faila (ja nav — Jaunsargs)</option><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select></div>
       <div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" id="importExtra" checked> Pārējās kolonnas (līgums, ārsta zīme, MTL u.c.) ierakstīt piezīmēs</label></div>
       <div class="field wide"><label class="check"><input type="checkbox" id="importFill" checked> Personām, kas jau ir uzskaitē, papildināt tukšos laukus (esošie dati netiek mainīti)</label></div></div>
     <div id="importMap"></div><p id="importStatus"></p><div id="importPreview" class="tablewrap" style="max-height:320px"></div>
@@ -991,5 +991,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.16.0"></script></body>
+<script src="app.bundle.js?v=1.16.1"></script></body>
 </html>

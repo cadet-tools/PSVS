@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.16.0';
+  CP.VERSION = '1.16.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -258,7 +258,7 @@ window.CP = window.CP || {};
   CP.util = U;
 
   /* ---------------- Datu shēma ---------------- */
-  CP.STATUSES = { candidate: 'Kandidāts', active: 'Aktīvs', paused: 'Pārtraukts', archived: 'Arhīvā' };
+  CP.STATUSES = { candidate: 'Kandidāts', active: 'Jaunsargs', paused: 'Pārtraukts', archived: 'Arhīvā' };
   CP.COMM_STATUS = { prepared: 'Sagatavots', opened: 'Atvērts ārējā lietotnē', confirmed: 'Lietotājs apstiprinājis nosūtīšanu', cancelled: 'Atcelts' };
   CP.FILE_STATUS = { available: 'Pieejams', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
 
@@ -270,9 +270,9 @@ window.CP = window.CP || {};
   CP.FIELDS = [
     { k: 'first', l: 'Vārds', s: 'basic', req: 1, v: 'name' },
     { k: 'last', l: 'Uzvārds', s: 'basic', req: 1, v: 'name' },
+    { k: 'status', l: 'Statuss', s: 'basic', t: 'select', opts: [['candidate', 'Kandidāts'], ['active', 'Jaunsargs'], ['paused', 'Pārtraukts']], noScan: 1 },
     { k: 'personalCode', l: 'Personas kods', s: 'basic', v: 'personalCode', sens: 1, ph: '000000-00000' },
     { k: 'birth', l: 'Dzimšanas datums', s: 'basic', t: 'date', v: 'date' },
-    { k: 'status', l: 'Statuss', s: 'study', t: 'select', opts: [['candidate', 'Kandidāts'], ['active', 'Aktīvs'], ['paused', 'Pārtraukts']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
     { k: 'school', l: 'Mācību iestāde', s: 'study' },
@@ -2066,7 +2066,7 @@ window.CP = window.CP || {};
   const esc = U.esc;
 
   /* =================== Saraksts =================== */
-  const STATUS_FILTERS = [['current', 'Visi aktuālie'], ['active', 'Aktīvie'], ['candidate', 'Kandidāti'], ['paused', 'Pārtrauktie'], ['archived', 'Arhīvs'], ['all', 'Visi ieraksti']];
+  const STATUS_FILTERS = [['current', 'Visi aktuālie'], ['active', 'Jaunsargi'], ['candidate', 'Kandidāti'], ['paused', 'Pārtrauktie'], ['archived', 'Arhīvs'], ['all', 'Visi ieraksti']];
 
   function listRows() {
     const L = S.list, q = U.norm(L.q).replace(/ /g, ''), last = D.lastContact();
@@ -2091,7 +2091,7 @@ window.CP = window.CP || {};
     const bulk = L.sel.size ? `<div class="bulkbar"><b>Atlasītas ${L.sel.size}</b>
       <button class="sm" data-act="bulkMsg">✉ Ziņa</button>
       <button class="sm" data-act="bulkGroup">Mainīt grupu…</button>
-      <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
+      <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
       <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītie ievadīti DVS">✓ DVS</button>
       <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
@@ -2466,7 +2466,7 @@ window.CP = window.CP || {};
     e.preventDefault(); const f = e.currentTarget, p = D.person(f.dataset.pid); if (!p) return;
     archive(p, Object.fromEntries(new FormData(f))); U.$('archiveDialog').close(); CP.store.changed(); ui.toast('Persona pārvietota uz arhīvu', 'ok');
   });
-  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu kā aktīvu?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
   A.erase = pid => {
     const p = D.person(pid); if (!p) return;
     const db = S.db;
@@ -3895,7 +3895,7 @@ window.CP = window.CP || {};
         ${CP.years?.banner() || ''}
         <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
         <div class="stats">
-          <button class="stat" data-tone="green" data-act="openList" data-arg="active">${CP.ic('userCheck')}<span>Aktīvie</span><strong>${cnt('active')}</strong></button>
+          <button class="stat" data-tone="green" data-act="openList" data-arg="active">${CP.ic('userCheck')}<span>Jaunsargi</span><strong>${cnt('active')}</strong></button>
           <button class="stat" data-tone="blue" data-act="openList" data-arg="candidate">${CP.ic('userClock')}<span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
           <button class="stat" data-tone="amber" data-act="openList" data-arg="missing">${CP.ic('fileAlert')}<span>Trūkst dokumentu</span><strong class="${miss.length ? 'warn' : ''}">${miss.length}</strong></button>
           <button class="stat" data-tone="violet" data-page="documents">${CP.ic('files')}<span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
@@ -4710,6 +4710,10 @@ window.CP = window.CP || {};
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.16.1', date: '2026-10-13', title: 'Statuss: Kandidāts / Jaunsargs', items: [
+      'Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs**. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.',
+      'Pievienojot jaunu personu, statusu var izvēlēties uzreiz pie vārda un uzvārda.'
+    ] },
     { v: '1.16.0', date: '2026-10-13', title: 'Piezīmju žurnāls un jaunumi', items: [
       'Piezīmes kartītē un piezīmes par mācību gadu tagad ir **ierakstu žurnāls**. Katra saglabātā piezīme parādās atsevišķi ar datumu, un to var **labot ✎** vai **dzēst ✕**.',
       'Teksta lauki izplešas paši, kamēr raksti. **Enter** saglabā, **Shift+Enter** sāk jaunu rindu.',

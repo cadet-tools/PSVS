@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.16.1 — 2026-10-13
+- Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs** visur rīkā: kartītē, sarakstā, filtros, pārskatā, importā un anketu ievadē. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.
+- Personas logā statusa izvēle ir sadaļā Pamatdati, uzreiz aiz vārda un uzvārda.
+
 ## 1.16.0 — 2026-10-13 — Piezīmju žurnāls un jaunumu logs
 - Personas piezīmes un piezīmes par mācību gadu tagad ir ierakstu žurnāls. Katrs ieraksts ir atsevišķs, ar datumu, un to var labot (✎) vai dzēst (✕). Ja ieraksts labots, redzams arī labošanas datums. Piezīmes redzamas arī cilnē Vēsture.
 - Teksta lauki izplešas vertikāli, kamēr raksti. Enter saglabā, Shift+Enter sāk jaunu rindu, un Esc atceļ labošanu.
