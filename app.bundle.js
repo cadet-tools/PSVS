@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 25 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 26 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.14.4';
+  CP.VERSION = '1.15.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -309,6 +309,7 @@ window.CP = window.CP || {};
     retentionDefault: 12,
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
+    registries: ['dvs', 'eklase'],
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
       { name: 'Trūkstošie dokumenti', text: 'Labdien, {saņēmējs}! Atgādinu, ka par {vārds} {uzvārds} vēl jāiesniedz: {trūkst}. Paldies!' },
@@ -343,7 +344,7 @@ window.CP = window.CP || {};
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
@@ -600,6 +601,7 @@ window.CP = window.CP || {};
         if (m.state === 'missing') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: izsniegts ekipējums, bet nav MTL aprites lapas`, when: '' });
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
+      if (D.regAlerts) for (const r of D.regAlerts(roster)) push(r);
       if (D.idCardAlerts) for (const r of D.idCardAlerts(roster.filter(p => p.status !== 'archived' || p.idCard?.status === 'issued'))) push(r);
       for (const g of D.phoneConflicts()) if (g.suspicious && g.entries.some(e => D.inYear(e.p))) {
         const who = [...new Map(g.entries.map(e => [e.p.id, e.p])).values()];
@@ -2073,6 +2075,8 @@ window.CP = window.CP || {};
       <button class="sm" data-act="bulkMsg">✉ Ziņa</button>
       <button class="sm" data-act="bulkGroup">Mainīt grupu…</button>
       <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
+      <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītie ievadīti DVS">✓ DVS</button>
+      <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
       <button class="sm" data-act="bulkVcard" title="Kontakti Google / telefonam">📇 vCard</button>
       <button class="sm" data-act="bulkArchive">Arhivēt</button>
@@ -2198,6 +2202,7 @@ window.CP = window.CP || {};
     return `<section class="card"><h3>Kontakti <button class="sm right" data-act="vcard" data-arg="${p.id}" title="Saglabāt telefonā / Google kontaktos">📇 Uz telefonu</button></h3>${contacts}</section>${dupCard}
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
+      ${CP.registry ? CP.registry.personCard(p) : ''}
       ${CP.forms ? CP.forms.personCard(p) : ''}
       ${tools ? `<section class="card"><h3>Rīki</h3><div class="actions">${tools}</div></section>` : ''}`;
   }
@@ -3339,6 +3344,55 @@ window.CP = window.CP || {};
 })(window.CP);
 
 
+/* ==== js/registry.js ==== */
+/* =====================================================================
+   Reģistrācija ārējās sistēmās: DVS un e-klase.
+   p.reg = { dvs: { done: true, date: 'YYYY-MM-DD' }, eklase: { … } }
+   Kamēr nav atzīmēts “ievadīts”, pārskatā un kartītē redzams brīdinājums.
+   Iestatījumos (settings.registries) var izvēlēties, kuras sistēmas jāseko.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, A = CP.actions, esc = U.esc;
+  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Ievadīts DVS sistēmā' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }];
+  CP.REGS = REGS;
+  const on = () => { const s = S.db.settings.registries; return REGS.filter(r => !Array.isArray(s) || s.includes(r.k)); };
+  /** Kurām sistēmām persona vēl nav atzīmēta (arhivētām un pārtrauktajām nebrīdina) */
+  D.regMissing = p => {
+    if (!p || p.status === 'archived' || D.partStatus(p) === 'paused' || D.partStatus(p) === 'archived') return [];
+    return on().filter(r => !p.reg?.[r.k]?.done);
+  };
+  D.regAlerts = roster => roster.map(p => ({ p, m: D.regMissing(p) })).filter(x => x.m.length)
+    .map(({ p, m }) => ({ kind: 'registry', personId: p.id, sev: 1, msg: `${U.full(p)}: nav atzīmēts, ka ievadīts — ${m.map(r => r.l).join(', ')}`, when: '' }));
+
+  function setReg(p, k, done) {
+    p.reg = { ...(p.reg || {}) };
+    if (done) p.reg[k] = { done: true, date: U.iso() }; else delete p.reg[k];
+    p.updatedAt = U.now();
+    D.audit(p.id, 'update', [`${REGS.find(r => r.k === k)?.l}: ${done ? 'ievadīts' : 'nav ievadīts'}`]);
+  }
+  A.regToggle = arg => {
+    const [id, k] = String(arg).split('|'), p = D.person(id); if (!p) return;
+    setReg(p, k, !p.reg?.[k]?.done); CP.store.changed();
+  };
+  A.bulkReg = k => {
+    let n = 0; for (const id of S.list.sel) { const p = D.person(id); if (p && !p.reg?.[k]?.done) { setReg(p, k, true); n++; } }
+    CP.store.changed(); CP.ui.toast(`${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
+  };
+
+  /** Kartītes sānu panelis */
+  function personCard(p) {
+    const list = on(); if (!list.length) return '';
+    const miss = D.regMissing(p);
+    return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija</h3>
+      ${list.map(r => { const v = p.reg?.[r.k]; return `<label class="reg-row ${v?.done ? 'ok' : (miss.includes(r) ? 'miss' : '')}"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|${r.k}" ${v?.done ? 'checked' : ''}>
+        <span class="grow"><b>${esc(r.l)}</b> <small class="muted">${v?.done ? 'ievadīts ' + esc(U.fmtDate(v.date)) : (miss.includes(r) ? '— vēl nav ievadīts' : 'nav jāseko šim statusam')}</small></span></label>`; }).join('')}
+      ${miss.length ? `<p class="small warn" style="margin:6px 0 0">⚠ Kad persona ir ievadīta ${miss.map(r => r.loc).join(' un ')}, atzīmē to šeit.</p>` : ''}</section>`;
+  }
+  CP.registry = { personCard, setReg, REGS };
+})(window.CP);
+
+
 /* ==== js/contacts.js ==== */
 /* =====================================================================
    Kontakti uz telefonu / Google kontaktiem
@@ -3720,7 +3774,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪') };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}</div>`;
@@ -4087,6 +4141,7 @@ window.CP = window.CP || {};
     if (idx.first < 0 && idx.name < 0) throw Error('nav norādīta kolonna ar vārdu');
     const H = headerCells(rows, headerRow).map(h => h.own);
     const nameReversed = idx.name >= 0 && /^uzvards/.test(H[idx.name] || '');
+    const fromEklase = H.includes('personaslietasnumurs');   // e-klases palīga CSV
     const out = [], skipped = [], used = new Set(Object.values(map));
     const extraCols = opts.extra ? H.map((h, c) => ({ c, h, label: headerCells(rows, headerRow)[c].text })).filter(x => x.h && !used.has(x.c) && !SKIP_EXTRA.test(x.h)) : [];
     io.lastSkipped = skipped;
@@ -4135,6 +4190,7 @@ window.CP = window.CP || {};
         const ex = extraCols.map(x => [x.label, cleanV(r[x.c])]).filter(([, v]) => v).map(([l, v]) => `${l.replace(/\s+/g, ' ').replace(/[.:]+$/, '')}: ${v.replace(/\s*\n\s*/g, ' ')}`);
         if (ex.length) p.notes = [p.notes, 'No Excel — ' + ex.join('; ')].filter(Boolean).join('\n');
       }
+      if (fromEklase) p.reg = { eklase: { done: true, date: U.iso() } };
       if (nameNote) p.notes = [p.notes, 'Pie vārda: ' + nameNote].filter(Boolean).join('\n');
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
       if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
@@ -4219,7 +4275,7 @@ window.CP = window.CP || {};
   const fillable = p => {
     const o = p._match && D.person(p._match); if (!o) return [];
     const p1ok = sameOrEmpty(o.parentName, p.parentName), p2ok = sameOrEmpty(o.parent2Name, p.parent2Name) && U.norm(p.parent2Name) !== U.norm(o.parentName);
-    return Object.keys(p).filter(k => !k.startsWith('_') && !['status', 'retentionMonths', 'group'].includes(k) && p[k] && !o[k]
+    return Object.keys(p).filter(k => !k.startsWith('_') && !['status', 'retentionMonths', 'group', 'reg'].includes(k) && p[k] && !o[k]
       && (!/^parent2/.test(k) || p2ok) && (!/^parent(?!2)/.test(k) || p1ok));
   };
   const fLabel = k => /^parent2/.test(k) ? '2. pārstāvis' : /^parent/.test(k) ? 'vecāks' : (CP.FIELD[k]?.l || k).toLowerCase();
@@ -4248,6 +4304,8 @@ window.CP = window.CP || {};
     const g = U.$('importGroup').value.trim(); let n = 0, upd = 0;
     for (const p of pending) {
       if (p._dup) {
+        const om = D.person(p._match);
+        if (om && p.reg?.eklase && !om.reg?.eklase?.done && CP.registry) CP.registry.setReg(om, 'eklase', true);
         const o = fillOn() && fillable(p).length && D.person(p._match);
         if (o) { const ks = fillable(p); for (const k of ks) o[k] = p[k]; o.updatedAt = U.now(); D.audit(o.id, 'update', ks.map(k => CP.FIELD[k]?.l || k)); upd++; }
         continue;
@@ -4325,7 +4383,8 @@ window.CP = window.CP || {};
 
       <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
-        <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div></div></section>
+        <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
+        <div class="field wide"><label>Atgādināt, ja persona nav atzīmēta kā ievadīta</label><div class="actions">${CP.REGS.map(r => `<label class="check"><input type="checkbox" data-reg-set="${r.k}" ${(s.registries || []).includes(r.k) ? 'checked' : ''}> ${esc(r.l)}</label>`).join('')}</div></div></div></section>
 
       <section class="card"><h3>Anketu nolasīšana</h3><div class="fieldgrid">
         <div class="field"><label>Atpazīšanas dzinējs</label><select data-ocr="engine">
@@ -4372,6 +4431,7 @@ window.CP = window.CP || {};
       else s[d.set] = t.value.trim();
       CP.store.changed(); return true;
     }
+    if (d.regSet) { const set = new Set(s.registries || []); t.checked ? set.add(d.regSet) : set.delete(d.regSet); s.registries = CP.REGS.map(r => r.k).filter(k => set.has(k)); CP.store.changed(); return true; }
     if (d.ocr) { s.ocr[d.ocr] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value.trim(); CP.store.changed(); return true; }
     if (d.tpl) { const [i, k] = d.tpl.split(':'); s.templates[i][k] = t.value; CP.store.changed({ silent: true }); return true; }
     if (d.tool) { const [i, k] = d.tool.split(':'); s.tools[i][k] = t.value.trim(); CP.store.changed({ silent: true }); return true; }

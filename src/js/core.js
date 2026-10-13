@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.14.4';
+  CP.VERSION = '1.15.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -306,6 +306,7 @@ window.CP = window.CP || {};
     retentionDefault: 12,
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
+    registries: ['dvs', 'eklase'],
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
       { name: 'Trūkstošie dokumenti', text: 'Labdien, {saņēmējs}! Atgādinu, ka par {vārds} {uzvārds} vēl jāiesniedz: {trūkst}. Paldies!' },
@@ -340,7 +341,7 @@ window.CP = window.CP || {};
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
@@ -597,6 +598,7 @@ window.CP = window.CP || {};
         if (m.state === 'missing') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: izsniegts ekipējums, bet nav MTL aprites lapas`, when: '' });
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
+      if (D.regAlerts) for (const r of D.regAlerts(roster)) push(r);
       if (D.idCardAlerts) for (const r of D.idCardAlerts(roster.filter(p => p.status !== 'archived' || p.idCard?.status === 'issued'))) push(r);
       for (const g of D.phoneConflicts()) if (g.suspicious && g.entries.some(e => D.inYear(e.p))) {
         const who = [...new Map(g.entries.map(e => [e.p.id, e.p])).values()];

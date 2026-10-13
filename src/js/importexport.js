@@ -155,6 +155,7 @@
     if (idx.first < 0 && idx.name < 0) throw Error('nav norādīta kolonna ar vārdu');
     const H = headerCells(rows, headerRow).map(h => h.own);
     const nameReversed = idx.name >= 0 && /^uzvards/.test(H[idx.name] || '');
+    const fromEklase = H.includes('personaslietasnumurs');   // e-klases palīga CSV
     const out = [], skipped = [], used = new Set(Object.values(map));
     const extraCols = opts.extra ? H.map((h, c) => ({ c, h, label: headerCells(rows, headerRow)[c].text })).filter(x => x.h && !used.has(x.c) && !SKIP_EXTRA.test(x.h)) : [];
     io.lastSkipped = skipped;
@@ -203,6 +204,7 @@
         const ex = extraCols.map(x => [x.label, cleanV(r[x.c])]).filter(([, v]) => v).map(([l, v]) => `${l.replace(/\s+/g, ' ').replace(/[.:]+$/, '')}: ${v.replace(/\s*\n\s*/g, ' ')}`);
         if (ex.length) p.notes = [p.notes, 'No Excel — ' + ex.join('; ')].filter(Boolean).join('\n');
       }
+      if (fromEklase) p.reg = { eklase: { done: true, date: U.iso() } };
       if (nameNote) p.notes = [p.notes, 'Pie vārda: ' + nameNote].filter(Boolean).join('\n');
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
       if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
@@ -287,7 +289,7 @@
   const fillable = p => {
     const o = p._match && D.person(p._match); if (!o) return [];
     const p1ok = sameOrEmpty(o.parentName, p.parentName), p2ok = sameOrEmpty(o.parent2Name, p.parent2Name) && U.norm(p.parent2Name) !== U.norm(o.parentName);
-    return Object.keys(p).filter(k => !k.startsWith('_') && !['status', 'retentionMonths', 'group'].includes(k) && p[k] && !o[k]
+    return Object.keys(p).filter(k => !k.startsWith('_') && !['status', 'retentionMonths', 'group', 'reg'].includes(k) && p[k] && !o[k]
       && (!/^parent2/.test(k) || p2ok) && (!/^parent(?!2)/.test(k) || p1ok));
   };
   const fLabel = k => /^parent2/.test(k) ? '2. pārstāvis' : /^parent/.test(k) ? 'vecāks' : (CP.FIELD[k]?.l || k).toLowerCase();
@@ -316,6 +318,8 @@
     const g = U.$('importGroup').value.trim(); let n = 0, upd = 0;
     for (const p of pending) {
       if (p._dup) {
+        const om = D.person(p._match);
+        if (om && p.reg?.eklase && !om.reg?.eklase?.done && CP.registry) CP.registry.setReg(om, 'eklase', true);
         const o = fillOn() && fillable(p).length && D.person(p._match);
         if (o) { const ks = fillable(p); for (const k of ks) o[k] = p[k]; o.updatedAt = U.now(); D.audit(o.id, 'update', ks.map(k => CP.FIELD[k]?.l || k)); upd++; }
         continue;

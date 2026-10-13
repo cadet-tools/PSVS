@@ -49,7 +49,8 @@
 
       <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
-        <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div></div></section>
+        <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
+        <div class="field wide"><label>Atgādināt, ja persona nav atzīmēta kā ievadīta</label><div class="actions">${CP.REGS.map(r => `<label class="check"><input type="checkbox" data-reg-set="${r.k}" ${(s.registries || []).includes(r.k) ? 'checked' : ''}> ${esc(r.l)}</label>`).join('')}</div></div></div></section>
 
       <section class="card"><h3>Anketu nolasīšana</h3><div class="fieldgrid">
         <div class="field"><label>Atpazīšanas dzinējs</label><select data-ocr="engine">
@@ -96,6 +97,7 @@
       else s[d.set] = t.value.trim();
       CP.store.changed(); return true;
     }
+    if (d.regSet) { const set = new Set(s.registries || []); t.checked ? set.add(d.regSet) : set.delete(d.regSet); s.registries = CP.REGS.map(r => r.k).filter(k => set.has(k)); CP.store.changed(); return true; }
     if (d.ocr) { s.ocr[d.ocr] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value.trim(); CP.store.changed(); return true; }
     if (d.tpl) { const [i, k] = d.tpl.split(':'); s.templates[i][k] = t.value; CP.store.changed({ silent: true }); return true; }
     if (d.tool) { const [i, k] = d.tool.split(':'); s.tools[i][k] = t.value.trim(); CP.store.changed({ silent: true }); return true; }

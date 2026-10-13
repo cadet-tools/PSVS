@@ -34,6 +34,8 @@
       <button class="sm" data-act="bulkMsg">✉ Ziņa</button>
       <button class="sm" data-act="bulkGroup">Mainīt grupu…</button>
       <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Aktīvs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
+      <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītie ievadīti DVS">✓ DVS</button>
+      <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
       <button class="sm" data-act="bulkVcard" title="Kontakti Google / telefonam">📇 vCard</button>
       <button class="sm" data-act="bulkArchive">Arhivēt</button>
@@ -159,6 +161,7 @@
     return `<section class="card"><h3>Kontakti <button class="sm right" data-act="vcard" data-arg="${p.id}" title="Saglabāt telefonā / Google kontaktos">📇 Uz telefonu</button></h3>${contacts}</section>${dupCard}
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
+      ${CP.registry ? CP.registry.personCard(p) : ''}
       ${CP.forms ? CP.forms.personCard(p) : ''}
       ${tools ? `<section class="card"><h3>Rīki</h3><div class="actions">${tools}</div></section>` : ''}`;
   }

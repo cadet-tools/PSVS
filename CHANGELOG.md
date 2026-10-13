@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.15.0 — 2026-10-13 — Atzīmes “ievadīts DVS” un “ievadīts e-klasē”
+- Personas kartītē ir jauna sadaļa **Reģistrācija** ar atzīmēm DVS un e-klase. Kopā ar atzīmi tiek saglabāts datums.
+- Kamēr persona nav atzīmēta, pārskatā un uzdevumos redzams brīdinājums. Tas attiecas uz aktīvajiem un kandidātiem, bet ne uz pārtrauktajiem un arhivētajiem.
+- Personu sarakstā atlasītajām personām var atzīmēt **✓ DVS** vai **✓ e-klase** uzreiz visām.
+- Personas, kas importētas ar e-klases eksporta palīgu, automātiski tiek atzīmētas kā ievadītas e-klasē.
+- Iestatījumi → Dokumenti: var izvēlēties, par kurām sistēmām atgādināt.
+
 ## 1.14.4 — 2026-10-13 — Imports no instruktoru Excel tabulām
 - Vecāka vārds un tālrunis vienā šūnā (“Vecāku vārds, uzvārds, tel.Nr.”) tiek sadalīts. Ja šūnā ir divi vecāki, otrs kļūst par 2. pārstāvi.
 - Jaunas atpazītās kolonnas: vecāka personas kods, “e-adrese” (e-pasts), statuss (Jaunsargs/Kandidāts) un jaunsarga apliecības numurs.
