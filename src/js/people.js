@@ -159,6 +159,7 @@
     return `<section class="card"><h3>Kontakti <button class="sm right" data-act="vcard" data-arg="${p.id}" title="Saglabāt telefonā / Google kontaktos">📇 Uz telefonu</button></h3>${contacts}</section>${dupCard}
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
+      ${CP.forms ? CP.forms.personCard(p) : ''}
       ${tools ? `<section class="card"><h3>Rīki</h3><div class="actions">${tools}</div></section>` : ''}`;
   }
   const taskRow = t => `<div class="task ${t.due && U.daysTo(t.due) < 0 ? 'late' : ''}"><input type="checkbox" data-act="taskDone" data-arg="${t.id}" ${t.done ? 'checked' : ''} aria-label="Izpildīts"><span>${esc(t.text)}${t.due ? `<small class="muted"> · ${U.fmtDate(t.due)}</small>` : ''}</span></div>`;
@@ -200,7 +201,7 @@
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
   const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
-  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība'};
+  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība', event: 'Pasākums'};
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });

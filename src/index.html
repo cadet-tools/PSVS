@@ -16,6 +16,7 @@
     <button data-page="dashboard" title="Pārskats"><span data-ic="grid">▦</span><small>Pārskats</small></button>
     <button data-page="people" title="Personas"><span data-ic="users">♙</span><small>Personas</small></button>
     <button data-page="comms" title="Saziņa"><span data-ic="message">✉</span><small>Saziņa</small></button>
+    <button data-page="forms" title="Veidlapas: instruktāžas, nometnes žurnāli"><span data-ic="clipboard">☑</span><small>Veidlapas</small></button>
     <button data-page="documents" title="Dokumenti"><span data-ic="file">▤</span><small>Dokumenti</small></button>
     <button data-page="equipment" title="Ekipējums"><span data-ic="backpack">▣</span><small>Ekipējums</small></button>
     <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span data-ic="bell">⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
@@ -164,6 +165,24 @@
   </form>
 </dialog>
 <datalist id="dl_items"><option value="Formas jaka"><option value="Formas bikses"><option value="Zābaki"><option value="Cepure"><option value="Josta"><option value="Mugursoma"><option value="Guļammaiss"><option value="Paklājiņš"></datalist>
+
+<!-- ============ Darbinieks / audzinātājs ============ -->
+<dialog id="staffDialog">
+  <form id="staffForm">
+    <header class="dlg-head"><h2 id="staffTitle">Darbinieks</h2><button type="button" class="ghost" data-close="staffDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label>Vārds, uzvārds</label><input name="name" required autocomplete="off"></div>
+      <div class="field"><label>Personas kods</label><input name="personalCode" autocomplete="off" placeholder="000000-00000"></div>
+      <div class="field"><label>Amats nometnē</label><input name="role" list="dl_roles" placeholder="piem., audzinātājs"></div>
+      <div class="field wide"><label>Deklarētā / faktiskā adrese</label><input name="address"></div>
+      <div class="field"><label>Tālrunis</label><input name="phone" type="tel"></div>
+      <div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" name="counselor"> Var būt audzinātājs</label></div>
+    </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="staffDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+<datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
+<input type="file" id="tplDocFile" accept=".docx" hidden>
 
 <!-- ============ Jaunsarga apliecība ============ -->
 <dialog id="idCardDialog">
@@ -367,6 +386,9 @@
 <script src="js/scan/viewer.js"></script>
 <script src="js/scan/ocr.js"></script>
 <script src="js/scan/scan.js"></script>
+<script src="js/pdfgen.js"></script>
+<script src="js/docxfill.js"></script>
+<script src="js/forms.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,5 +1,14 @@
 # Izmaiņu vēsture
 
+## 1.14.0 — 2026-10-13 — Veidlapas: instruktāžas lapa un nometnes žurnāls
+- Jauna sadaļa **Veidlapas**. Tajā ir pasākumu saraksts, darbinieku un audzinātāju saraksts un savas Word veidnes.
+- **Drošības instruktāžas lapa**: nosaukums, norises datumi (teksts “2026. gada 17.–18. oktobris” veidojas pats), instruktāžas datums, grupa, amats un vārds. Dalībniekus var izvēlēties pa vienam, visus, ar meklēšanu vai pēc grupas. Datums tiek ierakstīts katrā rindā.
+- **Nometnes žurnāls**: darbinieku lapa un dalībnieku lapa. Dzimšanas datums, adrese, tālrunis un vecāku kontakti tiek ņemti no kartītēm. Audzinātāju var norādīt grupai, un atsevišķam dalībniekam to var nomainīt. Var norādīt arī nometnes vadītāju.
+- Darbinieki un audzinātāji tiek saglabāti nākamajām reizēm, un neaktuālos var dzēst. Jaunā nometnē automātiski ir atzīmēti iepriekšējās nometnes darbinieki.
+- **Brīdinājums tikai rīkā**: ja dalībniekam trūkst anketas, līguma vai ārsta izziņas. Dalībnieku tik un tā var pievienot, un uz veidlapas brīdinājums netiek drukāts.
+- Gatavs **PDF**, ko var apskatīt, izdrukāt vai lejupielādēt. Kopija tiek saglabāta mapē `Macibu_gadi/<gads>/Pasakumi/`. Personas kartītē ir redzams, kuros pasākumos persona piedalījusies.
+- **Sava Word veidne**: Word dokumentā ieraksti atzīmes, piem., `{nosaukums}` un `{vards}`, un rīks to aizpildīs. Ir pieejami lejupielādējami paraugi.
+
 ## 1.13.1 — 2026-10-13
 - Iestatījumos izvēlētā ciparnīca iezīmējas uzreiz.
 - Pārskata kartītes ir sakārtotas: ikona augšā, cipars un nosaukums kopā apakšā.

@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 21 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 24 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.13.1';
+  CP.VERSION = '1.14.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -317,6 +317,7 @@ window.CP = window.CP || {};
     ],
     tools: [{ name: 'E-klase', url: 'https://my.e-klase.lv/' }, { name: 'DVS', url: 'https://dvs.mod.gov.lv/' }],
     toolsAdded: ['dvs'],
+    staff: [], formDefaults: { instrPosition: 'JSI', instrName: '', fillDates: true }, docTemplates: [],
     ocr: { engine: 'tesseract', googleKey: '', enhance: true, minConf: 65 },
     contactOrg: 'Jaunsardze',
     labelYouth: 'Jaunsardze – jaunsargi',
@@ -330,7 +331,7 @@ window.CP = window.CP || {};
 
   CP.blank = () => ({
     version: CP.SCHEMA, people: [], documents: [], equipment: [], relations: [], log: [], tasks: [], audit: [],
-    years: [], enrollments: [],
+    years: [], enrollments: [], events: [],
     sources: [], nextFolderSeq: 1, revision: 0,
     settings: CP.defaultSettings(), createdAt: U.now(), updatedAt: null
   });
@@ -341,8 +342,9 @@ window.CP = window.CP || {};
     const d = { ...CP.blank(), ...raw };
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
-    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));
@@ -1845,7 +1847,7 @@ window.CP = window.CP || {};
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku' };
+  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -1892,7 +1894,7 @@ window.CP = window.CP || {};
   };
 
   function renderNav() {
-    const nav = S.page === 'person' ? 'people' : S.page;
+    const nav = S.page === 'person' ? 'people' : S.page === 'formEdit' ? 'forms' : S.page;
     U.qsa('.nav [data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === nav));
     const n = D.alerts().filter(a => a.sev > 0).length, badge = U.$('alertBadge');
     if (badge) { badge.textContent = n; badge.classList.toggle('hidden', !n); }
@@ -2196,6 +2198,7 @@ window.CP = window.CP || {};
     return `<section class="card"><h3>Kontakti <button class="sm right" data-act="vcard" data-arg="${p.id}" title="Saglabāt telefonā / Google kontaktos">📇 Uz telefonu</button></h3>${contacts}</section>${dupCard}
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
+      ${CP.forms ? CP.forms.personCard(p) : ''}
       ${tools ? `<section class="card"><h3>Rīki</h3><div class="actions">${tools}</div></section>` : ''}`;
   }
   const taskRow = t => `<div class="task ${t.due && U.daysTo(t.due) < 0 ? 'late' : ''}"><input type="checkbox" data-act="taskDone" data-arg="${t.id}" ${t.done ? 'checked' : ''} aria-label="Izpildīts"><span>${esc(t.text)}${t.due ? `<small class="muted"> · ${U.fmtDate(t.due)}</small>` : ''}</span></div>`;
@@ -2237,7 +2240,7 @@ window.CP = window.CP || {};
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
   const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
-  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība'};
+  const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība', event: 'Pasākums'};
   function timeline(p) {
     const items = [];
     for (const l of S.db.log) if (l.personId === p.id) items.push({ at: l.at, type: l.type, text: l.detail, status: l.status, grp: l.type === 'note' ? 'notes' : 'comms' });
@@ -2626,6 +2629,13 @@ window.CP = window.CP || {};
     const h = await CP.store.handleFor(d.path, d.sourceId); if (!h) return ui.toast('Fails nav atrasts', 'warn');
     const f = await h.getFile(); f._linked = true;
     CP.scan.openWith(f, D.person(d.personId)?.status !== 'archived' ? d.personId : '');
+  };
+  /** Rāda sagatavotu failu (piem. veidlapas PDF) tajā pašā skatītājā */
+  docs.showBlob = (blob, name) => {
+    if (view) URL.revokeObjectURL(view.url);
+    view = { url: URL.createObjectURL(blob), name };
+    U.$('viewBody').innerHTML = `<iframe class="viewer" src="${view.url}" title="${esc(name)}"></iframe>`;
+    U.$('viewName').textContent = name; U.$('viewDialog').showModal();
   };
   A.viewTab = () => view && window.open(view.url, '_blank');
   A.viewDownload = () => { if (!view) return; const a = document.createElement('a'); a.href = view.url; a.download = view.name; a.click(); };
@@ -3756,7 +3766,7 @@ window.CP = window.CP || {};
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
           <section class="card"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 8).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}</section>
           <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
+          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
         </div></div>`;
     }
   };
@@ -5729,6 +5739,669 @@ window.CP = window.CP || {};
 
   scan.state = SC;   // diagnostikai (konsolē: CP.scan.state)
   CP.scan = scan;
+})(window.CP);
+
+
+/* ==== js/pdfgen.js ==== */
+/* =====================================================================
+   PDF veidlapas (pdf-lib + fontkit, Tinos — Times līdzīgs fonts ar latviešu burtiem).
+   Bibliotēkas tiek ielādētas tikai pirmajā PDF veidošanas reizē.
+   Instruktāžas lapa (A4 stateniski) un nometnes žurnāls (A4 guļus) pēc Jaunsardzes paraugiem.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util;
+  const MM = 72 / 25.4;
+  let LIB = null;
+  async function load() {
+    if (LIB) return LIB;
+    await CP.reader.loadScript(CP.VENDOR + 'pdf/pdf-lib.min.js');
+    await CP.reader.loadScript(CP.VENDOR + 'pdf/fontkit.umd.min.js');
+    const get = async n => new Uint8Array(await (await fetch(CP.VENDOR + 'pdf/' + n)).arrayBuffer());
+    const [reg, bold, ital] = await Promise.all(['Tinos-400Regular.ttf', 'Tinos-700Bold.ttf', 'Tinos-400Regular_Italic.ttf'].map(get));
+    LIB = { P: window.PDFLib, fk: window.fontkit, reg, bold, ital };
+    return LIB;
+  }
+
+  /* --- Zīmēšanas palīgs vienam dokumentam --- */
+  async function newDoc(title) {
+    const L = await load(), doc = await L.P.PDFDocument.create();
+    doc.registerFontkit(L.fk);
+    doc.setTitle(title); doc.setCreator('CADET PERSONĀLS'); doc.setProducer('CADET PERSONĀLS'); doc.setLanguage('lv');
+    const F = { r: await doc.embedFont(L.reg, { subset: true }), b: await doc.embedFont(L.bold, { subset: true }), i: await doc.embedFont(L.ital, { subset: true }) };
+    const black = L.P.rgb(0, 0, 0), grey = L.P.rgb(0.35, 0.35, 0.35);
+    const clean = s => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/[^ -ſ‐-‧‰‹›€№™]/g, '?');
+    const width = (t, f, s) => f.widthOfTextAtSize(clean(t), s);
+    /** Teksta sadalīšana rindās pēc platuma */
+    function wrap(text, f, s, w) {
+      const out = [];
+      for (const para of clean(text).split(/\n/)) {
+        let line = '';
+        for (const word of para.split(/\s+/).filter(Boolean)) {
+          const cand = line ? line + ' ' + word : word;
+          if (width(cand, f, s) <= w) { line = cand; continue; }
+          if (line) out.push(line);
+          if (width(word, f, s) <= w) { line = word; continue; }
+          let part = '';   // ļoti garš vārds — dala pa burtiem
+          for (const ch of word) { if (width(part + ch, f, s) > w && part) { out.push(part); part = ch; } else part += ch; }
+          line = part;
+        }
+        out.push(line);
+      }
+      return out.length ? out : [''];
+    }
+    function text(page, t, x, y, o = {}) {
+      const f = o.font || F.r, s = o.size || 11, str = clean(t);
+      let tx = x; const w = width(str, f, s);
+      if (o.align === 'center') tx = x - w / 2; else if (o.align === 'right') tx = x - w;
+      page.drawText(str, { x: tx, y, size: s, font: f, color: o.color || black });
+      if (o.underline) page.drawLine({ start: { x: tx, y: y - 1.5 }, end: { x: tx + w, y: y - 1.5 }, thickness: 0.6, color: o.color || black });
+      return w;
+    }
+    const line = (page, x1, y1, x2, y2, t = 0.7) => page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: t, color: black });
+    /** Teksts šūnā (vairākas rindas, centrēts vertikāli) */
+    function cell(page, t, x, yTop, w, h, o = {}) {
+      const f = o.font || F.r, s = o.size || 10, lh = s * 1.15, pad = o.pad ?? 3;
+      const lines = wrap(t, f, s, w - 2 * pad);
+      const total = lines.length * lh, y0 = yTop - (h - total) / 2 - s * 0.82;
+      lines.forEach((ln, i) => {
+        const y = y0 - i * lh;
+        if (o.align === 'center') text(page, ln, x + w / 2, y, { font: f, size: s, align: 'center' });
+        else if (o.align === 'right') text(page, ln, x + w - pad, y, { font: f, size: s, align: 'right' });
+        else text(page, ln, x + pad, y, { font: f, size: s });
+      });
+    }
+    const cellLines = (t, w, o = {}) => wrap(t, o.font || F.r, o.size || 10, w - 2 * (o.pad ?? 3)).length;
+    return { L, doc, F, text, line, cell, cellLines, wrap, width, grey };
+  }
+
+  /** Tabula ar galveni (var būt 2 rindas ar apvienotu grupu), automātiska lapošana un galvenes atkārtošana */
+  function table(ctx, { page: firstPage, newPage, x, yTop, yMin, cols, head, rows, minH, size = 10, headSize = 9.5 }) {
+    const { F, line, cell, cellLines } = ctx;
+    const W = cols.reduce((a, c) => a + c.w, 0);
+    let page = firstPage, y = yTop;
+    const drawHead = () => {
+      const h1 = head.h1, h2 = head.h2 || 0, top = y;
+      line(page, x, top, x + W, top);
+      let cx = x;
+      for (let i = 0; i < cols.length; i++) {
+        const c = cols[i], g = head.groups?.find(g => g.from === i);
+        if (g) {   // apvienota grupas virsrinda
+          const gw = cols.slice(g.from, g.to + 1).reduce((a, c) => a + c.w, 0);
+          cell(page, g.title, cx, top, gw, h1, { font: F.b, size: headSize, align: 'center' });
+          line(page, cx, top - h1, cx + gw, top - h1);
+          let sx = cx;
+          for (let j = g.from; j <= g.to; j++) { cell(page, cols[j].title, sx, top - h1, cols[j].w, h2, { font: F.b, size: headSize - 0.5, align: 'center' }); sx += cols[j].w; if (j < g.to) line(page, sx, top - h1, sx, top - h1 - h2); }
+          cx += gw; i = g.to; line(page, cx, top, cx, top - h1 - h2); continue;
+        }
+        cell(page, c.title, cx, top, c.w, h1 + h2, { font: F.b, size: headSize, align: 'center' });
+        line(page, cx, top, cx, top - h1 - h2);
+        cx += c.w;
+      }
+      line(page, x, top, x, top - h1 - h2);
+      y = top - h1 - h2; line(page, x, y, x + W, y);
+    };
+    drawHead();
+    const pages = [page];
+    for (const r of rows) {
+      const lines = Math.max(1, ...cols.map((c, i) => r[i] ? cellLines(r[i], c.w, { size, font: c.bold ? F.b : F.r }) : 1));
+      const h = Math.max(minH, lines * size * 1.15 + 6);
+      if (y - h < yMin) { page = newPage(); pages.push(page); y = page.__top; drawHead(); }
+      let cx = x;
+      cols.forEach((c, i) => {
+        if (r[i] != null && r[i] !== '') cell(page, r[i], cx, y, c.w, h, { size: c.size || size, font: c.bold ? F.b : c.italic ? F.i : F.r, align: c.align });
+        line(page, cx, y, cx, y - h); cx += c.w;
+      });
+      line(page, x + W, y, x + W, y - h);
+      y -= h; line(page, x, y, x + W, y);
+    }
+    return { page, y, pages };
+  }
+  const fmtD = iso => { const s = U.fmtDate(iso); return s ? s + '.' : ''; };
+  function pageNumbers(ctx, w) {
+    const pages = ctx.doc.getPages(); if (pages.length < 2) return;
+    pages.forEach((p, i) => ctx.text(p, `${i + 1}. lapa no ${pages.length}`, w - 15 * MM, 8 * MM, { size: 8, align: 'right', color: ctx.grey }));
+  }
+
+  /* =================== Drošības noteikumu instruktāžas veidlapa =================== */
+  async function instruction(ev, people) {
+    const ctx = await newDoc(`Instruktāžas veidlapa — ${ev.title || ''}`), { doc, F, text, line } = ctx;
+    const W = 595.28, H = 841.89, M = 15 * MM, cw = W - 2 * M;
+    const add = () => { const p = doc.addPage([W, H]); p.__top = H - 14 * MM; return p; };
+    const p1 = add();
+    let y = H - 16 * MM;
+    text(p1, 'Drošības noteikumu instruktāžas veidlapa', W / 2, y, { font: F.b, size: 16, align: 'center' }); y -= 24;
+    if (ev.title) text(p1, ev.title, W / 2, y + 3, { font: F.b, size: 12.5, align: 'center' });
+    line(p1, M + 20, y, W - M - 20, y, 0.7); y -= 11;
+    text(p1, '(nodarbības vai pasākuma nosaukums)', W / 2, y, { font: F.i, size: 8.5, align: 'center' }); y -= 16;
+    const w1 = text(p1, 'dalībnieku iepazīstināšana', M, y, { font: F.i, size: 11, underline: true });
+    text(p1, ' ar drošības noteikumiem, kas jāievēro nodarbībā vai pasākumā.', M + w1, y, { size: 11 }); y -= 20;
+    const when = ev.when || '';
+    if (when) { text(p1, when, W - M, y, { size: 11, align: 'right', underline: true }); }
+    else { text(p1, `${(ev.instrDate || U.iso()).slice(0, 4)}.gada ____________________`, W - M, y, { size: 11, align: 'right' }); }
+    y -= 11; text(p1, '(nodarbības vai pasākuma norises laiks)', W - M, y, { font: F.i, size: 8.5, align: 'right' }); y -= 8;
+
+    const date = ev.fillDates === false ? '___.___.______' : fmtD(ev.instrDate);
+    const cols = [{ title: 'N.p.k.', w: 13 * MM, align: 'center', bold: true }, { title: 'Vārds, Uzvārds', w: 50 * MM }, { title: '“iepazinos”', w: 24 * MM, align: 'center' },
+      { title: 'Datums', w: 25 * MM, align: 'center' }, { title: 'Paraksts', w: 30 * MM }, { title: 'Piezīmes', w: cw - 142 * MM, size: 9 }];
+    const rows = people.map((p, i) => [`${i + 1}.`, U.full(p), '“iepazinos”', date, '', ev.rowNote?.(p) || '']);
+    const totalRows = Math.max(26, rows.length + Math.max(0, ev.blankRows ?? 0));
+    for (let i = rows.length; i < totalRows; i++) rows.push([`${i + 1}.`, '', '“iepazinos”', ev.fillDates === false ? '___.___.______' : '___.___.______', '', '']);
+    const t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 16 * MM, cols, head: { h1: 15 }, rows, minH: 19.5, size: 10.5 });
+    let page = t.page; y = t.y - 22;
+    if (y < 40 * MM) { page = add(); y = page.__top - 10; }
+    text(page, `Grupa: ${ev.group || ''}`, M, y, { size: 11 }); y -= 16;
+    if (ev.notes) { for (const ln of ctx.wrap('Piezīmes: ' + ev.notes, F.r, 11, cw)) { text(page, ln, M, y, { size: 11 }); y -= 14; } }
+    else { text(page, 'Piezīmes' + '.'.repeat(118), M, y, { size: 11 }); y -= 14; }
+    y -= 14;
+    text(page, `Datums: ${ev.instrDate ? fmtD(ev.instrDate) : '___.___.______'}`, M, y, { size: 11 });
+    const instr = [ev.instrPosition || 'JSI', ev.instrName || ''].filter(Boolean);
+    const right = W / 2 + 8;
+    text(page, `${instr[0]} _____________ / ${ev.instrName || '__________________________'}`, right, y, { size: 11 });
+    y -= 12;
+    text(page, '(instruktāžas datums)', M, y, { font: F.i, size: 8.5 });
+    text(page, '(instruktāžas veicēja amats, vārds, uzvārds, paraksts)', right, y, { font: F.i, size: 8.5 });
+    pageNumbers(ctx, W);
+    return doc.save();
+  }
+
+  /* =================== Nometnes žurnāls =================== */
+  async function camp(ev, people, staff, counselorOf) {
+    const ctx = await newDoc(`Nometnes žurnāls — ${ev.title || ''}`), { doc, F, text } = ctx;
+    const W = 841.89, H = 595.28, M = 14 * MM, cw = W - 2 * M;
+    const add = () => { const p = doc.addPage([W, H]); p.__top = H - 14 * MM; return p; };
+    const titleLine = (p, y) => text(p, `NOMETNES  “${ev.title || '_________________'}”  ŽURNĀLS`, W / 2, y, { font: F.b, size: 12.5, align: 'center' });
+    const footer = (page, y) => {
+      if (y < 30 * MM) { page = add(); y = page.__top - 10; }
+      text(page, `Instruktāžas datums: ${ev.instrDate ? fmtD(ev.instrDate) : ''}`, M + 8 * MM, y, { size: 11 }); y -= 18;
+      const leader = staff.find(s => s.id === ev.leaderId);
+      text(page, `Nometnes vadītājs: ${leader ? leader.name : 'Vārds Uzvārds'}, paraksts / _____________`, M + 8 * MM, y, { size: 11 });
+    };
+    const addr = x => {
+      const parts = [];
+      if (x.addressDeclared) parts.push(x.addressDeclared);
+      if (x.addressActual && U.norm(x.addressActual) !== U.norm(x.addressDeclared || '')) parts.push('fakt.: ' + x.addressActual);
+      const ph = x.phone ? U.prettyPhone ? U.prettyPhone(x.phone) : x.phone : '';
+      return [parts.join('; '), ph].filter(Boolean).join(', tālr. ');
+    };
+    // --- Darbinieki ---
+    const p1 = add(); let y = H - 22 * MM;
+    titleLine(p1, y); y -= 20; text(p1, 'Darbinieki', W / 2, y, { font: F.b, size: 10.5, align: 'center' }); y -= 12;
+    const sigW = (cw - 157 * MM) / 3;
+    const sCols = [{ title: 'N.P.K.', w: 13 * MM, align: 'center', bold: true }, { title: 'Vārds Uzvārds', w: 42 * MM }, { title: 'Personas kods', w: 27 * MM, align: 'center' },
+      { title: 'Amats nometnē', w: 22 * MM, align: 'center' }, { title: 'Deklarētās un faktiskās dzīvesvietas adrese, tālruņa numurs', w: 53 * MM, size: 9 },
+      { title: 'Darba kārtības noteikumiem', w: sigW }, { title: 'Iekšējās kārtības noteikumiem', w: sigW }, { title: 'Darba drošības un ugunsdrošības noteikumiem', w: sigW }];
+    const sRows = staff.filter(s => (ev.staff || []).includes(s.id)).map((s, i) => [`${i + 1}.`, s.name, s.personalCode || '', s.role || '', addr({ addressDeclared: s.address, phone: s.phone }), '', '', '']);
+    const sTotal = Math.max(4, sRows.length + 1);
+    for (let i = sRows.length; i < sTotal; i++) sRows.push([`${i + 1}.`, '', '', '', '', '', '', '']);
+    let t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 18 * MM, cols: sCols, head: { h1: 16, h2: 34, groups: [{ from: 5, to: 7, title: 'Paraksts par iepazīšanos ar nometnes' }] }, rows: sRows, minH: 21, size: 9.5 });
+    footer(t.page, t.y - 24);
+    // --- Dalībnieki ---
+    const p2 = add(); y = H - 22 * MM;
+    titleLine(p2, y); y -= 20; text(p2, 'Dalībnieki', W / 2, y, { font: F.b, size: 10.5, align: 'center' }); y -= 12;
+    const sig2 = (cw - 207 * MM) / 2;
+    const pCols = [{ title: 'N.P.K.', w: 13 * MM, align: 'center', bold: true }, { title: 'Vārds Uzvārds', w: 36 * MM }, { title: 'Dzimšanas datums un gads', w: 22 * MM, align: 'center' },
+      { title: 'Deklarētās un faktiskās dzīvesvietas adrese, tālruņa numurs', w: 62 * MM, size: 8.8 }, { title: 'Likumisko pārstāvju vārds, uzvārds, kontakttālrunis', w: 44 * MM, size: 8.8 },
+      { title: 'Audzinātājs nometnē / piezīmes', w: 30 * MM, size: 9 }, { title: 'Iekšējās kārtības noteikumiem', w: sig2 }, { title: 'drošības noteikumiem', w: sig2 }];
+    const parents = p => [[p.parentName, p.parentPhone && (U.prettyPhone ? U.prettyPhone(p.parentPhone) : p.parentPhone)], [p.parent2Name, p.parent2Phone && (U.prettyPhone ? U.prettyPhone(p.parent2Phone) : p.parent2Phone)]]
+      .filter(([n, t]) => n || t).map(([n, t]) => [n, t].filter(Boolean).join(', ')).join('; ');
+    const pRows = people.map((p, i) => [`${i + 1}.`, U.full(p), fmtD(p.birth), addr(p), parents(p), [counselorOf(p), ev.noteOf?.(p)].filter(Boolean).join('; '), '', '']);
+    const pTotal = Math.max(11, pRows.length + Math.max(0, ev.blankRows ?? 2));
+    for (let i = pRows.length; i < pTotal; i++) pRows.push([`${i + 1}.`, '', '', '', '', '', '', '']);
+    t = table(ctx, { page: p2, newPage: add, x: M, yTop: y, yMin: 16 * MM, cols: pCols, head: { h1: 26, h2: 34, groups: [{ from: 6, to: 7, title: 'Paraksts par iepazīšanos ar nometnes' }] }, rows: pRows, minH: 30, size: 9.5 });
+    footer(t.page, t.y - 24);
+    pageNumbers(ctx, W);
+    return doc.save();
+  }
+
+  CP.pdf = { load, instruction, camp };
+})(window.CP);
+
+
+/* ==== js/docxfill.js ==== */
+/* =====================================================================
+   Lietotāja Word (.docx) veidnes aizpildīšana.
+   Atzīmes: {nosaukums}, {datums} … Tabulas rinda ar dalībnieka atzīmēm ({nr}, {vards} …)
+   tiek atkārtota katram dalībniekam; rinda ar {d_…} — katram darbiniekam.
+   Atzīme, kas Word sadalīta vairākos “gabalos”, tiek apvienota (rindkopas formatējums paliek no pirmā gabala).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, D = CP.data;
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const fmtD = iso => { const s = U.fmtDate(iso); return s ? s + '.' : ''; };
+  const phone = n => n ? (U.prettyPhone ? U.prettyPhone(n) : n) : '';
+
+  const FIELDS_HELP = [
+    ['{nosaukums}', 'pasākuma / nometnes nosaukums'], ['{norises_laiks}', 'piem. 2026. gada 17.–18. oktobris'], ['{datums}', 'instruktāžas datums'],
+    ['{gads}', 'gads'], ['{grupa}', 'grupa(-s)'], ['{piezimes}', 'piezīmes'], ['{amats}', 'instruktāžas veicēja amats'], ['{instruktors}', 'instruktāžas veicējs'],
+    ['{vaditajs}', 'nometnes vadītājs'], ['{dalibnieku_skaits}', 'dalībnieku skaits'],
+    ['Dalībnieka rinda', '{nr} {vards} {vards_uzvards} {uzvards} {personas_kods} {dzimsanas_datums} {grupa_p} {adrese} {talrunis} {vecaki} {audzinatajs} {rindas_datums}'],
+    ['Darbinieka rinda', '{d_nr} {d_vards} {d_personas_kods} {d_amats} {d_adrese} {d_talrunis}']
+  ];
+
+  /** Dati atzīmēm */
+  function data(ev, people, staff, counselorOf) {
+    const leader = staff.find(s => s.id === ev.leaderId);
+    const addr = x => { const a = [x.addressDeclared]; if (x.addressActual && U.norm(x.addressActual) !== U.norm(x.addressDeclared || '')) a.push('fakt.: ' + x.addressActual); return a.filter(Boolean).join('; '); };
+    const global = {
+      nosaukums: ev.title || '', norises_laiks: ev.when || '', datums: fmtD(ev.instrDate), gads: (ev.instrDate || U.iso()).slice(0, 4), grupa: ev.group || '',
+      piezimes: ev.notes || '', amats: ev.instrPosition || '', instruktors: ev.instrName || '', vaditajs: leader?.name || '', dalibnieku_skaits: String(people.length)
+    };
+    const rows = people.map((p, i) => ({
+      nr: `${i + 1}.`, vards: U.full(p), vards_uzvards: U.full(p), uzvards: p.last || '', personas_kods: p.personalCode || '', dzimsanas_datums: fmtD(p.birth), grupa_p: D.groupOf(p, ev.yearId) || '',
+      adrese: [addr(p), phone(p.phone) && 'tālr. ' + phone(p.phone)].filter(Boolean).join(', '), talrunis: phone(p.phone),
+      vecaki: [[p.parentName, phone(p.parentPhone)], [p.parent2Name, phone(p.parent2Phone)]].filter(([n, t]) => n || t).map(x => x.filter(Boolean).join(', ')).join('; '),
+      audzinatajs: counselorOf ? counselorOf(p) : '', rindas_datums: ev.fillDates === false ? '' : fmtD(ev.instrDate)
+    }));
+    const st = staff.filter(s => (ev.staff || []).includes(s.id)).map((s, i) => ({ d_nr: `${i + 1}.`, d_vards: s.name, d_personas_kods: s.personalCode || '', d_amats: s.role || '', d_adrese: [s.address, phone(s.phone) && 'tālr. ' + phone(s.phone)].filter(Boolean).join(', '), d_talrunis: phone(s.phone) }));
+    return { global, rows, staff: st, blankRows: Number(ev.blankRows) || 0 };
+  }
+
+  /* --- XML apstrāde --- */
+  const ROW_KEYS = ['nr', 'vards', 'vards_uzvards', 'uzvards', 'personas_kods', 'dzimsanas_datums', 'grupa_p', 'adrese', 'talrunis', 'vecaki', 'audzinatajs', 'rindas_datums'];
+  const STAFF_KEYS = ['d_nr', 'd_vards', 'd_personas_kods', 'd_amats', 'd_adrese', 'd_talrunis'];
+  const tEls = el => [...el.getElementsByTagNameNS(W, 't')];
+  /** Apvieno atzīmes, kas sadalītas pa vairākiem w:t vienā rindkopā */
+  function mergeParagraphs(doc) {
+    for (const p of doc.getElementsByTagNameNS(W, 'p')) {
+      const ts = tEls(p); if (ts.length < 2) continue;
+      if (!/\{[a-z_]+\}/i.test(ts.map(t => t.textContent).join(''))) continue;
+      // apvieno tikai tos gabalus, kas pārdala kādu {atzīmi}
+      const open = s => { const i = s.lastIndexOf('{'); return i >= 0 && s.indexOf('}', i) < 0; };
+      for (let i = 0; i < ts.length; i++) {
+        let j = i;
+        while (open(ts[i].textContent) && j + 1 < ts.length) { j++; ts[i].textContent += ts[j].textContent; ts[j].textContent = ''; }
+        if (j > i) ts[i].setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+        i = j;
+      }
+    }
+  }
+  function fillText(el, map) {
+    for (const t of tEls(el)) {
+      const v = t.textContent; if (!v.includes('{')) continue;
+      t.textContent = v.replace(/\{([a-z_]+)\}/gi, (m, k) => (k.toLowerCase() in map ? String(map[k.toLowerCase()] ?? '') : m)).replace(/\s*\n\s*/g, '; ');
+      t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+    }
+  }
+  function repeatRows(doc, keys, items, blank, nrKey) {
+    const rows = [...doc.getElementsByTagNameNS(W, 'tr')].filter(tr => keys.some(k => tr.textContent.includes('{' + k + '}')));
+    for (const tpl of rows) {
+      const parent = tpl.parentNode, list = [...items];
+      for (let i = 0; i < blank; i++) list.push({ [nrKey]: `${items.length + i + 1}.` });
+      for (const it of list) { const tr = tpl.cloneNode(true); fillText(tr, Object.fromEntries(keys.map(k => [k, it[k] ?? '']))); parent.insertBefore(tr, tpl); }
+      parent.removeChild(tpl);
+    }
+  }
+  function processXml(xml, d) {
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw Error('Word dokumenta XML nav nolasāms');
+    mergeParagraphs(doc);
+    repeatRows(doc, STAFF_KEYS, d.staff, 1, 'd_nr');
+    repeatRows(doc, ROW_KEYS, d.rows, d.blankRows, 'nr');
+    fillText(doc.documentElement, d.global);
+    return new XMLSerializer().serializeToString(doc);
+  }
+
+  /* --- ZIP rakstītājs (deflate, CRC-32) --- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = u => { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const deflate = async u => new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+  async function zip(entries) {
+    const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+    const now = new Date(), dt = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)), dd = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate());
+    for (const [name, data] of entries) {
+      const nb = enc.encode(name), comp = await deflate(data), crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 8, true); h.setUint16(10, dt, true); h.setUint16(12, dd, true);
+      h.setUint32(14, crc, true); h.setUint32(18, comp.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), nb, comp);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 8, true); c.setUint16(12, dt, true); c.setUint16(14, dd, true);
+      c.setUint32(16, crc, true); c.setUint32(20, comp.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+      central.push(new Uint8Array(c.buffer), nb);
+      off += 30 + nb.length + comp.length;
+    }
+    const csize = central.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, entries.length, true); e.setUint16(10, entries.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+    return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  }
+
+  async function fill(buf, d) {
+    const files = await U.unzip(buf), out = [], dec = new TextDecoder(), enc = new TextEncoder();
+    if (!files.has('word/document.xml')) throw Error('fails nav Word .docx dokuments');
+    let found = false;
+    for (const [name, get] of files) {
+      let data = await get();
+      if (/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) {
+        const xml = dec.decode(data); if (/\{[a-z_]+\}/i.test(xml.replace(/<[^>]+>/g, ''))) found = true;
+        data = enc.encode(processXml(xml, d));
+      }
+      out.push([name, data]);
+    }
+    if (!found) CP.ui.toast('Veidnē netika atrasta neviena atzīme {…}. Fails tika saglabāts bez izmaiņām.', 'warn', 10000);
+    return zip(out);
+  }
+
+  CP.docxFill = { fill, data, FIELDS_HELP };
+})(window.CP);
+
+
+/* ==== js/forms.js ==== */
+/* =====================================================================
+   Veidlapas: drošības instruktāžas lapa un nometnes žurnāls.
+   - Pasākums (S.db.events) glabā nosaukumu, laikus, dalībniekus, darbiniekus, audzinātājus.
+   - Dalībnieku izvēle: meklēšana, grupa, “atzīmēt redzamos”, atsevišķi.
+   - Brīdinājums (tikai rīkā): trūkst/nederīga anketa, līgums, ārsta izziņa. Pievienot drīkst.
+   - Rezultāts: PDF (rīka veidne) vai aizpildīts Word (lietotāja veidne ar {atzīmēm}).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const TYPES = { instr: { l: 'Drošības instruktāžas lapa', short: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometnes žurnāls', short: 'Nometne', icon: 'users' } };
+  CP.FORM_TYPES = TYPES;
+  const st = () => S.db.settings;
+  const staffList = () => st().staff || [];
+  const staffById = id => staffList().find(s => s.id === id);
+
+  /** Dokumentu problēmas dalībai pasākumā (tikai rīkā, nevis uz veidlapas) */
+  D.eventDocIssues = p => D.missingDocs(p);
+  const MONTHS_GEN = ['janvāris', 'februāris', 'marts', 'aprīlis', 'maijs', 'jūnijs', 'jūlijs', 'augusts', 'septembris', 'oktobris', 'novembris', 'decembris'];
+  /** “2026. gada 17.–18. oktobris” no datumiem */
+  function whenText(from, to) {
+    const a = /^(\d{4})-(\d{2})-(\d{2})/.exec(from || ''); if (!a) return '';
+    const b = /^(\d{4})-(\d{2})-(\d{2})/.exec(to || '') || a;
+    const [, y1, m1, d1] = a, [, y2, m2, d2] = b;
+    if (from === to || !to) return `${y1}. gada ${+d1}. ${MONTHS_GEN[m1 - 1]}`;
+    if (y1 === y2 && m1 === m2) return `${y1}. gada ${+d1}.–${+d2}. ${MONTHS_GEN[m1 - 1]}`;
+    if (y1 === y2) return `${y1}. gada ${+d1}. ${MONTHS_GEN[m1 - 1]} – ${+d2}. ${MONTHS_GEN[m2 - 1]}`;
+    return `${y1}. gada ${+d1}. ${MONTHS_GEN[m1 - 1]} – ${y2}. gada ${+d2}. ${MONTHS_GEN[m2 - 1]}`;
+  }
+
+  /* ---------------- Saraksts ---------------- */
+  const evPeople = ev => (ev.participants || []).map(x => D.person(x.pid)).filter(Boolean);
+  CP.pages.forms = {
+    render() {
+      const evs = [...(S.db.events || [])].sort((a, b) => String(b.dateFrom || b.instrDate || b.createdAt).localeCompare(String(a.dateFrom || a.instrDate || a.createdAt)));
+      const row = ev => {
+        const ps = evPeople(ev), warn = ps.filter(p => D.eventDocIssues(p).length).length, T = TYPES[ev.type] || TYPES.instr;
+        return `<div class="row ev-row"><span class="feat-ic">${ic(T.icon)}</span><div class="grow"><b>${esc(ev.title || '(bez nosaukuma)')}</b>
+          <div class="small muted">${esc(T.short)} · ${esc(ev.when || U.fmtDate(ev.instrDate) || '')} · ${ps.length} dalībnieki${warn ? ` · <span class="warn">⚠ ${warn} bez dokumentiem</span>` : ''}</div></div>
+          <button class="sm" data-act="formOpen" data-arg="${ev.id}">${ic('edit', '✎')} Atvērt</button><button class="sm" data-act="formPdf" data-arg="${ev.id}">${ic('file', '📄')} PDF</button><button class="sm ghost" data-act="formPrint" data-arg="${ev.id}">Drukāt</button>
+          <button class="sm ghost danger" data-act="formDelete" data-arg="${ev.id}" title="Dzēst pasākumu">✕</button></div>`;
+      };
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas un nometņu žurnāli no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button>`)}
+        <div class="cards2">
+          <section class="card wide"><h3>${ic('clipboard')}Pasākumi</h3>${evs.length ? evs.map(row).join('') : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa” vai “Nometnes žurnāls”.')}</section>
+          <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>
+          <section class="card"><h3>${ic('file')}Savas Word veidnes</h3>${tplCard()}</section>
+        </div></div>`;
+    }
+  };
+
+  /* ---------------- Darbinieku saraksts (saglabājas, var dzēst) ---------------- */
+  function staffCard() {
+    const list = staffList();
+    return `${list.length ? list.map(s => `<div class="row"><div class="grow"><b>${esc(s.name)}</b><div class="small muted">${esc([s.role, s.phone && U.prettyPhone(s.phone), s.counselor ? 'audzinātājs' : ''].filter(Boolean).join(' · '))}</div></div>
+      <button class="sm ghost" data-act="staffEdit" data-arg="${s.id}">${ic('edit', '✎')}</button><button class="sm ghost danger" data-act="staffDelete" data-arg="${s.id}" title="Dzēst">✕</button></div>`).join('') : '<p class="muted small">Saraksts ir tukšs. Darbiniekus un audzinātājus ievadi vienreiz — nākamajās nometnēs tie būs izvēlami.</p>'}
+      <div class="actions" style="margin-top:10px"><button class="sm" data-act="staffEdit">${ic('userPlus', '＋')} Pievienot</button></div>`;
+  }
+  A.staffEdit = id => {
+    const s = staffById(id) || {}, f = U.$('staffForm');
+    f.reset(); f.dataset.id = s.id || '';
+    for (const k of ['name', 'personalCode', 'role', 'address', 'phone']) f.elements[k].value = s[k] || '';
+    f.elements.counselor.checked = !!s.counselor;
+    U.$('staffTitle').textContent = s.id ? 'Labot darbinieku' : 'Jauns darbinieks / audzinātājs';
+    U.$('staffDialog').showModal(); f.elements.name.focus();
+  };
+  U.$('staffForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target, o = Object.fromEntries(new FormData(f)); for (const k in o) o[k] = String(o[k]).trim();
+    o.counselor = f.elements.counselor.checked;
+    if (!o.name) return;
+    const list = st().staff = staffList();
+    if (f.dataset.id) Object.assign(list.find(s => s.id === f.dataset.id), o);
+    else { const ns = { id: U.uid(), ...o }; list.push(ns); if (S.formEdit && S.formEdit.type === 'camp') S.formEdit.staff = [...new Set([...(S.formEdit.staff || []), ns.id])]; }
+    U.$('staffDialog').close(); CP.store.changed();
+  });
+  A.staffDelete = id => {
+    const s = staffById(id); if (!s || !confirm(`Dzēst “${s.name}” no darbinieku saraksta?\n\nJau sagatavotos pasākumos vārds paliek tikai tad, ja PDF jau ir saglabāts.`)) return;
+    st().staff = staffList().filter(x => x.id !== id);
+    if (S.formEdit) { S.formEdit.staff = (S.formEdit.staff || []).filter(x => x !== id); if (S.formEdit.leaderId === id) S.formEdit.leaderId = ''; }
+    CP.store.changed();
+  };
+
+  /* ---------------- Savas Word veidnes ---------------- */
+  function tplCard() {
+    const list = st().docTemplates || [];
+    return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{nosaukums}</code>, <code>{datums}</code>, un tabulas rindu ar <code>{nr}</code> <code>{vards}</code>. Rīks to aizpildīs. Paraugus vari lejupielādēt un pielāgot.</p>
+      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(TYPES[t.type]?.l || '')}</div></div><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
+      <div class="actions" style="margin-top:10px">
+        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button>
+        <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Paraugs: instruktāža</button><button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Paraugs: nometne</button></div>
+      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}</details>`;
+  }
+  let tplType = 'instr';
+  A.tplDocAdd = type => { if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn'); tplType = type; U.$('tplDocFile').click(); };
+  U.$('tplDocFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (!/\.docx$/i.test(f.name)) return ui.toast('Veidnei jābūt Word .docx failam', 'warn');
+    try {
+      const path = await CP.store.saveFile(['Veidnes'], f.name, f);
+      (st().docTemplates = st().docTemplates || []).push({ id: U.uid(), type: tplType, name: f.name.replace(/\.docx$/i, ''), path });
+      CP.store.changed(); ui.toast('Veidne pievienota: ' + f.name, 'ok');
+    } catch (err) { ui.toast('Veidni neizdevās saglabāt: ' + err.message, 'err'); }
+  });
+  A.tplDocDelete = id => {
+    const t = (st().docTemplates || []).find(x => x.id === id); if (!t || !confirm(`Noņemt veidni “${t.name}” no saraksta? Fails mapē Veidnes paliek.`)) return;
+    st().docTemplates = st().docTemplates.filter(x => x.id !== id); CP.store.changed();
+  };
+  A.tplDocSample = async type => {
+    try { const r = await fetch(CP.VENDOR + `templates/${type === 'camp' ? 'nometnes-zurnals' : 'instruktaza'}.docx`); if (!r.ok) throw Error(r.status); U.download(await r.blob(), type === 'camp' ? 'Nometnes žurnāls (veidne).docx' : 'Instruktāžas lapa (veidne).docx'); }
+    catch (e) { ui.toast('Paraugu neizdevās ielādēt: ' + e.message, 'err'); }
+  };
+
+  /* ---------------- Redaktors ---------------- */
+  function blank(type) {
+    const fd = st().formDefaults || {};
+    return { id: '', type, title: '', dateFrom: U.iso(), dateTo: '', when: '', whenAuto: true, instrDate: U.iso(), group: '', groupAuto: true, notes: '',
+      instrPosition: fd.instrPosition || 'JSI', instrName: fd.instrName || '', fillDates: fd.fillDates !== false, blankRows: type === 'camp' ? 2 : 0,
+      participants: [], staff: type === 'camp' ? staffList().filter(s => s.lastUsed).map(s => s.id) : [], leaderId: fd.leaderId || '', groupCounselors: {}, yearId: D.activeYear(), files: [] };
+  }
+  A.formNew = type => { S.formEdit = blank(type === 'camp' ? 'camp' : 'instr'); S.formPick = { q: '', group: '', onlySel: false }; ui.go('formEdit'); };
+  A.formOpen = id => { const ev = (S.db.events || []).find(e => e.id === id); if (!ev) return; S.formEdit = JSON.parse(JSON.stringify(ev)); S.formPick = { q: '', group: '', onlySel: false }; ui.go('formEdit'); };
+  A.formDelete = id => {
+    const ev = (S.db.events || []).find(e => e.id === id); if (!ev || !confirm(`Dzēst pasākumu “${ev.title || ''}”?\n\nSaglabātie PDF faili mapē paliek.`)) return;
+    S.db.events = S.db.events.filter(e => e.id !== id); CP.store.changed();
+  };
+  const sel = () => new Set((S.formEdit?.participants || []).map(x => x.pid));
+  function autoFields(ev) {
+    if (ev.whenAuto) ev.when = whenText(ev.dateFrom, ev.dateTo);
+    if (ev.groupAuto) ev.group = [...new Set(evPeople(ev).map(p => D.groupOf(p, ev.yearId)).filter(Boolean))].sort(U.cmp).join(', ');
+  }
+  CP.pages.formEdit = {
+    render() {
+      const ev = S.formEdit; if (!ev) return CP.pages.forms.render();
+      autoFields(ev);
+      const T = TYPES[ev.type], chosen = sel(), pick = S.formPick || (S.formPick = { q: '', group: '', onlySel: false });
+      const pool = D.peopleInYear(ev.yearId).filter(p => p.status !== 'archived')
+        .filter(p => !pick.group || D.groupOf(p, ev.yearId) === pick.group)
+        .filter(p => !pick.onlySel || chosen.has(p.id))
+        .filter(p => !pick.q || U.norm(`${U.full(p)} ${U.sortName(p)} ${D.groupOf(p, ev.yearId)}`).includes(U.norm(pick.q)))
+        .sort((a, b) => U.cmp(D.groupOf(a, ev.yearId), D.groupOf(b, ev.yearId)) || U.cmp(U.sortName(a), U.sortName(b)));
+      const ps = evPeople(ev), issues = ps.map(p => ({ p, m: D.eventDocIssues(p) })).filter(x => x.m.length);
+      const groups = D.groups();
+      const f = (k, label, type = 'text', extra = '') => `<div class="field"><label>${label}</label><input type="${type}" data-ev="${k}" value="${esc(ev[k] ?? '')}" ${extra}></div>`;
+      const counselorOpts = (cur, empty = '— nav —') => `<option value="">${empty}</option>` + staffList().map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('');
+      const evGroups = [...new Set(ps.map(p => D.groupOf(p, ev.yearId) || '(bez grupas)'))].sort(U.cmp);
+
+      const left = `<section class="card"><h3>${ic(T.icon)}${esc(T.l)}</h3><div class="fieldgrid">
+          <div class="field wide"><label>${ev.type === 'camp' ? 'Nometnes nosaukums' : 'Nodarbības vai pasākuma nosaukums'}</label><input data-ev="title" value="${esc(ev.title)}" placeholder="${ev.type === 'camp' ? 'piem., Vasaras nometne “Ozols”' : 'piem., Orientēšanās nodarbība Siguldā'}"></div>
+          ${f('dateFrom', 'Norises sākums', 'date')}${f('dateTo', 'Beigas (ja vairākas dienas)', 'date')}
+          <div class="field wide"><label>Norises laiks (tā, kā rakstīts veidlapā)</label><input data-ev="when" value="${esc(ev.when)}" placeholder="piem., 2026. gada 17.–18. oktobris"><small class="muted">${ev.whenAuto ? 'Tiek veidots no datumiem — vari pārrakstīt.' : '<a href="#" data-act="formWhenAuto">Veidot no datumiem</a>'}</small></div>
+          ${f('instrDate', 'Instruktāžas datums', 'date')}
+          ${ev.type === 'instr' ? `<div class="field"><label>Grupa</label><input data-ev="group" value="${esc(ev.group)}" list="dl_groups"><small class="muted">${ev.groupAuto ? 'No izvēlētajiem dalībniekiem.' : '<a href="#" data-act="formGroupAuto">No dalībniekiem</a>'}</small></div>` : ''}
+          ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats')}${f('instrName', 'Vārds, uzvārds')}` : ''}
+          ${ev.type === 'camp' ? `<div class="field"><label>Nometnes vadītājs</label><select data-ev="leaderId">${counselorOpts(ev.leaderId, '— izvēlies —')}</select></div>` : ''}
+          <div class="field wide"><label>Piezīmes</label><textarea data-ev="notes" rows="2">${esc(ev.notes)}</textarea></div>
+          ${f('blankRows', 'Papildu tukšas rindas', 'number', 'min="0" max="40"')}
+          ${ev.type === 'instr' ? `<div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" data-ev="fillDates" ${ev.fillDates !== false ? 'checked' : ''}> Datumu ierakstīt katrā rindā</label></div>` : ''}
+        </div></section>
+        ${ev.type === 'camp' ? `<section class="card"><h3>${ic('users')}Darbinieki nometnē</h3>
+          ${staffList().length ? staffList().map(s => `<label class="check ev-staff"><input type="checkbox" data-evstaff="${s.id}" ${(ev.staff || []).includes(s.id) ? 'checked' : ''}> <b>${esc(s.name)}</b> <span class="small muted">${esc([s.role, s.counselor ? 'audzinātājs' : ''].filter(Boolean).join(' · '))}</span></label>`).join('') : '<p class="muted small">Vēl nav neviena darbinieka.</p>'}
+          <div class="actions" style="margin-top:8px"><button class="sm" data-act="staffEdit">${ic('userPlus', '＋')} Pievienot darbinieku vai audzinātāju</button></div></section>
+          <section class="card"><h3>${ic('userCheck')}Audzinātāji</h3>
+          ${evGroups.length ? evGroups.map(g => `<div class="inline-form"><span class="grow"><b>${esc(g)}</b> <span class="small muted">${ps.filter(p => (D.groupOf(p, ev.yearId) || '(bez grupas)') === g).length} dal.</span></span><select data-evgroup="${esc(g)}" style="max-width:240px">${counselorOpts(ev.groupCounselors?.[g])}</select></div>`).join('') : '<p class="muted small">Izvēlies dalībniekus — tad varēs piešķirt audzinātāju katrai grupai.</p>'}
+          <p class="small muted">Atsevišķam dalībniekam audzinātāju var nomainīt sarakstā labajā pusē.</p></section>` : ''}`;
+
+      const prow = p => {
+        const on = chosen.has(p.id), m = D.eventDocIssues(p), part = (ev.participants || []).find(x => x.pid === p.id);
+        return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evpick="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, ev.yearId) || '')}</small>
+          ${m.length ? `<br><small class="warn" title="Bez šiem dokumentiem jaunsargs nedrīkst piedalīties pasākumā">⚠ Trūkst: ${esc(m.join(', '))}</small>` : ''}</span></label>
+          ${on && ev.type === 'camp' ? `<select class="sm" data-evcoun="${p.id}" title="Audzinātājs šim dalībniekam" style="max-width:170px">${counselorOpts(part?.counselorId || '', '↳ kā grupai')}</select>` : ''}</div>`;
+      };
+      const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ps.length} izvēlēti</span></h3>
+          <div class="ev-pickbar"><input type="search" id="evQ" placeholder="Meklēt vārdu…" value="${esc(pick.q)}" autocomplete="off">
+            <select id="evGroup"><option value="">Visas grupas</option>${groups.map(g => `<option ${g === pick.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+            <label class="check small"><input type="checkbox" id="evOnlySel" ${pick.onlySel ? 'checked' : ''}> Tikai izvēlētie</label></div>
+          <div class="actions" style="margin:8px 0"><button class="sm" data-act="evPickAll">Atzīmēt redzamos (${pool.length})</button><button class="sm ghost" data-act="evPickNone">Noņemt visus</button></div>
+          ${issues.length ? `<div class="notice">⚠ <b>${issues.length}</b> ${issues.length === 1 ? 'dalībniekam' : 'dalībniekiem'} trūkst obligāto dokumentu (anketa, līgums vai ārsta izziņa). Pasākumā bez tiem piedalīties nedrīkst — pārbaudi pirms pasākuma. Uz veidlapas šis brīdinājums netiek drukāts.</div>` : ''}
+          <div class="ev-list">${pool.map(prow).join('') || '<p class="muted small pad">Neviens neatbilst filtram.</p>'}</div></section>`;
+
+      const tpls = (st().docTemplates || []).filter(t => t.type === ev.type);
+      const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
+        ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
+      return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
+        <div class="ev-layout"><div>${left}</div><div>${right}</div></div></div>`;
+    }
+  };
+
+  /* --- Ievade redaktorā --- */
+  const NUM = new Set(['blankRows']);
+  CP.inputHandlers.push(e => {
+    const t = e.target; if (!S.formEdit) return false;
+    if (t.id === 'evQ') { S.formPick.q = t.value; renderKeepFocus('evQ'); return true; }
+    const k = t.dataset?.ev; if (!k || t.type === 'checkbox' || t.tagName === 'SELECT') return false;
+    S.formEdit[k] = NUM.has(k) ? Math.max(0, Math.min(40, Number(t.value) || 0)) : t.value;
+    if (k === 'when') S.formEdit.whenAuto = false;
+    if (k === 'group') S.formEdit.groupAuto = false;
+    if (k === 'dateFrom' || k === 'dateTo') { if (S.formEdit.whenAuto) { autoFields(S.formEdit); const w = document.querySelector('[data-ev="when"]'); if (w) w.value = S.formEdit.when; } }
+    return true;
+  });
+  CP.changeHandlers.push(e => {
+    const t = e.target, ev = S.formEdit; if (!ev) return false;
+    if (t.id === 'evGroup') { S.formPick.group = t.value; CP.render(); return true; }
+    if (t.id === 'evOnlySel') { S.formPick.onlySel = t.checked; CP.render(); return true; }
+    if (t.dataset.evpick) {
+      const id = t.dataset.evpick;
+      if (t.checked) { if (!sel().has(id)) ev.participants.push({ pid: id }); } else ev.participants = ev.participants.filter(x => x.pid !== id);
+      renderKeepScroll(); return true;
+    }
+    if (t.dataset.evstaff) { const id = t.dataset.evstaff; ev.staff = t.checked ? [...new Set([...(ev.staff || []), id])] : (ev.staff || []).filter(x => x !== id); return true; }
+    if (t.dataset.evgroup != null && t.dataset.evgroup !== undefined && t.hasAttribute('data-evgroup')) { ev.groupCounselors = { ...(ev.groupCounselors || {}), [t.dataset.evgroup]: t.value }; return true; }
+    if (t.dataset.evcoun) { const x = ev.participants.find(x => x.pid === t.dataset.evcoun); if (x) x.counselorId = t.value; return true; }
+    const k = t.dataset.ev; if (!k) return false;
+    if (t.type === 'checkbox') ev[k] = t.checked; else if (t.tagName === 'SELECT') ev[k] = t.value; else return false;
+    return true;
+  });
+  function renderKeepScroll() { const l = document.querySelector('.ev-list'), top = l ? l.scrollTop : 0, v = U.$('view').scrollTop; CP.render(); const l2 = document.querySelector('.ev-list'); if (l2) l2.scrollTop = top; U.$('view').scrollTop = v; }
+  function renderKeepFocus(id) { const el = U.$(id), pos = el?.selectionStart; renderKeepScroll(); const n = U.$(id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) { /* */ } } }
+  A.evPickAll = () => {
+    const ev = S.formEdit, pick = S.formPick, chosen = sel();
+    const pool = D.peopleInYear(ev.yearId).filter(p => p.status !== 'archived').filter(p => !pick.group || D.groupOf(p, ev.yearId) === pick.group)
+      .filter(p => !pick.q || U.norm(`${U.full(p)} ${U.sortName(p)} ${D.groupOf(p, ev.yearId)}`).includes(U.norm(pick.q)));
+    for (const p of pool) if (!chosen.has(p.id)) ev.participants.push({ pid: p.id });
+    renderKeepScroll();
+  };
+  A.evPickNone = () => { if (S.formEdit.participants.length && !confirm('Noņemt visus izvēlētos dalībniekus?')) return; S.formEdit.participants = []; renderKeepScroll(); };
+  A.formWhenAuto = () => { S.formEdit.whenAuto = true; CP.render(); };
+  A.formGroupAuto = () => { S.formEdit.groupAuto = true; CP.render(); };
+
+  /* --- Saglabāšana --- */
+  function commit(quiet) {
+    const ev = S.formEdit; if (!ev) return null;
+    autoFields(ev);
+    ev.updatedAt = U.now();
+    if (!ev.id) { ev.id = U.uid(); ev.createdAt = ev.updatedAt; }
+    const list = S.db.events = S.db.events || [], i = list.findIndex(x => x.id === ev.id);
+    const before = new Set(i >= 0 ? (list[i].participants || []).map(x => x.pid) : []);
+    const copy = JSON.parse(JSON.stringify(ev));
+    if (i >= 0) list[i] = copy; else list.push(copy);
+    // atceras instruktoru un vadītāju nākamajai reizei
+    const fd = st().formDefaults = st().formDefaults || {};
+    if (ev.type === 'instr') { fd.instrPosition = ev.instrPosition; fd.instrName = ev.instrName; fd.fillDates = ev.fillDates !== false; }
+    if (ev.type === 'camp') { fd.leaderId = ev.leaderId; for (const s of staffList()) s.lastUsed = (ev.staff || []).includes(s.id) || undefined; }
+    for (const p of evPeople(ev)) if (!before.has(p.id)) D.audit(p.id, 'event', [ev.title || TYPES[ev.type].short]);   // tikai jaunpievienotajiem
+    CP.store.changed({ silent: true });
+    if (!quiet) ui.toast('Pasākums saglabāts', 'ok');
+    return copy;
+  }
+  A.formSave = () => { commit(false); CP.render(); };
+
+  /* --- PDF --- */
+  function counselorFor(ev) {
+    return p => {
+      const own = (ev.participants || []).find(x => x.pid === p.id)?.counselorId;
+      const g = D.groupOf(p, ev.yearId) || '(bez grupas)';
+      return staffById(own || ev.groupCounselors?.[g])?.name || '';
+    };
+  }
+  async function buildPdf(ev) {
+    const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
+    ui.toast('Sagatavo PDF…', 'ok', 2500);
+    const bytes = ev.type === 'camp'
+      ? await CP.pdf.camp(ev, people, staffList(), counselorFor(ev))
+      : await CP.pdf.instruction(ev, people);
+    return new Blob([bytes], { type: 'application/pdf' });
+  }
+  const fileBase = ev => `${(ev.dateFrom || ev.instrDate || U.iso()).slice(0, 10)} ${TYPES[ev.type].short} ${ev.title || ''}`.trim().replace(/\s+/g, ' ').slice(0, 90);
+  async function savePdfCopy(ev, blob) {
+    if (!S.root) return null;
+    try {
+      const dir = ['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)];
+      const path = await CP.store.saveFile(dir, `${TYPES[ev.type].l}.pdf`, blob);
+      const list = S.db.events.find(x => x.id === ev.id); if (list) { (list.files = list.files || []).push({ path, at: U.now(), kind: 'pdf' }); CP.store.changed({ silent: true }); }
+      return path;
+    } catch (e) { ui.toast('PDF kopiju mapē neizdevās saglabāt: ' + e.message, 'warn', 9000); return null; }
+  }
+  const current = id => { if (id) { const ev = (S.db.events || []).find(e => e.id === id); return ev ? JSON.parse(JSON.stringify(ev)) : null; } return commit(true); };
+  async function withPdf(id, fn) {
+    const ev = current(id); if (!ev) return;
+    if (!evPeople(ev).length && !confirm('Nav izvēlēts neviens dalībnieks. Sagatavot tukšu veidlapu?')) return;
+    try { const blob = await buildPdf(ev); await fn(blob, ev); }
+    catch (e) { console.error(e); ui.toast('PDF neizdevās sagatavot: ' + e.message, 'err', 12000); }
+  }
+  A.formPdf = id => withPdf(id, async (blob, ev) => { const path = await savePdfCopy(ev, blob); CP.docs.showBlob(blob, `${fileBase(ev)}.pdf`); if (path) ui.toast('Kopija saglabāta: ' + path, 'ok', 7000); });
+  A.formDownload = id => withPdf(id, async (blob, ev) => { U.download(blob, `${fileBase(ev)}.pdf`); await savePdfCopy(ev, blob); });
+  A.formPrint = id => withPdf(id, async blob => {
+    const url = URL.createObjectURL(blob), fr = document.createElement('iframe');
+    fr.className = 'print-frame'; fr.src = url; document.body.appendChild(fr);
+    fr.onload = () => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } setTimeout(() => { fr.remove(); URL.revokeObjectURL(url); }, 60000); };
+  });
+
+  /* --- Sava Word veidne --- */
+  A.formDocx = async tid => {
+    const t = (st().docTemplates || []).find(x => x.id === tid); if (!t) return;
+    const ev = commit(true);
+    try {
+      const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
+      const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
+      const blob = await CP.docxFill.fill(await (await h.getFile()).arrayBuffer(), CP.docxFill.data(ev, people, staffList(), counselorFor(ev)));
+      U.download(blob, `${fileBase(ev)}.docx`);
+      if (S.root) { const path = await CP.store.saveFile(['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)], `${t.name}.docx`, blob); const x = S.db.events.find(e => e.id === ev.id); if (x) { (x.files = x.files || []).push({ path, at: U.now(), kind: 'docx' }); CP.store.changed({ silent: true }); } }
+    } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
+  };
+
+  /* --- Personas kartītē: dalība pasākumos --- */
+  CP.forms = {
+    personCard(p) {
+      const evs = (S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).sort((a, b) => String(b.dateFrom || b.instrDate).localeCompare(String(a.dateFrom || a.instrDate)));
+      if (!evs.length) return '';
+      return `<section class="card"><h3>${ic('clipboard')}Pasākumi</h3>${evs.slice(0, 6).map(e => `<div class="row"><div class="grow"><b>${esc(e.title || TYPES[e.type].short)}</b><div class="small muted">${esc(TYPES[e.type].short)} · ${esc(e.when || U.fmtDate(e.instrDate))}</div></div><button class="sm ghost" data-act="formOpen" data-arg="${e.id}">Atvērt</button></div>`).join('')}${evs.length > 6 ? `<p class="small muted">… un vēl ${evs.length - 6}</p>` : ''}</section>`;
+    },
+    whenText
+  };
 })(window.CP);
 
 

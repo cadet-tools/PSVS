@@ -37,7 +37,7 @@
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku' };
+  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -84,7 +84,7 @@
   };
 
   function renderNav() {
-    const nav = S.page === 'person' ? 'people' : S.page;
+    const nav = S.page === 'person' ? 'people' : S.page === 'formEdit' ? 'forms' : S.page;
     U.qsa('.nav [data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === nav));
     const n = D.alerts().filter(a => a.sev > 0).length, badge = U.$('alertBadge');
     if (badge) { badge.textContent = n; badge.classList.toggle('hidden', !n); }

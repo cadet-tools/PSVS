@@ -210,6 +210,13 @@
     const f = await h.getFile(); f._linked = true;
     CP.scan.openWith(f, D.person(d.personId)?.status !== 'archived' ? d.personId : '');
   };
+  /** Rāda sagatavotu failu (piem. veidlapas PDF) tajā pašā skatītājā */
+  docs.showBlob = (blob, name) => {
+    if (view) URL.revokeObjectURL(view.url);
+    view = { url: URL.createObjectURL(blob), name };
+    U.$('viewBody').innerHTML = `<iframe class="viewer" src="${view.url}" title="${esc(name)}"></iframe>`;
+    U.$('viewName').textContent = name; U.$('viewDialog').showModal();
+  };
   A.viewTab = () => view && window.open(view.url, '_blank');
   A.viewDownload = () => { if (!view) return; const a = document.createElement('a'); a.href = view.url; a.download = view.name; a.click(); };
   U.$('viewDialog').addEventListener('close', () => { if (view) { URL.revokeObjectURL(view.url); view = null; } U.$('viewBody').innerHTML = ''; });

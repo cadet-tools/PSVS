@@ -21,4 +21,6 @@ Google Cloud Vision šajā mapē nav. Tas paliek izslēgts, kamēr lietotājs pa
 
 Manrope (Mikhail Sharanda) — SIL Open Font License 1.1, vendor/fonts/OFL.txt
 
+Tinos (Steve Matteson, Google) — Apache-2.0, vendor/pdf/Tinos-*.ttf (apakškopa). pdf-lib 1.17.1 un @pdf-lib/fontkit 1.1.1 — MIT.
+
 Tesseract.js 7.0.0 un tesseract.js-core 7.0.0 — Apache-2.0 (https://github.com/naptha/tesseract.js). Valodu dati lav/eng 4.0.0_best_int — Apache-2.0 (tesseract-ocr/tessdata).

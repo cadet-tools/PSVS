@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.13.1';
+  CP.VERSION = '1.14.0';
   CP.SCHEMA = 6;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -314,6 +314,7 @@ window.CP = window.CP || {};
     ],
     tools: [{ name: 'E-klase', url: 'https://my.e-klase.lv/' }, { name: 'DVS', url: 'https://dvs.mod.gov.lv/' }],
     toolsAdded: ['dvs'],
+    staff: [], formDefaults: { instrPosition: 'JSI', instrName: '', fillDates: true }, docTemplates: [],
     ocr: { engine: 'tesseract', googleKey: '', enhance: true, minConf: 65 },
     contactOrg: 'Jaunsardze',
     labelYouth: 'Jaunsardze – jaunsargi',
@@ -327,7 +328,7 @@ window.CP = window.CP || {};
 
   CP.blank = () => ({
     version: CP.SCHEMA, people: [], documents: [], equipment: [], relations: [], log: [], tasks: [], audit: [],
-    years: [], enrollments: [],
+    years: [], enrollments: [], events: [],
     sources: [], nextFolderSeq: 1, revision: 0,
     settings: CP.defaultSettings(), createdAt: U.now(), updatedAt: null
   });
@@ -338,8 +339,9 @@ window.CP = window.CP || {};
     const d = { ...CP.blank(), ...raw };
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
-    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));

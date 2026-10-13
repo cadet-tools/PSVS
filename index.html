@@ -393,6 +393,19 @@ html[data-theme="light"] .watch-card,html[data-theme="light"] .watch-big{--w-cas
 .wb-hint{color:var(--muted);font-weight:600;font-size:14px;margin:0}
 @media (prefers-reduced-motion:reduce){.watch-big{transition:none}[data-state="alarm"] .w-face{animation:none}}
 
+/* Veidlapas */
+.ev-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.ev-layout{grid-template-columns:1fr}}
+.ev-pick{position:sticky;top:60px}
+.ev-pickbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ev-pickbar input[type=search]{flex:1;min-width:160px}.ev-pickbar .check{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.ev-pickbar select{width:auto}
+.ev-list{max-height:calc(100vh - 330px);min-height:240px;overflow:auto;margin:0 -6px;padding:0 6px}
+.row.pick{padding:6px 6px;border-radius:10px;border-bottom:0;gap:8px}.row.pick:hover{background:var(--hover,#ffffff0d)}
+.row.pick.on{background:var(--sel,#1d3a3a)}
+.row.pick label.check{align-items:center;gap:10px;font-size:13.5px}
+.ev-staff{padding:5px 0}
+.ev-row .feat-ic{flex:none}
+.print-frame{position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -591,6 +604,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
     <button data-page="dashboard" title="Pārskats"><span data-ic="grid">▦</span><small>Pārskats</small></button>
     <button data-page="people" title="Personas"><span data-ic="users">♙</span><small>Personas</small></button>
     <button data-page="comms" title="Saziņa"><span data-ic="message">✉</span><small>Saziņa</small></button>
+    <button data-page="forms" title="Veidlapas: instruktāžas, nometnes žurnāli"><span data-ic="clipboard">☑</span><small>Veidlapas</small></button>
     <button data-page="documents" title="Dokumenti"><span data-ic="file">▤</span><small>Dokumenti</small></button>
     <button data-page="equipment" title="Ekipējums"><span data-ic="backpack">▣</span><small>Ekipējums</small></button>
     <button data-page="alerts" title="Uzdevumi un brīdinājumi"><span data-ic="bell">⚠</span><small>Uzdevumi</small><b id="alertBadge" class="badge hidden"></b></button>
@@ -739,6 +753,24 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
   </form>
 </dialog>
 <datalist id="dl_items"><option value="Formas jaka"><option value="Formas bikses"><option value="Zābaki"><option value="Cepure"><option value="Josta"><option value="Mugursoma"><option value="Guļammaiss"><option value="Paklājiņš"></datalist>
+
+<!-- ============ Darbinieks / audzinātājs ============ -->
+<dialog id="staffDialog">
+  <form id="staffForm">
+    <header class="dlg-head"><h2 id="staffTitle">Darbinieks</h2><button type="button" class="ghost" data-close="staffDialog" aria-label="Aizvērt">✕</button></header>
+    <div class="dlg-body"><div class="fieldgrid">
+      <div class="field wide"><label>Vārds, uzvārds</label><input name="name" required autocomplete="off"></div>
+      <div class="field"><label>Personas kods</label><input name="personalCode" autocomplete="off" placeholder="000000-00000"></div>
+      <div class="field"><label>Amats nometnē</label><input name="role" list="dl_roles" placeholder="piem., audzinātājs"></div>
+      <div class="field wide"><label>Deklarētā / faktiskā adrese</label><input name="address"></div>
+      <div class="field"><label>Tālrunis</label><input name="phone" type="tel"></div>
+      <div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" name="counselor"> Var būt audzinātājs</label></div>
+    </div></div>
+    <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="staffDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
+  </form>
+</dialog>
+<datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
+<input type="file" id="tplDocFile" accept=".docx" hidden>
 
 <!-- ============ Jaunsarga apliecība ============ -->
 <dialog id="idCardDialog">

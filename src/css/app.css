@@ -376,3 +376,16 @@ html[data-theme="light"] .watch-card,html[data-theme="light"] .watch-big{--w-cas
 .watch-big .watch{max-width:none}
 .wb-hint{color:var(--muted);font-weight:600;font-size:14px;margin:0}
 @media (prefers-reduced-motion:reduce){.watch-big{transition:none}[data-state="alarm"] .w-face{animation:none}}
+
+/* Veidlapas */
+.ev-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.ev-layout{grid-template-columns:1fr}}
+.ev-pick{position:sticky;top:60px}
+.ev-pickbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ev-pickbar input[type=search]{flex:1;min-width:160px}.ev-pickbar .check{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.ev-pickbar select{width:auto}
+.ev-list{max-height:calc(100vh - 330px);min-height:240px;overflow:auto;margin:0 -6px;padding:0 6px}
+.row.pick{padding:6px 6px;border-radius:10px;border-bottom:0;gap:8px}.row.pick:hover{background:var(--hover,#ffffff0d)}
+.row.pick.on{background:var(--sel,#1d3a3a)}
+.row.pick label.check{align-items:center;gap:10px;font-size:13.5px}
+.ev-staff{padding:5px 0}
+.ev-row .feat-ic{flex:none}
+.print-frame{position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
