@@ -13,7 +13,7 @@
   const STD = { 'jaunietis-papirs': 'Jaunietis 18+, papīra forma', 'parstavis-papirs': 'Likumiskais pārstāvis, papīra forma', 'jaunietis-edoc': 'Jaunietis 18+, EDOC', 'parstavis-edoc': 'Likumiskais pārstāvis, EDOC' };
   const FIELDS_HELP = [
     ['{liguma_nr}', 'līguma numurs'], ['{liguma_datums}', 'piem. 2026.gada 15.oktobrī'], ['{vieta}', 'līguma vieta'],
-    ['{i_parvalde} {i_nodala}', 'novada pārvaldes un nodaļas nr.'], ['{i_vards_gen}', 'instruktora vārds ģenitīvā (Jāņa Egļa)'], ['{i_vards} {i_amats} {i_talrunis} {i_epasts}', 'instruktora dati'],
+    ['{i_parvalde} {i_nodala}', 'novada pārvaldes un nodaļas nr.'], ['{i_vards_gen}', 'instruktora vārds ģenitīvā (Jāņa Egļa)'], ['{i_vards} {i_amats} {i_talrunis} {i_epasts}', 'instruktora dati'], ['{i_paraksta_datums}', 'piem. 2026. gada 15. oktobrī'],
     ['{j_vards} {j_statuss_vards} {j_vards_pk}', 'jaunietis'], ['{j_pk1} … {j_pk11}', 'jaunieša personas koda cipari pa vienam'], ['{j_personas_kods} {j_adrese_dekl} {j_adrese_fakt} {j_talrunis} {j_epasts}', 'jaunieša dati'],
     ['{p_vards} {p_statuss_vards} {p_vards_pk} {p_pk1} … {p_pk11}', 'likumiskais pārstāvis'], ['{p_personas_kods} {p_adrese_dekl} {p_adrese_fakt} {p_talrunis} {p_epasts}', 'pārstāvja dati']
   ];
@@ -42,6 +42,18 @@
   const STATUS_WORD = { candidate: 'jaunsarga kandidāts', active: 'jaunsargs', paused: 'jaunsargs' };
   const relWord = r => String(r || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('lv');
 
+  /** Pārstāvja statuss: māte / tēvs / likumiskais pārstāvis / cits (jāizvēlas, nav noklusējuma) */
+  const REL = [['māte', 'Māte'], ['tēvs', 'Tēvs'], ['likumiskais pārstāvis', 'Likumiskais pārstāvis'], ['cits', 'Cits — norādīt pats']];
+  function relPick(rel) {
+    const r = relWord(rel); if (!r) return { p_rel: '', p_rel_other: '' };
+    if (/^m[aā]te|^mamma/.test(r)) return { p_rel: 'māte', p_rel_other: '' };
+    if (/^t[eē]vs|^t[eē]tis/.test(r)) return { p_rel: 'tēvs', p_rel_other: '' };
+    if (/likumisk/.test(r)) return { p_rel: 'likumiskais pārstāvis', p_rel_other: '' };
+    return { p_rel: 'cits', p_rel_other: r };
+  }
+  const relText = f => f.p_rel === 'cits' ? (f.p_rel_other || '').trim() : (f.p_rel || '');
+  const dateLvSp = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[1]}. gada ${+m[3]}. ${MONTHS_LOC[m[2] - 1]}` : ''; };
+
   /* --- Dialogs --- */
   let cur = null;   // { pid, kind, form, tpl, parent, no, date, place, fields:{} }
   function personData(p, parentIdx) {
@@ -51,7 +63,7 @@
       j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '',
       j_adrese_dekl: p.addressDeclared || '', j_adrese_fakt: p.addressActual && U.norm(p.addressActual) !== U.norm(p.addressDeclared || '') ? p.addressActual : '',
       j_talrunis: phone(p.phone), j_epasts: p.email || '',
-      p_vards: pn || '', p_status: relWord(rel) || 'likumiskais pārstāvis', p_pk: two ? '' : (p.parentCode || ''),
+      p_vards: pn || '', ...relPick(rel), p_pk: two ? '' : (p.parentCode || ''),
       p_adrese_dekl: (two ? '' : p.parentAddressDeclared) || '', p_adrese_fakt: (two ? '' : p.parentAddressActual) || '',
       p_talrunis: phone(two ? p.parent2Phone : p.parentPhone), p_epasts: (two ? p.parent2Email : p.parentEmail) || ''
     };
@@ -60,7 +72,7 @@
     const p = pid && D.person(pid);
     const age = p ? U.age(p.birth) : null;
     cur = { pid: p ? p.id : '', kind: age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
-      parent: 1, no: p?.contractNo || '', date: U.iso(), place: inst().place || '', fields: p ? personData(p, 1) : {} };
+      parent: 1, no: p?.contractNo || '', date: U.iso(), place: inst().place || '', signMode: inst().signMode || 'same', signDate: '', fields: p ? personData(p, 1) : {} };
     renderDialog(); U.$('contractDialog').showModal();
   };
   function renderDialog() {
@@ -74,6 +86,7 @@
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
+    if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
     if (!c.no) warn.push('nav ievadīts līguma numurs (vietā paliks tukša līnija)');
     if (!I.name || !I.parvalde || !I.nodala) warn.push('aizpildi instruktora datus');
     U.$('contractBody').innerHTML = `
@@ -86,6 +99,7 @@
         <div class="field"><label>Līguma Nr. <small class="muted">(no citas sistēmas)</small></label><input data-cc="no" value="${esc(c.no)}" placeholder="piem. 124/JS-2026/8"></div>
         <div class="field"><label>Datums</label><input type="date" data-cc="date" value="${esc(c.date)}"></div>
         <div class="field"><label>Vieta</label><input data-cc="place" value="${esc(c.place)}" placeholder="piem. Rīga"></div>
+        ${c.form === 'papirs' ? `<div class="field"><label>Instruktora paraksta datums</label><select data-cc="signMode">${opt('same', 'Tāds pats kā līguma datums', c.signMode)}${opt('custom', 'Cits datums…', c.signMode)}${opt('blank', 'Tukšs — rakstīšu ar roku', c.signMode)}</select>${c.signMode === 'custom' ? `<input type="date" data-cc="signDate" value="${esc(c.signDate || c.date)}" style="margin-top:6px">` : ''}</div>` : ''}
         ${c.kind === 'parstavis' && p && p.parent2Name ? `<div class="field wide"><label>Likumiskais pārstāvis</label><div class="actions"><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="1" ${c.parent === 1 ? 'checked' : ''}> ${esc(p.parentName || '1. pārstāvis')}</label><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="2" ${c.parent === 2 ? 'checked' : ''}> ${esc(p.parent2Name)}</label></div></div>` : ''}
       </div>
       ${warn.length ? `<div class="notice">⚠ ${esc(warn.join('; '))}.</div>` : ''}
@@ -93,7 +107,8 @@
         ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}
         ${inp('j_talrunis', 'Jaunieša tālrunis', f.j_talrunis)}${inp('j_epasts', 'Jaunieša e-pasts', f.j_epasts)}
         ${c.kind === 'jaunietis' ? `${inp('j_adrese_dekl', 'Deklarētā adrese', f.j_adrese_dekl, 'wide')}${inp('j_adrese_fakt', 'Faktiskā adrese (ja atšķiras)', f.j_adrese_fakt, 'wide')}` : `
-        ${inp('p_status', 'Pārstāvja statuss (māte, tēvs, aizbildnis…)', f.p_status)}${inp('p_vards', 'Pārstāvja vārds, uzvārds', f.p_vards)}${inp('p_pk', 'Pārstāvja personas kods', f.p_pk)}
+        <div class="field"><label>Pārstāvja statuss <b class="red">*</b></label><select data-ct="p_rel" class="${f.p_rel ? '' : 'need'}"><option value="">— izvēlies —</option>${REL.map(([v, l]) => `<option value="${v}" ${f.p_rel === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        ${f.p_rel === 'cits' ? `<div class="field"><label>Statuss (ieraksti) <b class="red">*</b></label><input data-ct="p_rel_other" value="${esc(f.p_rel_other || '')}" list="dl_ctrel" placeholder="piem. aizbildnis, vecmāmiņa"><datalist id="dl_ctrel">${(S.db.settings.contractRelations || []).map(x => `<option value="${esc(x)}">`).join('')}</datalist></div>` : ''}${inp('p_vards', 'Pārstāvja vārds, uzvārds', f.p_vards)}${inp('p_pk', 'Pārstāvja personas kods', f.p_pk)}
         ${inp('p_talrunis', 'Pārstāvja tālrunis', f.p_talrunis)}${inp('p_epasts', 'Pārstāvja e-pasts', f.p_epasts)}
         ${inp('p_adrese_dekl', 'Pārstāvja deklarētā adrese', f.p_adrese_dekl, 'wide')}${inp('p_adrese_fakt', 'Pārstāvja faktiskā adrese (ja atšķiras)', f.p_adrese_fakt, 'wide')}`}
       </div></details>` : ''}
@@ -111,7 +126,7 @@
     if (k) {
       if (k === 'parent') { cur.parent = Number(t.value); const p = D.person(cur.pid); if (p) Object.assign(cur.fields, Object.fromEntries(Object.entries(personData(p, cur.parent)).filter(([x]) => x.startsWith('p_')))); }
       else cur[k] = t.value;
-      if (k === 'kind' || k === 'parent') renderDialog();
+      if (k === 'kind' || k === 'parent' || k === 'form' || k === 'signMode') renderDialog();
       return;
     }
     if (t.dataset.ci) {
@@ -122,7 +137,7 @@
   });
   document.addEventListener('input', e => {
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
-    if (t.dataset.ct) cur.fields[t.dataset.ct] = t.value;
+    if (t.dataset.ct) { cur.fields[t.dataset.ct] = t.value; if (t.dataset.ct === 'p_rel') renderDialog(); }
     if (t.dataset.cc && t.dataset.cc !== 'parent') cur[t.dataset.cc] = t.value;
   });
 
@@ -138,8 +153,9 @@
       i_talrunis: line(phone(I.phone)), i_epasts: line(I.email),
       j_vards: L(f.j_vards), j_statuss_vards: [f.j_status, f.j_vards].filter(Boolean).join(' '), j_personas_kods: pkFmt(f.j_pk), j_vards_pk: [f.j_vards, pkFmt(f.j_pk)].filter(Boolean).join(', '),
       j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis), j_epasts: line(f.j_epasts),
-      p_vards: L(f.p_vards), p_statuss_vards: [f.p_status, f.p_vards].filter(Boolean).join(' '), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
+      p_vards: L(f.p_vards), p_statuss_vards: [relText(f), f.p_vards].filter(Boolean).join(' '), p_statuss: relText(f), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
       p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis), p_epasts: line(f.p_epasts),
+      i_paraksta_datums: c.signMode === 'blank' ? '_____.\u00a0gada ____.\u00a0________________' : dateLvSp(c.signMode === 'custom' ? (c.signDate || c.date) : c.date) || '_____.\u00a0gada ____.\u00a0________________',
       ...digits(f.j_pk, 'j'), ...digits(f.p_pk, 'p')
     };
     return { global: g, rows: [], staff: [], blankRows: 0, staffBlank: 0 };
@@ -153,19 +169,39 @@
     const r = await fetch(CP.VENDOR + `templates/ligums-${cur.kind}-${cur.form}.docx`); if (!r.ok) throw Error('standarta veidne nav ielādējama (' + r.status + ')');
     return r.arrayBuffer();
   }
+  /** Pirms sagatavošanas: obligātais pārstāvja statuss, jautājums par trūkstošu līguma numuru */
+  function ready() {
+    if (!cur?.pid) { ui.toast('Izvēlies personu', 'warn'); return false; }
+    if (cur.kind === 'parstavis' && !relText(cur.fields)) { ui.toast('Izvēlies likumiskā pārstāvja statusu: māte, tēvs, likumiskais pārstāvis vai cits.', 'warn', 8000); ctDlg().querySelector('[data-ct="p_rel"],[data-ct="p_rel_other"]')?.focus(); return false; }
+    if (!String(cur.no || '').trim() && !confirm('Līguma numurs nav ievadīts.\n\nLīgumā numura vietā paliks tukša līnija, ko varēs aizpildīt vēlāk.\n\nVai turpināt bez līguma numura?')) { ctDlg().querySelector('[data-cc="no"]')?.focus(); return false; }
+    return true;
+  }
   async function build() {
     if (!cur?.pid) throw Error('izvēlies personu');
     return CP.docxFill.fill(await templateBuf(), fillData());
   }
   const fileName = () => { const p = D.person(cur.pid); return `Līgums ${cur.no ? cur.no.replace(/[\\/:*?"<>|]/g, '_') + ' ' : ''}${U.full(p)} ${cur.date || U.iso()}.docx`.replace(/\s+/g, ' '); };
+  /** Saglabā atkārtoti noderīgo: formu, vietu, paraksta datuma izvēli, statusus — un kartītē tukšos laukus */
   function remember() {
     const p = D.person(cur.pid); if (!p) return;
-    S.db.settings.contractForm = cur.form;
-    if (cur.place && !inst().place) inst().place = cur.place;
-    if (cur.no && p.contractNo !== cur.no) { p.contractNo = cur.no; D.audit(p.id, 'update', ['Līguma Nr.']); }
+    const S2 = S.db.settings, I = inst(), f = cur.fields;
+    S2.contractForm = cur.form; if (cur.place) I.place = cur.place.trim(); I.signMode = cur.signMode;
+    if (cur.no && p.contractNo !== cur.no) { p.contractNo = cur.no.trim(); D.audit(p.id, 'update', ['Līguma Nr.']); }
+    if (f.p_rel === 'cits' && f.p_rel_other) S2.contractRelations = [...new Set([f.p_rel_other.trim(), ...(S2.contractRelations || [])])].slice(0, 12);
+    // kartītē papildina tikai tukšos laukus (esošie dati netiek pārrakstīti)
+    const two = cur.parent === 2, put = [], set = (k, v) => { v = String(v || '').trim(); if (v && !String(p[k] || '').trim()) { p[k] = v; put.push(CP.FIELD[k]?.l || k); } };
+    set('personalCode', U.codeDigits(f.j_pk).length === 11 ? U.fmtCode(f.j_pk) : f.j_pk); set('phone', f.j_talrunis); set('email', f.j_epasts);
+    if (cur.kind === 'jaunietis') { set('addressDeclared', f.j_adrese_dekl); set('addressActual', f.j_adrese_fakt); }
+    if (cur.kind === 'parstavis') {
+      set(two ? 'parent2Name' : 'parentName', f.p_vards); set(two ? 'parent2Relation' : 'parentRelation', relText(f));
+      set(two ? 'parent2Phone' : 'parentPhone', f.p_talrunis); set(two ? 'parent2Email' : 'parentEmail', f.p_epasts);
+      if (!two) { set('parentCode', U.codeDigits(f.p_pk).length === 11 ? U.fmtCode(f.p_pk) : f.p_pk); set('parentAddressDeclared', f.p_adrese_dekl); set('parentAddressActual', f.p_adrese_fakt); }
+    }
+    if (put.length) { p.updatedAt = U.now(); D.audit(p.id, 'update', put); ui.toast('Kartītē papildināts: ' + put.join(', '), 'ok', 6000); }
   }
   /** Word fails: lejupielāde + kopija personas mapē + ieraksts kartītē */
   A.contractWord = async () => {
+    if (!ready()) return;
     try {
       const blob = await build(), p = D.person(cur.pid), name = fileName();
       U.download(blob, name); remember();
@@ -180,6 +216,7 @@
   };
   /** Priekšskatījums un drukāšana rīkā (Word → HTML ar docx-preview) */
   A.contractPreview = async () => {
+    if (!ready()) return;
     try {
       const blob = await build(); remember(); CP.store.changed({ silent: true });
       await CP.printDocx(blob, fileName());

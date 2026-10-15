@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.17.1 — 2026-10-15 — Līguma labojumi
+- Datu lauki standarta veidnēs (vārdi, personas koda cipari, adreses, amats, instruktora vārds, vieta) ir centrēti un rakstīti Times New Roman 12,5 pt taisnā šriftā, kā dokumenta teksts.
+- Instruktora paraksta datums (papīra līgumos), piem., “2026. gada 15. oktobrī”: tāds pats kā līguma datums, cits datums vai tukšs. Izvēle tiek atcerēta.
+- Pārstāvja statusam nav noklusējuma, tas jāizvēlas (Māte / Tēvs / Likumiskais pārstāvis / Cits + paša teksts, ko rīks atceras ieteikumiem). Bez statusa līgumu sagatavot nevar.
+- Ja nav līguma numura, rīks pirms priekšskatījuma vai Word faila skaidri jautā, vai turpināt.
+- Līguma logā ievadītie dati papildina tukšos kartītes laukus (pārstāvja vārds, statuss, personas kods, adreses, tālrunis, e-pasts; jaunieša kontakti). Esošie dati netiek pārrakstīti. Vieta un forma tiek atcerētas.
+- Teikumā “uz ____ (____) lapām” ir garākas līnijas visās četrās veidnēs.
+
 ## 1.17.0 — 2026-10-15 — Veidlapa “Līgums”
 - Četras standarta veidnes no Jaunsardzes centra paraugiem (24.10.2024): jaunietis 18+ un likumiskais pārstāvis, katrs papīra formā un EDOC.
 - Automātiski tiek aizpildīts: līguma Nr. (ievada lietotājs), vieta un datums (“2026.gada 15.oktobrī”), novada pārvaldes un nodaļas nr., instruktora vārds ģenitīvā (ar ieteikumu, ko var labot), jaunieša un pārstāvja statuss, vārds, personas koda cipari pa šūnām, adreses, tālruņi un e-pasti, kā arī Centra pārstāvja amats un kontakti.

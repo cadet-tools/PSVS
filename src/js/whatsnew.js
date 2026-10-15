@@ -8,6 +8,14 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.17.1', date: '2026-10-15', title: 'Līguma uzlabojumi', items: [
+      'Ievadītie dati līgumā ir **centrēti** un rakstīti tādā pašā fontā kā dokuments, nevis slīprakstā.',
+      'Ja nav ievadīts **līguma numurs**, rīks to skaidri pasaka un jautā, vai turpināt.',
+      'Pārstāvja statuss jāizvēlas pašam: **Māte, Tēvs, Likumiskais pārstāvis** vai **Cits** (ieraksti pats).',
+      'Instruktora pusē ir **paraksta datums**: tāds pats kā līguma datums, cits datums vai tukšs. Izvēle tiek atcerēta.',
+      'Dati, ko ievadi līguma logā, piem., pārstāvja personas kodu un adresi, tiek saglabāti kartītē, ja tur tie nebija aizpildīti.',
+      'Lapu skaitam (“uz ____ lapām”) ir vairāk vietas.'
+    ] },
     { v: '1.17.0', date: '2026-10-15', title: 'Jauna veidlapa: Līgums', items: [
       'Personas kartītē ir sadaļa **Līgums**, un **Veidlapas** lapā ir poga **＋ Līgums**. Līgums aizpildās pats no personas datiem: vārds, personas kods pa cipariem, adreses, tālruņi un e-pasti.',
       'Rīks pats izvēlas veidu: līdz 18 gadiem līgums ar **likumisko pārstāvi**, no 18 gadiem ar **jaunieti**. Formu izvēlies pats: **papīrs** vai **EDOC**. Ja ir divi vecāki, var izvēlēties, ar kuru slēgt līgumu.',
