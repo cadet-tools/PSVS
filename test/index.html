@@ -425,6 +425,15 @@ textarea[data-autogrow],#noteText{field-sizing:content;min-height:2.6em;max-heig
 .stepper{display:flex;align-items:center;gap:6px}.stepper input{width:80px;text-align:center}.stepper button{min-width:36px;font-size:18px;line-height:1}
 .print-dlg{width:min(1100px,96vw)}.print-pages{display:flex;flex-direction:column;align-items:center;gap:18px;background:#5b6470;padding:18px;border-radius:10px;max-height:70vh;overflow:auto}
 .print-page{margin:0;width:min(640px,100%)}.print-page.land{width:min(900px,100%)}.print-page img{width:100%;display:block;background:#fff;box-shadow:0 4px 18px #0006}.print-page figcaption{text-align:center;color:#e9edf1;font-size:12px;margin-top:6px}
+/* Drukāšana no galvenā loga */
+#printSheet{display:none}
+@media print{
+  html.printing body>*:not(#printSheet){display:none!important}
+  html.printing,html.printing body{background:#fff!important;margin:0!important;padding:0!important;height:auto!important;overflow:visible!important}
+  html.printing #printSheet{display:block!important}
+  #printSheet img{display:block;object-fit:contain;page-break-after:always;break-after:page;margin:0}
+  #printSheet img:last-child{page-break-after:auto;break-after:auto}
+}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -999,5 +1008,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.16.2"></script></body>
+<script src="app.bundle.js?v=1.16.3"></script></body>
 </html>

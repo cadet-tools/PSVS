@@ -8,6 +8,11 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.16.3', date: '2026-10-15', title: 'Drukāšana un tukšās rindas', items: [
+      '**Drukāšana salabota:** pārlūka drukas logā tagad uzreiz redzamas veidlapas lapas, un tās var izdrukāt.',
+      'Tukšo rindu skaitu izvēlies pats arī tad, ja dalībnieki nav izvēlēti. Rīks vairs nepievieno rindas pēc saviem ieskatiem.',
+      'Nometnes žurnālā var norādīt arī tukšas rindas **darbinieku** tabulā.'
+    ] },
     { v: '1.16.2', date: '2026-10-15', title: 'Veidlapas: precīzs rindu skaits un drukas priekšskatījums', items: [
       'Instruktāžas lapā un nometnes žurnālā ir **tieši tik rindu, cik izvēlēto dalībnieku**. Tukšas rindas tiek pievienotas tikai tad, ja tās norādi.',
       'Lauks **Tukšas rindas veidlapas beigās** ar pogām − un +. Zem lauka redzams, cik rindu būs veidlapā.',

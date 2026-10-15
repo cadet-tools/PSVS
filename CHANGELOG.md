@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.16.3 — 2026-10-15
+- Drukāšana notiek tieši no rīka loga, bez slēpta rāmja. Chrome drukas logs uzreiz rāda veidlapas lapas: A4 portrets instruktāžas lapai, ainava nometnes žurnālam. Ja ir printeris, tās var izdrukāt, vai arī saglabāt kā PDF. Pārbaudīts ar pārlūka drukas dzinēju: izdrukā ir tikai veidlapa, 1 lapa.
+- Tukšās rindas vienmēr nosaka lietotājs: bez dalībniekiem veidlapā ir tieši norādītais rindu skaits (agrāk vismaz 10). Ja dalībnieku nav un rindu skaits ir 0, rīks lūdz norādīt rindu skaitu.
+- Nometnes žurnālā ir atsevišķa izvēle tukšajām rindām darbinieku tabulā (agrāk 3 rindas, ja darbinieki nebija izvēlēti).
+- Ievadot skaitli tukšo rindu laukā, paskaidrojums zem tā atjaunojas uzreiz.
+
 ## 1.16.2 — 2026-10-15 — Veidlapu labojumi
 - Instruktāžas lapā un nometnes žurnālā vairs nav obligāti 26 vai 11 rindu. Rindu skaits ir dalībnieku skaits plus norādītās tukšās rindas (noklusējumā 0). Tukšai veidlapai bez dalībniekiem ir 10 rindas. Darbinieku tabulā ir tik rindu, cik izvēlēto darbinieku, bet, ja neviens nav izvēlēts, 3 tukšas rindas.
 - Tukšajās rindās datuma šūna ir tukša. Ja izvēlēts neierakstīt datumu katrā rindā, arī dalībnieku rindās datuma šūna ir tukša.
