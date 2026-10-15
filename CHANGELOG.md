@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.20.0 — 2026-10-15 — Dokumentu derīgums un labošana kartītē
+- `settings.docValidity` (noklusējums: “Ārsta izziņa” = 12 mēn., tikai savā mācību gadā). Dokumentam ir jauns lauks `issued` (izsniegšanas datums). Ja “Derīgs līdz” nav ievadīts, termiņš ir izsniegšanas datums + 12 mēn. − 1 diena.
+- Dokuments der mācību gadam, ja tas izsniegts no 1. augusta pirms gada sākuma līdz gada beigām (31.08.). Ja izsniegšanas datuma nav, tiek ņemts saņemšanas vai pievienošanas datums. Ja nav neviena datuma, dokuments der. `D.missingDocs` to ņem vērā, tāpēc pēc pārcelšanas uz jauno gadu iepriekšējā gada izziņa tiek uzskatīta par trūkstošu.
+- Brīdinājumi: beidzies derīgums (sarkans); derīga vēl ≤30 d.; no 1. maija “derīga līdz mācību gada beigām” (informatīvs); “jaunajā mācību gadā jāiesniedz jauna … (iepriekšējā: datums)”; “nav norādīts izsniegšanas datums”.
+- Dokumenta logā: lauks “izsniegšanas datums” (izziņai obligāts), automātisks “Derīgs līdz” un paskaidrojums. Pievienojot vienu izziņas failu, logs atveras uzreiz.
+- Kartītes “Obligātie dokumenti”: katram dokumentam ir rinda ar datumiem un pogām atvērt / labot / aizstāt failu / dzēst, kā arī “+ Fails” / “+ Papīrs” trūkstošajiem. Dokumentu sarakstā pogas ir ar nosaukumiem.
+- “Aizstāt failu”: jaunais fails tiek saglabāts personas mapē, iepriekšējais paliek mapē un ieraksta `versions` vēsturē. “Dzēst” noņem tikai ierakstu. Pēc faila pievienošanas paziņojumā ir poga “✎ Labot datus”.
+
 ## 1.19.1 — 2026-10-15 — Bez datu mapes darbs netiek sākts
 - Bez pieslēgtas datu mapes (`!S.root`): pārskatā redzama tikai sadaļa “Sāc darbu” ar soļiem (izveido mapi → izvēlies → atļauj rediģēt). Statistika, pulkstenis un ātrās darbības netiek rādītas.
 - Visas darbības, kas maina datus, tiek apturētas, un tiek parādīts logs “Vispirms pievieno datu mapi” ar pogu mapes izvēlei vai piekļuves atļaušanai. Atļautas ir tikai mapes, izskata, pulksteņa, jaunumu un instalēšanas darbības (`CP.noRootOk`).

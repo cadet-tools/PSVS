@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.19.1';
+  CP.VERSION = '1.20.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -307,6 +307,8 @@ window.CP = window.CP || {};
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'eklase'],
+    // dokumenti ar derīguma termiņu: mēneši no izsniegšanas; schoolYear — derīgs tikai savā mācību gadā
+    docValidity: { 'Ārsta izziņa': { months: 12, schoolYear: true } },
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
       { name: 'Trūkstošie dokumenti', text: 'Labdien, {saņēmējs}! Atgādinu, ka par {vārds} {uzvārds} vēl jāiesniedz: {trūkst}. Paldies!' },
@@ -357,6 +359,7 @@ window.CP = window.CP || {};
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
     for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
+    d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));
@@ -494,10 +497,20 @@ window.CP = window.CP || {};
     { kind: 'emergency', role: 'Ārkārtas' + (p.emergencyRelation ? ' · ' + p.emergencyRelation : ''), name: p.emergencyName, phone: p.emergencyPhone, email: '' }
   ].map((c, i) => ({ ...c, idx: i })).filter(c => U.normPhone(c.phone) || c.email);
   D.docsOf = p => db().documents.filter(d => d.personId === p.id);
-  D.missingDocs = p => {
-    const t = U.iso();
-    return (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && !(d.expires && d.expires < t)));
+  /* --- Derīguma termiņi (piem., ārsta izziņa: 12 mēn. un tikai savā mācību gadā) --- */
+  D.docRule = kind => (db().settings.docValidity || {})[kind] || null;
+  D.docDate = d => String(d.issued || d.received || d.addedAt || '').slice(0, 10);
+  /** Termiņš: ievadītais “derīgs līdz” vai izsniegšanas datums + N mēneši − 1 diena */
+  D.docExpiry = d => { if (d.expires) return d.expires; const r = D.docRule(d.kind); if (!r?.months || !d.issued) return ''; const e = U.addMonths(d.issued, r.months); const x = new Date(e + 'T12:00:00'); x.setDate(x.getDate() - 1); return U.iso(x); };
+  /** Vai dokuments der konkrētajam mācību gadam (izsniegts no 1. augusta pirms gada sākuma līdz gada beigām vai piesaistīts šim gadam) */
+  D.docForYear = (d, yearId) => {
+    const r = D.docRule(d.kind); if (!r?.schoolYear) return true;
+    const [from, to] = U.yearSpan(yearId), dt = D.docDate(d); if (!from) return true;
+    if (dt) { const f = new Date(from + 'T12:00:00'); f.setMonth(f.getMonth() - 1); return dt >= U.iso(f) && dt <= to; }
+    return !d.yearId || d.yearId === yearId;   // bez datumiem un gada — neuzskata par nederīgu
   };
+  D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
+  D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && D.docValid(d)));
   D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned);
   D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
@@ -603,7 +616,7 @@ window.CP = window.CP || {};
       if (p?.status === 'archived') push({ kind: 'equipment', personId: e.personId, sev: 2, msg: `${U.full(p)} ir arhīvā, bet nav atdots: ${e.item}`, when: e.due });
       else if (diff !== null && (live ? diff <= 14 : inSpan(e.due))) push({ kind: 'equipment', personId: e.personId, sev: diff < 0 ? 2 : 1, msg: `${U.full(p)}: ${e.item} — ${live ? (diff < 0 ? 'kavēts ' + (-diff) + ' d.' : 'jāatdod pēc ' + diff + ' d.') : 'atdošanas termiņš šajā gadā'}`, when: e.due });
     }
-    for (const doc of d.documents) if (doc.expires && D.inYear(D.person(doc.personId)) && D.person(doc.personId)?.status !== 'archived' && (live ? U.daysTo(doc.expires) <= 30 : inSpan(doc.expires))) {
+    for (const doc of d.documents) if (doc.expires && !D.docRule(doc.kind) && D.inYear(D.person(doc.personId)) && D.person(doc.personId)?.status !== 'archived' && (live ? U.daysTo(doc.expires) <= 30 : inSpan(doc.expires))) {
       const p = D.person(doc.personId), diff = U.daysTo(doc.expires);
       push({ kind: 'document', personId: doc.personId, sev: diff < 0 ? 2 : 1, msg: `${U.full(p)}: ${doc.kind} — ${live ? (diff < 0 ? 'beidzies derīgums' : 'derīgs vēl ' + diff + ' d.') : 'derīgums šajā mācību gadā'}`, when: doc.expires });
     }
@@ -614,6 +627,18 @@ window.CP = window.CP || {};
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
       if (D.regAlerts) for (const r of D.regAlerts(roster)) push(r);
+      // dokumenti ar derīguma noteikumiem (ārsta izziņa)
+      for (const [kind, rule] of Object.entries(d.settings.docValidity || {})) for (const p of roster) {
+        if (p.status === 'archived' || D.partStatus(p) === 'paused') continue;
+        const docs = d.documents.filter(x => x.personId === p.id && x.kind === kind).sort((a, b) => D.docDate(b).localeCompare(D.docDate(a)));
+        if (!docs.length) continue;
+        const cur = docs.find(x => D.docForYear(x, yearId)), who = U.full(p), kl = kind.toLowerCase();
+        if (!cur) { const last = docs[0]; push({ kind: 'document', personId: p.id, sev: 1, msg: `${who}: jaunajā mācību gadā jāiesniedz jauna ${kl}${D.docDate(last) ? ` (iepriekšējā: ${U.fmtDate(D.docDate(last))})` : ''}`, when: '' }); continue; }
+        if (!cur.issued && !cur.expires) { push({ kind: 'document', personId: p.id, docId: cur.id, sev: 1, msg: `${who}: ${kl} — nav norādīts izsniegšanas datums. Norādi to, lai rīks atgādinātu par termiņu.`, when: '' }); }
+        const exp = D.docExpiry(cur), [, yEnd] = U.yearSpan(yearId);
+        if (exp) { const n = U.daysTo(exp); if (n < 0) { push({ kind: 'document', personId: p.id, docId: cur.id, sev: 2, msg: `${who}: ${kl} — beidzies derīgums (${U.fmtDate(exp)})`, when: exp }); continue; } if (n <= 30) push({ kind: 'document', personId: p.id, docId: cur.id, sev: 1, msg: `${who}: ${kl} — derīga vēl ${n} d. (līdz ${U.fmtDate(exp)})`, when: exp }); }
+        if (rule.schoolYear && yEnd && today >= yEnd.slice(0, 4) + '-05-01' && today <= yEnd) push({ kind: 'document', personId: p.id, docId: cur.id, sev: 0, msg: `${who}: ${kl} derīga līdz mācību gada beigām — nākamajam mācību gadam vajadzēs jaunu`, when: yEnd });
+      }
       if (D.idCardAlerts) for (const r of D.idCardAlerts(roster.filter(p => p.status !== 'archived' || p.idCard?.status === 'issued'))) push(r);
       for (const g of D.phoneConflicts()) if (g.suspicious && g.entries.some(e => D.inYear(e.p))) {
         const who = [...new Map(g.entries.map(e => [e.p.id, e.p])).values()];

@@ -433,3 +433,5 @@ textarea[data-autogrow],#noteText{field-sizing:content;min-height:2.6em;max-heig
 .root-steps{margin:8px 0 12px;padding-left:22px;line-height:1.55}.root-steps li{margin:4px 0}
 .root-howto{margin-top:14px;padding:10px 14px;border:1px dashed var(--edge2,var(--edge));border-radius:10px;text-align:left}
 html.noroot .aside .aside-top [data-act],html.noroot .aside [data-act=scan],html.noroot .aside [data-act=import]{opacity:.45}
+.reqdocs{display:flex;flex-direction:column;gap:6px}.reqdoc{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--edge);flex-wrap:wrap}
+.reqdoc.ok b{color:var(--teal)}.reqdoc.miss b{color:var(--amber,#f0b429)}.reqdoc-btns{display:flex;gap:4px;flex-wrap:wrap}.reqdoc-btns .sm{padding:3px 7px}

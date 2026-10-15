@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.19.1';
+  CP.VERSION = '1.20.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -310,6 +310,8 @@ window.CP = window.CP || {};
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'eklase'],
+    // dokumenti ar derīguma termiņu: mēneši no izsniegšanas; schoolYear — derīgs tikai savā mācību gadā
+    docValidity: { 'Ārsta izziņa': { months: 12, schoolYear: true } },
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
       { name: 'Trūkstošie dokumenti', text: 'Labdien, {saņēmējs}! Atgādinu, ka par {vārds} {uzvārds} vēl jāiesniedz: {trūkst}. Paldies!' },
@@ -360,6 +362,7 @@ window.CP = window.CP || {};
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
     for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
+    d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));
@@ -497,10 +500,20 @@ window.CP = window.CP || {};
     { kind: 'emergency', role: 'Ārkārtas' + (p.emergencyRelation ? ' · ' + p.emergencyRelation : ''), name: p.emergencyName, phone: p.emergencyPhone, email: '' }
   ].map((c, i) => ({ ...c, idx: i })).filter(c => U.normPhone(c.phone) || c.email);
   D.docsOf = p => db().documents.filter(d => d.personId === p.id);
-  D.missingDocs = p => {
-    const t = U.iso();
-    return (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && !(d.expires && d.expires < t)));
+  /* --- Derīguma termiņi (piem., ārsta izziņa: 12 mēn. un tikai savā mācību gadā) --- */
+  D.docRule = kind => (db().settings.docValidity || {})[kind] || null;
+  D.docDate = d => String(d.issued || d.received || d.addedAt || '').slice(0, 10);
+  /** Termiņš: ievadītais “derīgs līdz” vai izsniegšanas datums + N mēneši − 1 diena */
+  D.docExpiry = d => { if (d.expires) return d.expires; const r = D.docRule(d.kind); if (!r?.months || !d.issued) return ''; const e = U.addMonths(d.issued, r.months); const x = new Date(e + 'T12:00:00'); x.setDate(x.getDate() - 1); return U.iso(x); };
+  /** Vai dokuments der konkrētajam mācību gadam (izsniegts no 1. augusta pirms gada sākuma līdz gada beigām vai piesaistīts šim gadam) */
+  D.docForYear = (d, yearId) => {
+    const r = D.docRule(d.kind); if (!r?.schoolYear) return true;
+    const [from, to] = U.yearSpan(yearId), dt = D.docDate(d); if (!from) return true;
+    if (dt) { const f = new Date(from + 'T12:00:00'); f.setMonth(f.getMonth() - 1); return dt >= U.iso(f) && dt <= to; }
+    return !d.yearId || d.yearId === yearId;   // bez datumiem un gada — neuzskata par nederīgu
   };
+  D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
+  D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && D.docValid(d)));
   D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned);
   D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
@@ -606,7 +619,7 @@ window.CP = window.CP || {};
       if (p?.status === 'archived') push({ kind: 'equipment', personId: e.personId, sev: 2, msg: `${U.full(p)} ir arhīvā, bet nav atdots: ${e.item}`, when: e.due });
       else if (diff !== null && (live ? diff <= 14 : inSpan(e.due))) push({ kind: 'equipment', personId: e.personId, sev: diff < 0 ? 2 : 1, msg: `${U.full(p)}: ${e.item} — ${live ? (diff < 0 ? 'kavēts ' + (-diff) + ' d.' : 'jāatdod pēc ' + diff + ' d.') : 'atdošanas termiņš šajā gadā'}`, when: e.due });
     }
-    for (const doc of d.documents) if (doc.expires && D.inYear(D.person(doc.personId)) && D.person(doc.personId)?.status !== 'archived' && (live ? U.daysTo(doc.expires) <= 30 : inSpan(doc.expires))) {
+    for (const doc of d.documents) if (doc.expires && !D.docRule(doc.kind) && D.inYear(D.person(doc.personId)) && D.person(doc.personId)?.status !== 'archived' && (live ? U.daysTo(doc.expires) <= 30 : inSpan(doc.expires))) {
       const p = D.person(doc.personId), diff = U.daysTo(doc.expires);
       push({ kind: 'document', personId: doc.personId, sev: diff < 0 ? 2 : 1, msg: `${U.full(p)}: ${doc.kind} — ${live ? (diff < 0 ? 'beidzies derīgums' : 'derīgs vēl ' + diff + ' d.') : 'derīgums šajā mācību gadā'}`, when: doc.expires });
     }
@@ -617,6 +630,18 @@ window.CP = window.CP || {};
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
       if (D.regAlerts) for (const r of D.regAlerts(roster)) push(r);
+      // dokumenti ar derīguma noteikumiem (ārsta izziņa)
+      for (const [kind, rule] of Object.entries(d.settings.docValidity || {})) for (const p of roster) {
+        if (p.status === 'archived' || D.partStatus(p) === 'paused') continue;
+        const docs = d.documents.filter(x => x.personId === p.id && x.kind === kind).sort((a, b) => D.docDate(b).localeCompare(D.docDate(a)));
+        if (!docs.length) continue;
+        const cur = docs.find(x => D.docForYear(x, yearId)), who = U.full(p), kl = kind.toLowerCase();
+        if (!cur) { const last = docs[0]; push({ kind: 'document', personId: p.id, sev: 1, msg: `${who}: jaunajā mācību gadā jāiesniedz jauna ${kl}${D.docDate(last) ? ` (iepriekšējā: ${U.fmtDate(D.docDate(last))})` : ''}`, when: '' }); continue; }
+        if (!cur.issued && !cur.expires) { push({ kind: 'document', personId: p.id, docId: cur.id, sev: 1, msg: `${who}: ${kl} — nav norādīts izsniegšanas datums. Norādi to, lai rīks atgādinātu par termiņu.`, when: '' }); }
+        const exp = D.docExpiry(cur), [, yEnd] = U.yearSpan(yearId);
+        if (exp) { const n = U.daysTo(exp); if (n < 0) { push({ kind: 'document', personId: p.id, docId: cur.id, sev: 2, msg: `${who}: ${kl} — beidzies derīgums (${U.fmtDate(exp)})`, when: exp }); continue; } if (n <= 30) push({ kind: 'document', personId: p.id, docId: cur.id, sev: 1, msg: `${who}: ${kl} — derīga vēl ${n} d. (līdz ${U.fmtDate(exp)})`, when: exp }); }
+        if (rule.schoolYear && yEnd && today >= yEnd.slice(0, 4) + '-05-01' && today <= yEnd) push({ kind: 'document', personId: p.id, docId: cur.id, sev: 0, msg: `${who}: ${kl} derīga līdz mācību gada beigām — nākamajam mācību gadam vajadzēs jaunu`, when: yEnd });
+      }
       if (D.idCardAlerts) for (const r of D.idCardAlerts(roster.filter(p => p.status !== 'archived' || p.idCard?.status === 'issued'))) push(r);
       for (const g of D.phoneConflicts()) if (g.suspicious && g.entries.some(e => D.inYear(e.p))) {
         const who = [...new Map(g.entries.map(e => [e.p.id, e.p])).values()];
@@ -2232,8 +2257,16 @@ window.CP = window.CP || {};
         <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
     }).join('') || `<p class="muted small">Nav ievadīts neviens tālrunis vai e-pasts.</p><button class="sm" data-act="edit" data-arg="${p.id}" data-sec="contact">＋ Pievienot kontaktus</button>`;
     const req = S.db.settings.requiredDocs;
-    const docs = req.length ? `<div class="chips col">${req.map(k => `<span class="chip ${miss.includes(k) ? 'miss' : 'ok'}">${miss.includes(k) ? '✗' : '✓'} ${esc(k)}</span>`).join('')}</div>
-      ${miss.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-tab="docs">Pievienot</button>${cs.length ? `<button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt</button>` : ''}</div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
+    const reqRow = k => {
+      const list = S.db.documents.filter(d => d.personId === p.id && d.kind === k).sort((a, b) => String(D.docDate(b) || b.addedAt).localeCompare(String(D.docDate(a) || a.addedAt)));
+      const ok = !miss.includes(k), d = list.find(x => D.docValid(x)) || list[0];
+      const exp = d && D.docExpiry(d), info = d ? [d.issued ? 'izsniegts ' + U.fmtDate(d.issued) : (D.docRule(k) && !d.expires ? '⚠ nav norādīts izsniegšanas datums' : ''), exp && 'līdz ' + U.fmtDate(exp), !ok && (D.docRule(k)?.schoolYear && !D.docForYear(d, D.activeYear()) ? 'cita mācību gada' : exp && exp < U.iso() ? 'beidzies derīgums' : '')].filter(Boolean).join(' · ') : '';
+      return `<div class="reqdoc ${ok ? 'ok' : 'miss'}"><div class="grow"><b>${ok ? '✓' : '✗'} ${esc(k)}</b>${info ? `<div class="small muted">${esc(info)}</div>` : (d ? '' : '<div class="small muted">nav pievienots</div>')}</div>
+        <div class="reqdoc-btns">${d ? `${d.path ? `<button class="sm ghost" data-act="view" data-arg="${esc((d.sourceId || 'main') + '|' + d.path)}" title="Atvērt">📄</button>` : ''}<button class="sm ghost" data-act="editDoc" data-arg="${d.id}" title="Labot datus">✎</button><button class="sm ghost" data-act="replaceDoc" data-arg="${d.id}" title="Aizstāt failu">⇄</button><button class="sm ghost danger" data-act="delDoc" data-arg="${d.id}" title="Dzēst ierakstu">✕</button>` : ''}
+        ${!ok ? `<button class="sm" data-act="attach" data-arg="${p.id}|${esc(k)}" title="Pievienot failu">＋ Fails</button><button class="sm ghost" data-act="addDoc" data-arg="${p.id}|${esc(k)}" title="Reģistrēt papīra dokumentu">＋ Papīrs</button>` : ''}</div></div>`;
+    };
+    const docs = req.length ? `<div class="reqdocs">${req.map(reqRow).join('')}</div>
+      ${miss.length && cs.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt</button></div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
     const tools = CP.comms.toolLinks(p);
     const tasks = S.db.tasks.filter(t => t.personId === p.id && !t.done).sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9')));
     const dups = Object.keys(D.PHONE_FIELDS).flatMap(f => D.phoneMatches(p[f], p.id, f).filter(e => e.p.id !== p.id).map(e => ({ f, e })));
@@ -2555,19 +2588,20 @@ window.CP = window.CP || {};
   };
 
   function docRow(d, showPerson) {
-    const exp = d.expires ? U.daysTo(d.expires) : null;
+    const exp = D.docExpiry(d) ? U.daysTo(D.docExpiry(d)) : null;
     const st = docs.statusOf(d);
     return `<div class="row doc">
       <div class="doc-ic">${/\.(jpe?g|png|webp|heic)$/i.test(d.path || '') ? '🖼' : /\.edoc$/i.test(d.path || '') ? '✍' : d.path ? '📄' : '🗂'}</div>
       <div class="grow">
         <div><b>${esc(d.kind)}</b> ${fmtTag(d.format)} ${docs.statusHtml(d)} ${showPerson ? `· <a href="#" data-person="${d.personId}" data-goto="docs">${esc(U.full(D.person(d.personId)))}</a>` : ''}</div>
-        <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) + ' · ' : ''}${d.path ? esc(d.path) : 'Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.expires ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(d.expires)}</span>` : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
+        <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) + ' · ' : ''}${d.path ? esc(d.path) : 'Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
       </div>
       ${d.path ? `<button class="sm mainbtn" data-act="view" data-arg="${keyOf(d.sourceId, d.path)}">Atvērt</button>` : ''}
       ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
       ${d.path && /\.(pdf|docx|edoc|asice|jpe?g|png)$/i.test(d.path) ? `<button class="sm" data-act="readDoc" data-arg="${d.id}" title="Nolasīt datus no šī dokumenta kartiņā">📥 Nolasīt</button>` : ''}
-      <button class="sm" data-act="editDoc" data-arg="${d.id}" title="Rediģēt">✎</button>
-      <button class="sm ghost" data-act="delDoc" data-arg="${d.id}" title="Noņemt ierakstu (fails paliek)">✕</button></div>`;
+      <button class="sm" data-act="editDoc" data-arg="${d.id}" title="Labot dokumenta datus (veids, datumi, statuss)">✎ Labot</button>
+      <button class="sm" data-act="replaceDoc" data-arg="${d.id}" title="Aizstāt failu ar jaunu (vecais paliek mapē)">⇄ Aizstāt failu</button>
+      <button class="sm ghost danger" data-act="delDoc" data-arg="${d.id}" title="Dzēst ierakstu (fails mapē paliek)">✕ Dzēst</button></div>`;
   }
 
   /* --- Personas cilne --- */
@@ -2643,7 +2677,8 @@ window.CP = window.CP || {};
   /* --- Saites un ieraksti --- */
   docs.link = (personId, kind, format, path, sourceId, extra = {}) => {
     if (S.db.documents.some(x => x.personId === personId && x.path === path && (x.sourceId || 'main') === (sourceId || 'main'))) { ui.toast('Šis fails jau ir piesaistīts', 'warn'); return false; }
-    S.db.documents.push({ id: U.uid(), personId, kind, format, path, sourceId: sourceId || 'main', received: U.iso(), addedAt: U.now(), yearId: D.activeYear(), ...extra });
+    const id = U.uid(); docs.lastLinked = id;
+    S.db.documents.push({ id, personId, kind, format, path, sourceId: sourceId || 'main', received: U.iso(), addedAt: U.now(), yearId: D.activeYear(), ...extra });
     D.audit(personId, 'doc-add', [kind]); return true;
   };
   const splitKey = a => { const i = a.indexOf('|'); return [a.slice(0, i), a.slice(i + 1)]; };
@@ -2662,7 +2697,7 @@ window.CP = window.CP || {};
     U.$('associateDialog').close();
   };
   A.delDoc = id => {
-    const d = S.db.documents.find(x => x.id === id); if (!d || !confirm('Noņemt dokumenta ierakstu no uzskaites? Pats fails mapē paliks.')) return;
+    const d = S.db.documents.find(x => x.id === id); if (!d || !confirm(`Dzēst dokumenta ierakstu “${d.kind}”?\n\nIeraksts tiek noņemts no kartītes. Pats fails datu mapē netiek dzēsts.`)) return;
     S.db.documents = S.db.documents.filter(x => x.id !== id); D.audit(d.personId, 'doc-remove', [d.kind]); CP.store.changed();
   };
 
@@ -2673,14 +2708,24 @@ window.CP = window.CP || {};
     const [pid, kind] = String(arg || '').split('|');
     dform.reset(); dform.dataset.edit = ''; U.$('docTitle').textContent = 'Reģistrēt dokumentu';
     ui.personOptions('docPerson', pid || S.selected); U.$('docKind').innerHTML = ui.kindOptions(kind || '');
-    dform.elements.received.value = U.iso(); dform.elements.format.value = 'paper'; U.$('documentDialog').showModal();
+    dform.elements.received.value = U.iso(); dform.elements.format.value = 'paper'; dform.dataset.autoExp = '1'; docRuleUi(); U.$('documentDialog').showModal();
   };
+  /** Ārsta izziņa u.c.: prasa izsniegšanas datumu, termiņu aprēķina pats (var labot) */
+  function docRuleUi() {
+    const kind = dform.elements.kind.value, r = D.docRule(kind), iss = dform.elements.issued, exp = dform.elements.expires;
+    U.$('docIssuedLbl').innerHTML = r ? `${U.esc(kind)}: izsniegšanas datums <b class="red">*</b>` : 'Dokumenta datums (izsniegts)';
+    iss.required = !!r;
+    if (r && iss.value && (dform.dataset.autoExp || !exp.value)) { exp.value = D.docExpiry({ kind, issued: iss.value }); dform.dataset.autoExp = '1'; }
+    U.$('docExpHint').textContent = r ? `Derīga ${r.months} mēn. no izsniegšanas${r.schoolYear ? ' un tikai savā mācību gadā — rīks atgādinās pirms termiņa, mācību gada beigās un jaunā gada sākumā' : ''}.` : '';
+  }
+  dform.addEventListener('change', e => { if (e.target.name === 'expires') dform.dataset.autoExp = ''; if (['kind', 'issued'].includes(e.target.name)) docRuleUi(); });
   A.editDoc = id => {
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
     dform.reset(); dform.dataset.edit = id; U.$('docTitle').textContent = 'Rediģēt dokumentu';
     ui.personOptions('docPerson', d.personId, true); U.$('docKind').innerHTML = ui.kindOptions(d.kind);
-    for (const k of ['format', 'received', 'expires', 'notes', 'review']) if (dform.elements[k]) dform.elements[k].value = d[k] || '';
-    U.$('documentDialog').showModal();
+    for (const k of ['format', 'received', 'issued', 'expires', 'notes', 'review']) if (dform.elements[k]) dform.elements[k].value = d[k] || '';
+    dform.dataset.autoExp = d.expires && d.expires === D.docExpiry({ ...d, expires: '' }) ? '1' : '';
+    docRuleUi(); U.$('documentDialog').showModal();
   };
   dform.addEventListener('submit', e => {
     e.preventDefault(); const o = Object.fromEntries(new FormData(dform));
@@ -2715,8 +2760,29 @@ window.CP = window.CP || {};
         if (docs.link(p.id, kind || D.guessKind(f.name), format, path, 'main', { size: f.size, review: 'received' })) n++;
       } catch (err) { ui.toast('Neizdevās saglabāt ' + f.name + ': ' + err.message, 'err'); }
     }
-    if (n) { CP.store.changed(); ui.toast(`Pievienoti ${n} faili personas mapē. Oriģināli nav dzēsti.`, 'ok'); }
+    if (n) {
+      CP.store.changed();
+      const last = n === 1 && S.db.documents.find(x => x.id === docs.lastLinked);
+      // dokumentam ar derīguma termiņu (ārsta izziņa) uzreiz jautā izsniegšanas datumu
+      if (last && D.docRule(last.kind) && !last.issued) { A.editDoc(last.id); setTimeout(() => dform.elements.issued.focus(), 50); ui.toast(`${last.kind} pievienota. Norādi izsniegšanas datumu — rīks atgādinās, kad beidzas derīgums.`, 'ok', 8000); }
+      else ui.toast(`Pievienoti ${n} faili personas mapē. Oriģināli nav dzēsti.`, 'ok', 7000, last ? { act: 'editDoc', arg: last.id, label: '✎ Labot datus' } : null);
+    }
   };
+  /** Aizstāt dokumenta failu ar jaunu (vecais fails paliek mapē, ierakstā saglabājas versiju vēsture) */
+  let replaceId = null;
+  A.replaceDoc = id => { if (!S.root) return CP.needRoot?.(); replaceId = id; U.$('replaceFile').click(); };
+  U.$('replaceFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; const d = S.db.documents.find(x => x.id === replaceId); if (!f || !d) return;
+    const p = D.person(d.personId);
+    try {
+      await CP.store.ensurePersonYearFolder(p);
+      const path = await CP.store.saveFile(CP.store.yearPersonDir(p), f.name, f, { confirmConflict: true }); if (!path) return;
+      if (d.path) (d.versions = d.versions || []).push({ path: d.path, sourceId: d.sourceId || 'main', at: d.replacedAt || d.addedAt });
+      Object.assign(d, { path, sourceId: 'main', format: /\.edoc$/i.test(f.name) ? 'edoc' : (d.format === 'paper' ? 'pdf' : d.format || 'pdf'), size: f.size, replacedAt: U.now(), fileState: 'check', _live: null });
+      D.audit(d.personId, 'update', [`Aizstāts fails: ${d.kind}`]); CP.store.changed();
+      ui.toast('Fails aizstāts. Iepriekšējais fails paliek personas mapē.', 'ok', 7000, { act: 'editDoc', arg: d.id, label: '✎ Labot datus' });
+    } catch (err) { ui.toast('Neizdevās aizstāt: ' + err.message, 'err', 9000); }
+  });
   // Failu ievilkšana kartiņas dokumentu sarakstā
   document.addEventListener('dragover', e => { const z = e.target.closest?.('[data-drop]'); if (z) { e.preventDefault(); z.classList.add('over'); } });
   document.addEventListener('dragleave', e => { e.target.closest?.('[data-drop]')?.classList.remove('over'); });
@@ -4796,6 +4862,12 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.20.0', date: '2026-10-15', title: 'Ārsta izziņas termiņi un dokumentu labošana kartītē', items: [
+      'Pievienojot **ārsta izziņu**, rīks prasa **izsniegšanas datumu** un pats aprēķina derīgumu uz **12 mēnešiem**. Termiņu var labot.',
+      'Rīks atgādina: **30 dienas pirms** termiņa beigām, **mācību gada beigās** (izziņa der tikai savam mācību gadam) un **jaunā mācību gada sākumā**, ja jaunietis pārcelts, bet izziņa ir no iepriekšējā gada. Ja izziņai nav datuma, rīks lūdz to norādīt.',
+      'Kartītes sadaļā **Obligātie dokumenti** pie katra dokumenta ir pogas: **📄 atvērt, ✎ labot, ⇄ aizstāt failu, ✕ dzēst**. Trūkstošajiem dokumentiem ir pogas **＋ Fails** un **＋ Papīrs**.',
+      'Aizstājot failu, vecais paliek mapē. Dzēšot tiek noņemts tikai ieraksts, bet fails mapē paliek.'
+    ] },
     { v: '1.19.1', date: '2026-10-15', title: 'Skaidrs sākums: vispirms datu mape', items: [
       'Ja **datu mape nav pievienota**, pārskatā redzama tikai mapes pievienošana un 3 soļi, kā to izdarīt.',
       'Bez mapes nevar neko ievadīt: mēģinot pievienot personu, ievadīt anketu, importēt vai sagatavot veidlapu, rīks paskaidro, ka vispirms jāpievieno mape, un piedāvā pogu **Izvēlēties datu mapi**.',

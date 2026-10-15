@@ -152,8 +152,16 @@
         <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
     }).join('') || `<p class="muted small">Nav ievadīts neviens tālrunis vai e-pasts.</p><button class="sm" data-act="edit" data-arg="${p.id}" data-sec="contact">＋ Pievienot kontaktus</button>`;
     const req = S.db.settings.requiredDocs;
-    const docs = req.length ? `<div class="chips col">${req.map(k => `<span class="chip ${miss.includes(k) ? 'miss' : 'ok'}">${miss.includes(k) ? '✗' : '✓'} ${esc(k)}</span>`).join('')}</div>
-      ${miss.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-tab="docs">Pievienot</button>${cs.length ? `<button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt</button>` : ''}</div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
+    const reqRow = k => {
+      const list = S.db.documents.filter(d => d.personId === p.id && d.kind === k).sort((a, b) => String(D.docDate(b) || b.addedAt).localeCompare(String(D.docDate(a) || a.addedAt)));
+      const ok = !miss.includes(k), d = list.find(x => D.docValid(x)) || list[0];
+      const exp = d && D.docExpiry(d), info = d ? [d.issued ? 'izsniegts ' + U.fmtDate(d.issued) : (D.docRule(k) && !d.expires ? '⚠ nav norādīts izsniegšanas datums' : ''), exp && 'līdz ' + U.fmtDate(exp), !ok && (D.docRule(k)?.schoolYear && !D.docForYear(d, D.activeYear()) ? 'cita mācību gada' : exp && exp < U.iso() ? 'beidzies derīgums' : '')].filter(Boolean).join(' · ') : '';
+      return `<div class="reqdoc ${ok ? 'ok' : 'miss'}"><div class="grow"><b>${ok ? '✓' : '✗'} ${esc(k)}</b>${info ? `<div class="small muted">${esc(info)}</div>` : (d ? '' : '<div class="small muted">nav pievienots</div>')}</div>
+        <div class="reqdoc-btns">${d ? `${d.path ? `<button class="sm ghost" data-act="view" data-arg="${esc((d.sourceId || 'main') + '|' + d.path)}" title="Atvērt">📄</button>` : ''}<button class="sm ghost" data-act="editDoc" data-arg="${d.id}" title="Labot datus">✎</button><button class="sm ghost" data-act="replaceDoc" data-arg="${d.id}" title="Aizstāt failu">⇄</button><button class="sm ghost danger" data-act="delDoc" data-arg="${d.id}" title="Dzēst ierakstu">✕</button>` : ''}
+        ${!ok ? `<button class="sm" data-act="attach" data-arg="${p.id}|${esc(k)}" title="Pievienot failu">＋ Fails</button><button class="sm ghost" data-act="addDoc" data-arg="${p.id}|${esc(k)}" title="Reģistrēt papīra dokumentu">＋ Papīrs</button>` : ''}</div></div>`;
+    };
+    const docs = req.length ? `<div class="reqdocs">${req.map(reqRow).join('')}</div>
+      ${miss.length && cs.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt</button></div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
     const tools = CP.comms.toolLinks(p);
     const tasks = S.db.tasks.filter(t => t.personId === p.id && !t.done).sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9')));
     const dups = Object.keys(D.PHONE_FIELDS).flatMap(f => D.phoneMatches(p[f], p.id, f).filter(e => e.p.id !== p.id).map(e => ({ f, e })));
