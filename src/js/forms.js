@@ -31,24 +31,69 @@
 
   /* ---------------- Saraksts ---------------- */
   const evPeople = ev => (ev.participants || []).map(x => D.person(x.pid)).filter(Boolean);
+  /* Visas sagatavotās veidlapas vienā sarakstā: pasākumi (instruktāža, nometne) + līgumi no personu kartītēm */
+  const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' } };
+  const CVAR = { 'jaunietis-papirs': 'ar jaunieti, papīrs', 'parstavis-papirs': 'ar pārstāvi, papīrs', 'jaunietis-edoc': 'ar jaunieti, EDOC', 'parstavis-edoc': 'ar pārstāvi, EDOC' };
+  function allItems() {
+    const out = [];
+    for (const ev of S.db.events || []) {
+      const ps = evPeople(ev);
+      out.push({ kind: ev.type === 'camp' ? 'camp' : 'instr', id: ev.id, date: String(ev.dateFrom || ev.instrDate || ev.createdAt || '').slice(0, 10), title: ev.title || '(bez nosaukuma)', ev, ps,
+        hay: U.norm([ev.title, ev.when, ev.group, ...ps.map(U.full)].join(' ')) });
+    }
+    for (const p of S.db.people || []) for (const c of p.contracts || []) {
+      out.push({ kind: 'contract', id: c.id, date: String(c.date || c.at || '').slice(0, 10), title: `Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}`, p, c,
+        hay: U.norm([U.full(p), U.sortName(p), c.no, D.groupOf(p)].join(' ')) });
+    }
+    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+  let showN = 40;
   CP.pages.forms = {
     render() {
-      const evs = [...(S.db.events || [])].sort((a, b) => String(b.dateFrom || b.instrDate || b.createdAt).localeCompare(String(a.dateFrom || a.instrDate || a.createdAt)));
-      const row = ev => {
-        const ps = evPeople(ev), warn = ps.filter(p => D.eventDocIssues(p).length).length, T = TYPES[ev.type] || TYPES.instr;
-        return `<div class="row ev-row"><span class="feat-ic">${ic(T.icon)}</span><div class="grow"><b>${esc(ev.title || '(bez nosaukuma)')}</b>
-          <div class="small muted">${esc(T.short)} · ${esc(ev.when || U.fmtDate(ev.instrDate) || '')} · ${ps.length} dalībnieki${warn ? ` · <span class="warn">⚠ ${warn} bez dokumentiem</span>` : ''}</div></div>
+      const F = S.formFilter || (S.formFilter = { kind: '', q: '', from: '', to: '', year: '' });
+      const all = allItems(), [yf, yt] = F.year ? U.yearSpan(F.year) : ['', ''];
+      const base = all.filter(x => (!F.q || x.hay.includes(U.norm(F.q))) && (!F.from || x.date >= F.from) && (!F.to || x.date <= F.to) && (!F.year || (x.date >= yf && x.date <= yt)));
+      const list = base.filter(x => !F.kind || x.kind === F.kind);
+      const cnt = k => base.filter(x => x.kind === k).length;
+      const chip = (k, l) => `<button class="chipbtn ${F.kind === k ? 'on' : ''}" data-act="ffKind" data-arg="${k}">${l} <small>${k ? cnt(k) : base.length}</small></button>`;
+      const years = [...new Set(all.map(x => /^\d{4}-\d{2}-\d{2}$/.test(x.date) ? U.schoolYear(x.date + 'T12:00:00') : '').filter(y => /^\d{4}-\d{4}$/.test(y)))].sort().reverse();
+      const row = x => {
+        const K = KIND[x.kind];
+        if (x.kind === 'contract') {
+          const { p, c } = x;
+          return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
+            <div class="small muted"><a href="#" data-person="${p.id}">${esc(U.full(p))}</a> · ${esc(U.fmtDate(x.date))} · ${esc(CVAR[`${c.kind}-${c.form}`] || '')}</div></div>
+            ${c.path ? `<button class="sm" data-act="contractView" data-arg="${p.id}|${c.id}">${ic('file', '📄')} Skatīt / drukāt</button><button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">${ic('download', '⬇')} Word</button>` : ''}
+            <button class="sm ghost danger" data-act="contractDel" data-arg="${p.id}|${c.id}" title="Noņemt no saraksta">✕</button></div>`;
+        }
+        const ev = x.ev, ps = x.ps, warn = ps.filter(q => D.eventDocIssues(q).length).length;
+        return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
+          <div class="small muted">${esc(ev.when || U.fmtDate(ev.instrDate) || '')} · ${ps.length} dalībnieki${warn ? ` · <span class="warn">⚠ ${warn} bez dokumentiem</span>` : ''}</div></div>
           <button class="sm" data-act="formOpen" data-arg="${ev.id}">${ic('edit', '✎')} Atvērt</button><button class="sm" data-act="formPdf" data-arg="${ev.id}">${ic('file', '📄')} PDF</button><button class="sm ghost" data-act="formPrint" data-arg="${ev.id}">Drukāt</button>
           <button class="sm ghost danger" data-act="formDelete" data-arg="${ev.id}" title="Dzēst pasākumu">✕</button></div>`;
       };
-      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas un nometņu žurnāli no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button>`)}
+      const filtered = F.kind || F.q || F.from || F.to || F.year;
+      const filters = `<div class="ff-bar">
+          <input type="search" id="ffQ" placeholder="Meklēt: persona, nosaukums, līguma nr…" value="${esc(F.q)}" autocomplete="off">
+          <label class="small muted">No <input type="date" data-ff="from" value="${esc(F.from)}"></label><label class="small muted">Līdz <input type="date" data-ff="to" value="${esc(F.to)}"></label>
+          <select data-ff="year"><option value="">Visi mācību gadi</option>${years.map(y => `<option value="${y}" ${F.year === y ? 'selected' : ''}>${esc(U.yearLabel(y))}</option>`).join('')}</select>
+          ${filtered ? `<button class="sm ghost" data-act="ffClear">Notīrīt filtrus</button>` : ''}</div>
+        <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}</div>`;
+      const body = all.length ? (list.length ? list.slice(0, showN).map(row).join('') + (list.length > showN ? `<div class="actions" style="margin-top:8px"><button class="sm" data-act="ffMore">Rādīt vēl (${list.length - showN})</button></div>` : '') : '<p class="muted pad">Nekas neatbilst filtram.</p>')
+        : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa”, “Nometnes žurnāls” vai “Līgums”.');
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli un līgumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button>`)}
         <div class="cards2">
-          <section class="card wide"><h3>${ic('clipboard')}Pasākumi</h3>${evs.length ? evs.map(row).join('') : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa” vai “Nometnes žurnāls”.')}</section>
+          <section class="card wide"><h3>${ic('clipboard')}Sagatavotās veidlapas <span class="pill">${list.length}${list.length !== all.length ? ' no ' + all.length : ''}</span></h3>${all.length ? filters : ''}<div class="ev-list-all">${body}</div></section>
           <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>
           <section class="card"><h3>${ic('file')}Savas Word veidnes</h3>${tplCard()}</section>
         </div></div>`;
     }
   };
+  A.ffKind = k => { S.formFilter.kind = k || ''; showN = 40; CP.render(); };
+  A.ffClear = () => { S.formFilter = { kind: '', q: '', from: '', to: '', year: '' }; showN = 40; CP.render(); };
+  A.ffMore = () => { showN += 40; renderKeepScroll(); };
+  CP.inputHandlers.push(e => { if (e.target.id !== 'ffQ' || S.page !== 'forms') return false; S.formFilter.q = e.target.value; showN = 40; renderKeepFocus('ffQ'); return true; });
+  CP.changeHandlers.push(e => { const k = e.target.dataset?.ff; if (!k || S.page !== 'forms') return false; S.formFilter[k] = e.target.value; showN = 40; setTimeout(() => CP.render(), 0); return true; });
 
   /* ---------------- Darbinieku saraksts (saglabājas, var dzēst) ---------------- */
   function staffCard() {

@@ -8,6 +8,11 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.18.0', date: '2026-10-15', title: 'Visas veidlapas vienā sarakstā ar filtriem', items: [
+      'Lapā **Veidlapas** ir saraksts **Sagatavotās veidlapas**: instruktāžas lapas, nometņu žurnāli un **līgumi**.',
+      'Filtri: veids (Instruktāžas / Nometnes / Līgumi, ar skaitu), **datums no–līdz**, **mācību gads** un **meklēšana** pēc personas, nosaukuma vai līguma numura.',
+      'Līgumu var **apskatīt un izdrukāt** vai **lejupielādēt Word** failu tieši no saraksta, kā arī noņemt no saraksta. Fails personas mapē paliek.'
+    ] },
     { v: '1.17.2', date: '2026-10-15', title: 'Līgums: Jaunsardzes centra tālrunis', items: [
       'Līguma rekvizītos atkal ir Jaunsardzes centra tālrunis **67335388**. Iepriekš to kļūdaini aizstāja instruktora tālrunis.',
       'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.',

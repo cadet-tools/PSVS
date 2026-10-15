@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.18.0 — 2026-10-15 — Sagatavoto veidlapu saraksts ar filtriem
+- Veidlapas → **Sagatavotās veidlapas**: vienā sarakstā ir pasākumi (instruktāžas, nometnes) un visu personu sagatavotie līgumi. Jaunākie ir augšā, un sarakstā redzami 40 ieraksti ar pogu “Rādīt vēl”.
+- Filtri: veida pogas ar skaitu, datums no/līdz, mācību gads, meklēšana pēc personas vārda (arī pasākumu dalībniekiem), pasākuma nosaukuma, grupas vai līguma numura, un “Notīrīt filtrus”.
+- Līgumu rindās ir saite uz personu, poga “Skatīt / drukāt” (priekšskatījums no saglabātā Word faila), poga “Word” (lejupielāde) un poga ✕ (noņem ierakstu, bet fails paliek).
+
 ## 1.17.2 — 2026-10-15
 - Labojums: līguma rekvizītos Centra tālrunis “Tālrunis: 67335388” vairs netiek aizstāts ar instruktora tālruni. Tālruņi un e-pasti tiek ierakstīti tikai rindās ar tukšu līniju. Pārbaudīts visās četrās standarta veidnēs.
 - Standarta Word veidnes vairs netiek ņemtas no bezsaistes keša: adresē ir versija (`?v=`), un pakalpojuma darbinieks tās ielādē no tīkla. Iepriekš pēc atjauninājuma varēja tikt izmantota vecā veidne.

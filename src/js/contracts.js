@@ -248,6 +248,16 @@
     },
     FIELDS_HELP
   };
+  const findC = arg => { const [pid, cid] = String(arg).split('|'), p = D.person(pid); return { p, c: (p?.contracts || []).find(x => x.id === cid) }; };
+  A.contractView = async arg => {
+    const { c } = findC(arg); if (!c?.path) return;
+    try { const h = await CP.store.handleFor(c.path, 'main'); if (!h) return ui.toast('Fails personas mapē nav atrasts: ' + c.path, 'warn', 8000); await CP.printDocx(await h.getFile(), c.path.split('/').pop()); }
+    catch (e) { ui.toast('Neizdevās atvērt: ' + e.message, 'err', 9000); }
+  };
+  A.contractDel = arg => {
+    const { p, c } = findC(arg); if (!c || !confirm(`Noņemt “Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}” no saraksta?\n\nWord fails personas mapē paliek.`)) return;
+    p.contracts = p.contracts.filter(x => x.id !== c.id); D.audit(p.id, 'update', ['Noņemts līguma ieraksts']); CP.store.changed();
+  };
   A.contractOpen = async arg => {
     const [pid, cid] = String(arg).split('|'), p = D.person(pid), c = (p?.contracts || []).find(x => x.id === cid); if (!c) return;
     const h = await CP.store.handleFor(c.path, 'main'); if (!h) return ui.toast('Fails personas mapē nav atrasts: ' + c.path, 'warn', 8000);

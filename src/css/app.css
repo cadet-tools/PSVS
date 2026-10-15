@@ -423,3 +423,4 @@ textarea[data-autogrow],#noteText{field-sizing:content;min-height:2.6em;max-heig
 .print-pages .docx-holder section.docx{background:#fff;box-shadow:0 4px 18px #0006;margin:0}
 @media print{ #printSheet.docx-print section.docx{box-shadow:none!important;margin:0!important;page-break-after:always;break-after:page} #printSheet.docx-print section.docx:last-child{page-break-after:auto;break-after:auto} }
 .need{border-color:var(--amber,#f0b429)!important;box-shadow:0 0 0 2px rgba(240,180,41,.25)}
+.ff-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ff-bar input[type=search]{flex:1;min-width:220px}.ff-bar label{display:inline-flex;align-items:center;gap:6px}.ff-bar input[type=date]{width:auto}.ff-bar select{width:auto}
