@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.23.1 — 2026-10-15
+- “Nodarbību saraksts”: piezīmes tiek dalītas pa rindām un “;”. Segmentu datumi (`DD.MM`, `DD.MM.`, `DD.,DD.OKT`, `8. un 27. oktobrī`; gads pēc mācību gada) tiek pievienoti kā nodarbības ar rindas laiku un vietu. Segmenti ar “nenotiek / atcelts / nebūs / pārcelts” datumu noņem. Datuma segments ir šīs dienas piezīme; segmenti bez datumiem ir piezīme visām rindas dienām. Rinda tiek izlaista tikai tad, ja datumu nav ne kolonnās, ne piezīmēs.
+- Jaunsargu grupu nodarbības nosaukums ir “Jaunsardzes nodarbība <līmenis>”. Atslēga paliek pēc 1.23.0 nosaukuma (`keyTitle`), tāpēc atkārtotā importā tas ir “mainīts: nosaukums”.
+- Stundu kopsavilkumā: “Kontaktstundas (nodarbības + VAM)”.
+
 ## 1.23.0 — 2026-10-15 — Grafika imports no darba uzskaites Excel
 - Jauns modulis `js/schedimport.js`. Lasa .xlsm / .xlsx (makro netiek izpildīti, tiek lasītas formulu saglabātās vērtības). Tiek atvērtas tikai redzamās lapas, kurās atrasti vajadzīgie virsraksti; lielās slēptās palīglapas netiek atspiestas.
 - “Darba plāns_secīgi”: kolonnas pēc virsrakstiem (Datums no / Laiks no / Datums līdz / Laiks līdz, Mācību grupa, Pasākuma veids, Obligātais pasākums, Pasākuma nosaukums, Norises vieta, Vadītājs, Atbalsta personāls, Dalībnieki). Excel datumi (sērijas skaitļi) un laiki (dienas daļas) tiek pārvērsti; vairāku dienu notikumi saglabā sākuma un beigu laiku; prombūtne ir visu dienu, bez atgādinājumiem. “Darba plāns_Matrica” netiek lasīta (dublē secīgo).

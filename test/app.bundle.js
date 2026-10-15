@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.23.0';
+  CP.VERSION = '1.23.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4873,6 +4873,13 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.23.1', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [
+      'Importējot “Nodarbību saraksts”, rīks nolasa arī **datumus piezīmju kolonnā**: e-VAM **kontaktstundas** (piem., “08.,27.OKT”), **aizvietošanas** (“02.11. aizvieto …”) un mentorēšanas dienas. Tām tiek izmantots tās pašas rindas laiks un vieta.',
+      'Ja piezīmē rakstīts **“nenotiek”** (piem., “nenotiek 16.11”), šis datums netiek ielikts kalendārā vai tiek no tā noņemts.',
+      'Katrai dienai tiek pievienota tieši tās piezīme, bet vispārīgās piezīmes visām rindas nodarbībām.',
+      'Jaunsargu grupu nodarbības tagad sauc **“Jaunsardzes nodarbība 2.4.”**. Jau importētās tiks pārdēvētas nākamajā importā (kā “mainīts”, nevis no jauna).',
+      'Stundu kopsavilkumā rādītājs **“Kontaktstundas (nodarbības + VAM)”**.'
+    ] },
     { v: '1.23.0', date: '2026-10-15', title: 'Darba grafiks no Excel uzskaites tabulas', items: [
       'Sadaļā **Grafiks** var **ievilkt** instruktora darba uzskaites Excel failu (**.xlsm** / .xlsx) vai izvēlēties to ar pogu **Imports**. Rīks pats saliek kalendāru.',
       'Tiek nolasīta lapa **“Darba plāns_secīgi”** (pasākumi, semināri, metodiskais darbs, prombūtne ar datumiem un laikiem) un lapa **“Nodarbību saraksts”** (regulārās nodarbības no mēnešu kolonnām, ar laiku un vietu). Slēptās palīglapas un tukšās rindas ar “0” tiek izlaistas.',
@@ -8199,7 +8206,7 @@ window.CP = window.CP || {};
     const total = byType.reduce((a, b) => a + b.h, 0), max = Math.max(1, ...byType.map(x => x.h));
     const f = h => (Math.round(h * 100) / 100).toLocaleString('lv-LV');
     return `<section class="card"><div class="att-bar"><input type="month" id="schHoursM" value="${esc(m)}" style="width:auto"><span class="grow"></span><span class="small muted">Plānotās stundas pēc grafika (visu dienu notikumi netiek skaitīti stundās).</span></div>
-      <div class="kpis"><div class="kpi"><small>Stundas kopā</small><b>${f(total)}</b></div><div class="kpi"><small>Notikumi</small><b>${ev.length}</b></div><div class="kpi"><small>Nodarbības + VAM</small><b>${f(byType.filter(x => /Nodarbība/.test(x.t)).reduce((a, b) => a + b.h, 0))} h</b></div></div>
+      <div class="kpis"><div class="kpi"><small>Stundas kopā</small><b>${f(total)}</b></div><div class="kpi"><small>Notikumi</small><b>${ev.length}</b></div><div class="kpi"><small>Kontaktstundas (nodarbības + VAM)</small><b>${f(byType.filter(x => /Nodarbība/.test(x.t)).reduce((a, b) => a + b.h, 0))} h</b></div></div>
       ${byType.map(x => `<div class="gbar"><span class="gname"><i class="sch-dot" style="background:${x.c}"></i>${esc(x.t)}</span><span class="gtrack"><span style="width:${x.h / max * 100}%;background:${x.c}"></span></span><b>${f(x.h)} h</b><small class="muted">${x.n}×</small></div>`).join('') || ui.empty('Šajā mēnesī nav notikumu.')}</section>
       ${ev.length ? `<section class="card"><h3>${ic('list')}Notikumi</h3><table class="table"><thead><tr><th>Datums</th><th>Laiks</th><th>Notikums</th><th>Veids</th><th>Stundas</th></tr></thead><tbody>${ev.map(e => `<tr><td class="nowrap">${esc(U.fmtDate(e.date))} <small class="muted">${WD[wd(e.date)]}</small></td><td class="nowrap">${esc(timeTxt(e))}</td><td><a href="#" data-act="schEdit" data-arg="${e.id}">${esc(e.title)}</a>${e.place ? ` <small class="muted">· ${esc(e.place)}</small>` : ''}</td><td><span class="tag">${esc(e.type)}</span></td><td>${e.allDay ? '—' : f(hours(e))}</td></tr>`).join('')}</tbody></table></section>` : ''}`;
   }
@@ -8557,6 +8564,17 @@ window.CP = window.CP || {};
     return { events: out, skipped };
   }
 
+  /* Datumi piezīmē: “13.11.”, “04.11”, “08.,27.OKT”, “8. un 27. oktobrī” → [[mēnesis 0–11, diena]] */
+  const MAB = { jan: 0, feb: 1, mar: 2, apr: 3, mai: 4, maij: 4, jūn: 5, jun: 5, jūl: 6, jul: 6, aug: 7, sep: 8, okt: 9, nov: 10, dec: 11 };
+  function noteDates(seg) {
+    const out = [], t = seg.replace(/LV-\d{4}/gi, '');
+    for (const m of t.matchAll(/(?<![\d.])(\d{1,2})\.(\d{1,2})\.?(?![\d])/g)) { const d = +m[1], mo = +m[2]; if (m[1].length === 2 || m[2].length === 2) if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) out.push([mo - 1, d]); }
+    for (const m of t.matchAll(/((?:\d{1,2}\.?\s*(?:,|un|un\.)\s*)*\d{1,2})\.?\s*(jan|feb|mar|apr|maij|mai|jūn|jun|jūl|jul|aug|sep|okt|nov|dec)\p{L}*/giu)) {
+      const mo = MAB[m[2].toLowerCase()]; for (const d of (m[1].match(/\d{1,2}/g) || []).map(Number)) if (d >= 1 && d <= 31) out.push([mo, d]);
+    }
+    return out;
+  }
+
   /* --- Lapa “Nodarbību saraksts” --- */
   function parseLessons(rows) {
     const h = findHead(rows, ['Septembris', 'laiks no']); if (h < 0) return null;
@@ -8571,20 +8589,28 @@ window.CP = window.CP || {};
       const R = rows[r] || [], g = i => i >= 0 ? R[i] : '';
       const lvl = clean(g(c.lvl)), name = clean(g(c.name)); if (!lvl && !name) continue;
       const t0 = typeOf(lvl, '', name), type = t0 === 'Cits' ? 'Nodarbība' : t0, start = timeOf(g(c.t1)), end = timeOf(g(c.t2));
-      const title = type === 'VAM nodarbība' ? [lvl, name].filter(Boolean).join(' ') : type === 'Metodiskais darbs' ? [lvl, name].filter(Boolean).join(' — ') : `Nodarbība ${lvl}${name ? ' ' + name : ''}`;
-      const place = [clean(g(c.place)), clean(g(c.addr))].filter(Boolean).join(', '), notes = clean(g(c.note));
-      let n = 0;
+      const title = type === 'VAM nodarbība' ? [lvl, name].filter(Boolean).join(' ') : type === 'Metodiskais darbs' ? [lvl, name].filter(Boolean).join(' — ') : `Jaunsardzes nodarbība ${lvl}${name ? ' ' + name : ''}`;
+      // atslēga paliek kā 1.23.0 (“Nodarbība 2.4.”), lai atkārtotā importā pārdēvēšana būtu “mainīts”, nevis “dzēsts + jauns”
+      const keyTitle = type === 'Nodarbība' ? `Nodarbība ${lvl}${name ? ' ' + name : ''}` : title;
+      const place = [clean(g(c.place)), clean(g(c.addr))].filter(Boolean).join(', ');
+      const iso = (mi, d) => { const x = `${mi >= 8 ? y1 : y1 + 1}-${String(mi + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; return new Date(x + 'T12:00:00').getMonth() === mi ? x : ''; };
+      const dates = new Map();                      // datums → piezīme konkrētajai dienai
       for (const m of months) {
         const cell = String(g(m.c) ?? '').trim(); if (!cell || cell === '0') continue;
         const days = /^\d+(\.\d+)?$/.test(cell) && Number(cell) > 31 ? [] : (cell.match(/\d{1,2}/g) || []).map(Number).filter(d => d >= 1 && d <= 31);
-        const yr = m.i >= 8 ? y1 : y1 + 1;
-        for (const d of days) {
-          const iso = `${yr}-${String(m.i + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-          if (new Date(iso + 'T12:00:00').getMonth() !== m.i) continue;
-          out.push({ src: 'les', title, type, date: iso, endDate: '', allDay: !start, start, end: start && end > start ? end : '', place, notes, row: r + 1 }); n++;
-        }
+        for (const d of days) { const x = iso(m.i, d); if (x) dates.set(x, ''); }
       }
-      if (!n) skipped.push({ row: r + 1, why: 'mēnešu kolonnās nav datumu', text: title });
+      // Piezīmes: papildu datumi (kontaktstundas, aizvietošana) un “nenotiek” — pa rindām / “;”
+      const general = [], fromCols = dates.size;
+      for (const seg of String(g(c.note) ?? '').split(/[;\n]+/).map(x => x.replace(/\s+/g, ' ').trim()).filter(x => x && x !== '0')) {
+        const found = noteDates(seg).map(([mi, d]) => iso(mi, d)).filter(Boolean);
+        if (!found.length) { general.push(seg); continue; }
+        if (/nenotiek|atcel|nebūs|pārcelt/i.test(seg)) { for (const x of found) dates.delete(x); continue; }
+        for (const x of found) dates.set(x, [dates.get(x), seg].filter(Boolean).join('; '));
+      }
+      for (const [d, own] of [...dates].sort()) out.push({ src: 'les', title, type, date: d, endDate: '', allDay: !start, start, end: start && end > start ? end : '', place, notes: [own, ...general].filter(Boolean).join('\n'), row: r + 1, keyTitle, fromNote: !!own && fromCols === 0 });
+      const n = dates.size;
+      if (!n) skipped.push({ row: r + 1, why: 'nav datumu ne mēnešu kolonnās, ne piezīmēs', text: title });
     }
     return { events: out, skipped, year: `${y1}./${y1 + 1}.` };
   }
@@ -8600,7 +8626,7 @@ window.CP = window.CP || {};
     if (!plan && !les) throw Error('failā netika atrastas lapas “Darba plāns_secīgi” vai “Nodarbību saraksts” ar gaidītajiem virsrakstiem');
     // atslēgas: avots + datums + nosaukums (+ kārtas nr., ja vienā dienā vairāki vienādi)
     const all = [...(plan?.events || []), ...(les?.events || [])], seen = {};
-    for (const e of all) { const k = `${e.src}|${e.date}|${norm(e.title)}`; seen[k] = (seen[k] || 0) + 1; e.ikey = seen[k] > 1 ? `${k}#${seen[k]}` : k; }
+    for (const e of all) { const k = `${e.src}|${e.date}|${norm(e.keyTitle || e.title)}`; seen[k] = (seen[k] || 0) + 1; e.ikey = seen[k] > 1 ? `${k}#${seen[k]}` : k; }
     return { name: file.name, events: all, skipped: [...(plan?.skipped || []), ...(les?.skipped || [])], planSheet, lesSheet, year: les?.year || '' };
   }
 
