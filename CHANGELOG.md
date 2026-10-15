@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.18.1 — 2026-10-15 — Līgumu labošana un versijas
+- Kopā ar līgumu tiek saglabāti visi līguma loga dati (veids, forma, veidne, pārstāvis, Nr., datumi, vieta, labotie lauki). **✎ Labot** (sarakstā Veidlapas un personas kartītē) atver logu ar šiem datiem.
+- Saglabājot labojumus, tiek izveidots jauns Word fails, un ieraksts norāda uz jaunāko versiju. Iepriekšējais fails netiek pārrakstīts (`versions` vēsture).
+- **⬆ Ielādēt labotu**: Word programmā labotu .docx failu var ielādēt kā jaunu versiju (`… (labots DD.MM.GGGG).docx` personas mapē).
+- Sarakstā redzams “labots DD.MM.GGGG (N. versija)”. Labojot personu mainīt nevar.
+
 ## 1.18.0 — 2026-10-15 — Sagatavoto veidlapu saraksts ar filtriem
 - Veidlapas → **Sagatavotās veidlapas**: vienā sarakstā ir pasākumi (instruktāžas, nometnes) un visu personu sagatavotie līgumi. Jaunākie ir augšā, un sarakstā redzami 40 ieraksti ar pogu “Rādīt vēl”.
 - Filtri: veida pogas ar skaitu, datums no/līdz, mācību gads, meklēšana pēc personas vārda (arī pasākumu dalībniekiem), pasākuma nosaukuma, grupas vai līguma numura, un “Notīrīt filtrus”.

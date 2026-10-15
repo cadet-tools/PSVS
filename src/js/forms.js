@@ -62,8 +62,10 @@
         if (x.kind === 'contract') {
           const { p, c } = x;
           return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
-            <div class="small muted"><a href="#" data-person="${p.id}">${esc(U.full(p))}</a> · ${esc(U.fmtDate(x.date))} · ${esc(CVAR[`${c.kind}-${c.form}`] || '')}</div></div>
+            <div class="small muted"><a href="#" data-person="${p.id}">${esc(U.full(p))}</a> · ${esc(U.fmtDate(x.date))} · ${esc(CVAR[`${c.kind}-${c.form}`] || '')}${c.editedAt ? ` · labots ${esc(U.fmtDate(c.editedAt.slice(0, 10)))} (${(c.versions || []).length + 1}. versija)` : ''}</div></div>
+            <button class="sm" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Atvērt līguma datus un sagatavot jaunu versiju">${ic('edit', '✎')} Labot</button>
             ${c.path ? `<button class="sm" data-act="contractView" data-arg="${p.id}|${c.id}">${ic('file', '📄')} Skatīt / drukāt</button><button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">${ic('download', '⬇')} Word</button>` : ''}
+            <button class="sm ghost" data-act="contractUpload" data-arg="${p.id}|${c.id}" title="Ielādēt Word programmā labotu līgumu kā jaunu versiju">${ic('upload', '⬆')} Ielādēt labotu</button>
             <button class="sm ghost danger" data-act="contractDel" data-arg="${p.id}|${c.id}" title="Noņemt no saraksta">✕</button></div>`;
         }
         const ev = x.ev, ps = x.ps, warn = ps.filter(q => D.eventDocIssues(q).length).length;

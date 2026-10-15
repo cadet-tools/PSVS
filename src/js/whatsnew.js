@@ -8,6 +8,11 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.18.1', date: '2026-10-15', title: 'Līgumu labošana', items: [
+      '**✎ Labot** atver līgumu ar visiem iepriekš ievadītajiem datiem: numuru, datumu, pārstāvi, adresēm u.c. Pēc izmaiņām tiek sagatavota **jauna versija**.',
+      '**⬆ Ielādēt labotu** ielādē Word programmā labotu līgumu, un tas kļūst par jaunāko versiju.',
+      'Vecās versijas netiek pārrakstītas, tās paliek personas mapē. Sarakstā redzams, kad līgums labots un kura tā ir versija.'
+    ] },
     { v: '1.18.0', date: '2026-10-15', title: 'Visas veidlapas vienā sarakstā ar filtriem', items: [
       'Lapā **Veidlapas** ir saraksts **Sagatavotās veidlapas**: instruktāžas lapas, nometņu žurnāli un **līgumi**.',
       'Filtri: veids (Instruktāžas / Nometnes / Līgumi, ar skaitu), **datums no–līdz**, **mācību gads** un **meklēšana** pēc personas, nosaukuma vai līguma numura.',

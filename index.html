@@ -806,10 +806,11 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 <datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
 <dialog id="contractDialog" class="wide">
-  <header class="dlg-head"><h2>Līgums par dalību Jaunsardzē</h2><button type="button" class="ghost" data-close="contractDialog" aria-label="Aizvērt">✕</button></header>
+  <header class="dlg-head"><h2 id="contractTitle">Līgums par dalību Jaunsardzē</h2><button type="button" class="ghost" data-close="contractDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body" id="contractBody"></div>
-  <footer class="dlg-foot"><span class="muted small">Word failu pēc tam var atvērt, labot un pārsūtīt.</span><span class="grow"></span><button type="button" data-close="contractDialog">Aizvērt</button><button type="button" data-act="contractPreview">Priekšskatīt / drukāt</button><button type="button" class="mainbtn" data-act="contractWord">Sagatavot Word failu</button></footer>
+  <footer class="dlg-foot"><span class="muted small">Word failu pēc tam var atvērt, labot un pārsūtīt.</span><span class="grow"></span><button type="button" data-close="contractDialog">Aizvērt</button><button type="button" data-act="contractPreview">Priekšskatīt / drukāt</button><button type="button" class="mainbtn" id="contractWordBtn" data-act="contractWord">Sagatavot Word failu</button></footer>
 </dialog>
+<input type="file" id="ctUpload" accept=".docx" hidden>
 <dialog id="printDialog" class="wide print-dlg">
   <header class="dlg-head"><h2>Drukas priekšskatījums</h2><span class="muted small" id="printInfo"></span><span class="grow"></span><button type="button" class="ghost" data-close="printDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body"><div id="printPages" class="print-pages"></div></div>
@@ -1019,5 +1020,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.18.0"></script></body>
+<script src="app.bundle.js?v=1.18.1"></script></body>
 </html>

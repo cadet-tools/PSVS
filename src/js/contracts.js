@@ -54,6 +54,7 @@
   const relText = f => f.p_rel === 'cits' ? (f.p_rel_other || '').trim() : (f.p_rel || '');
   const dateLvSp = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[1]}. gada ${+m[3]}. ${MONTHS_LOC[m[2] - 1]}` : ''; };
 
+  const findC = arg => { const [pid, cid] = String(arg).split('|'), p = D.person(pid); return { p, c: (p?.contracts || []).find(x => x.id === cid) }; };
   /* --- Dialogs --- */
   let cur = null;   // { pid, kind, form, tpl, parent, no, date, place, fields:{} }
   function personData(p, parentIdx) {
@@ -73,8 +74,44 @@
     const age = p ? U.age(p.birth) : null;
     cur = { pid: p ? p.id : '', kind: age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
       parent: 1, no: p?.contractNo || '', date: U.iso(), place: inst().place || '', signMode: inst().signMode || 'same', signDate: '', fields: p ? personData(p, 1) : {} };
-    renderDialog(); U.$('contractDialog').showModal();
+    openDlg();
   };
+  const PARAMS = ['kind', 'form', 'tpl', 'parent', 'no', 'date', 'place', 'signMode', 'signDate'];
+  const snapshot = () => ({ ...Object.fromEntries(PARAMS.map(k => [k, cur[k]])), fields: { ...cur.fields } });
+  function openDlg() {
+    const ed = !!cur.editId;
+    U.$('contractTitle').textContent = ed ? 'Labot līgumu' : 'Līgums par dalību Jaunsardzē';
+    U.$('contractWordBtn').textContent = ed ? 'Saglabāt izmaiņas (jauna versija)' : 'Sagatavot Word failu';
+    renderDialog(); U.$('contractDialog').showModal();
+  }
+  /** Labot: atver logu ar iepriekš ievadītajiem datiem; saglabājot rodas jauna versija (vecais fails netiek pārrakstīts) */
+  A.contractEdit = arg => {
+    const { p, c } = findC(arg); if (!c) return;
+    const base = personData(p, c.params?.parent || 1);
+    cur = { pid: p.id, kind: c.kind, form: c.form, tpl: '', parent: 1, no: c.no || p.contractNo || '', date: c.date || U.iso(), place: inst().place || '', signMode: inst().signMode || 'same', signDate: '',
+      ...(c.params || {}), fields: { ...base, ...(c.params?.fields || {}) }, editId: c.id };
+    if (U.$('printDialog').open) U.$('printDialog').close();
+    openDlg();
+  };
+  /** Ielādēt Word programmā labotu līgumu kā jaunu versiju */
+  let upTarget = null;
+  A.contractUpload = arg => { if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn'); upTarget = arg; U.$('ctUpload').click(); };
+  U.$('ctUpload').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !upTarget) return;
+    if (!/\.docx$/i.test(f.name)) return ui.toast('Ielādē Word .docx failu', 'warn');
+    const { p, c } = findC(upTarget); if (!c) return;
+    try {
+      const base = (c.path ? c.path.split('/').pop() : `Līgums ${U.full(p)}.docx`).replace(/( \(labots [^)]*\))*(\s\(\d+\))?\.docx$/i, '');
+      const path = await CP.store.saveFile(CP.store.yearPersonDir(p), `${base} (labots ${U.fmtDate(U.iso())}).docx`, f);
+      newVersion(c, path, 'ielādēts labots fails');
+      D.audit(p.id, 'update', ['Ielādēts labots līgums' + (c.no ? ' Nr. ' + c.no : '')]);
+      CP.store.changed(); ui.toast('Labotais līgums saglabāts kā jauna versija. Iepriekšējā versija paliek mapē.', 'ok', 7000);
+    } catch (err) { ui.toast('Neizdevās saglabāt: ' + err.message, 'err', 9000); }
+  });
+  function newVersion(c, path, how) {
+    (c.versions = c.versions || []).push({ path: c.path, at: c.editedAt || c.at });
+    c.path = path; c.editedAt = U.now(); c.editHow = how;
+  }
   function renderDialog() {
     const c = cur, p = D.person(c.pid), I = inst(), age = p ? U.age(p.birth) : null, f = c.fields;
     const own = (S.db.settings.docTemplates || []).filter(t => t.type === 'contract');
@@ -91,7 +128,7 @@
     if (!I.name || !I.parvalde || !I.nodala) warn.push('aizpildi instruktora datus');
     U.$('contractBody').innerHTML = `
       <div class="fieldgrid">
-        <div class="field wide"><label>Persona</label><select id="ctPerson"><option value="">— izvēlies —</option>${people.map(x => opt(x.id, `${U.sortName(x)}${D.groupOf(x) ? ' · ' + D.groupOf(x) : ''}`, c.pid)).join('')}</select>
+        <div class="field wide"><label>Persona</label><select id="ctPerson" ${c.editId ? "disabled title=\"Labojot personu mainīt nevar\"" : ""}><option value="">— izvēlies —</option>${people.map(x => opt(x.id, `${U.sortName(x)}${D.groupOf(x) ? ' · ' + D.groupOf(x) : ''}`, c.pid)).join('')}</select>
           ${p ? `<small class="muted">${age != null ? `${age} g.` : 'dzimšanas datums nav zināms'} — ${age != null && age >= 18 ? 'pilngadīgs: līgums ar jaunieti' : 'nepilngadīgs: līgums ar likumisko pārstāvi'}</small>` : ''}</div>
         <div class="field"><label>Līguma veids</label><select data-cc="kind">${opt('parstavis', 'Ar likumisko pārstāvi (līdz 18 g.)', c.kind)}${opt('jaunietis', 'Ar jaunieti (no 18 g.)', c.kind)}</select></div>
         <div class="field"><label>Forma</label><select data-cc="form">${opt('papirs', 'Papīra forma (parakstīt ar roku)', c.form)}${opt('edoc', 'EDOC (e-paraksts)', c.form)}</select></div>
@@ -208,9 +245,17 @@
       U.download(blob, name); remember();
       if (S.root) {
         const path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
-        (p.contracts = p.contracts || []).push({ id: U.uid(), no: cur.no || '', date: cur.date, kind: cur.kind, form: cur.form, path, at: U.now() });
-        D.audit(p.id, 'update', ['Sagatavots līgums' + (cur.no ? ' Nr. ' + cur.no : '')]);
-        ui.toast('Līgums sagatavots. Kopija saglabāta personas mapē — to var atvērt un labot Word programmā.', 'ok', 8000);
+        const old = cur.editId && (p.contracts || []).find(x => x.id === cur.editId);
+        if (old) {
+          newVersion(old, path, 'labots rīkā'); Object.assign(old, { no: cur.no || '', date: cur.date, kind: cur.kind, form: cur.form, params: snapshot() });
+          D.audit(p.id, 'update', ['Labots līgums' + (cur.no ? ' Nr. ' + cur.no : '')]);
+          ui.toast('Izmaiņas saglabātas kā jauna līguma versija. Iepriekšējā versija paliek personas mapē.', 'ok', 8000);
+          U.$('contractDialog').close();
+        } else {
+          (p.contracts = p.contracts || []).push({ id: U.uid(), no: cur.no || '', date: cur.date, kind: cur.kind, form: cur.form, path, at: U.now(), params: snapshot() });
+          D.audit(p.id, 'update', ['Sagatavots līgums' + (cur.no ? ' Nr. ' + cur.no : '')]);
+          ui.toast('Līgums sagatavots. Kopija saglabāta personas mapē — to var atvērt un labot Word programmā.', 'ok', 8000);
+        }
       }
       CP.store.changed();
     } catch (e) { console.error(e); ui.toast('Līgumu neizdevās sagatavot: ' + e.message, 'err', 10000); }
@@ -243,12 +288,11 @@
       const list = [...(p.contracts || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
       return `<section class="card"><h3>${CP.ic('file', '📄')}Līgums</h3>
         ${p.contractNo ? `<p class="small" style="margin:0 0 6px">Līguma Nr.: <b>${esc(p.contractNo)}</b></p>` : ''}
-        ${list.slice(0, 4).map(c => `<div class="row"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div>${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}</div>`).join('')}
+        ${list.slice(0, 4).map(c => `<div class="row"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div><button class="sm ghost" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Labot">✎</button>${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}</div>`).join('')}
         <div class="actions" style="margin-top:8px"><button class="sm mainbtn" data-act="contractNew" data-arg="${p.id}">${CP.ic('file', '📄')} Sagatavot līgumu</button></div></section>`;
     },
     FIELDS_HELP
   };
-  const findC = arg => { const [pid, cid] = String(arg).split('|'), p = D.person(pid); return { p, c: (p?.contracts || []).find(x => x.id === cid) }; };
   A.contractView = async arg => {
     const { c } = findC(arg); if (!c?.path) return;
     try { const h = await CP.store.handleFor(c.path, 'main'); if (!h) return ui.toast('Fails personas mapē nav atrasts: ' + c.path, 'warn', 8000); await CP.printDocx(await h.getFile(), c.path.split('/').pop()); }
