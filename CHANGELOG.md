@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.17.2 — 2026-10-15
+- Labojums: līguma rekvizītos Centra tālrunis “Tālrunis: 67335388” vairs netiek aizstāts ar instruktora tālruni. Tālruņi un e-pasti tiek ierakstīti tikai rindās ar tukšu līniju. Pārbaudīts visās četrās standarta veidnēs.
+- Ja līgums sagatavots ar 1.17.0 vai 1.17.1, Centra tālrunis tajā jāizlabo ar roku vai līgums jāsagatavo no jauna.
+
 ## 1.17.1 — 2026-10-15 — Līguma labojumi
 - Datu lauki standarta veidnēs (vārdi, personas koda cipari, adreses, amats, instruktora vārds, vieta) ir centrēti un rakstīti Times New Roman 12,5 pt taisnā šriftā, kā dokumenta teksts.
 - Instruktora paraksta datums (papīra līgumos), piem., “2026. gada 15. oktobrī”: tāds pats kā līguma datums, cits datums vai tukšs. Izvēle tiek atcerēta.
