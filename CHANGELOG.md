@@ -1,5 +1,17 @@
 # Izmaiņu vēsture
 
+## 1.22.0 — 2026-10-15 — Grafiks
+- Jauns modulis `js/schedule.js` un lapa “Grafiks” (cilnes: kalendārs, stundu kopsavilkums, atgādinājumi un Google). Grafiks nav saistīts ar personu datiem.
+- Dati: `db.schedule = [{ id, title, type, date, endDate, allDay, start, end, place, notes, remind[min], seriesId, gcalId, gsig }]`, `db.scheduleDel` (Google kalendārā vēl jādzēš). Iestatījumi: `gcal { clientId, calendarId, lastSync }`, `notify { events, alerts }`, `schDefaultRemind`.
+- Skati: mēnesis (6×7), nedēļa (7:00–22:00, pārklāšanās joslās, visu dienu josla, “tagad” līnija), saraksts (60 dienas). Veidi ar krāsām: Nodarbība, VAM nodarbība, Pasākums, Nometne, Sacensības, Sapulce / apmācības, Administratīvais darbs, Cits.
+- Iknedēļas atkārtojums izveido atsevišķus notikumus ar `seriesId` (līdz 200). Labojot var piemērot nākamajiem; var dzēst šo un nākamos, kā arī kopēt uz nākamo nedēļu.
+- Atgādinājumi: pārbaude ik 30 s, kamēr rīks ir atvērts. Paziņojums rīkā + `Notification` caur SW `showNotification`; klikšķis atver rīku vajadzīgajā sadaļā (`notificationclick` → `cp-open`). Parādītie atgādinājumi tiek atzīmēti `localStorage` (`cp.schNotified`). Brīdinājumu kopsavilkums uz darbvirsmas reizi dienā par jaunajiem.
+- Google Calendar: OAuth 2.0 token plūsma uznirstošā logā (`oauth.html` + `oauth.js` → `BroadcastChannel('cp-oauth')`), tvērums `calendar.app.created` (tikai rīka izveidotais kalendārs). Tiek izveidots kalendārs “Jaunsardze — darba grafiks”. Notikumi tiek pievienoti / atjaunoti (PUT, ja mainījies paraksts `gsig`) / dzēsti; Rīgas laika zona, atgādinājumi `popup`, krāsas pēc veida. Pēc pirmās sinhronizācijas izmaiņas tiek nosūtītas automātiski, kamēr piekļuve ir derīga. CSP `connect-src` papildināts ar `https://www.googleapis.com`.
+- `.ics` eksports (VTIMEZONE Europe/Riga, VALARM, visu dienu / vairāku dienu notikumi).
+- Pārskatā ir kartīte “Grafiks — tuvākās 7 dienas”. Poga “Imports” rāda paziņojumu, ka funkcija tiek gatavota.
+- `CP.render` vairs neizsauc sevi atkārtoti zīmēšanas laikā (piem., blur → change); otrā zīmēšana notiek uzreiz pēc pirmās.
+- Apmeklējuma un grafika stili izmanto tēmas mainīgos (strādā gan tumšajā, gan gaišajā tēmā). Apmeklējuma navigācijas ikona ir nomainīta.
+
 ## 1.21.1 — 2026-10-15
 - Apmeklējuma tabulā var ievadīt ar tastatūru. Klikšķis fokusē rūtiņu un tāpat kā līdz šim maina atzīmi. Taustiņi `+`/`=`/`B`/`1`/`P` → bija, `N` `K` `A` `S`; `Del`/`Backspace`/`0`/`-` notīra; atstarpe = klikšķis; bultiņas, `Enter`, `Tab`, `Home`/`End` pārvietojas; `Esc` noņem fokusu.
 - Pēc atzīmes fokuss pāriet uz leju (nākamā persona) vai pa labi (nākamais datums). Izvēle tiek saglabāta `localStorage` (`cp.attDir`).

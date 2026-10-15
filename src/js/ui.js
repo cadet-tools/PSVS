@@ -37,7 +37,7 @@
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums' };
+  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -85,7 +85,15 @@
   const noRootPage = () => `<div class="page">${ui.pageHead(PAGE_NAMES[S.page] || 'Rīks', '')}<section class="card hero noroot"><h2>📁 Nav pievienota datu mape</h2>
       <p>Šī sadaļa strādā tikai ar pievienotu datu mapi. Rīks tajā glabā personu kartītes, dokumentus un veidlapas.</p>${ui.rootSteps()}
       <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${U.esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : '<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>'}</div>${ui.rootDrop()}</section></div>`;
+  /** Ja zīmēšanas laikā kāds notikums (piem., lauka blur → change) prasa jaunu zīmēšanu, tā notiek uzreiz pēc tam, nevis iekšā */
+  let rendering = false, again = false;
   CP.render = () => {
+    if (rendering) { again = true; return; }
+    rendering = true;
+    try { renderNow(); } finally { rendering = false; }
+    if (again) { again = false; queueMicrotask(CP.render); }
+  };
+  const renderNow = () => {
     if (CP.D2) CP.theme.apply();
     if (S.root && !CP._watchLoaded && CP.watchReload) { CP._watchLoaded = true; CP.watchReload(); }
     renderNav(); renderSide();

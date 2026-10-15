@@ -20,3 +20,13 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })));
   }
 });
+/* Paziņojuma klikšķis: atver (vai fokusē) rīka logu un pāriet uz vajadzīgo sadaļu */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const page = e.notification.data?.page || 'dashboard';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const c = list.find(x => x.url.startsWith(self.registration.scope));
+    if (c) { c.postMessage({ type: 'cp-open', page }); return c.focus(); }
+    return self.clients.openWindow(self.registration.scope);
+  }));
+});

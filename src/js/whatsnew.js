@@ -10,6 +10,16 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.22.0', date: '2026-10-15', title: 'Grafiks: darba kalendārs ar atgādinājumiem un Google kalendāru', items: [
+      'Jauna sadaļa **Grafiks** (📅 kreisajā joslā). Tas ir instruktora darba kalendārs: **nodarbības, VAM nodarbības, pasākumi, nometnes, sacensības, sapulces** un administratīvais darbs, katram veidam sava krāsa.',
+      'Skati: **Mēnesis**, **Nedēļa** (pa stundām, ar sarkanu līniju “tagad”) un **Saraksts**. Klikšķis uz dienas vai stundas izveido notikumu, klikšķis uz notikuma to atver labošanai.',
+      'Notikumam ir **datums, laiks no–līdz** (vai visa diena, arī vairākas dienas, piem., nometnei), vieta un piezīmes. **Atkārtot katru nedēļu** izveido visu sēriju uzreiz, un izmaiņas var piemērot arī nākamajiem sērijas notikumiem.',
+      '**Atgādinājumi** (piem., 1 h un 1 dienu iepriekš) parādās rīkā un, ja atļauj, arī **uz darbvirsmas**. Pēc izvēles uz darbvirsmas reizi dienā parādās arī jaunie brīdinājumi par dokumentiem un kavējumiem.',
+      '**Google kalendārs:** poga “Sinhronizēt ar Google” izveido atsevišķu kalendāru “Jaunsardze — darba grafiks” un tālāk pati atjauno izmaiņas, tāpēc grafiks un atgādinājumi ir redzami arī **telefonā**. Vienreizējai iestatīšanai ir instrukcija. Uz Google tiek sūtīti tikai notikumi, nevis personu dati.',
+      'Bez Google iestatīšanas grafiku var lejupielādēt kā **kalendāra failu (.ics)**.',
+      '**Stundu kopsavilkums** par mēnesi: plānotās stundas pa veidiem.',
+      'Pārskatā ir jauna kartīte **“Grafiks — tuvākās 7 dienas”**. Poga **Imports** (darba grafiks no Excel) jau ir vietā; pati funkcija tiks pielāgota instruktoru uzskaites veidnei.'
+    ] },
     { v: '1.21.1', from: '1.21.0', date: '2026-10-15', title: 'Apmeklējuma atzīmēšana ar tastatūru', items: [
       'Mēneša tabulā atzīmes var ievadīt ar **tastatūru**. Uzklikšķini uz rūtiņas un raksti **+** (vai **B**), **N**, **K**, **A** vai **S**. Atzīme tiek ierakstīta, un fokuss pāriet uz nākamo rūtiņu.',
       'Izvēlies, kur pāriet pēc atzīmes: **↓ nākamā persona** (ērti, atzīmējot vienu nodarbību) vai **→ nākamais datums**. Izvēle tiek atcerēta.',

@@ -13,7 +13,7 @@ for n in os.listdir(repo):
     p = os.path.join(repo, n); shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; "
-       "connect-src 'self' blob: data: https://vision.googleapis.com; worker-src 'self' blob:; frame-src 'self' blob:; "
+       "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com; worker-src 'self' blob:; frame-src 'self' blob:; "
        "object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'")
 
 def build(channel, out, vendor_rel, design=''):
@@ -45,6 +45,15 @@ def build(channel, out, vendor_rel, design=''):
     sw = sw.replace('__CACHE__', f'cadet-{channel}-{ver}').replace('__PREFIX__', f'cadet-{channel}-')
     open(f'{out}/sw.js', 'w', encoding='utf-8').write(sw)
     json.dump({'version': ver}, open(f'{out}/version.json', 'w', encoding='utf-8'))
+    # Google pieteikšanās atbildes lapa: nodod piekļuves atslēgu atpakaļ rīkam (tajā pašā pārlūkā) un aizveras
+    open(f'{out}/oauth.html', 'w', encoding='utf-8').write('<!doctype html><html lang="lv"><head><meta charset="UTF-8">'
+        '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'self\'; style-src \'unsafe-inline\'">'
+        '<meta name="referrer" content="no-referrer"><title>Google pieteikšanās</title></head>'
+        '<body style="font:15px system-ui;background:#0b1219;color:#ecf3f7;padding:30px"><p id="m">Savieno ar rīku…</p><script src="oauth.js"></script></body></html>')
+    open(f'{out}/oauth.js', 'w', encoding='utf-8').write("(function(){var h=location.hash||('#'+location.search.slice(1));history.replaceState(null,'',location.pathname);"
+        "try{var b=new BroadcastChannel('cp-oauth');b.postMessage(h);b.close();}catch(e){}"
+        "document.getElementById('m').textContent=/access_token/.test(h)?'Gatavs! Šo logu var aizvērt.':'Piekļuve netika atļauta. Šo logu var aizvērt.';"
+        "setTimeout(function(){window.close();},600);})();")
 
 # Dizaina karogs: CP_DESIGN_STABLE / CP_DESIGN_TEST (piem. 'v2'); testa kanālam pēc noklusējuma v2
 build('stable', repo, 'vendor/', os.environ.get('CP_DESIGN_STABLE', ''))

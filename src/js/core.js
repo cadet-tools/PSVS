@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.21.1';
+  CP.VERSION = '1.22.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -334,7 +334,7 @@ window.CP = window.CP || {};
 
   CP.blank = () => ({
     version: CP.SCHEMA, people: [], documents: [], equipment: [], relations: [], log: [], tasks: [], audit: [],
-    years: [], enrollments: [], events: [], sessions: [],
+    years: [], enrollments: [], events: [], sessions: [], schedule: [], scheduleDel: [],
     sources: [], nextFolderSeq: 1, revision: 0,
     settings: CP.defaultSettings(), createdAt: U.now(), updatedAt: null
   });
@@ -359,7 +359,7 @@ window.CP = window.CP || {};
     const d = { ...CP.blank(), ...raw };
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
-    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events', 'sessions']) if (!Array.isArray(d[k])) d[k] = [];
+    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events', 'sessions', 'schedule', 'scheduleDel']) if (!Array.isArray(d[k])) d[k] = [];
     for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
