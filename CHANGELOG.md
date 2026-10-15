@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.26.0 — 2026-10-16 — Jaunas grupas un grupas izvēlne
+- `settings.groupsByYear = { yearId: [nosaukums] }`: pieteiktās grupas (arī tukšas). `D.groups()` = šī gada personu grupas ∪ pieteiktās, tāpēc tās ir visās izvēlnēs (datalist `dl_groups`, filtri, apmeklējums, saziņa, imports, pārcelšana). `D.addGroup`, `D.declaredGroups`, `D.setDeclaredGroups`. Pārdēvējot / dzēšot tiek atjaunots arī pieteikto saraksts.
+- Pārskatā ir poga “＋ Jauna grupa” (`A.groupNew`). Tukšas grupas dzēšana bez jautājuma par personām.
+- Formas laukam “Grupa” ir `select[data-grppick]` blakus ievades laukam (grupas, “bez grupas”, “jauna grupa…”); ievades lauks paliek (OCR un ierakstīšana), datalist bultiņa ir paslēpta.
+
 ## 1.25.1 — 2026-10-16
 - Labots mūra izkārtojums, ja `.wide` kartīte ir virs citām (Veidlapas): izstiepšana tiek rēķināta pa joslām starp platajām kartītēm, nevis līdz pirmajai platajai kartītei (iepriekš rindu robežas apgriezās, un kartītes uzklājās). Izstiepj tikai joslās, kurām zemāk seko platā kartīte. Jauns tests: nepārklāšanās visās `.cards2` lapās trijos platumos.
 

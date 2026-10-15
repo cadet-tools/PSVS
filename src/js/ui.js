@@ -167,6 +167,7 @@
         else if (t === 'textarea') input = `<textarea id="${id}" name="${f.k}" rows="2"></textarea>`;
         else input = `<input id="${id}" name="${f.k}" type="${t}" autocomplete="off" ${t === 'number' ? 'min="0" max="1200"' : ''} ${f.ph ? `placeholder="${U.esc(f.ph)}"` : ''} ${f.list ? `list="${f.list}"` : ''}>`;
         const pin = f.k === 'group' ? `<button type="button" class="pinbtn" data-act="pinGroup" title="Atcerēties grupu nākamajām personām" tabindex="-1">📌</button>` : '';
+        if (f.k === 'group') input = `<div class="grp-field">${input}<select class="grp-pick" data-grppick="${id}" title="Izvēlēties grupu no saraksta" aria-label="Izvēlēties grupu"><option value="">▾</option></select></div>`;
         h += `<div class="field ${f.wide ? 'wide' : ''}" data-f="${f.k}"><label for="${id}">${f.l}${f.req ? ' <span class="reqmark">*</span>' : ''}${pin}<span class="fx"></span></label>${input}${f.k === 'group' ? '<div class="pinnote hidden"></div>' : ''}<div class="hint"></div></div>`;
       }
       h += `</div></fieldset>`;
@@ -194,6 +195,13 @@
     else { const v = input?.value.trim(); if (!v) { ui.toast('Vispirms ieraksti grupu, ko atcerēties', 'warn'); input?.focus(); return; } s.stickyGroup = v; ui.toast(`Grupa “${v}” tiks ielikta katrai jaunai personai`, 'ok'); }
     CP.store.changed({ silent: true }); ui.syncPins();
   };
+  // Grupas izvēlne pie lauka: ieliek izvēlēto grupu laukā (vai izveido jaunu)
+  document.addEventListener('change', e => {
+    const sel = e.target.closest?.('select[data-grppick]'); if (!sel) return;
+    const input = U.$(sel.dataset.grppick); let v = sel.value; sel.value = ''; if (!input || !v) return;
+    if (v === '__new') { v = (prompt('Jaunās grupas nosaukums:') || '').trim(); if (!v) return; if (D.addGroup(v)) CP.store.changed({ silent: true }); ui.datalists(); }
+    input.value = v === '__none' ? '' : v; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   // Ja grupa ir piesprausta un lietotājs to nomaina — atceras jauno vērtību
   document.addEventListener('change', e => {
     if (e.target.name === 'group' && S.db.settings.stickyGroup && e.target.value.trim() && e.target.closest('#personForm,#scanForm')) { S.db.settings.stickyGroup = e.target.value.trim(); CP.store.changed({ silent: true }); ui.syncPins(); }
@@ -246,6 +254,8 @@
   };
   ui.datalists = () => {
     U.$('dl_groups').innerHTML = D.groups().map(g => `<option value="${U.esc(g)}">`).join('');
+    const opts = `<option value="">▾</option>${D.groups().map(g => `<option value="${U.esc(g)}">${U.esc(g)}</option>`).join('')}<option value="__none">— bez grupas —</option><option value="__new">＋ Jauna grupa…</option>`;
+    U.qsa('select[data-grppick]').forEach(s => { s.innerHTML = opts; s.value = ''; });
   };
   ui.personOptions = (sel, chosen, all = false) => {
     U.$(sel).innerHTML = S.db.people.filter(p => (all || D.isCurrent(p) || p.id === chosen) && (D.inYear(p) || p.id === chosen)).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)))

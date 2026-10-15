@@ -51,7 +51,7 @@
           ${CP.schedule?.dashCard ? CP.schedule.dashCard() : ''}
           <section class="card" data-fill="5" data-mcol="1"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 40).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}${al.length ? `<div class="fill-more" data-total="${al.length}"><button class="sm ghost" data-page="alerts"></button></div>` : ''}</section>
           <section class="card" data-fill="5" data-mcol="2"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 40).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}${miss.length ? `<div class="fill-more" data-total="${miss.length}"><button class="sm ghost" data-act="openList" data-arg="missing"></button></div>` : ''}</section>
-          <section class="card" data-mcol="0"><h3>Grupas</h3>${D.groups().map(g => `<div class="row grp-row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span><span class="grp-btns"><button class="sm ghost" data-act="groupEdit" data-arg="${esc(g)}" title="Pārdēvēt vai apvienot ar citu grupu" aria-label="Pārdēvēt grupu ${esc(g)}">✎</button><button class="sm ghost danger" data-act="groupDel" data-arg="${esc(g)}" title="Dzēst grupu" aria-label="Dzēst grupu ${esc(g)}">✕</button></span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
+          <section class="card" data-mcol="0"><h3>Grupas <button class="ghost sm right" data-act="groupNew" title="Pievienot jaunu grupu">＋ Jauna grupa</button></h3>${D.groups().map(g => `<div class="row grp-row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span><span class="grp-btns"><button class="sm ghost" data-act="groupEdit" data-arg="${esc(g)}" title="Pārdēvēt vai apvienot ar citu grupu" aria-label="Pārdēvēt grupu ${esc(g)}">✎</button><button class="sm ghost danger" data-act="groupDel" data-arg="${esc(g)}" title="Dzēst grupu" aria-label="Dzēst grupu ${esc(g)}">✕</button></span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
           <section class="card wide"><h3>Pēdējās izmaiņas</h3><div class="recent-grid">${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</div></section>
         </div></div>`;
     }
@@ -185,6 +185,7 @@
     // apmeklējuma nodarbības: pārdēvējot / apvienojot pāriet uz jauno grupu (vēsture saglabājas); dzēšot paliek ar veco nosaukumu
     if (to) for (const s of S.db.sessions || []) if (s.group === from && s.yearId === D.activeYear() && !(S.db.sessions || []).some(x => x !== s && x.group === to && x.date === s.date)) s.group = to;
     if (S.att?.group === from) S.att.group = to || '';
+    D.setDeclaredGroups([...D.declaredGroups().filter(x => x !== from), ...(to ? [to] : [])]);
     return list.length;
   }
   function dlg(html) { let d = U.$('groupDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'groupDialog'; document.body.appendChild(d); } d.innerHTML = html; d.showModal(); return d; }
@@ -201,10 +202,22 @@
       const k = moveGroup(g, to); d.close(); CP.store.changed(); ui.toast(merge ? `Grupa “${g}” apvienota ar “${to}” (${k} personas)` : `Grupa pārdēvēta: “${g}” → “${to}”`, 'ok');
     };
   };
+  A.groupNew = () => {
+    const d = dlg(`<form><header class="dlg-head"><h2>Jauna grupa</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><div class="field"><label>Grupas nosaukums</label><input name="name" required placeholder="piem., 2.4. vai J1"></div>
+      <p class="small muted">Grupa uzreiz parādīsies visās izvēlnēs: personas kartītē, sarakstu filtrā, apmeklējumā, saziņā un importā (mācību gadam ${esc(U.yearLabel(D.activeYear()))}).</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="groupDialog">Atcelt</button><button class="mainbtn" type="submit">Pievienot</button></footer></form>`);
+    d.querySelector('[name=name]').focus();
+    d.querySelector('form').onsubmit = e => {
+      e.preventDefault(); const n = e.target.name.value.trim(); if (!n) return;
+      if (!D.addGroup(n)) { d.close(); return ui.toast(`Grupa “${n}” jau ir`, 'warn'); }
+      d.close(); CP.store.changed(); ui.datalists(); ui.toast(`Grupa “${n}” pievienota`, 'ok');
+    };
+  };
   A.groupDel = g => {
     const others = D.groups().filter(x => x !== g), n = members(g).length;
     const d = dlg(`<form><header class="dlg-head"><h2>Dzēst grupu “${esc(g)}”</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body"><p style="margin-top:0">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>
+      <div class="dlg-body">${!n ? `<p style="margin-top:0">Grupā nav personu.</p>` : ''}<p style="margin-top:0;${n ? '' : 'display:none'}">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>
         ${others.length ? `<label class="check"><input type="radio" name="how" value="move" checked> Pārcelt uz grupu <select name="to">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></label>` : ''}
         <label class="check" style="margin-top:6px"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}> Atstāt bez grupas</label>
         <p class="small muted">Iepriekšējo mācību gadu dalība netiek mainīta.</p></div>

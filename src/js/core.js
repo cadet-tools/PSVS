@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.25.1';
+  CP.VERSION = '1.26.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -492,7 +492,11 @@ window.CP = window.CP || {};
     if (p.status === 'archived' && !opts.status) e.status = e.status || 'archived';
     return e;
   };
-  D.groups = () => [...new Set(D.peopleInYear().filter(D.isCurrent).map(p => D.groupOf(p)).filter(Boolean))].sort(U.cmp);
+  /** Pieteiktās grupas (var būt arī tukšas): settings.groupsByYear = { yearId: [nosaukums] } */
+  D.declaredGroups = (yearId = D.activeYear()) => ((db().settings.groupsByYear || {})[yearId] || []).filter(Boolean);
+  D.setDeclaredGroups = (list, yearId = D.activeYear()) => { const s = db().settings; s.groupsByYear = { ...(s.groupsByYear || {}), [yearId]: [...new Set(list.map(x => String(x).trim()).filter(Boolean))].sort(U.cmp) }; };
+  D.addGroup = name => { const n = String(name || '').trim(); if (!n) return false; if (D.groups().includes(n)) { if (!D.declaredGroups().includes(n)) D.setDeclaredGroups([...D.declaredGroups(), n]); return false; } D.setDeclaredGroups([...D.declaredGroups(), n]); return true; };
+  D.groups = () => [...new Set([...D.peopleInYear().filter(D.isCurrent).map(p => D.groupOf(p)).filter(Boolean), ...D.declaredGroups()])].sort(U.cmp);
   D.contacts = p => [
     { kind: 'youth', role: 'Jaunietis', name: U.full(p), phone: p.phone, email: p.email },
     { kind: 'parent', role: p.parentRelation || 'Vecāks', name: p.parentName, phone: p.parentPhone, email: p.parentEmail },
