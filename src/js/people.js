@@ -162,6 +162,7 @@
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
       ${CP.registry ? CP.registry.personCard(p) : ''}
+      ${CP.contracts ? CP.contracts.personCard(p) : ''}
       ${CP.forms ? CP.forms.personCard(p) : ''}
       ${tools ? `<section class="card"><h3>Rīki</h3><div class="actions">${tools}</div></section>` : ''}`;
   }

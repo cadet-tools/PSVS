@@ -45,7 +45,7 @@
   function mergeParagraphs(doc) {
     for (const p of doc.getElementsByTagNameNS(W, 'p')) {
       const ts = tEls(p); if (ts.length < 2) continue;
-      if (!/\{[a-z_]+\}/i.test(ts.map(t => t.textContent).join(''))) continue;
+      if (!/\{[a-z_0-9]+\}/i.test(ts.map(t => t.textContent).join(''))) continue;
       // apvieno tikai tos gabalus, kas pārdala kādu {atzīmi}
       const open = s => { const i = s.lastIndexOf('{'); return i >= 0 && s.indexOf('}', i) < 0; };
       for (let i = 0; i < ts.length; i++) {
@@ -59,7 +59,7 @@
   function fillText(el, map) {
     for (const t of tEls(el)) {
       const v = t.textContent; if (!v.includes('{')) continue;
-      t.textContent = v.replace(/\{([a-z_]+)\}/gi, (m, k) => (k.toLowerCase() in map ? String(map[k.toLowerCase()] ?? '') : m)).replace(/\s*\n\s*/g, '; ');
+      t.textContent = v.replace(/\{([a-z_0-9]+)\}/gi, (m, k) => (k.toLowerCase() in map ? String(map[k.toLowerCase()] ?? '') : m)).replace(/\s*\n\s*/g, '; ');
       t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
     }
   }
@@ -113,7 +113,7 @@
     for (const [name, get] of files) {
       let data = await get();
       if (/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) {
-        const xml = dec.decode(data); if (/\{[a-z_]+\}/i.test(xml.replace(/<[^>]+>/g, ''))) found = true;
+        const xml = dec.decode(data); if (/\{[a-z_0-9]+\}/i.test(xml.replace(/<[^>]+>/g, ''))) found = true;
         data = enc.encode(processXml(xml, d));
       }
       out.push([name, data]);

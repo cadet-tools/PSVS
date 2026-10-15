@@ -8,6 +8,14 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.17.0', date: '2026-10-15', title: 'Jauna veidlapa: Līgums', items: [
+      'Personas kartītē ir sadaļa **Līgums**, un **Veidlapas** lapā ir poga **＋ Līgums**. Līgums aizpildās pats no personas datiem: vārds, personas kods pa cipariem, adreses, tālruņi un e-pasti.',
+      'Rīks pats izvēlas veidu: līdz 18 gadiem līgums ar **likumisko pārstāvi**, no 18 gadiem ar **jaunieti**. Formu izvēlies pats: **papīrs** vai **EDOC**. Ja ir divi vecāki, var izvēlēties, ar kuru slēgt līgumu.',
+      '**Līguma Nr.** ieraksti no citas sistēmas. Tas tiek saglabāts kartītē.',
+      '**Instruktora dati** (pārvalde, nodaļa, vārds ģenitīvā, tālrunis, e-pasts) jāievada vienreiz, un tie tiek atcerēti.',
+      'Rezultāts ir **Word fails**, ko var labot un pārsūtīt. Kopija tiek saglabāta personas mapē. Līgumu var arī **priekšskatīt un izdrukāt** rīkā.',
+      'Var izmantot arī savu līguma veidni: Veidlapas → Savas Word veidnes → Līguma veidne.'
+    ] },
     { v: '1.16.3', date: '2026-10-15', title: 'Drukāšana un tukšās rindas', items: [
       '**Drukāšana salabota:** pārlūka drukas logā tagad uzreiz redzamas veidlapas lapas, un tās var izdrukāt.',
       'Tukšo rindu skaitu izvēlies pats arī tad, ja dalībnieki nav izvēlēti. Rīks vairs nepievieno rindas pēc saviem ieskatiem.',

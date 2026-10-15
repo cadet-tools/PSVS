@@ -1,5 +1,16 @@
 # Izmaiņu vēsture
 
+## 1.17.0 — 2026-10-15 — Veidlapa “Līgums”
+- Četras standarta veidnes no Jaunsardzes centra paraugiem (24.10.2024): jaunietis 18+ un likumiskais pārstāvis, katrs papīra formā un EDOC.
+- Automātiski tiek aizpildīts: līguma Nr. (ievada lietotājs), vieta un datums (“2026.gada 15.oktobrī”), novada pārvaldes un nodaļas nr., instruktora vārds ģenitīvā (ar ieteikumu, ko var labot), jaunieša un pārstāvja statuss, vārds, personas koda cipari pa šūnām, adreses, tālruņi un e-pasti, kā arī Centra pārstāvja amats un kontakti.
+- Pirms sagatavošanas visus datus var pārbaudīt un labot. Labotais attiecas tikai uz šo līgumu, un kartītes dati netiek mainīti.
+- Līguma veids tiek izvēlēts pēc vecuma, formu atceras rīks, un pārstāvi var izvēlēties no diviem vecākiem.
+- Rīks brīdina, ja trūkst personas koda, pārstāvja, līguma numura vai instruktora datu.
+- Word fails tiek lejupielādēts, un kopija saglabāta `Macibu_gadi/<gads>/Personas/<persona>/`. Kartītē ir sagatavoto līgumu saraksts, un līguma Nr. tiek saglabāts kartītē.
+- Līgumu var priekšskatīt un izdrukāt rīkā. Priekšskatījums tiek veidots no Word faila ar bibliotēku docx-preview 0.3.7, un izkārtojums var nedaudz atšķirties no Word.
+- Savu līguma veidni var izmantot ar atzīmēm `{liguma_nr}`, `{j_vards}`, `{j_pk1}`…`{j_pk11}`, `{p_statuss_vards}` u.c. Ir pieejams lejupielādējams paraugs.
+- Word aizpildīšana tagad atbalsta atzīmes ar cipariem, piem., `{j_pk1}`.
+
 ## 1.16.3 — 2026-10-15
 - Drukāšana notiek tieši no rīka loga, bez slēpta rāmja. Chrome drukas logs uzreiz rāda veidlapas lapas: A4 portrets instruktāžas lapai, ainava nometnes žurnālam. Ja ir printeris, tās var izdrukāt, vai arī saglabāt kā PDF. Pārbaudīts ar pārlūka drukas dzinēju: izdrukā ir tikai veidlapa, 1 lapa.
 - Tukšās rindas vienmēr nosaka lietotājs: bez dalībniekiem veidlapā ir tieši norādītais rindu skaits (agrāk vismaz 10). Ja dalībnieku nav un rindu skaits ir 0, rīks lūdz norādīt rindu skaitu.

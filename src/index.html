@@ -182,6 +182,11 @@
   </form>
 </dialog>
 <datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
+<dialog id="contractDialog" class="wide">
+  <header class="dlg-head"><h2>Līgums par dalību Jaunsardzē</h2><button type="button" class="ghost" data-close="contractDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body" id="contractBody"></div>
+  <footer class="dlg-foot"><span class="muted small">Word failu pēc tam var atvērt, labot un pārsūtīt.</span><span class="grow"></span><button type="button" data-close="contractDialog">Aizvērt</button><button type="button" data-act="contractPreview">Priekšskatīt / drukāt</button><button type="button" class="mainbtn" data-act="contractWord">Sagatavot Word failu</button></footer>
+</dialog>
 <dialog id="printDialog" class="wide print-dlg">
   <header class="dlg-head"><h2>Drukas priekšskatījums</h2><span class="muted small" id="printInfo"></span><span class="grow"></span><button type="button" class="ghost" data-close="printDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body"><div id="printPages" class="print-pages"></div></div>
@@ -417,6 +422,7 @@
 <script src="js/pdfgen.js"></script>
 <script src="js/docxfill.js"></script>
 <script src="js/forms.js"></script>
+<script src="js/contracts.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

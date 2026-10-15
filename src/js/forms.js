@@ -41,7 +41,7 @@
           <button class="sm" data-act="formOpen" data-arg="${ev.id}">${ic('edit', '✎')} Atvērt</button><button class="sm" data-act="formPdf" data-arg="${ev.id}">${ic('file', '📄')} PDF</button><button class="sm ghost" data-act="formPrint" data-arg="${ev.id}">Drukāt</button>
           <button class="sm ghost danger" data-act="formDelete" data-arg="${ev.id}" title="Dzēst pasākumu">✕</button></div>`;
       };
-      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas un nometņu žurnāli no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button>`)}
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas un nometņu žurnāli no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button>`)}
         <div class="cards2">
           <section class="card wide"><h3>${ic('clipboard')}Pasākumi</h3>${evs.length ? evs.map(row).join('') : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa” vai “Nometnes žurnāls”.')}</section>
           <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>
@@ -86,11 +86,11 @@
   function tplCard() {
     const list = st().docTemplates || [];
     return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{nosaukums}</code>, <code>{datums}</code>, un tabulas rindu ar <code>{nr}</code> <code>{vards}</code>. Rīks to aizpildīs. Paraugus vari lejupielādēt un pielāgot.</p>
-      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(TYPES[t.type]?.l || '')}</div></div><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
+      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
       <div class="actions" style="margin-top:10px">
-        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button>
-        <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Paraugs: instruktāža</button><button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Paraugs: nometne</button></div>
-      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}</details>`;
+        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button><button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līguma veidne</button>
+        <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Paraugs: instruktāža</button><button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Paraugs: nometne</button><button class="sm ghost" data-act="tplDocSample" data-arg="contract">${ic('download', '⬇')} Paraugs: līgums</button></div>
+      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}<p class="small"><b>Līgumam:</b></p>${ui.dl(CP.CONTRACT_FIELDS_HELP || [])}</details>`;
   }
   let tplType = 'instr';
   A.tplDocAdd = type => { if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn'); tplType = type; U.$('tplDocFile').click(); };
@@ -108,7 +108,9 @@
     st().docTemplates = st().docTemplates.filter(x => x.id !== id); CP.store.changed();
   };
   A.tplDocSample = async type => {
-    try { const r = await fetch(CP.VENDOR + `templates/${type === 'camp' ? 'nometnes-zurnals' : 'instruktaza'}.docx`); if (!r.ok) throw Error(r.status); U.download(await r.blob(), type === 'camp' ? 'Nometnes žurnāls (veidne).docx' : 'Instruktāžas lapa (veidne).docx'); }
+    const file = type === 'camp' ? 'nometnes-zurnals' : type === 'contract' ? 'ligums-parstavis-papirs' : 'instruktaza';
+    const nice = type === 'camp' ? 'Nometnes žurnāls (veidne).docx' : type === 'contract' ? 'Līgums ar likumisko pārstāvi (veidne).docx' : 'Instruktāžas lapa (veidne).docx';
+    try { const r = await fetch(CP.VENDOR + `templates/${file}.docx`); if (!r.ok) throw Error(r.status); U.download(await r.blob(), nice); }
     catch (e) { ui.toast('Paraugu neizdevās ielādēt: ' + e.message, 'err'); }
   };
 
@@ -305,12 +307,13 @@
     }
     return out;
   }
-  let printPages = [], printBlob = null, printName = '';
+  let printPages = [], printBlob = null, printName = '', printSrc = { kind: 'img' };
+  CP.setPrintSource = src => { printSrc = src; const dl = U.qs('#printDialog [data-act=printDownload]'); if (dl) dl.textContent = src.kind === 'html' ? 'Lejupielādēt Word' : 'Lejupielādēt PDF'; printBlob = src.blob || null; printName = src.name || ''; if (src.kind === 'img') printPages = src.pages || []; };
   A.formPrint = id => withPdf(id, async (blob, ev) => {
-    const d = U.$('printDialog'); printBlob = blob; printName = `${fileBase(ev)}.pdf`;
+    const d = U.$('printDialog'); CP.setPrintSource({ kind: 'img', pages: [], blob, name: `${fileBase(ev)}.pdf` }); U.$('printGo').disabled = true;
     U.$('printPages').innerHTML = '<p class="muted pad">Sagatavo priekšskatījumu…</p>'; U.$('printInfo').textContent = ''; d.showModal();
     try {
-      printPages = await renderPages(blob);
+      printPages = await renderPages(blob); printSrc.pages = printPages;
       U.$('printInfo').textContent = `${printPages.length} ${printPages.length === 1 ? 'lapa' : 'lapas'} · A4 ${printPages[0]?.land ? 'ainava' : 'portrets'}`;
       U.$('printPages').innerHTML = printPages.map((p, i) => `<figure class="print-page ${p.land ? 'land' : ''}"><img src="${p.src}" alt="${i + 1}. lapa"><figcaption>${i + 1}. lapa</figcaption></figure>`).join('');
       U.$('printGo').disabled = false;
@@ -320,12 +323,14 @@
   /* Drukā tieši no galvenā loga (bez iframe — Chrome drukas logs ar slēptu rāmi bieži “ielādējas” bezgalīgi):
      lapas tiek ieliktas #printSheet, @media print paslēpj visu pārējo. */
   A.printGo = async () => {
-    if (!printPages.length) return;
-    const land = printPages[0].land;
+    const html = printSrc.kind === 'html';
+    if (!html && !printPages.length) return;
+    const land = !html && printPages[0].land;
     let sheet = U.$('printSheet'); if (!sheet) { sheet = document.createElement('div'); sheet.id = 'printSheet'; document.body.appendChild(sheet); }
     let st = U.$('printPageStyle'); if (!st) { st = document.createElement('style'); st.id = 'printPageStyle'; document.head.appendChild(st); }
-    st.textContent = `@page{size:A4 ${land ? 'landscape' : 'portrait'};margin:0}#printSheet img{width:${land ? '296mm' : '209mm'};height:${land ? '208mm' : '295mm'};margin:0 auto}`;
-    sheet.innerHTML = printPages.map(p => `<img src="${p.src}" alt="">`).join('');
+    st.textContent = html ? '@page{size:A4 portrait;margin:0}' : `@page{size:A4 ${land ? 'landscape' : 'portrait'};margin:0}#printSheet img{width:${land ? '296mm' : '209mm'};height:${land ? '208mm' : '295mm'};margin:0 auto}`;
+    sheet.className = html ? 'docx-print' : '';
+    sheet.innerHTML = html ? printSrc.node.innerHTML : printPages.map(p => `<img src="${p.src}" alt="">`).join('');
     await Promise.all([...sheet.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => {}) : null));
     const dlg = U.$('printDialog'); dlg.close();             // modālais logs netiek drukāts
     document.documentElement.classList.add('printing');
