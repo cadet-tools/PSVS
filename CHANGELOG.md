@@ -2,6 +2,8 @@
 
 ## 1.17.2 — 2026-10-15
 - Labojums: līguma rekvizītos Centra tālrunis “Tālrunis: 67335388” vairs netiek aizstāts ar instruktora tālruni. Tālruņi un e-pasti tiek ierakstīti tikai rindās ar tukšu līniju. Pārbaudīts visās četrās standarta veidnēs.
+- Standarta Word veidnes vairs netiek ņemtas no bezsaistes keša: adresē ir versija (`?v=`), un pakalpojuma darbinieks tās ielādē no tīkla. Iepriekš pēc atjauninājuma varēja tikt izmantota vecā veidne.
+- Instruktora dati tiek saglabāti jau rakstīšanas laikā.
 - Ja līgums sagatavots ar 1.17.0 vai 1.17.1, Centra tālrunis tajā jāizlabo ar roku vai līgums jāsagatavo no jauna.
 
 ## 1.17.1 — 2026-10-15 — Līguma labojumi

@@ -10,7 +10,8 @@
   const NEWS = [
     { v: '1.17.2', date: '2026-10-15', title: 'Līgums: Jaunsardzes centra tālrunis', items: [
       'Līguma rekvizītos atkal ir Jaunsardzes centra tālrunis **67335388**. Iepriekš to kļūdaini aizstāja instruktora tālrunis.',
-      'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.'
+      'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.',
+      'Pēc atjauninājuma līgumu veidnes vienmēr tiek ielādētas no jauna, nevis no pārlūka kešatmiņas.'
     ] },
     { v: '1.17.1', date: '2026-10-15', title: 'Līguma uzlabojumi', items: [
       'Ievadītie dati līgumā ir **centrēti** un rakstīti tādā pašā fontā kā dokuments, nevis slīprakstā.',

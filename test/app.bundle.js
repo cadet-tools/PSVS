@@ -4713,7 +4713,8 @@ window.CP = window.CP || {};
   const NEWS = [
     { v: '1.17.2', date: '2026-10-15', title: 'Līgums: Jaunsardzes centra tālrunis', items: [
       'Līguma rekvizītos atkal ir Jaunsardzes centra tālrunis **67335388**. Iepriekš to kļūdaini aizstāja instruktora tālrunis.',
-      'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.'
+      'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.',
+      'Pēc atjauninājuma līgumu veidnes vienmēr tiek ielādētas no jauna, nevis no pārlūka kešatmiņas.'
     ] },
     { v: '1.17.1', date: '2026-10-15', title: 'Līguma uzlabojumi', items: [
       'Ievadītie dati līgumā ir **centrēti** un rakstīti tādā pašā fontā kā dokuments, nevis slīprakstā.',
@@ -6801,7 +6802,7 @@ window.CP = window.CP || {};
   A.tplDocSample = async type => {
     const file = type === 'camp' ? 'nometnes-zurnals' : type === 'contract' ? 'ligums-parstavis-papirs' : 'instruktaza';
     const nice = type === 'camp' ? 'Nometnes žurnāls (veidne).docx' : type === 'contract' ? 'Līgums ar likumisko pārstāvi (veidne).docx' : 'Instruktāžas lapa (veidne).docx';
-    try { const r = await fetch(CP.VENDOR + `templates/${file}.docx`); if (!r.ok) throw Error(r.status); U.download(await r.blob(), nice); }
+    try { const r = await fetch(CP.VENDOR + `templates/${file}.docx?v=${CP.VERSION}`, { cache: "no-cache" }); if (!r.ok) throw Error(r.status); U.download(await r.blob(), nice); }
     catch (e) { ui.toast('Paraugu neizdevās ielādēt: ' + e.message, 'err'); }
   };
 
@@ -7199,6 +7200,7 @@ window.CP = window.CP || {};
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
     if (t.dataset.ct) { cur.fields[t.dataset.ct] = t.value; if (t.dataset.ct === 'p_rel') renderDialog(); }
     if (t.dataset.cc && t.dataset.cc !== 'parent') cur[t.dataset.cc] = t.value;
+    if (t.dataset.ci) { inst()[t.dataset.ci] = t.value.trim(); CP.store.changed({ silent: true }); }
   });
 
   /* --- Aizpildīšana --- */
@@ -7226,7 +7228,7 @@ window.CP = window.CP || {};
       const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
       return (await h.getFile()).arrayBuffer();
     }
-    const r = await fetch(CP.VENDOR + `templates/ligums-${cur.kind}-${cur.form}.docx`); if (!r.ok) throw Error('standarta veidne nav ielādējama (' + r.status + ')');
+    const r = await fetch(CP.VENDOR + `templates/ligums-${cur.kind}-${cur.form}.docx?v=${CP.VERSION}`, { cache: "no-cache" }); if (!r.ok) throw Error('standarta veidne nav ielādējama (' + r.status + ')');
     return r.arrayBuffer();
   }
   /** Pirms sagatavošanas: obligātais pārstāvja statuss, jautājums par trūkstošu līguma numuru */

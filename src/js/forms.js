@@ -110,7 +110,7 @@
   A.tplDocSample = async type => {
     const file = type === 'camp' ? 'nometnes-zurnals' : type === 'contract' ? 'ligums-parstavis-papirs' : 'instruktaza';
     const nice = type === 'camp' ? 'Nometnes žurnāls (veidne).docx' : type === 'contract' ? 'Līgums ar likumisko pārstāvi (veidne).docx' : 'Instruktāžas lapa (veidne).docx';
-    try { const r = await fetch(CP.VENDOR + `templates/${file}.docx`); if (!r.ok) throw Error(r.status); U.download(await r.blob(), nice); }
+    try { const r = await fetch(CP.VENDOR + `templates/${file}.docx?v=${CP.VERSION}`, { cache: "no-cache" }); if (!r.ok) throw Error(r.status); U.download(await r.blob(), nice); }
     catch (e) { ui.toast('Paraugu neizdevās ielādēt: ' + e.message, 'err'); }
   };
 
