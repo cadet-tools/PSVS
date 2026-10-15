@@ -10,12 +10,13 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.23.1', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [
+    { v: '1.23.2', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [
       'Importējot “Nodarbību saraksts”, rīks nolasa arī **datumus piezīmju kolonnā**: e-VAM **kontaktstundas** (piem., “08.,27.OKT”), **aizvietošanas** (“02.11. aizvieto …”) un mentorēšanas dienas. Tām tiek izmantots tās pašas rindas laiks un vieta.',
       'Ja piezīmē rakstīts **“nenotiek”** (piem., “nenotiek 16.11”), šis datums netiek ielikts kalendārā vai tiek no tā noņemts.',
       'Katrai dienai tiek pievienota tieši tās piezīme, bet vispārīgās piezīmes visām rindas nodarbībām.',
       'Jaunsargu grupu nodarbības tagad sauc **“Jaunsardzes nodarbība 2.4.”**. Jau importētās tiks pārdēvētas nākamajā importā (kā “mainīts”, nevis no jauna).',
-      'Stundu kopsavilkumā rādītājs **“Kontaktstundas (nodarbības + VAM)”**.'
+      'Stundu kopsavilkumā rādītājs **“Kontaktstundas (nodarbības + VAM)”**.',
+      'Google kalendāra savienošanas instrukcija atjaunota atbilstoši jaunajam Google Cloud izskatam (Google Auth Platform → Audience → Clients), ar abām kopējamām adresēm.'
     ] },
     { v: '1.23.0', date: '2026-10-15', title: 'Darba grafiks no Excel uzskaites tabulas', items: [
       'Sadaļā **Grafiks** var **ievilkt** instruktora darba uzskaites Excel failu (**.xlsm** / .xlsx) vai izvēlēties to ar pogu **Imports**. Rīks pats saliek kalendāru.',

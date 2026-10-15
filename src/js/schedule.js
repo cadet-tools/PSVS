@@ -349,15 +349,16 @@
     const origin = location.origin;
     d.innerHTML = `<header class="dlg-head"><h2>Google kalendāra savienošana (vienu reizi, ~10 min)</h2><button type="button" class="ghost" data-close="gcalHelp" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body gcal-help"><p class="small muted">Bezmaksas. Vajag tikai Google kontu. Rīks redzēs tikai savu kalendāru “Jaunsardze — darba grafiks”, nevis citus tavus kalendārus.</p><ol>
-        <li>Atver <b>console.cloud.google.com</b> un piesakies ar savu Google kontu. Augšā izvēlies <b>“Select a project” → “New project”</b> (nosaukums, piem., <i>Jaunsardze grafiks</i>) → <b>Create</b>.</li>
-        <li>Meklēšanā ieraksti <b>Google Calendar API</b>, atver to un spied <b>Enable</b>.</li>
-        <li><b>APIs &amp; Services → OAuth consent screen</b> (vai “Google Auth Platform”) → <b>Get started</b>: lietotnes nosaukums (piem., <i>CADET grafiks</i>), tavs e-pasts, <b>Audience: External</b> → <b>Create</b>.</li>
-        <li>Sadaļā <b>Audience → Test users</b> pievieno savu Gmail adresi (un citu instruktoru adreses, ja viņi lietos to pašu).</li>
-        <li><b>Clients</b> (vai <b>Credentials → Create credentials → OAuth client ID</b>) → <b>Application type: Web application</b>.
-          <div>Authorized JavaScript origins: <code class="copy">${esc(origin)}</code></div>
-          <div>Authorized redirect URIs: <code class="copy">${esc(redirectUri())}</code></div> → <b>Create</b>.</li>
-        <li>Nokopē <b>Client ID</b> (beidzas ar <i>.apps.googleusercontent.com</i>) un ielīmē to rīkā laukā <b>“Google OAuth Client ID”</b>.</li>
+        <li>Atver <b>console.cloud.google.com</b> un piesakies ar savu Google kontu. Augšā izvēlies projektu vai izveido jaunu (piem., <i>Jaunsardze grafiks</i>). Projekts “My First Project” arī der.</li>
+        <li>Augšējā meklēšanas laukā ieraksti <b>Google Calendar API</b>, atver to un spied <b>Enable</b>. Ja redzi “Manage”, tas jau ir ieslēgts.</li>
+        <li>Meklēšanā ieraksti <b>Google Auth Platform</b>. Ja redzi pogu <b>Get started</b>, aizpildi: lietotnes nosaukums (piem., <i>CADET grafiks</i>), tavs e-pasts, <b>Audience: External</b>, kontakta e-pasts → <b>Create</b>. Ja jau redzi lapu “OAuth Overview”, šis solis ir izdarīts.</li>
+        <li>Kreisajā joslā <b>Audience</b> → sadaļā <b>Test users</b> spied <b>+ Add users</b>, ieraksti savu Gmail adresi (un citu instruktoru adreses, ja viņi lietos to pašu Client ID) → <b>Save</b>.</li>
+        <li>Kreisajā joslā <b>Clients</b> → <b>+ Create client</b> → <b>Application type: Web application</b>, nosaukums, piem., <i>CADET grafiks</i>.
+          <div>“Authorized JavaScript origins” → <b>+ Add URI</b>: <code class="copy">${esc(origin)}</code></div>
+          <div>“Authorized redirect URIs” → <b>+ Add URI</b> (abas adreses): <code class="copy">${esc(new URL('PSVS/oauth.html', origin + '/').href)}</code> <code class="copy">${esc(new URL('PSVS/test/oauth.html', origin + '/').href)}</code>${/\/PSVS\/(test\/)?oauth\.html$/.test(new URL(redirectUri()).pathname) ? '' : ` <code class="copy">${esc(redirectUri())}</code>`}</div> → <b>Create</b>.</li>
+        <li>Parādīsies <b>Client ID</b> (beidzas ar <i>.apps.googleusercontent.com</i>). Nokopē to un ielīmē rīkā laukā <b>“Google OAuth Client ID”</b>.</li>
         <li>Spied <b>“Sinhronizēt ar Google”</b>. Atvērsies Google logs. Ja redzi “Google hasn’t verified this app”, spied <b>Continue</b> (tā ir tava paša lietotne) un atļauj piekļuvi.</li></ol>
+        <p class="small muted">Josla “Free trial” Google Cloud augšā uz šo neattiecas: kalendāra savienojums ir bezmaksas.</p>
         <p class="small">Uz Google tiek sūtīti tikai grafika notikumi: nosaukums, laiks, vieta, piezīmes un veids. Personu dati netiek sūtīti. Telefonā kalendārs “Jaunsardze — darba grafiks” parādīsies Google Calendar lietotnē ar atgādinājumiem.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="gcalHelp">Aizvērt</button></footer>`;
     d.showModal();

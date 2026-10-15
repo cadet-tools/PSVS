@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.23.2 — 2026-10-16
+- Google kalendāra instrukcija atbilst Google Auth Platform izvēlnei (Get started / OAuth Overview, Audience → Test users, Clients → Create client). Tiek parādītas abas novirzīšanas adreses (stabilā un testa).
+
 ## 1.23.1 — 2026-10-15
 - “Nodarbību saraksts”: piezīmes tiek dalītas pa rindām un “;”. Segmentu datumi (`DD.MM`, `DD.MM.`, `DD.,DD.OKT`, `8. un 27. oktobrī`; gads pēc mācību gada) tiek pievienoti kā nodarbības ar rindas laiku un vietu. Segmenti ar “nenotiek / atcelts / nebūs / pārcelts” datumu noņem. Datuma segments ir šīs dienas piezīme; segmenti bez datumiem ir piezīme visām rindas dienām. Rinda tiek izlaista tikai tad, ja datumu nav ne kolonnās, ne piezīmēs.
 - Jaunsargu grupu nodarbības nosaukums ir “Jaunsardzes nodarbība <līmenis>”. Atslēga paliek pēc 1.23.0 nosaukuma (`keyTitle`), tāpēc atkārtotā importā tas ir “mainīts: nosaukums”.
