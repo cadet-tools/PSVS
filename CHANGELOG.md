@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.16.2 — 2026-10-15 — Veidlapu labojumi
+- Instruktāžas lapā un nometnes žurnālā vairs nav obligāti 26 vai 11 rindu. Rindu skaits ir dalībnieku skaits plus norādītās tukšās rindas (noklusējumā 0). Tukšai veidlapai bez dalībniekiem ir 10 rindas. Darbinieku tabulā ir tik rindu, cik izvēlēto darbinieku, bet, ja neviens nav izvēlēts, 3 tukšas rindas.
+- Tukšajās rindās datuma šūna ir tukša. Ja izvēlēts neierakstīt datumu katrā rindā, arī dalībnieku rindās datuma šūna ir tukša.
+- Tukšo rindu izvēle darbojas: skaitlis ar pogām − / + un paskaidrojums par rindu skaitu. Tas pats attiecas uz savām Word veidnēm.
+- Drukāšana: rīkā tiek atvērts priekšskatījums ar visām lapām (A4 portrets vai ainava) un pogām Drukāt un Lejupielādēt PDF. Iepriekšējais veids pārlūkā varēja ielādēties bezgalīgi.
+
 ## 1.16.1 — 2026-10-13
 - Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs** visur rīkā: kartītē, sarakstā, filtros, pārskatā, importā un anketu ievadē. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.
 - Personas logā statusa izvēle ir sadaļā Pamatdati, uzreiz aiz vārda un uzvārda.

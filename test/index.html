@@ -422,6 +422,9 @@ textarea[data-autogrow],#noteText{field-sizing:content;min-height:2.6em;max-heig
 .jentry .jtext{margin-top:2px;white-space:pre-wrap;word-break:break-word}.jentry.editing{border-color:var(--teal)}.jentry textarea{width:100%}
 .news .news-item{padding:10px 0;border-bottom:1px solid var(--edge)}.news .news-item:last-child{border-bottom:0}
 .news h4{margin:0 0 6px;font-size:15px}.news ul{margin:0;padding-left:20px;line-height:1.55}.news li{margin:3px 0}
+.stepper{display:flex;align-items:center;gap:6px}.stepper input{width:80px;text-align:center}.stepper button{min-width:36px;font-size:18px;line-height:1}
+.print-dlg{width:min(1100px,96vw)}.print-pages{display:flex;flex-direction:column;align-items:center;gap:18px;background:#5b6470;padding:18px;border-radius:10px;max-height:70vh;overflow:auto}
+.print-page{margin:0;width:min(640px,100%)}.print-page.land{width:min(900px,100%)}.print-page img{width:100%;display:block;background:#fff;box-shadow:0 4px 18px #0006}.print-page figcaption{text-align:center;color:#e9edf1;font-size:12px;margin-top:6px}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -787,6 +790,11 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
   </form>
 </dialog>
 <datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
+<dialog id="printDialog" class="wide print-dlg">
+  <header class="dlg-head"><h2>Drukas priekšskatījums</h2><span class="muted small" id="printInfo"></span><span class="grow"></span><button type="button" class="ghost" data-close="printDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div id="printPages" class="print-pages"></div></div>
+  <footer class="dlg-foot"><button type="button" data-act="printDownload">Lejupielādēt PDF</button><span class="grow"></span><button type="button" data-close="printDialog">Aizvērt</button><button type="button" class="mainbtn" id="printGo" data-act="printGo">Drukāt</button></footer>
+</dialog>
 <input type="file" id="tplDocFile" accept=".docx" hidden>
 
 <!-- ============ Jaunsarga apliecība ============ -->
@@ -991,5 +999,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.16.1"></script></body>
+<script src="app.bundle.js?v=1.16.2"></script></body>
 </html>

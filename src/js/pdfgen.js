@@ -136,12 +136,13 @@
     else { text(p1, `${(ev.instrDate || U.iso()).slice(0, 4)}.gada ____________________`, W - M, y, { size: 11, align: 'right' }); }
     y -= 11; text(p1, '(nodarbības vai pasākuma norises laiks)', W - M, y, { font: F.i, size: 8.5, align: 'right' }); y -= 8;
 
-    const date = ev.fillDates === false ? '___.___.______' : fmtD(ev.instrDate);
+    const date = ev.fillDates === false ? '' : fmtD(ev.instrDate);
     const cols = [{ title: 'N.p.k.', w: 13 * MM, align: 'center', bold: true }, { title: 'Vārds, Uzvārds', w: 50 * MM }, { title: '“iepazinos”', w: 24 * MM, align: 'center' },
       { title: 'Datums', w: 25 * MM, align: 'center' }, { title: 'Paraksts', w: 30 * MM }, { title: 'Piezīmes', w: cw - 142 * MM, size: 9 }];
     const rows = people.map((p, i) => [`${i + 1}.`, U.full(p), '“iepazinos”', date, '', ev.rowNote?.(p) || '']);
-    const totalRows = Math.max(26, rows.length + Math.max(0, ev.blankRows ?? 0));
-    for (let i = rows.length; i < totalRows; i++) rows.push([`${i + 1}.`, '', '“iepazinos”', ev.fillDates === false ? '___.___.______' : '___.___.______', '', '']);
+    // tieši tik rindu, cik dalībnieku + norādītās tukšās rindas (tukšai veidlapai — vismaz 10)
+    const blank = Math.max(0, Math.min(60, Number(ev.blankRows) || 0)), totalRows = rows.length ? rows.length + blank : Math.max(10, blank);
+    for (let i = rows.length; i < totalRows; i++) rows.push([`${i + 1}.`, '', '“iepazinos”', '', '', '']);
     const t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 16 * MM, cols, head: { h1: 15 }, rows, minH: 19.5, size: 10.5 });
     let page = t.page; y = t.y - 22;
     if (y < 40 * MM) { page = add(); y = page.__top - 10; }
@@ -187,7 +188,7 @@
       { title: 'Amats nometnē', w: 22 * MM, align: 'center' }, { title: 'Deklarētās un faktiskās dzīvesvietas adrese, tālruņa numurs', w: 53 * MM, size: 9 },
       { title: 'Darba kārtības noteikumiem', w: sigW }, { title: 'Iekšējās kārtības noteikumiem', w: sigW }, { title: 'Darba drošības un ugunsdrošības noteikumiem', w: sigW }];
     const sRows = staff.filter(s => (ev.staff || []).includes(s.id)).map((s, i) => [`${i + 1}.`, s.name, s.personalCode || '', s.role || '', addr({ addressDeclared: s.address, phone: s.phone }), '', '', '']);
-    const sTotal = Math.max(4, sRows.length + 1);
+    const sTotal = sRows.length ? sRows.length : 3;   // ja darbinieki nav izvēlēti — 3 tukšas rindas aizpildīšanai ar roku
     for (let i = sRows.length; i < sTotal; i++) sRows.push([`${i + 1}.`, '', '', '', '', '', '', '']);
     let t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 18 * MM, cols: sCols, head: { h1: 16, h2: 34, groups: [{ from: 5, to: 7, title: 'Paraksts par iepazīšanos ar nometnes' }] }, rows: sRows, minH: 21, size: 9.5 });
     footer(t.page, t.y - 24);
@@ -201,7 +202,7 @@
     const parents = p => [[p.parentName, p.parentPhone && (U.prettyPhone ? U.prettyPhone(p.parentPhone) : p.parentPhone)], [p.parent2Name, p.parent2Phone && (U.prettyPhone ? U.prettyPhone(p.parent2Phone) : p.parent2Phone)]]
       .filter(([n, t]) => n || t).map(([n, t]) => [n, t].filter(Boolean).join(', ')).join('; ');
     const pRows = people.map((p, i) => [`${i + 1}.`, U.full(p), fmtD(p.birth), addr(p), parents(p), [counselorOf(p), ev.noteOf?.(p)].filter(Boolean).join('; '), '', '']);
-    const pTotal = Math.max(11, pRows.length + Math.max(0, ev.blankRows ?? 2));
+    const pBlank = Math.max(0, Math.min(60, Number(ev.blankRows) || 0)), pTotal = pRows.length ? pRows.length + pBlank : Math.max(10, pBlank);
     for (let i = pRows.length; i < pTotal; i++) pRows.push([`${i + 1}.`, '', '', '', '', '', '', '']);
     t = table(ctx, { page: p2, newPage: add, x: M, yTop: y, yMin: 16 * MM, cols: pCols, head: { h1: 26, h2: 34, groups: [{ from: 6, to: 7, title: 'Paraksts par iepazīšanos ar nometnes' }] }, rows: pRows, minH: 30, size: 9.5 });
     footer(t.page, t.y - 24);

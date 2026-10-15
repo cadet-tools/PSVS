@@ -182,6 +182,11 @@
   </form>
 </dialog>
 <datalist id="dl_roles"><option value="Nometnes vadītājs"><option value="Audzinātājs"><option value="Instruktors"><option value="Medicīnas darbinieks"><option value="Pavārs"><option value="Brīvprātīgais"></datalist>
+<dialog id="printDialog" class="wide print-dlg">
+  <header class="dlg-head"><h2>Drukas priekšskatījums</h2><span class="muted small" id="printInfo"></span><span class="grow"></span><button type="button" class="ghost" data-close="printDialog" aria-label="Aizvērt">✕</button></header>
+  <div class="dlg-body"><div id="printPages" class="print-pages"></div></div>
+  <footer class="dlg-foot"><button type="button" data-act="printDownload">Lejupielādēt PDF</button><span class="grow"></span><button type="button" data-close="printDialog">Aizvērt</button><button type="button" class="mainbtn" id="printGo" data-act="printGo">Drukāt</button></footer>
+</dialog>
 <input type="file" id="tplDocFile" accept=".docx" hidden>
 
 <!-- ============ Jaunsarga apliecība ============ -->

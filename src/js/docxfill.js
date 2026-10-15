@@ -34,7 +34,7 @@
       audzinatajs: counselorOf ? counselorOf(p) : '', rindas_datums: ev.fillDates === false ? '' : fmtD(ev.instrDate)
     }));
     const st = staff.filter(s => (ev.staff || []).includes(s.id)).map((s, i) => ({ d_nr: `${i + 1}.`, d_vards: s.name, d_personas_kods: s.personalCode || '', d_amats: s.role || '', d_adrese: [s.address, phone(s.phone) && 'tālr. ' + phone(s.phone)].filter(Boolean).join(', '), d_talrunis: phone(s.phone) }));
-    return { global, rows, staff: st, blankRows: Number(ev.blankRows) || 0 };
+    return { global, rows, staff: st, blankRows: rows.length ? Math.max(0, Number(ev.blankRows) || 0) : Math.max(10, Number(ev.blankRows) || 0) };
   }
 
   /* --- XML apstrāde --- */
@@ -76,7 +76,7 @@
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw Error('Word dokumenta XML nav nolasāms');
     mergeParagraphs(doc);
-    repeatRows(doc, STAFF_KEYS, d.staff, 1, 'd_nr');
+    repeatRows(doc, STAFF_KEYS, d.staff, d.staff.length ? 0 : 3, 'd_nr');
     repeatRows(doc, ROW_KEYS, d.rows, d.blankRows, 'nr');
     fillText(doc.documentElement, d.global);
     return new XMLSerializer().serializeToString(doc);

@@ -8,6 +8,12 @@
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
   const NEWS = [
+    { v: '1.16.2', date: '2026-10-15', title: 'Veidlapas: precīzs rindu skaits un drukas priekšskatījums', items: [
+      'Instruktāžas lapā un nometnes žurnālā ir **tieši tik rindu, cik izvēlēto dalībnieku**. Tukšas rindas tiek pievienotas tikai tad, ja tās norādi.',
+      'Lauks **Tukšas rindas veidlapas beigās** ar pogām − un +. Zem lauka redzams, cik rindu būs veidlapā.',
+      'Tukšajās rindās datuma šūna ir tukša, bez svītrām un punktiem.',
+      '**Drukāt** tagad atver priekšskatījumu ar visām lapām tieši tā, kā tās tiks izdrukātas. Tur ir arī pogas Drukāt un Lejupielādēt PDF.'
+    ] },
     { v: '1.16.1', date: '2026-10-13', title: 'Statuss: Kandidāts / Jaunsargs', items: [
       'Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs**. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.',
       'Pievienojot jaunu personu, statusu var izvēlēties uzreiz pie vārda un uzvārda.'

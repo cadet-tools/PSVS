@@ -116,7 +116,7 @@
   function blank(type) {
     const fd = st().formDefaults || {};
     return { id: '', type, title: '', dateFrom: U.iso(), dateTo: '', when: '', whenAuto: true, instrDate: U.iso(), group: '', groupAuto: true, notes: '',
-      instrPosition: fd.instrPosition || 'JSI', instrName: fd.instrName || '', fillDates: fd.fillDates !== false, blankRows: type === 'camp' ? 2 : 0,
+      instrPosition: fd.instrPosition || 'JSI', instrName: fd.instrName || '', fillDates: fd.fillDates !== false, blankRows: 0,
       participants: [], staff: type === 'camp' ? staffList().filter(s => s.lastUsed).map(s => s.id) : [], leaderId: fd.leaderId || '', groupCounselors: {}, yearId: D.activeYear(), files: [] };
   }
   A.formNew = type => { S.formEdit = blank(type === 'camp' ? 'camp' : 'instr'); S.formPick = { q: '', group: '', onlySel: false }; ui.go('formEdit'); };
@@ -155,7 +155,7 @@
           ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats')}${f('instrName', 'Vārds, uzvārds')}` : ''}
           ${ev.type === 'camp' ? `<div class="field"><label>Nometnes vadītājs</label><select data-ev="leaderId">${counselorOpts(ev.leaderId, '— izvēlies —')}</select></div>` : ''}
           <div class="field wide"><label>Piezīmes</label><textarea data-ev="notes" rows="2">${esc(ev.notes)}</textarea></div>
-          ${f('blankRows', 'Papildu tukšas rindas', 'number', 'min="0" max="40"')}
+          <div class="field"><label>Tukšas rindas veidlapas beigās</label><div class="stepper"><button type="button" class="sm" data-act="formBlank" data-arg="-1" aria-label="Mazāk">−</button><input type="number" data-ev="blankRows" min="0" max="60" value="${Number(ev.blankRows) || 0}" inputmode="numeric"><button type="button" class="sm" data-act="formBlank" data-arg="1" aria-label="Vairāk">+</button></div><small class="muted">${(Number(ev.blankRows) || 0) ? `Veidlapā būs ${evPeople(ev).length} dalībnieki + ${Number(ev.blankRows)} tukšas rindas.` : `Veidlapā būs tieši ${evPeople(ev).length} rindas — bez tukšām.`}</small></div>
           ${ev.type === 'instr' ? `<div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" data-ev="fillDates" ${ev.fillDates !== false ? 'checked' : ''}> Datumu ierakstīt katrā rindā</label></div>` : ''}
         </div></section>
         ${ev.type === 'camp' ? `<section class="card"><h3>${ic('users')}Darbinieki nometnē</h3>
@@ -193,7 +193,7 @@
     const t = e.target; if (!S.formEdit) return false;
     if (t.id === 'evQ') { S.formPick.q = t.value; renderKeepFocus('evQ'); return true; }
     const k = t.dataset?.ev; if (!k || t.type === 'checkbox' || t.tagName === 'SELECT') return false;
-    S.formEdit[k] = NUM.has(k) ? Math.max(0, Math.min(40, Number(t.value) || 0)) : t.value;
+    S.formEdit[k] = NUM.has(k) ? Math.max(0, Math.min(60, Number(t.value) || 0)) : t.value;
     if (k === 'when') S.formEdit.whenAuto = false;
     if (k === 'group') S.formEdit.groupAuto = false;
     if (k === 'dateFrom' || k === 'dateTo') { if (S.formEdit.whenAuto) { autoFields(S.formEdit); const w = document.querySelector('[data-ev="when"]'); if (w) w.value = S.formEdit.when; } }
@@ -225,6 +225,7 @@
     renderKeepScroll();
   };
   A.evPickNone = () => { if (S.formEdit.participants.length && !confirm('Noņemt visus izvēlētos dalībniekus?')) return; S.formEdit.participants = []; renderKeepScroll(); };
+  A.formBlank = d => { const ev = S.formEdit; if (!ev) return; ev.blankRows = Math.max(0, Math.min(60, (Number(ev.blankRows) || 0) + Number(d))); renderKeepScroll(); };
   A.formWhenAuto = () => { S.formEdit.whenAuto = true; CP.render(); };
   A.formGroupAuto = () => { S.formEdit.groupAuto = true; CP.render(); };
 
@@ -284,11 +285,47 @@
   }
   A.formPdf = id => withPdf(id, async (blob, ev) => { const path = await savePdfCopy(ev, blob); CP.docs.showBlob(blob, `${fileBase(ev)}.pdf`); if (path) ui.toast('Kopija saglabāta: ' + path, 'ok', 7000); });
   A.formDownload = id => withPdf(id, async (blob, ev) => { U.download(blob, `${fileBase(ev)}.pdf`); await savePdfCopy(ev, blob); });
-  A.formPrint = id => withPdf(id, async blob => {
-    const url = URL.createObjectURL(blob), fr = document.createElement('iframe');
-    fr.className = 'print-frame'; fr.src = url; document.body.appendChild(fr);
-    fr.onload = () => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { window.open(url, '_blank'); } setTimeout(() => { fr.remove(); URL.revokeObjectURL(url); }, 60000); };
+  /* --- Drukāšana: PDF lapas tiek pārvērstas attēlos un parādītas priekšskatījumā rīkā; “Drukāt” atver pārlūka drukas logu ar tām pašām lapām --- */
+  async function renderPages(blob) {
+    await CP.reader.loadScript(CP.VENDOR + 'pdfjs/pdf.min.js');
+    const lib = window.pdfjsLib, data = new Uint8Array(await blob.arrayBuffer());
+    let pdf;
+    if (location.protocol === 'file:') pdf = await lib.getDocument({ data, disableWorker: true }).promise;
+    else { lib.GlobalWorkerOptions.workerSrc = new URL(CP.VENDOR + 'pdfjs/pdf.worker.min.js', location.href).href; try { pdf = await lib.getDocument({ data: data.slice(0) }).promise; } catch (e) { pdf = await lib.getDocument({ data, disableWorker: true }).promise; } }
+    const out = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const pg = await pdf.getPage(i), v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: 2200 / Math.max(v1.width, v1.height) });
+      const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      await pg.render({ canvasContext: ctx, viewport: vp }).promise;
+      out.push({ src: c.toDataURL('image/png'), land: v1.width > v1.height });
+    }
+    return out;
+  }
+  let printPages = [], printBlob = null, printName = '';
+  A.formPrint = id => withPdf(id, async (blob, ev) => {
+    const d = U.$('printDialog'); printBlob = blob; printName = `${fileBase(ev)}.pdf`;
+    U.$('printPages').innerHTML = '<p class="muted pad">Sagatavo priekšskatījumu…</p>'; U.$('printInfo').textContent = ''; d.showModal();
+    try {
+      printPages = await renderPages(blob);
+      U.$('printInfo').textContent = `${printPages.length} ${printPages.length === 1 ? 'lapa' : 'lapas'} · A4 ${printPages[0]?.land ? 'ainava' : 'portrets'}`;
+      U.$('printPages').innerHTML = printPages.map((p, i) => `<figure class="print-page ${p.land ? 'land' : ''}"><img src="${p.src}" alt="${i + 1}. lapa"><figcaption>${i + 1}. lapa</figcaption></figure>`).join('');
+      U.$('printGo').disabled = false;
+    } catch (e) { console.error(e); U.$('printPages').innerHTML = `<p class="red pad">Priekšskatījumu neizdevās sagatavot: ${esc(e.message)}. Vari lejupielādēt PDF un izdrukāt to.</p>`; }
   });
+  A.printGo = () => {
+    if (!printPages.length) return;
+    U.qsa('iframe.print-frame').forEach(f => f.remove());
+    const fr = document.createElement('iframe'); fr.className = 'print-frame';
+    const land = printPages[0].land;
+    fr.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4 ${land ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#fff}img{display:block;width:${land ? '297mm' : '210mm'};height:${land ? '210mm' : '297mm'};object-fit:contain;page-break-after:always;break-after:page}img:last-child{page-break-after:auto;break-after:auto}</style></head><body>${printPages.map(p => `<img src="${p.src}">`).join('')}</body></html>`;
+    fr.onload = async () => {
+      try { await Promise.all([...fr.contentDocument.images].map(i => i.decode ? i.decode().catch(() => {}) : null)); fr.contentWindow.focus(); fr.contentWindow.print(); }
+      catch (e) { ui.toast('Drukas logu neizdevās atvērt: ' + e.message + '. Lejupielādē PDF un izdrukā to.', 'err', 9000); }
+    };
+    document.body.appendChild(fr);
+  };
+  A.printDownload = () => { if (printBlob) U.download(printBlob, printName); };
 
   /* --- Sava Word veidne --- */
   A.formDocx = async tid => {
