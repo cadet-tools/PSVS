@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.24.0';
+  CP.VERSION = '1.24.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4031,7 +4031,7 @@ window.CP = window.CP || {};
       const cur = D.peopleInYear().filter(D.isCurrent), al = D.alerts();
       const miss = cur.map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length).sort((a, b) => b.m.length - a.m.length || U.cmp(U.sortName(a.p), U.sortName(b.p)));
       const cnt = s => cur.filter(p => D.partStatus(p) === s).length;
-      const recent = [...S.db.audit].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 8);
+      const recent = [...S.db.audit].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 10);
       const B = S.boot;
       const start = B && !S.root && !B.error ? `<section class="card hero boot"><h2>Atver datu mapi${B.name ? ` “${esc(B.name)}”` : ''}</h2>
           <div class="bootbar"><span style="width:${Math.max(4, B.pct || 0)}%"></span></div>
@@ -4065,10 +4065,10 @@ window.CP = window.CP || {};
         <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel</button><button data-act="import" data-arg="eklase">${CP.ic('upload', '⬆')} No e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
         <div class="cards2">
           ${CP.schedule?.dashCard ? CP.schedule.dashCard() : ''}
-          <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
-          <section class="card"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 8).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}</section>
+          <section class="card" data-fill="5"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 40).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}${al.length ? `<div class="fill-more" data-total="${al.length}"><button class="sm ghost" data-page="alerts"></button></div>` : ''}</section>
+          <section class="card" data-fill="5"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 40).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}${miss.length ? `<div class="fill-more" data-total="${miss.length}"><button class="sm ghost" data-act="openList" data-arg="missing"></button></div>` : ''}</section>
           <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
+          <section class="card wide"><h3>Pēdējās izmaiņas</h3><div class="recent-grid">${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</div></section>
         </div></div>`;
     }
   };
@@ -4122,19 +4122,47 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const GAP = 14, UNIT = 2;
-  const ro = 'ResizeObserver' in window ? new ResizeObserver(entries => { const grids = new Set(entries.map(e => e.target.parentElement).filter(Boolean)); grids.forEach(lay); }) : null;
-  function lay(grid) {
-    if (!grid?.isConnected) return;
-    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length, kids = [...grid.children];
-    if (n <= 1) { for (const c of kids) c.style.gridColumn = c.style.gridRow = ''; grid.classList.remove('masonry'); return; }
-    grid.classList.add('masonry');
-    const h = Array(n).fill(0);                                  // katras kolonnas augstums (rindu vienībās)
-    for (const c of kids) {
+  const ro = 'ResizeObserver' in window ? new ResizeObserver(entries => { const grids = new Set(entries.map(e => e.target.parentElement).filter(g => g && !g._laying)); grids.forEach(lay); }) : null;
+  /** Kartīte ar data-fill: rāda tik rindu, cik ietilpst līdz garākās kolonnas apakšai (vismaz data-fill), pārējās — “… un vēl N” */
+  const fillRows = c => [...c.children].filter(x => x.classList.contains('row'));
+  function setFill(c, n) {
+    const rows = fillRows(c); rows.forEach((r, i) => { r.hidden = i >= n; });
+    const more = c.querySelector('.fill-more'), total = Number(more?.dataset.total || rows.length), shown = Math.min(n, rows.length);
+    if (more) { more.hidden = total <= shown; const b = more.querySelector('button'); if (b) b.textContent = `… un vēl ${total - shown} →`; }
+  }
+  function place(grid, n) {
+    const h = Array(n).fill(0), at = new Map();
+    for (const c of grid.children) {
       const span = Math.max(1, Math.ceil((c.getBoundingClientRect().height + GAP) / UNIT));
       if (c.classList.contains('wide')) { const top = Math.max(...h); c.style.gridColumn = '1 / -1'; c.style.gridRow = `${top + 1} / span ${span}`; h.fill(top + span); continue; }
-      const col = h.indexOf(Math.min(...h));                    // īsākā kolonna
-      c.style.gridColumn = String(col + 1); c.style.gridRow = `${h[col] + 1} / span ${span}`; h[col] += span;
+      const col = h.indexOf(Math.min(...h));
+      c.style.gridColumn = String(col + 1); c.style.gridRow = `${h[col] + 1} / span ${span}`; at.set(c, { col, top: h[col], span }); h[col] += span;
     }
+    return at;
+  }
+  function lay(grid) {
+    if (!grid?.isConnected) return;
+    grid._laying = true;
+    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length, kids = [...grid.children], fills = kids.filter(c => c.dataset.fill);
+    if (n <= 1) { for (const c of kids) c.style.gridColumn = c.style.gridRow = ''; grid.classList.remove('masonry'); fills.forEach(c => setFill(c, Number(c.dataset.fill) + 2)); }
+    else {
+      grid.classList.add('masonry');
+      const k = new Map(fills.map(c => [c, Number(c.dataset.fill)]));
+      fills.forEach(c => setFill(c, k.get(c)));                    // sāk ar minimumu
+      const bottoms = at => { const b = Array(n).fill(0); for (const [c, a] of at) b[a.col] = Math.max(b[a.col], a.top + a.span); return b; };
+      const done = new Set();
+      for (let it = 0; it < 120; it++) {
+        const at = place(grid, n), b = bottoms(at), max = Math.max(...b);
+        // īsākā kolonna, kurā ir kartīte, kas vēl var augt
+        const cand = fills.filter(c => !done.has(c) && at.has(c) && k.get(c) < fillRows(c).length).sort((x, y) => b[at.get(x).col] - b[at.get(y).col])[0];
+        if (!cand) break;
+        const col = at.get(cand).col; setFill(cand, k.get(cand) + 1);
+        const b2 = bottoms(place(grid, n));
+        if (b2[col] > max || Math.max(...b2) > max) { setFill(cand, k.get(cand)); done.add(cand); } else k.set(cand, k.get(cand) + 1);
+      }
+      place(grid, n);
+    }
+    requestAnimationFrame(() => { grid._laying = false; });
   }
   function apply() {
     document.querySelectorAll('#main .cards2').forEach(g => {
@@ -4902,8 +4930,10 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.24.0', date: '2026-10-16', title: 'Sakārtots pārskats un ērtāks grafika imports', items: [
+    { v: '1.24.1', from: '1.24.0', date: '2026-10-16', title: 'Sakārtots pārskats un ērtāks grafika imports', items: [
       '**Pārskata** kartītes tagad saliekas cieši cita zem citas kolonnās, bez tukšām starpām. Katra nākamā kartīte nonāk īsākajā kolonnā. Tas pats izkārtojums darbojas arī citās lapās ar kartītēm.',
+      '**“Trūkstošie dokumenti”** un **“Uzdevumi un brīdinājumi”** rāda tik ierakstu, cik ietilpst līdz garākās kolonnas apakšai, pārējie ir zem **“… un vēl N →”**. Tā visu kolonnu apakšas ir līdzenas.',
+      '**“Pēdējās izmaiņas”** stiepjas pa visu platumu zem visām kartītēm, divās kolonnās.',
       'Grafika pogai **Imports** ir uznirstošais logs: ievelc **darba plānošanas matricu** (darba uzskaites .xlsm vai .xlsx) laukumā vai spied **“Izvēlēties failu…”**. Logā īsi paskaidrots, kas notiks.'
     ] },
     { v: '1.23.3', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [

@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.24.1 — 2026-10-16
+- Pārskats: “Pēdējās izmaiņas” atkal ir `.wide` (visā platumā, apakšā), ieraksti divās kolonnās (`.recent-grid`, 10 ieraksti). Kartītes ar `data-fill` (Trūkstošie dokumenti, Uzdevumi un brīdinājumi) sāk ar minimumu (5 rindas) un pa vienai rindai aug īsākajā kolonnā, kamēr nepārsniedz garāko; pārējās — “… un vēl N →”. `ResizeObserver` netiek izsaukts no paša izkārtojuma maiņas (`_laying`).
+
 ## 1.24.0 — 2026-10-16 — Pārskata izkārtojums un importa logs
 - `CP.masonry` (dashboard.js, `afterRender`): `.cards2` ar vairākām kolonnām → režģa rindas pa 2 px; katra kartīte tiek novietota īsākajā kolonnā (`grid-column` / `grid-row: N / span …`); `.wide` aizņem visu platumu zem garākās kolonnas. `ResizeObserver` pārrēķina pēc satura maiņas; vienā kolonnā (šaurs ekrāns) ir parastā plūsma. Pārskatā “Pēdējās izmaiņas” vairs nav `.wide`, tāpēc tā aizpilda brīvo kolonnu.
 - Grafika “Imports” atver logu `#schImpPick`: teksts par darba plānošanas matricu, ievilkšanas laukums (arī Enter / atstarpe) un faila izvēle; pēc faila izvēles atveras salīdzinājuma priekšskatījums. Ievilkšana grafika lapā darbojas kā līdz šim.
