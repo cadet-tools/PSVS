@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.19.0';
+  CP.VERSION = '1.19.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -1892,12 +1892,34 @@ window.CP = window.CP || {};
   };
   CP.actions.goBack = () => { if (!navStack.length) return; try { history.back(); } catch (e) { doBack(); } };
   window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
+  /* --- Bez datu mapes nevar strādāt: skaidrs paziņojums un aizliegtas darbības --- */
+  const NOROOT_OK = /^(pickRoot|restoreRoot|retryRestore|bootNew|reloadApp|installApp|newsAll|setTheme|setAccent|watch\w*|break\w*|goBack|jCancel|needRootPick)$/;
+  CP.noRootOk = act => NOROOT_OK.test(act);
+  const NOROOT_PAGES = new Set(['dashboard', 'about']);
+  ui.rootSteps = () => `<ol class="root-steps">
+      <li><b>Izveido datorā mapi</b> rīka datiem, piem., <i>Dokumenti\\CADET PERSONALS</i>, vai uz šifrētas zibatmiņas. Ja rīku jau lieto, izmanto to pašu mapi, kur ir dati.</li>
+      <li>Spied <b>📁 Izvēlēties datu mapi</b> un izvēlies šo mapi. Mapi var arī ievilkt no File Explorer.</li>
+      <li>Kad Chrome jautā, atļauj <b>rediģēt failus</b>. Nākamreiz rīks mapi atcerēsies.</li></ol>`;
+  CP.needRoot = () => {
+    let d = U.$('needRootDialog');
+    if (!d) { d = document.createElement('dialog'); d.id = 'needRootDialog'; document.body.appendChild(d); }
+    const pend = S.pendingRoot;
+    d.innerHTML = `<header class="dlg-head"><h2>📁 Vispirms pievieno datu mapi</h2><button type="button" class="ghost" data-close="needRootDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p>Rīks vēl nav pieslēgts datu mapei, tāpēc <b>neko nevar ievadīt un saglabāt</b>: personas, dokumenti un veidlapas glabājas tieši šajā mapē tavā datorā.</p>${ui.rootSteps()}</div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="needRootDialog">Vēlāk</button>${pend ? `<button type="button" class="mainbtn" data-act="needRootPick" data-arg="restore">🔓 Atļaut piekļuvi “${U.esc(pend.name)}”</button>` : `<button type="button" class="mainbtn" data-act="needRootPick">📁 Izvēlēties datu mapi</button>`}</footer>`;
+    if (!d.open) d.showModal();
+  };
+  CP.actions.needRootPick = arg => { U.$('needRootDialog')?.close(); return arg === 'restore' ? CP.store.restoreRoot() : CP.store.pickRoot(); };
+  const noRootPage = () => `<div class="page">${ui.pageHead(PAGE_NAMES[S.page] || 'Rīks', '')}<section class="card hero noroot"><h2>📁 Nav pievienota datu mape</h2>
+      <p>Šī sadaļa strādā tikai ar pievienotu datu mapi. Rīks tajā glabā personu kartītes, dokumentus un veidlapas.</p>${ui.rootSteps()}
+      <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${U.esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : '<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>'}</div>${ui.rootDrop()}</section></div>`;
   CP.render = () => {
     if (CP.D2) CP.theme.apply();
     if (S.root && !CP._watchLoaded && CP.watchReload) { CP._watchLoaded = true; CP.watchReload(); }
     renderNav(); renderSide();
     const pg = CP.pages[S.page] || CP.pages.dashboard;
-    U.$('main').innerHTML = pg.render();
+    document.documentElement.classList.toggle('noroot', !S.root);
+    U.$('main').innerHTML = !S.root && !NOROOT_PAGES.has(S.page) && !S.boot ? noRootPage() : pg.render();
     pg.after?.();
     for (const f of CP.afterRender || []) { try { f(); } catch (e) { console.error(e); } }
     CP.years?.paint();
@@ -3947,10 +3969,11 @@ window.CP = window.CP || {};
         : !S.root ? `<section class="card hero"><h2>Sāc darbu</h2><p>${S.pendingRoot ? `Mape <b>“${esc(S.pendingRoot.name)}”</b> ir atrasta. Chrome drošības dēļ pēc pārlūka restartēšanas lūdz apstiprināt piekļuvi — spied pogu zemāk.` : 'Pieslēdz datu mapi datorā — tajā glabāsies uzskaites fails un personu dokumenti. Pārlūks mapi atcerēsies.'}</p>
         <div class="actions">${S.pendingRoot ? `<button class="mainbtn" data-act="restoreRoot">🔓 Atļaut piekļuvi mapei “${esc(S.pendingRoot.name)}”</button><button data-act="pickRoot">Izvēlēties citu mapi</button>` : `<button class="mainbtn" data-act="pickRoot">📁 Izvēlēties datu mapi</button>`}</div>
         ${ui.rootDrop()}
-        <p class="muted small">Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
+        <div class="root-howto"><b>Kā sākt:</b>${ui.rootSteps()}</div>
+        <p class="muted small">Kamēr mape nav pievienota, personas, dokumentus un veidlapas nevar ievadīt. Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
         : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
       const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
-      if (!S.root && B && B.step !== 'index') return `<div class="page">${head}${start}</div>`;   // kamēr mape atveras vai nav pieejama — tikai statuss
+      if (!S.root) return `<div class="page">${head}${start}</div>`;   // bez mapes — tikai mapes pievienošana (statistika un darbības nav pieejamas)
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
         ${start}
         ${CP.years?.banner() || ''}
@@ -4773,6 +4796,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.19.1', date: '2026-10-15', title: 'Skaidrs sākums: vispirms datu mape', items: [
+      'Ja **datu mape nav pievienota**, pārskatā redzama tikai mapes pievienošana un 3 soļi, kā to izdarīt.',
+      'Bez mapes nevar neko ievadīt: mēģinot pievienot personu, ievadīt anketu, importēt vai sagatavot veidlapu, rīks paskaidro, ka vispirms jāpievieno mape, un piedāvā pogu **Izvēlēties datu mapi**.',
+      'Sadaļās, kurām vajag datus, ir paziņojums **“Nav pievienota datu mape”**. Sadaļa **Par rīku** ir pieejama vienmēr.'
+    ] },
     { v: '1.19.0', date: '2026-10-15', title: 'DVS reģistrācija pa dokumentiem', items: [
       'Kartītes sadaļā **Reģistrācija** DVS ir sadalīts pa dokumentiem: **Pieteikuma anketa, Līgums, Ārsta izziņa**. Katru atzīmē atsevišķi, kad tas reģistrēts.',
       'Katram dokumentam ir savs **reģistrēšanas datums**, un to var nomainīt. Redzams arī, vai dokuments jau **pievienots rīkā**.',
@@ -7494,6 +7522,7 @@ window.CP = window.CP || {};
     if (d.close) { U.$(d.close).close(); if (!d.person) return; }
     if (d.act) {
       const fn = A[d.act]; if (!fn) return console.warn('Nav darbības', d.act);
+      if (!S.root && !CP.noRootOk(d.act)) { CP.needRoot(); return; }
       try { await fn(d.arg, el, e); } catch (err) { console.error(err); ui.toast('Kļūda: ' + err.message, 'err'); }
       return;
     }

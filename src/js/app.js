@@ -15,6 +15,7 @@
     if (d.close) { U.$(d.close).close(); if (!d.person) return; }
     if (d.act) {
       const fn = A[d.act]; if (!fn) return console.warn('Nav darbības', d.act);
+      if (!S.root && !CP.noRootOk(d.act)) { CP.needRoot(); return; }
       try { await fn(d.arg, el, e); } catch (err) { console.error(err); ui.toast('Kļūda: ' + err.message, 'err'); }
       return;
     }

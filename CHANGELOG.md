@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.19.1 — 2026-10-15 — Bez datu mapes darbs netiek sākts
+- Bez pieslēgtas datu mapes (`!S.root`): pārskatā redzama tikai sadaļa “Sāc darbu” ar soļiem (izveido mapi → izvēlies → atļauj rediģēt). Statistika, pulkstenis un ātrās darbības netiek rādītas.
+- Visas darbības, kas maina datus, tiek apturētas, un tiek parādīts logs “Vispirms pievieno datu mapi” ar pogu mapes izvēlei vai piekļuves atļaušanai. Atļautas ir tikai mapes, izskata, pulksteņa, jaunumu un instalēšanas darbības (`CP.noRootOk`).
+- Citās sadaļās, izņemot Pārskatu un Par rīku, tiek parādīta lapa “Nav pievienota datu mape” ar tiem pašiem soļiem. Sānjoslas pogas ir pelēkotas.
+- Mapes pārbaudes laikā (atcerētā mape vēl atveras) tiek rādīts kā līdz šim progress.
+
 ## 1.19.0 — 2026-10-15 — DVS reģistrācija pa dokumentiem
 - `p.reg.dvs.docs[<dokuments>] = { done, date }`. Dokumentu saraksts ir tas pats, kas obligātie dokumenti (Iestatījumi → Dokumenti). Vecā `p.reg.dvs.done` tiek nolasīta kā “visi reģistrēti” ar to pašu datumu.
 - Kartītē katram dokumentam ir izvēles rūtiņa, reģistrēšanas datums (var mainīt) un statuss rīkā (✓ pievienots / ✗ nav pievienots). Augšā ir skaitītājs “N/3 reģistrēti”. e-klase paliek viena atzīme.
