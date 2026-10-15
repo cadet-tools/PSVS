@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.21.1 — 2026-10-15
+- Apmeklējuma tabulā var ievadīt ar tastatūru. Klikšķis fokusē rūtiņu un tāpat kā līdz šim maina atzīmi. Taustiņi `+`/`=`/`B`/`1`/`P` → bija, `N` `K` `A` `S`; `Del`/`Backspace`/`0`/`-` notīra; atstarpe = klikšķis; bultiņas, `Enter`, `Tab`, `Home`/`End` pārvietojas; `Esc` noņem fokusu.
+- Pēc atzīmes fokuss pāriet uz leju (nākamā persona) vai pa labi (nākamais datums). Izvēle tiek saglabāta `localStorage` (`cp.attDir`).
+- Fokusētās rūtiņas rinda un kolonnas virsraksts tiek izgaismoti. Pēc kopsavilkumu pārzīmēšanas (1,5 s pēc pēdējās atzīmes) fokuss un ritinājuma vieta saglabājas.
+
 ## 1.21.0 — 2026-10-15 — Apmeklējums
 - Jauns modulis `js/attendance.js` un lapa “Apmeklējums” (cilnes: mēneša tabula, žurnāls, rādītāji, kvalifikācijas un dalība).
 - Dati: `db.sessions = [{ id, date, group ('*' = visa vienība), yearId, type, topic, notes, att: { personId: kods } }]`. Kodi: `+` bija, `n` nebija, `k` kavēja (skaitās klātesošs), `a` attaisnots, `s` slimības dēļ. Attaisnotie neietekmē %.

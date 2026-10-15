@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.21.1', from: '1.21.0', date: '2026-10-15', title: 'Apmeklējuma atzīmēšana ar tastatūru', items: [
+      'Mēneša tabulā atzīmes var ievadīt ar **tastatūru**. Uzklikšķini uz rūtiņas un raksti **+** (vai **B**), **N**, **K**, **A** vai **S**. Atzīme tiek ierakstīta, un fokuss pāriet uz nākamo rūtiņu.',
+      'Izvēlies, kur pāriet pēc atzīmes: **↓ nākamā persona** (ērti, atzīmējot vienu nodarbību) vai **→ nākamais datums**. Izvēle tiek atcerēta.',
+      '**Bultiņas** pārvietojas pa tabulu, **Del** notīra, **Atstarpe** strādā kā klikšķis, **Esc** beidz. Aktīvās rūtiņas rinda un datums tiek izgaismoti.',
+      'Var strādāt arī jaukti: turpināt klikšķināt ar peli un, kad ērtāk, rakstīt ar tastatūru.'
+    ] },
     { v: '1.21.0', date: '2026-10-15', title: 'Apmeklējums, rādītāji, kvalifikācijas un pārkāpumi', items: [
       'Jauna sadaļa **Apmeklējums** (📅 kreisajā joslā). **Mēneša tabulā** ir N.p.k., vārds, uzvārds un datumu kolonnas. Atzīmes liek ar klikšķi kā e-klasē: **+** bija → **n** nebija → **k** kavēja → **a** attaisnots → **s** slimības dēļ.',
       'Katrai grupai pats atzīmē **nodarbību dienas** (piem., O un C). Tabulā var rādīt tikai **jaunsardzes dienas** vai **visas mēneša dienas**.',

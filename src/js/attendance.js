@@ -115,7 +115,7 @@
   const pctTag = v => v == null ? '<span class="muted">—</span>' : `<b class="${v >= 75 ? 'okc' : v >= 50 ? 'warn' : 'red'}">${v}%</b>`;
 
   /* ================== Lapa ================== */
-  const view = () => S.att || (S.att = { tab: 'grid', group: '', month: U.iso().slice(0, 7), all: false, statG: '*', qual: '' });
+  const view = () => S.att || (S.att = { tab: 'grid', group: '', month: U.iso().slice(0, 7), all: false, statG: '*', qual: '', dir: (() => { try { return localStorage.getItem('cp.attDir') || 'down'; } catch (e) { return 'down'; } })() });
   CP.pages.attendance = {
     render() {
       const v = view(), groups = D.groups();
@@ -143,7 +143,7 @@
       const mSess = sessions().filter(s => (s.group === v.group || (v.group !== '*' && s.group === '*')) && s.date.startsWith(v.month));
       const r = rateOf(p.id, mSess), sk = streak(p), lim = Number(st().absenceStreak) || 3;
       return `<tr><td class="ad-n">${i + 1}.</td><td class="ad-name"><a href="#" data-person="${p.id}">${esc(U.sortName(p))}</a>${sk.n >= lim ? ` <span class="warn" title="${sk.n} kavējumi pēc kārtas">⚠${sk.n}</span>` : ''}</td>
-        ${dates.map(d => { const s = sessFor(v.group, d), c = s?.att?.[p.id] || ''; return `<td class="ad-c"><button class="acell c${c === '+' ? 'p' : c || 'x'}" data-act="attCell" data-arg="${p.id}|${d}" title="${esc(U.full(p) + ' · ' + U.fmtDate(d))}">${esc(c)}</button></td>`; }).join('')}
+        ${dates.map(d => { const s = sessFor(v.group, d), c = s?.att?.[p.id] || ''; return `<td class="ad-c"><button class="acell c${c === '+' ? 'p' : c || 'x'}" data-act="attCell" data-arg="${p.id}|${d}" title="${esc(U.full(p) + ' · ' + U.fmtDate(d) + ' — klikšķis vai + n k a s')}">${esc(c)}</button></td>`; }).join('')}
         <td class="ad-pct">${pctTag(r.pct)}</td></tr>`;
     }).join('');
     const foot = dates.map(d => { const s = sessFor(v.group, d), n = s ? Object.values(s.att || {}).filter(c => PRESENT.has(c)).length : ''; return `<td class="ad-c small">${n === '' ? '' : n}</td>`; }).join('');
@@ -154,7 +154,9 @@
         <span class="grow"></span>
         <button class="sm" data-act="attPdf" data-arg="blank">${ic('file', '📄')} Tukša veidlapa</button><button class="sm" data-act="attPdf" data-arg="filled">${ic('file', '📄')} Ar atzīmēm</button></div>
       <div class="att-days">${daysPick}${!days.length && v.group !== '*' && !v.all ? ' <span class="warn small">— atzīmē grupas nodarbību dienas, vai izvēlies “Visas mēneša dienas”.</span>' : ''}</div>
-      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. Klikšķis uz rūtiņas maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
+      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
+      <div class="att-keys" id="attKeyHint"><span class="small"><b>Ar tastatūru:</b> uzklikšķini uz rūtiņas un raksti <kbd>+</kbd> (vai <kbd>B</kbd>) <kbd>N</kbd> <kbd>K</kbd> <kbd>A</kbd> <kbd>S</kbd> — atzīme tiek ierakstīta un fokuss pāriet tālāk. <kbd>Del</kbd> notīra, <kbd>Atstarpe</kbd> = klikšķis, bultiņas pārvietojas, <kbd>Esc</kbd> beidz.</span>
+        <span class="seg"><span class="small muted" style="padding:0 6px">Pēc atzīmes:</span><button class="sm ${(v.dir || 'down') === 'down' ? 'on' : ''}" data-act="attDir" data-arg="down" title="Nākamā persona tajā pašā datumā (atzīmē vienu nodarbību)">↓ nākamā persona</button><button class="sm ${v.dir === 'right' ? 'on' : ''}" data-act="attDir" data-arg="right" title="Nākamais datums tai pašai personai">→ nākamais datums</button></span></div>
       ${ppl.length ? `<div class="att-wrap"><table class="att-grid"><thead><tr><th class="ad-n">N.p.k.</th><th class="ad-name">Vārds, uzvārds</th>${head}<th class="ad-pct">Mēn.</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr><td></td><td class="small muted">Klātesošie</td>${foot}<td></td></tr></tfoot></table></div>` : ui.empty('Šajā grupā nav personu.')}
       <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s).</p></section>`;
@@ -176,16 +178,60 @@
     if (!s) { s = { id: U.uid(), date, group: g, yearId: U.yearOfDate(date) || D.activeYear(), type: 'Nodarbība', topic: '', notes: '', att: {}, createdAt: U.now() }; sessions().push(s); }
     return s;
   }
-  A.attCell = arg => {
+  /** Atzīmes ierakstīšana vienā rūtiņā (pele vai tastatūra) */
+  function setCode(arg, code) {
     const [pid, date] = String(arg).split('|'), v = view(), s = ensureSess(v.group, date);
-    const c = s.att[pid] || '', nx = CYCLE[(CYCLE.indexOf(c) + 1) % CYCLE.length];
-    if (nx) s.att[pid] = nx; else delete s.att[pid];
+    if (code) s.att[pid] = code; else delete s.att[pid];
     s.updatedAt = U.now();
     const btn = document.querySelector(`[data-act="attCell"][data-arg="${CSS.escape(arg)}"]`);
-    if (btn) { btn.textContent = nx; btn.className = 'acell c' + (nx === '+' ? 'p' : nx || 'x'); }
+    if (btn) { btn.textContent = code; btn.className = 'acell c' + (code === '+' ? 'p' : code || 'x'); }
     CP.store.changed({ silent: true });
-    clearTimeout(A._attT); A._attT = setTimeout(() => { if (S.page === 'attendance') { const w = document.querySelector('.att-wrap'), sl = w?.scrollLeft; CP.render(); const w2 = document.querySelector('.att-wrap'); if (w2) w2.scrollLeft = sl; } }, 1200);
+    // tabulas kopsavilkumi (%, klātesošie) tiek pārzīmēti, kad atzīmēšana apstājas; fokuss un ritinājums paliek
+    clearTimeout(A._attT); A._attT = setTimeout(() => {
+      if (S.page !== 'attendance' || view().tab !== 'grid') return;
+      const w = document.querySelector('.att-wrap'), sl = w?.scrollLeft, st0 = window.scrollY, f = document.activeElement?.closest?.('.acell')?.dataset.arg;
+      CP.render(); const w2 = document.querySelector('.att-wrap'); if (w2) w2.scrollLeft = sl; window.scrollTo(0, st0);
+      if (f) document.querySelector(`.acell[data-arg="${CSS.escape(f)}"]`)?.focus({ preventScroll: true });
+    }, 1500);
+  }
+  A.attCell = (arg, el) => {
+    const [pid, date] = String(arg).split('|'), c = sessFor(view().group, date)?.att?.[pid] || '';
+    setCode(arg, CYCLE[(CYCLE.indexOf(c) + 1) % CYCLE.length]);
+    el?.focus?.({ preventScroll: true });
   };
+  A.attDir = d => { view().dir = d; try { localStorage.setItem('cp.attDir', d); } catch (e) { } document.querySelectorAll('[data-act="attDir"]').forEach(b => b.classList.toggle('on', b.dataset.arg === d)); document.querySelector('.att-grid')?.querySelector('.acell:focus')?.focus(); };
+  /** Tastatūra: + n k a s ieraksta atzīmi un pāriet uz nākamo rūtiņu; bultiņas pārvietojas; Delete notīra; atstarpe = kā klikšķis */
+  const KEYMAP = { '+': '+', '=': '+', 'b': '+', '1': '+', 'p': '+', 'n': 'n', 'k': 'k', 'a': 'a', 's': 's', 'delete': '', 'backspace': '', '0': '', '-': '' };
+  function moveFrom(btn, dr, dc) {
+    const td = btn.closest('td'), tr = td.parentElement, ci = [...tr.children].indexOf(td), rows = [...tr.parentElement.children];
+    let ri = rows.indexOf(tr) + dr, cj = ci + dc;
+    const cells = r => [...r.querySelectorAll('.acell')], first = [...tr.children].findIndex(x => x.querySelector('.acell'));
+    const nCols = cells(tr).length;
+    if (cj < first) { cj = first + nCols - 1; ri--; } else if (cj >= first + nCols) { cj = first; ri++; }
+    const row = rows[ri]; const nx = row?.children[cj]?.querySelector('.acell');
+    if (nx) { nx.focus(); nx.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }
+    return false;
+  }
+  document.addEventListener('keydown', e => {
+    const btn = e.target.closest?.('.acell'); if (!btn || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key.toLowerCase(), dir = view().dir || 'down';
+    const nav = { arrowdown: [1, 0], arrowup: [-1, 0], arrowright: [0, 1], arrowleft: [0, -1], enter: dir === 'right' ? [0, 1] : [1, 0], tab: e.shiftKey ? [0, -1] : [0, 1] }[k];
+    if (nav) { if (moveFrom(btn, ...nav) || k !== 'tab') e.preventDefault(); return; }
+    if (k === 'home' || k === 'end') { e.preventDefault(); const c = [...btn.closest('tr').querySelectorAll('.acell')]; (k === 'home' ? c[0] : c.at(-1))?.focus(); return; }
+    if (k === 'escape') { btn.blur(); return; }
+    if (k in KEYMAP) {
+      e.preventDefault(); setCode(btn.dataset.arg, KEYMAP[k]);
+      if (k !== 'delete' && k !== 'backspace') moveFrom(btn, ...(dir === 'right' ? [0, 1] : [1, 0]));
+    }
+  });
+  /** Fokusētās rūtiņas rinda un kolonna tiek izgaismotas */
+  document.addEventListener('focusin', e => {
+    document.querySelectorAll('.att-grid .hl').forEach(x => x.classList.remove('hl'));
+    const btn = e.target.closest?.('.acell'); if (!btn) return;
+    const td = btn.closest('td'), tr = td.parentElement, ci = [...tr.children].indexOf(td), tb = tr.closest('table');
+    tr.classList.add('hl'); tb.querySelector('thead tr')?.children[ci]?.classList.add('hl');
+    const hint = document.getElementById('attKeyHint'); if (hint) hint.classList.add('on');
+  });
 
   /* --- Nodarbības logs --- */
   let edit = null;
