@@ -1,5 +1,15 @@
 # Izmaiņu vēsture
 
+## 1.21.0 — 2026-10-15 — Apmeklējums
+- Jauns modulis `js/attendance.js` un lapa “Apmeklējums” (cilnes: mēneša tabula, žurnāls, rādītāji, kvalifikācijas un dalība).
+- Dati: `db.sessions = [{ id, date, group ('*' = visa vienība), yearId, type, topic, notes, att: { personId: kods } }]`. Kodi: `+` bija, `n` nebija, `k` kavēja (skaitās klātesošs), `a` attaisnots, `s` slimības dēļ. Attaisnotie neietekmē %.
+- Iestatījumi: `groupDays` (grupas nedēļas dienas 1–7), `absenceStreak` (noklusējums 3), `quals` (instruktora definētas kvalifikācijas). Personai ir jauni lauki `quals [{ qid, date, src }]` un `incidents [{ id, date, type, severity, text, action }]`. Esošie dati netiek mainīti, shēma paliek 7 (jaunie masīvi tiek pievienoti automātiski).
+- Mēneša tabula: jaunsardzes dienas vai visas dienas; klikšķis maina atzīmi; nodarbības logs (tēma, veids, piezīmes, “visi bija”, “neatzīmētie — nebija”, notīrīt, dzēst). Veidlapa PDF (`CP.pdf.attendance`) — tukša vai ar atzīmēm, horizontāla, ja datumu ir vairāk par 9; drukāšana ar kopējo `CP.printPdf`.
+- Rādītāji: gada / mēneša %, dinamikas līnijgrafiks (SVG, laukums ar gradientu, slīdošā vidējā 4 nodarbībām, krustiņš un vērtība pie peles), grupu salīdzinājums, personu % ar tendenci (pēdējās 4 pret iepriekšējām 4) un mini grafiku.
+- Brīdinājums `attendance` pārskatā / uzdevumos: N kavējumi (`n`) pēc kārtas; attaisnotie un neatzīmētie neskaitās. Pārtrauktie netiek rādīti tabulā un brīdinājumos.
+- Kvalifikācijas: izveidot / dzēst, piešķirt atzīmētajiem ar datumu vai nometnes žurnāla dalībniekiem, noņemt. Kartītē piešķiršana no saraksta.
+- Personas kartīte: apmeklējuma karte sānjoslā; “Dalība un kvalifikācijas” (nometnes, instruktāžas, nodarbības ar veidu pasākums / nometne / sacensības); “Uzvedība un pārkāpumi” ar labošanu un dzēšanu, kas tiek reģistrēti izmaiņu vēsturē.
+
 ## 1.20.1 — 2026-10-15
 - Dokumentu cilnē noņemta augšējā sadaļa “Obligātie dokumenti”, jo tā dublēja sānjoslu. Visas tās darbības (+ Fails, + Papīrs, atgādināt pārstāvim) ir sānjoslā, kur ir arī labot / aizstāt / dzēst. Dokumentu mape un “Visi dokumenti” paliek bez izmaiņām.
 

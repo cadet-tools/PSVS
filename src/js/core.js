@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.20.1';
+  CP.VERSION = '1.21.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -308,6 +308,9 @@ window.CP = window.CP || {};
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'eklase'],
     // dokumenti ar derīguma termiņu: mēneši no izsniegšanas; schoolYear — derīgs tikai savā mācību gadā
+    groupDays: {},
+    absenceStreak: 3,
+    quals: [],
     docValidity: { 'Ārsta izziņa': { months: 12, schoolYear: true } },
     templates: [
       { name: 'Brīva ziņa', text: 'Labdien, {saņēmējs}!\n\n' },
@@ -331,7 +334,7 @@ window.CP = window.CP || {};
 
   CP.blank = () => ({
     version: CP.SCHEMA, people: [], documents: [], equipment: [], relations: [], log: [], tasks: [], audit: [],
-    years: [], enrollments: [], events: [],
+    years: [], enrollments: [], events: [], sessions: [],
     sources: [], nextFolderSeq: 1, revision: 0,
     settings: CP.defaultSettings(), createdAt: U.now(), updatedAt: null
   });
@@ -356,8 +359,8 @@ window.CP = window.CP || {};
     const d = { ...CP.blank(), ...raw };
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
-    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'sources', 'years', 'enrollments', 'events', 'sessions']) if (!Array.isArray(d[k])) d[k] = [];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
     if ((raw.version || 2) < 4) {
@@ -627,6 +630,7 @@ window.CP = window.CP || {};
         if (m.state === 'outdated') push({ kind: 'mtl', personId: p.id, sev: 1, msg: `${U.full(p)}: MTL aprites lapa nav atjaunota pēc izmaiņām ekipējumā`, when: (m.lastChange || '').slice(0, 10) });
       }
       if (D.regAlerts) for (const r of D.regAlerts(roster)) push(r);
+      if (D.attAlerts) for (const r of D.attAlerts(roster)) push(r);
       // dokumenti ar derīguma noteikumiem (ārsta izziņa)
       for (const [kind, rule] of Object.entries(d.settings.docValidity || {})) for (const p of roster) {
         if (p.status === 'archived' || D.partStatus(p) === 'paused') continue;

@@ -10,6 +10,17 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.21.0', date: '2026-10-15', title: 'Apmeklējums, rādītāji, kvalifikācijas un pārkāpumi', items: [
+      'Jauna sadaļa **Apmeklējums** (📅 kreisajā joslā). **Mēneša tabulā** ir N.p.k., vārds, uzvārds un datumu kolonnas. Atzīmes liek ar klikšķi kā e-klasē: **+** bija → **n** nebija → **k** kavēja → **a** attaisnots → **s** slimības dēļ.',
+      'Katrai grupai pats atzīmē **nodarbību dienas** (piem., O un C). Tabulā var rādīt tikai **jaunsardzes dienas** vai **visas mēneša dienas**.',
+      'Klikšķis uz datuma atver nodarbību: **tēma, veids** (nodarbība, pasākums, nometne, sacensības), **piezīmes** un pogas **“Visi bija”** un **“Neatzīmētie — nebija”**.',
+      '**Drukāšana:** “Tukša veidlapa” rūtiņām uz papīra vai “Ar atzīmēm”. Ja datumu ir daudz, lapa tiek pagriezta horizontāli.',
+      '**Žurnāls** parāda mēneša nodarbības ar tēmu un apmeklējuma %.',
+      '**Rādītāji:** vienības un grupu vidējais apmeklējums, dinamikas grafiks ar slīdošo vidējo (vērtība redzama, novietojot peli), grupu salīdzinājums un katras personas % ar tendenci ▲▼.',
+      '**Brīdinājums**, ja persona nav apmeklējusi **3 nodarbības pēc kārtas** (skaitu var mainīt). Attaisnotie kavējumi neskaitās.',
+      '**Kvalifikācijas:** pats nosaki, piem., “Pamatnometne”, un redzi, kam tā ir un kam nav. To var piešķirt atzīmētajiem vai visiem nometnes žurnāla dalībniekiem.',
+      'Personas kartītē: **apmeklējums** (%, pēdējās nodarbības, grafiks), **dalība un kvalifikācijas** (pasākumi un nometnes) un **uzvedība un pārkāpumi**: datums, smagums, apraksts, veiktie pasākumi; ierakstus var labot un dzēst.'
+    ] },
     { v: '1.20.1', from: '1.20.0', date: '2026-10-15', title: 'Ārsta izziņas termiņi un dokumentu labošana kartītē', items: [
       'Pievienojot **ārsta izziņu**, rīks prasa **izsniegšanas datumu** un pats aprēķina derīgumu uz **12 mēnešiem**. Termiņu var labot.',
       'Rīks atgādina: **30 dienas pirms** termiņa beigām, **mācību gada beigās** (izziņa der tikai savam mācību gadam) un **jaunā mācību gada sākumā**, ja jaunietis pārcelts, bet izziņa ir no iepriekšējā gada. Ja izziņai nav datuma, rīks lūdz to norādīt.',

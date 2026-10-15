@@ -210,5 +210,28 @@
     return doc.save();
   }
 
-  CP.pdf = { load, instruction, camp };
+  /* =================== Apmeklējuma veidlapa (mēnesis, grupa) =================== */
+  /** o = { title, group, monthTitle ('Jūlijā'), dates:[iso], people:[p], marks: pid→{iso→kods} | null, legend, instructor } */
+  async function attendance(o) {
+    const ctx = await newDoc(`Apmeklējums — ${o.group || ''} ${o.monthTitle || ''}`), { doc, F, text } = ctx;
+    const land = o.dates.length > 9;
+    const W = land ? 841.89 : 595.28, H = land ? 595.28 : 841.89, M = 12 * MM, cw = W - 2 * M;
+    const add = () => { const pg = doc.addPage([W, H]); pg.__top = H - 14 * MM; return pg; };
+    const p1 = add(); let y = H - 16 * MM;
+    text(p1, o.title || 'Nodarbību apmeklējums', W / 2, y, { font: F.b, size: 14, align: 'center' }); y -= 16;
+    text(p1, [o.group && `Grupa: ${o.group}`, o.year].filter(Boolean).join(' · '), W / 2, y, { size: 10.5, align: 'center' }); y -= 14;
+    const nW = 13 * MM, nameW = Math.min(55 * MM, Math.max(40 * MM, cw * 0.28)), dW = o.dates.length ? (cw - nW - nameW) / o.dates.length : 0;
+    const cols = [{ title: 'N.P.K.', w: nW, align: 'center' }, { title: 'V. UZVĀRDS', w: nameW }, ...o.dates.map(d => ({ title: d.slice(8, 10) + '.', w: dW, align: 'center', bold: true }))];
+    if (!o.dates.length) cols[1].w = cw - nW;
+    const rows = o.people.map((pp, i) => [`${i + 1}.`, U.full(pp), ...o.dates.map(d => { const c = o.marks?.[pp.id]?.[d] || ''; return c === '+' ? '+' : c; })]);
+    for (let i = 0; i < (o.blank || 0); i++) rows.push([`${rows.length + 1}.`, '', ...o.dates.map(() => '')]);
+    const t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 18 * MM, cols, head: { h1: 16, h2: 16, groups: o.dates.length ? [{ from: 2, to: cols.length - 1, title: `Nodarbības ${o.monthTitle || ''}`.trim() }] : [] }, rows, minH: 17, size: 10 });
+    let fy = t.y - 16;
+    if (o.legend) { text(t.page, o.legend, M, fy, { size: 8.5, color: ctx.grey }); fy -= 16; }
+    text(t.page, `${o.instructor ? o.instructor + ' ' : 'Instruktors '}_____________________`, W - M, fy, { size: 10, align: 'right' });
+    pageNumbers(ctx, W);
+    return doc.save();
+  }
+
+  CP.pdf = { load, instruction, camp, attendance };
 })(window.CP);

@@ -365,8 +365,10 @@
   }
   let printPages = [], printBlob = null, printName = '', printSrc = { kind: 'img' };
   CP.setPrintSource = src => { printSrc = src; const dl = U.qs('#printDialog [data-act=printDownload]'); if (dl) dl.textContent = src.kind === 'html' ? 'Lejupielādēt Word' : 'Lejupielādēt PDF'; printBlob = src.blob || null; printName = src.name || ''; if (src.kind === 'img') printPages = src.pages || []; };
-  A.formPrint = id => withPdf(id, async (blob, ev) => {
-    const d = U.$('printDialog'); CP.setPrintSource({ kind: 'img', pages: [], blob, name: `${fileBase(ev)}.pdf` }); U.$('printGo').disabled = true;
+  A.formPrint = id => withPdf(id, async (blob, ev) => CP.printPdf(blob, `${fileBase(ev)}.pdf`));
+  /** PDF priekšskatījums un drukāšana (lieto arī apmeklējuma veidlapa) */
+  CP.printPdf = async (blob, name) => {
+    const d = U.$('printDialog'); CP.setPrintSource({ kind: 'img', pages: [], blob, name }); U.$('printGo').disabled = true;
     U.$('printPages').innerHTML = '<p class="muted pad">Sagatavo priekšskatījumu…</p>'; U.$('printInfo').textContent = ''; d.showModal();
     try {
       printPages = await renderPages(blob); printSrc.pages = printPages;
@@ -374,7 +376,7 @@
       U.$('printPages').innerHTML = printPages.map((p, i) => `<figure class="print-page ${p.land ? 'land' : ''}"><img src="${p.src}" alt="${i + 1}. lapa"><figcaption>${i + 1}. lapa</figcaption></figure>`).join('');
       U.$('printGo').disabled = false;
     } catch (e) { console.error(e); U.$('printPages').innerHTML = `<p class="red pad">Priekšskatījumu neizdevās sagatavot: ${esc(e.message)}. Vari lejupielādēt PDF un izdrukāt to.</p>`; }
-  });
+  };
   /* Drukā pašu rīka lapu: drukas laikā redzamas tikai veidlapas lapas (bez iegultiem rāmjiem — Chrome priekšskatījums ielādējas uzreiz) */
   /* Drukā tieši no galvenā loga (bez iframe — Chrome drukas logs ar slēptu rāmi bieži “ielādējas” bezgalīgi):
      lapas tiek ieliktas #printSheet, @media print paslēpj visu pārējo. */

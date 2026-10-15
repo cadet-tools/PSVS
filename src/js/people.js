@@ -169,6 +169,7 @@
     return `<section class="card"><h3>Kontakti <button class="sm right" data-act="vcard" data-arg="${p.id}" title="Saglabāt telefonā / Google kontaktos">📇 Uz telefonu</button></h3>${contacts}</section>${dupCard}
       <section class="card"><h3>Obligātie dokumenti</h3>${docs}</section>
       ${tasks.length ? `<section class="card"><h3>Uzdevumi</h3>${tasks.map(taskRow).join('')}</section>` : ''}
+      ${CP.attendance ? CP.attendance.attCard(p) : ''}
       ${CP.registry ? CP.registry.personCard(p) : ''}
       ${CP.contracts ? CP.contracts.personCard(p) : ''}
       ${CP.forms ? CP.forms.personCard(p) : ''}
@@ -193,6 +194,7 @@
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
       <section class="card"><h3>Pēdējā aktivitāte <button class="ghost sm right" data-tab="history">Viss →</button></h3>${recent.length ? recent.map(timelineRow).join('') : '<p class="muted small">Vēl nav ierakstu.</p>'}</section>
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
+      ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
     </div>`;
   }
