@@ -534,6 +534,12 @@ kbd{display:inline-block;min-width:18px;padding:0 5px;border:1px solid var(--edg
 .gh-warn{margin:8px 0 0;padding:6px 10px;border-radius:8px;background:var(--warn-bg, #33291a);color:var(--warn-tx, #f6d6a0);font-size:13px}
 .gh-paste{display:flex;gap:8px;margin:2px 0 8px}.gh-paste input{flex:1;min-width:0}.gh-done{margin-top:8px;font-size:12px}.gh-foot p{margin:4px 0}
 .gcal-help a.btn{text-decoration:none}
+/* mūra izkārtojums (js: CP.masonry) — rindas pa 2px, starpu dod kartītes apakšējā mala */
+.cards2.masonry{grid-auto-rows:2px;row-gap:0;align-items:start}.cards2.masonry>.card{margin-bottom:14px!important}
+
+.imp-drop{display:flex;flex-direction:column;align-items:center;gap:6px;padding:28px 16px;border:2px dashed var(--edge2);border-radius:14px;background:var(--panel2);cursor:pointer;text-align:center;transition:border-color .12s,background .12s}
+.imp-drop:hover,.imp-drop:focus-visible,.imp-drop.sch-over{border-color:var(--teal);background:var(--sel, var(--panel2));outline:none}.imp-drop-ic{font-size:28px;line-height:1;color:var(--teal)}
+.imp-hints{margin:12px 0 0;padding-left:18px;line-height:1.6}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1118,5 +1124,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.23.3"></script></body>
+<script src="app.bundle.js?v=1.24.0"></script></body>
 </html>

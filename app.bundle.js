@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.23.3';
+  CP.VERSION = '1.24.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4068,7 +4068,7 @@ window.CP = window.CP || {};
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
           <section class="card"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 8).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}</section>
           <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
+          <section class="card"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
         </div></div>`;
     }
   };
@@ -4116,6 +4116,35 @@ window.CP = window.CP || {};
         ${done.length ? `<details class="card"><summary><b>Nesen izpildītie</b></summary>${done.map(t => `<div class="row done"><div class="grow">${esc(U.full(D.person(t.personId)))}: ${esc(t.text)}</div><button class="sm ghost" data-act="taskDone" data-arg="${t.id}">Atjaunot</button></div>`).join('')}</details>` : ''}</div>`;
     }
   };
+})(window.CP);
+/* --- Kartīšu “mūra” izkārtojums: .cards2 kolonnās kartītes saliekas cieši cita zem citas (bez tukšām starpām),
+       secība pa rindām paliek tā pati. Augstums tiek pārrēķināts, mainoties saturam vai loga platumam. --- */
+(function (CP) {
+  'use strict';
+  const GAP = 14, UNIT = 2;
+  const ro = 'ResizeObserver' in window ? new ResizeObserver(entries => { const grids = new Set(entries.map(e => e.target.parentElement).filter(Boolean)); grids.forEach(lay); }) : null;
+  function lay(grid) {
+    if (!grid?.isConnected) return;
+    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length, kids = [...grid.children];
+    if (n <= 1) { for (const c of kids) c.style.gridColumn = c.style.gridRow = ''; grid.classList.remove('masonry'); return; }
+    grid.classList.add('masonry');
+    const h = Array(n).fill(0);                                  // katras kolonnas augstums (rindu vienībās)
+    for (const c of kids) {
+      const span = Math.max(1, Math.ceil((c.getBoundingClientRect().height + GAP) / UNIT));
+      if (c.classList.contains('wide')) { const top = Math.max(...h); c.style.gridColumn = '1 / -1'; c.style.gridRow = `${top + 1} / span ${span}`; h.fill(top + span); continue; }
+      const col = h.indexOf(Math.min(...h));                    // īsākā kolonna
+      c.style.gridColumn = String(col + 1); c.style.gridRow = `${h[col] + 1} / span ${span}`; h[col] += span;
+    }
+  }
+  function apply() {
+    document.querySelectorAll('#main .cards2').forEach(g => {
+      if (!g._mas) { g._mas = true; for (const c of g.children) ro?.observe(c); }
+      lay(g);
+    });
+  }
+  (CP.afterRender = CP.afterRender || []).push(apply);
+  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2').forEach(lay));
+  CP.masonry = { apply, lay };
 })(window.CP);
 
 
@@ -4873,6 +4902,10 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.24.0', date: '2026-10-16', title: 'Sakārtots pārskats un ērtāks grafika imports', items: [
+      '**Pārskata** kartītes tagad saliekas cieši cita zem citas kolonnās, bez tukšām starpām. Katra nākamā kartīte nonāk īsākajā kolonnā. Tas pats izkārtojums darbojas arī citās lapās ar kartītēm.',
+      'Grafika pogai **Imports** ir uznirstošais logs: ievelc **darba plānošanas matricu** (darba uzskaites .xlsm vai .xlsx) laukumā vai spied **“Izvēlēties failu…”**. Logā īsi paskaidrots, kas notiks.'
+    ] },
     { v: '1.23.3', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [
       'Importējot “Nodarbību saraksts”, rīks nolasa arī **datumus piezīmju kolonnā**: e-VAM **kontaktstundas** (piem., “08.,27.OKT”), **aizvietošanas** (“02.11. aizvieto …”) un mentorēšanas dienas. Tām tiek izmantots tās pašas rindas laiks un vieta.',
       'Ja piezīmē rakstīts **“nenotiek”** (piem., “nenotiek 16.11”), šis datums netiek ielikts kalendārā vai tiek no tā noņemts.',
@@ -8742,20 +8775,39 @@ window.CP = window.CP || {};
   };
 
   /* --- Faila izvēle un ievilkšana --- */
+  /* Imports: uznirstošais logs ar ievilkšanas laukumu */
+  const take = f => { if (!isXl(f)) return ui.toast('Ievelc Excel failu (.xlsm vai .xlsx) ar darba plānošanas matricu', 'warn', 6000); U.$('schImpPick')?.close(); open(f); };
   A.schImport = () => {
     if (!S.root) return CP.needRoot?.();
-    let inp = U.$('schImpFile'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.id = 'schImpFile'; inp.accept = '.xlsx,.xlsm,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; inp.hidden = true; document.body.appendChild(inp); inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) open(f); }; }
+    let d = U.$('schImpPick'); if (!d) { d = document.createElement('dialog'); d.id = 'schImpPick'; document.body.appendChild(d); }
+    const imp = st().schImport;
+    d.innerHTML = `<header class="dlg-head"><h2>Importēt darba grafiku</h2><button type="button" class="ghost" data-close="schImpPick" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body">
+        <p style="margin-top:0">Šeit var importēt <b>darba plānošanas matricu</b>, t. i., instruktora darba uzskaites Excel failu (<b>.xlsm</b> vai .xlsx). Rīks pats saliks kalendāru no lapām <b>“Darba plāns_secīgi”</b> un <b>“Nodarbību saraksts”</b>.</p>
+        <div class="imp-drop" data-impdrop tabindex="0" role="button" data-act="schImpPickFile" aria-label="Ievilkt vai izvēlēties failu">
+          <div class="imp-drop-ic">⬆</div><b>Ievelc failu šeit</b><span class="muted small">vai</span><span class="btn mainbtn sm">Izvēlēties failu…</span>
+          <span class="muted small">.xlsm vai .xlsx</span></div>
+        <ul class="small imp-hints">
+          <li>Pirms izmaiņām parādīsies saraksts: <b>jauni</b>, <b>mainīti</b> un <b>failā vairs nav</b>. Katru izmaiņu vari atķeksēt.</li>
+          <li>Atjaunotu failu var ievilkt atkārtoti. Notikumi tiks papildināti un pārrakstīti, bet ne dubultoti.</li>
+          <li>Pašā rīkā izveidotie notikumi netiek aiztikti. Fails netiek saglabāts un nekur sūtīts.</li></ul>
+        ${imp ? `<p class="small muted">Pēdējais imports: <b>${esc(imp.name)}</b> · ${esc(U.fmtDateTime(imp.at))} · ${imp.n} notikumi.</p>` : ''}</div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="schImpPick">Aizvērt</button></footer>`;
+    d.showModal();
+  };
+  A.schImpPickFile = () => {
+    let inp = U.$('schImpFile'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.id = 'schImpFile'; inp.accept = '.xlsx,.xlsm,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; inp.hidden = true; document.body.appendChild(inp); inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) take(f); }; }
     inp.click();
   };
+  document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-impdrop]')) { e.preventDefault(); A.schImpPickFile(); } });
   const isXl = f => /\.(xlsx|xlsm)$/i.test(f?.name || '');
-  const zone = e => S.page === 'schedule' && S.root && !U.qs('dialog[open]') ? e.target.closest?.('.page') : null;
+  const zone = e => { if (!S.root) return null; const pick = e.target.closest?.('#schImpPick'); if (pick) return pick.querySelector('[data-impdrop]'); return S.page === 'schedule' && !U.qs('dialog[open]') ? e.target.closest?.('.page') : null; };
   const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
   document.addEventListener('dragover', e => { if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; zone(e).classList.add('sch-over'); });
-  document.addEventListener('dragleave', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('.page')) document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over')); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('.page,[data-impdrop]')) document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over')); });
   document.addEventListener('drop', e => {
     if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over'));
-    const f = [...e.dataTransfer.files].find(isXl); if (!f) return ui.toast('Ievelc Excel failu (.xlsm vai .xlsx) ar darba uzskaiti', 'warn', 6000);
-    open(f);
+    const f = [...e.dataTransfer.files].find(isXl); take(f || e.dataTransfer.files[0]);
   });
   CP.schedImport = { parseFile, diff, open };
 })(window.CP);

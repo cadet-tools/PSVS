@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.24.0 — 2026-10-16 — Pārskata izkārtojums un importa logs
+- `CP.masonry` (dashboard.js, `afterRender`): `.cards2` ar vairākām kolonnām → režģa rindas pa 2 px; katra kartīte tiek novietota īsākajā kolonnā (`grid-column` / `grid-row: N / span …`); `.wide` aizņem visu platumu zem garākās kolonnas. `ResizeObserver` pārrēķina pēc satura maiņas; vienā kolonnā (šaurs ekrāns) ir parastā plūsma. Pārskatā “Pēdējās izmaiņas” vairs nav `.wide`, tāpēc tā aizpilda brīvo kolonnu.
+- Grafika “Imports” atver logu `#schImpPick`: teksts par darba plānošanas matricu, ievilkšanas laukums (arī Enter / atstarpe) un faila izvēle; pēc faila izvēles atveras salīdzinājuma priekšskatījums. Ievilkšana grafika lapā darbojas kā līdz šim.
+
 ## 1.23.3 — 2026-10-16
 - Google savienošanas palīgs: 5 soļi ar tiešajām saitēm (Calendar API, Auth Platform, Audience, Clients), kopēšanas pogām, atzīmēm “Izdarīts” (`localStorage` `cp.gcalSteps`), Client ID lauku ar “Saglabāt un sinhronizēt” un pārbaudi, ka ID beidzas ar `.apps.googleusercontent.com`.
 

@@ -241,20 +241,39 @@
   };
 
   /* --- Faila izvēle un ievilkšana --- */
+  /* Imports: uznirstošais logs ar ievilkšanas laukumu */
+  const take = f => { if (!isXl(f)) return ui.toast('Ievelc Excel failu (.xlsm vai .xlsx) ar darba plānošanas matricu', 'warn', 6000); U.$('schImpPick')?.close(); open(f); };
   A.schImport = () => {
     if (!S.root) return CP.needRoot?.();
-    let inp = U.$('schImpFile'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.id = 'schImpFile'; inp.accept = '.xlsx,.xlsm,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; inp.hidden = true; document.body.appendChild(inp); inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) open(f); }; }
+    let d = U.$('schImpPick'); if (!d) { d = document.createElement('dialog'); d.id = 'schImpPick'; document.body.appendChild(d); }
+    const imp = st().schImport;
+    d.innerHTML = `<header class="dlg-head"><h2>Importēt darba grafiku</h2><button type="button" class="ghost" data-close="schImpPick" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body">
+        <p style="margin-top:0">Šeit var importēt <b>darba plānošanas matricu</b>, t. i., instruktora darba uzskaites Excel failu (<b>.xlsm</b> vai .xlsx). Rīks pats saliks kalendāru no lapām <b>“Darba plāns_secīgi”</b> un <b>“Nodarbību saraksts”</b>.</p>
+        <div class="imp-drop" data-impdrop tabindex="0" role="button" data-act="schImpPickFile" aria-label="Ievilkt vai izvēlēties failu">
+          <div class="imp-drop-ic">⬆</div><b>Ievelc failu šeit</b><span class="muted small">vai</span><span class="btn mainbtn sm">Izvēlēties failu…</span>
+          <span class="muted small">.xlsm vai .xlsx</span></div>
+        <ul class="small imp-hints">
+          <li>Pirms izmaiņām parādīsies saraksts: <b>jauni</b>, <b>mainīti</b> un <b>failā vairs nav</b>. Katru izmaiņu vari atķeksēt.</li>
+          <li>Atjaunotu failu var ievilkt atkārtoti. Notikumi tiks papildināti un pārrakstīti, bet ne dubultoti.</li>
+          <li>Pašā rīkā izveidotie notikumi netiek aiztikti. Fails netiek saglabāts un nekur sūtīts.</li></ul>
+        ${imp ? `<p class="small muted">Pēdējais imports: <b>${esc(imp.name)}</b> · ${esc(U.fmtDateTime(imp.at))} · ${imp.n} notikumi.</p>` : ''}</div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="schImpPick">Aizvērt</button></footer>`;
+    d.showModal();
+  };
+  A.schImpPickFile = () => {
+    let inp = U.$('schImpFile'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.id = 'schImpFile'; inp.accept = '.xlsx,.xlsm,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; inp.hidden = true; document.body.appendChild(inp); inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) take(f); }; }
     inp.click();
   };
+  document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-impdrop]')) { e.preventDefault(); A.schImpPickFile(); } });
   const isXl = f => /\.(xlsx|xlsm)$/i.test(f?.name || '');
-  const zone = e => S.page === 'schedule' && S.root && !U.qs('dialog[open]') ? e.target.closest?.('.page') : null;
+  const zone = e => { if (!S.root) return null; const pick = e.target.closest?.('#schImpPick'); if (pick) return pick.querySelector('[data-impdrop]'); return S.page === 'schedule' && !U.qs('dialog[open]') ? e.target.closest?.('.page') : null; };
   const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
   document.addEventListener('dragover', e => { if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; zone(e).classList.add('sch-over'); });
-  document.addEventListener('dragleave', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('.page')) document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over')); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('.page,[data-impdrop]')) document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over')); });
   document.addEventListener('drop', e => {
     if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); document.querySelectorAll('.sch-over').forEach(x => x.classList.remove('sch-over'));
-    const f = [...e.dataTransfer.files].find(isXl); if (!f) return ui.toast('Ievelc Excel failu (.xlsm vai .xlsx) ar darba uzskaiti', 'warn', 6000);
-    open(f);
+    const f = [...e.dataTransfer.files].find(isXl); take(f || e.dataTransfer.files[0]);
   });
   CP.schedImport = { parseFile, diff, open };
 })(window.CP);

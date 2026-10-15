@@ -10,6 +10,10 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.24.0', date: '2026-10-16', title: 'Sakārtots pārskats un ērtāks grafika imports', items: [
+      '**Pārskata** kartītes tagad saliekas cieši cita zem citas kolonnās, bez tukšām starpām. Katra nākamā kartīte nonāk īsākajā kolonnā. Tas pats izkārtojums darbojas arī citās lapās ar kartītēm.',
+      'Grafika pogai **Imports** ir uznirstošais logs: ievelc **darba plānošanas matricu** (darba uzskaites .xlsm vai .xlsx) laukumā vai spied **“Izvēlēties failu…”**. Logā īsi paskaidrots, kas notiks.'
+    ] },
     { v: '1.23.3', from: '1.23.0', date: '2026-10-15', title: 'Kontaktstundas un datumi no piezīmēm', items: [
       'Importējot “Nodarbību saraksts”, rīks nolasa arī **datumus piezīmju kolonnā**: e-VAM **kontaktstundas** (piem., “08.,27.OKT”), **aizvietošanas** (“02.11. aizvieto …”) un mentorēšanas dienas. Tām tiek izmantots tās pašas rindas laiks un vieta.',
       'Ja piezīmē rakstīts **“nenotiek”** (piem., “nenotiek 16.11”), šis datums netiek ielikts kalendārā vai tiek no tā noņemts.',

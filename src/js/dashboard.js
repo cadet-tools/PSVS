@@ -52,7 +52,7 @@
           <section class="card"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 8).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}</section>
           <section class="card"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 8).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}</section>
           <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card wide"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
+          <section class="card"><h3>Pēdējās izmaiņas</h3>${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</section>
         </div></div>`;
     }
   };
@@ -100,4 +100,33 @@
         ${done.length ? `<details class="card"><summary><b>Nesen izpildītie</b></summary>${done.map(t => `<div class="row done"><div class="grow">${esc(U.full(D.person(t.personId)))}: ${esc(t.text)}</div><button class="sm ghost" data-act="taskDone" data-arg="${t.id}">Atjaunot</button></div>`).join('')}</details>` : ''}</div>`;
     }
   };
+})(window.CP);
+/* --- Kartīšu “mūra” izkārtojums: .cards2 kolonnās kartītes saliekas cieši cita zem citas (bez tukšām starpām),
+       secība pa rindām paliek tā pati. Augstums tiek pārrēķināts, mainoties saturam vai loga platumam. --- */
+(function (CP) {
+  'use strict';
+  const GAP = 14, UNIT = 2;
+  const ro = 'ResizeObserver' in window ? new ResizeObserver(entries => { const grids = new Set(entries.map(e => e.target.parentElement).filter(Boolean)); grids.forEach(lay); }) : null;
+  function lay(grid) {
+    if (!grid?.isConnected) return;
+    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length, kids = [...grid.children];
+    if (n <= 1) { for (const c of kids) c.style.gridColumn = c.style.gridRow = ''; grid.classList.remove('masonry'); return; }
+    grid.classList.add('masonry');
+    const h = Array(n).fill(0);                                  // katras kolonnas augstums (rindu vienībās)
+    for (const c of kids) {
+      const span = Math.max(1, Math.ceil((c.getBoundingClientRect().height + GAP) / UNIT));
+      if (c.classList.contains('wide')) { const top = Math.max(...h); c.style.gridColumn = '1 / -1'; c.style.gridRow = `${top + 1} / span ${span}`; h.fill(top + span); continue; }
+      const col = h.indexOf(Math.min(...h));                    // īsākā kolonna
+      c.style.gridColumn = String(col + 1); c.style.gridRow = `${h[col] + 1} / span ${span}`; h[col] += span;
+    }
+  }
+  function apply() {
+    document.querySelectorAll('#main .cards2').forEach(g => {
+      if (!g._mas) { g._mas = true; for (const c of g.children) ro?.observe(c); }
+      lay(g);
+    });
+  }
+  (CP.afterRender = CP.afterRender || []).push(apply);
+  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2').forEach(lay));
+  CP.masonry = { apply, lay };
 })(window.CP);
