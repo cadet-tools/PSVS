@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.18.3 — 2026-10-15
+- Nometnes žurnāls: dalībnieka izvēlei ir nosaukums “Audzinātājs:”. Noklusējuma opcija rāda grupas audzinātāja vārdu, piem., “Ilze … (grupas audzinātājs)”, vai “Kā grupai — vēl nav izvēlēts”. Agrāk tur bija neskaidrs “↳ kā grupai”, kas pārlūkā attēlojās kā “ļ, kā grupai”. Pārējās opcijās ir citi darbinieki. Ja darbinieku nav, ir paskaidrojums, kur tos pievienot.
+- Mainot grupas audzinātāju, dalībnieku saraksts atjaunojas uzreiz. Šaurā ekrānā izvēle pārceļas zem vārda.
+
 ## 1.18.2 — 2026-10-15
 - Labojums: atverot rīku, vairs neparādās “Pieejama jauna versija… pārlādē”. Paziņojumu izraisīja bezsaistes keša atjaunošana fonā, lai gan lapa jau bija ielādējusi jaunāko kodu.
 - Jaunas versijas pārbaude darba laikā: rīks salīdzina publicēto `version.json` ar ielādēto versiju (5 min pēc atvēršanas, tad ik pēc 15 min un atgriežoties logā). Paziņojums ar pogu “↻ Pārlādēt” paliek redzams, līdz to aizver, un tiek parādīts vienreiz katrai versijai. `version.json` vienmēr tiek ielādēts no tīkla.

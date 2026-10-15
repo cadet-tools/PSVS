@@ -193,6 +193,15 @@
       const ps = evPeople(ev), issues = ps.map(p => ({ p, m: D.eventDocIssues(p) })).filter(x => x.m.length);
       const groups = D.groups();
       const f = (k, label, type = 'text', extra = '') => `<div class="field"><label>${label}</label><input type="${type}" data-ev="${k}" value="${esc(ev[k] ?? '')}" ${extra}></div>`;
+      /* Dalībnieka audzinātājs: noklusējumā — grupas audzinātājs (redzams vārds), vai cits darbinieks tikai šim dalībniekam */
+      const personCoun = (p, part) => {
+        if (!staffList().length) return `<small class="muted ev-coun">Audzinātāju sarakstā vēl nav — pievieno sadaļā “Darbinieki nometnē”</small>`;
+        const g = D.groupOf(p, ev.yearId) || '(bez grupas)', gc = staffById(ev.groupCounselors?.[g]);
+        const own = part?.counselorId || '';
+        return `<label class="ev-coun small"><span class="muted">Audzinātājs:</span><select class="sm" data-evcoun="${p.id}" title="Šī dalībnieka audzinātājs nometnē">
+          <option value="" ${own ? '' : 'selected'}>${gc ? `${esc(gc.name)} (grupas audzinātājs)` : 'Kā grupai — vēl nav izvēlēts'}</option>
+          ${staffList().filter(s => s.id !== gc?.id).map(s => `<option value="${s.id}" ${own === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('')}</select></label>`;
+      };
       const counselorOpts = (cur, empty = '— nav —') => `<option value="">${empty}</option>` + staffList().map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('');
       const evGroups = [...new Set(ps.map(p => D.groupOf(p, ev.yearId) || '(bez grupas)'))].sort(U.cmp);
 
@@ -214,13 +223,13 @@
           <div class="actions" style="margin-top:8px"><button class="sm" data-act="staffEdit">${ic('userPlus', '＋')} Pievienot darbinieku vai audzinātāju</button></div></section>
           <section class="card"><h3>${ic('userCheck')}Audzinātāji</h3>
           ${evGroups.length ? evGroups.map(g => `<div class="inline-form"><span class="grow"><b>${esc(g)}</b> <span class="small muted">${ps.filter(p => (D.groupOf(p, ev.yearId) || '(bez grupas)') === g).length} dal.</span></span><select data-evgroup="${esc(g)}" style="max-width:240px">${counselorOpts(ev.groupCounselors?.[g])}</select></div>`).join('') : '<p class="muted small">Izvēlies dalībniekus — tad varēs piešķirt audzinātāju katrai grupai.</p>'}
-          <p class="small muted">Atsevišķam dalībniekam audzinātāju var nomainīt sarakstā labajā pusē.</p></section>` : ''}`;
+          <p class="small muted">Katrs dalībnieks automātiski saņem savas grupas audzinātāju. Ja kādam jābūt citam, labajā pusē pie dalībnieka izvēlies “Audzinātājs”.</p></section>` : ''}`;
 
       const prow = p => {
         const on = chosen.has(p.id), m = D.eventDocIssues(p), part = (ev.participants || []).find(x => x.pid === p.id);
         return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evpick="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, ev.yearId) || '')}</small>
           ${m.length ? `<br><small class="warn" title="Bez šiem dokumentiem jaunsargs nedrīkst piedalīties pasākumā">⚠ Trūkst: ${esc(m.join(', '))}</small>` : ''}</span></label>
-          ${on && ev.type === 'camp' ? `<select class="sm" data-evcoun="${p.id}" title="Audzinātājs šim dalībniekam" style="max-width:170px">${counselorOpts(part?.counselorId || '', '↳ kā grupai')}</select>` : ''}</div>`;
+          ${on && ev.type === 'camp' ? personCoun(p, part) : ''}</div>`;
       };
       const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ps.length} izvēlēti</span></h3>
           <div class="ev-pickbar"><input type="search" id="evQ" placeholder="Meklēt vārdu…" value="${esc(pick.q)}" autocomplete="off">
@@ -260,7 +269,7 @@
       renderKeepScroll(); return true;
     }
     if (t.dataset.evstaff) { const id = t.dataset.evstaff; ev.staff = t.checked ? [...new Set([...(ev.staff || []), id])] : (ev.staff || []).filter(x => x !== id); return true; }
-    if (t.dataset.evgroup != null && t.dataset.evgroup !== undefined && t.hasAttribute('data-evgroup')) { ev.groupCounselors = { ...(ev.groupCounselors || {}), [t.dataset.evgroup]: t.value }; return true; }
+    if (t.dataset.evgroup != null && t.dataset.evgroup !== undefined && t.hasAttribute('data-evgroup')) { ev.groupCounselors = { ...(ev.groupCounselors || {}), [t.dataset.evgroup]: t.value }; setTimeout(renderKeepScroll, 0); return true; }
     if (t.dataset.evcoun) { const x = ev.participants.find(x => x.pid === t.dataset.evcoun); if (x) x.counselorId = t.value; return true; }
     const k = t.dataset.ev; if (!k) return false;
     if (NUM.has(k)) { setTimeout(() => { if (S.page === 'formEdit') renderKeepScroll(); }, 0); return true; }

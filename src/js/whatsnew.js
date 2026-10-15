@@ -10,10 +10,11 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.18.2', date: '2026-10-15', title: 'Ērtāki atjauninājumi', items: [
+    { v: '1.18.3', from: '1.18.2', date: '2026-10-15', title: 'Ērtāki atjauninājumi un sīki uzlabojumi', items: [
       'Atverot rīku, vairs netiek lūgts pārlādēt lapu: tu jau strādā ar jaunāko versiju.',
       'Ja jauna versija iznāk, kamēr strādā, rīks par to paziņo, un lapu var pārlādēt, kad tev ērti.',
-      'Šis jaunumu saraksts ir sakārtots pa lielākām funkcijām.'
+      'Šis jaunumu saraksts ir sakārtots pa lielākām funkcijām.',
+      'Nometnes žurnālā pie katra dalībnieka ir izvēle **Audzinātājs**. Noklusējumā tur redzams grupas audzinātāja vārds, un citu var izvēlēties tikai šim dalībniekam.'
     ] },
     { v: '1.18.1', from: '1.17.0', date: '2026-10-15', title: 'Jauna veidlapa: Līgums par dalību Jaunsardzē', items: [
       '**Aizpildās pats no kartītes**: jaunieša un pārstāvja vārds, personas kods pa cipariem, adreses, tālruņi un e-pasti. Rīks pats izvēlas līgumu ar pārstāvi (līdz 18 g.) vai ar jaunieti (no 18 g.). Formu (papīrs vai EDOC) izvēlies pats.',
