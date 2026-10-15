@@ -344,24 +344,55 @@
   }
   const autoSync = U.debounce(() => { if (token && Date.now() < tokenExp - 60000 && gc().calendarId) sync(false); }, 3000);
   A.gcalSync = () => sync(true);
+  /* Google savienošanas palīgs: soļi ar tiešajām saitēm, kopēšanas pogām un atzīmēm “izdarīts” */
+  const HKEY = 'cp.gcalSteps';
+  const doneSteps = () => { try { return JSON.parse(localStorage.getItem(HKEY) || '{}'); } catch (e) { return {}; } };
+  A.gcalStep = k => { const o = doneSteps(); o[k] = !o[k]; try { localStorage.setItem(HKEY, JSON.stringify(o)); } catch (e) { } const b = document.querySelector('#gcalHelp .dlg-body'), y = b?.scrollTop || 0, v = U.$('gcalHelpId')?.value; A.gcalHelp(); const b2 = document.querySelector('#gcalHelp .dlg-body'); if (b2) b2.scrollTop = y; if (v != null && U.$('gcalHelpId')) U.$('gcalHelpId').value = v; };
+  A.gcalCopy = (v, el) => navigator.clipboard.writeText(v).then(() => { if (el) { const t = el.textContent; el.textContent = '✓ Nokopēts'; setTimeout(() => { el.textContent = t; }, 1500); } }, () => ui.toast(v, 'ok', 10000));
+  A.gcalSave = async () => {
+    const v = (U.$('gcalHelpId')?.value || '').trim();
+    if (!/\.apps\.googleusercontent\.com$/.test(v)) return ui.toast('Ielīmē Client ID — tam jābeidzas ar .apps.googleusercontent.com (Client secret nav vajadzīgs)', 'warn', 8000);
+    gc().clientId = v; CP.store.changed({ silent: true }); U.$('gcalHelp').close(); CP.render(); sync(true);
+  };
   A.gcalHelp = () => {
     let d = U.$('gcalHelp'); if (!d) { d = document.createElement('dialog'); d.id = 'gcalHelp'; d.className = 'wide'; document.body.appendChild(d); }
-    const origin = location.origin;
-    d.innerHTML = `<header class="dlg-head"><h2>Google kalendāra savienošana (vienu reizi, ~10 min)</h2><button type="button" class="ghost" data-close="gcalHelp" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body gcal-help"><p class="small muted">Bezmaksas. Vajag tikai Google kontu. Rīks redzēs tikai savu kalendāru “Jaunsardze — darba grafiks”, nevis citus tavus kalendārus.</p><ol>
-        <li>Atver <b>console.cloud.google.com</b> un piesakies ar savu Google kontu. Augšā izvēlies projektu vai izveido jaunu (piem., <i>Jaunsardze grafiks</i>). Projekts “My First Project” arī der.</li>
-        <li>Augšējā meklēšanas laukā ieraksti <b>Google Calendar API</b>, atver to un spied <b>Enable</b>. Ja redzi “Manage”, tas jau ir ieslēgts.</li>
-        <li>Meklēšanā ieraksti <b>Google Auth Platform</b>. Ja redzi pogu <b>Get started</b>, aizpildi: lietotnes nosaukums (piem., <i>CADET grafiks</i>), tavs e-pasts, <b>Audience: External</b>, kontakta e-pasts → <b>Create</b>. Ja jau redzi lapu “OAuth Overview”, šis solis ir izdarīts.</li>
-        <li>Kreisajā joslā <b>Audience</b> → sadaļā <b>Test users</b> spied <b>+ Add users</b>, ieraksti savu Gmail adresi (un citu instruktoru adreses, ja viņi lietos to pašu Client ID) → <b>Save</b>.</li>
-        <li>Kreisajā joslā <b>Clients</b> → <b>+ Create client</b> → <b>Application type: Web application</b>, nosaukums, piem., <i>CADET grafiks</i>.
-          <div>“Authorized JavaScript origins” → <b>+ Add URI</b>: <code class="copy">${esc(origin)}</code></div>
-          <div>“Authorized redirect URIs” → <b>+ Add URI</b> (abas adreses): <code class="copy">${esc(new URL('PSVS/oauth.html', origin + '/').href)}</code> <code class="copy">${esc(new URL('PSVS/test/oauth.html', origin + '/').href)}</code>${/\/PSVS\/(test\/)?oauth\.html$/.test(new URL(redirectUri()).pathname) ? '' : ` <code class="copy">${esc(redirectUri())}</code>`}</div> → <b>Create</b>.</li>
-        <li>Parādīsies <b>Client ID</b> (beidzas ar <i>.apps.googleusercontent.com</i>). Nokopē to un ielīmē rīkā laukā <b>“Google OAuth Client ID”</b>.</li>
-        <li>Spied <b>“Sinhronizēt ar Google”</b>. Atvērsies Google logs. Ja redzi “Google hasn’t verified this app”, spied <b>Continue</b> (tā ir tava paša lietotne) un atļauj piekļuvi.</li></ol>
-        <p class="small muted">Josla “Free trial” Google Cloud augšā uz šo neattiecas: kalendāra savienojums ir bezmaksas.</p>
-        <p class="small">Uz Google tiek sūtīti tikai grafika notikumi: nosaukums, laiks, vieta, piezīmes un veids. Personu dati netiek sūtīti. Telefonā kalendārs “Jaunsardze — darba grafiks” parādīsies Google Calendar lietotnē ar atgādinājumiem.</p></div>
+    const origin = location.origin, R1 = new URL('PSVS/oauth.html', origin + '/').href, R2 = new URL('PSVS/test/oauth.html', origin + '/').href, own = redirectUri();
+    const redirs = [...new Set([R1, R2, own])].filter(u => /oauth\.html$/.test(u) && (u === own || /\/PSVS\//.test(own)));
+    const ok = doneSteps(), GC = 'https://console.cloud.google.com';
+    const copy = v => `<span class="gh-copy"><code>${esc(v)}</code><button type="button" class="sm" data-act="gcalCopy" data-arg="${esc(v)}">⧉ Kopēt</button></span>`;
+    const link = (href, label) => `<a class="btn sm" href="${href}" target="_blank" rel="noopener noreferrer">↗ ${label}</a>`;
+    const step = (k, n, title, body) => `<section class="gh-step ${ok[k] ? 'done' : ''}"><div class="gh-num">${ok[k] ? '✓' : n}</div><div class="grow"><h3>${title}</h3>${body}
+      <label class="check gh-done"><input type="checkbox" data-act="gcalStep" data-arg="${k}" ${ok[k] ? 'checked' : ''}> Izdarīts</label></div></section>`;
+    d.innerHTML = `<header class="dlg-head"><h2>Google kalendāra savienošana</h2><button type="button" class="ghost" data-close="gcalHelp" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body gcal-help">
+        <div class="gh-intro"><b>Vienu reizi, apmēram 10 minūtes.</b> Bezmaksas. Vajag tikai Google kontu. Rīks redzēs tikai savu kalendāru “Jaunsardze — darba grafiks”, nevis citus tavus kalendārus.
+          <div class="small muted">Katrs solis atver vajadzīgo Google lapu jaunā cilnē. Pēc katra soļa atzīmē “Izdarīts”, lai redzētu, kur esi.</div></div>
+        ${step('api', 1, 'Ieslēdz Google Calendar API', `<ol class="gh-list"><li>${link(GC + '/apis/library/calendar-json.googleapis.com', 'Atvērt Google Calendar API')} un piesakies ar savu Google kontu.</li>
+          <li>Ja augšā prasa izvēlēties projektu: izvēlies esošo (der arī <i>My First Project</i>) vai izveido jaunu.</li>
+          <li>Spied zilo pogu <b>Enable</b>. Ja redzi pogu <b>Manage</b>, API jau ir ieslēgts, un nekas vairāk nav jādara.</li></ol>`)}
+        ${step('start', 2, 'Izveido lietotnes aprakstu (ja vēl nav)', `<ol class="gh-list"><li>${link(GC + '/auth/overview', 'Atvērt Google Auth Platform')}</li>
+          <li><b>Ja redzi lapu “OAuth Overview” ar grafikiem, šis solis jau ir izdarīts.</b> Atzīmē “Izdarīts” un ej tālāk.</li>
+          <li>Ja redzi pogu <b>Get started</b>, spied to un aizpildi:
+            <ul><li><b>App name:</b> piem., <i>CADET grafiks</i></li><li><b>User support email:</b> tavs e-pasts</li><li><b>Audience:</b> <b>External</b></li><li><b>Contact information:</b> tavs e-pasts</li><li>Atzīmē piekrišanu → <b>Create</b></li></ul></li></ol>`)}
+        ${step('users', 3, 'Pievieno sevi kā testa lietotāju', `<ol class="gh-list"><li>${link(GC + '/auth/audience', 'Atvērt Audience')}</li>
+          <li>Ritini uz leju līdz sadaļai <b>Test users</b> → <b>+ Add users</b>.</li>
+          <li>Ieraksti savu <b>Gmail adresi</b>, ar kuru pieteiksies (citi instruktori, kas lietos šo pašu Client ID, jāpievieno arī šeit) → <b>Save</b>.</li></ol>`)}
+        ${step('client', 4, 'Izveido Client ID', `<ol class="gh-list"><li>${link(GC + '/auth/clients', 'Atvērt Clients')} → spied <b>+ Create client</b>.</li>
+          <li><b>Application type:</b> izvēlies <b>Web application</b>. <b>Name:</b> piem., <i>CADET grafiks</i>.</li>
+          <li>Sadaļā <b>Authorized JavaScript origins</b> spied <b>+ Add URI</b> un ielīmē:${copy(origin)}</li>
+          <li>Sadaļā <b>Authorized redirect URIs</b> spied <b>+ Add URI</b> ${redirs.length > 1 ? `${redirs.length} reizes un ielīmē katru adresi` : 'un ielīmē'}:${redirs.map(copy).join('')}</li>
+          <li>Spied <b>Create</b>. Atvērsies logs <b>“OAuth client created”</b>.</li>
+          <li>Pie <b>Client ID</b> (beidzas ar <i>.apps.googleusercontent.com</i>) spied kopēšanas ikonu ⧉.</li></ol>
+          <p class="gh-warn">🔒 <b>Client secret nav vajadzīgs.</b> To neievadi rīkā un nevienam nerādi.</p>`)}
+        ${step('tool', 5, 'Ielīmē Client ID rīkā un sinhronizē', `<div class="gh-paste"><input id="gcalHelpId" value="${esc(gc().clientId || '')}" placeholder="xxxxxxxx-xxxx.apps.googleusercontent.com" spellcheck="false"><button type="button" class="mainbtn" data-act="gcalSave">↻ Saglabāt un sinhronizēt</button></div>
+          <ol class="gh-list"><li>Atvērsies Google logs. Izvēlies kontu, ko pievienoji 3. solī.</li>
+          <li>Ja redzi <b>“Google hasn’t verified this app”</b>, spied <b>Continue</b>. Tā ir tava paša lietotne.</li>
+          <li>Atļauj piekļuvi kalendāram → <b>Continue</b>. Logs aizvērsies pats, un rīks parādīs “Google kalendārs atjaunināts”.</li>
+          <li>Ja logs neatveras, pārlūks bloķēja uznirstošo logu. Atļauj to adreses joslas labajā pusē un spied vēlreiz.</li></ol>`)}
+        <div class="gh-foot small"><p><b>Telefonā:</b> Google Calendar lietotnē parādīsies kalendārs “Jaunsardze — darba grafiks”. Ja to neredzi, atver izvēlni ☰ un ieslēdz to kalendāru sarakstā.</p>
+          <p class="muted">Uz Google tiek sūtīti tikai grafika notikumi: nosaukums, laiks, vieta, piezīmes un veids. Personu dati netiek sūtīti. Josla “Free trial” Google Cloud lapā uz šo neattiecas.</p></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="gcalHelp">Aizvērt</button></footer>`;
-    d.showModal();
+    if (!d.open) d.showModal();
   };
   A.gcalForget = () => { if (!confirm('Atvienot Google kalendāru? Rīkā notikumi paliek. Google kalendārā tie paliek, kā ir; nākamreiz rīks izveidos jaunu kalendāru.')) return; const g = gc(); g.calendarId = ''; g.lastSync = ''; token = null; for (const e of list()) { delete e.gcalId; delete e.gsig; } S.db.scheduleDel = []; CP.store.changed(); };
 

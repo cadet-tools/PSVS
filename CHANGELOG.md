@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.23.3 — 2026-10-16
+- Google savienošanas palīgs: 5 soļi ar tiešajām saitēm (Calendar API, Auth Platform, Audience, Clients), kopēšanas pogām, atzīmēm “Izdarīts” (`localStorage` `cp.gcalSteps`), Client ID lauku ar “Saglabāt un sinhronizēt” un pārbaudi, ka ID beidzas ar `.apps.googleusercontent.com`.
+
 ## 1.23.2 — 2026-10-16
 - Google kalendāra instrukcija atbilst Google Auth Platform izvēlnei (Get started / OAuth Overview, Audience → Test users, Clients → Create client). Tiek parādītas abas novirzīšanas adreses (stabilā un testa).
 

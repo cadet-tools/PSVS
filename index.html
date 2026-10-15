@@ -525,6 +525,16 @@ kbd{display:inline-block;min-width:18px;padding:0 5px;border:1px solid var(--edg
 .imp-row{display:flex;gap:10px;align-items:baseline;padding:4px 2px;border-top:1px solid var(--line, var(--edge));font-size:13px}.imp-row input{flex:none}.imp-when{min-width:170px;color:var(--muted);font-size:12px}
 .imp-row s{text-decoration:line-through}
 
+/* --- Google savienošanas palīgs --- */
+.gcal-help{display:flex;flex-direction:column;gap:10px}.gh-intro{padding:10px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--edge)}
+.gh-step{display:flex;gap:14px;padding:12px 14px;border:1px solid var(--edge);border-radius:12px;background:var(--panel)}.gh-step.done{opacity:.72}.gh-step h3{margin:2px 0 6px;font-size:15px}
+.gh-num{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:var(--teal-d);color:#fff}.gh-step.done .gh-num{background:var(--ok-bg, #173a31);color:var(--ok-tx, #9be5c8)}
+.gh-list{margin:0;padding-left:20px;line-height:1.65}.gh-list li{margin:3px 0}.gh-list ul{margin:4px 0;padding-left:18px}
+.gh-copy{display:flex;gap:6px;align-items:center;margin:4px 0}.gh-copy code{flex:1;min-width:0;background:var(--field);border:1px solid var(--edge);border-radius:6px;padding:4px 8px;user-select:all;word-break:break-all;font-size:12.5px}
+.gh-warn{margin:8px 0 0;padding:6px 10px;border-radius:8px;background:var(--warn-bg, #33291a);color:var(--warn-tx, #f6d6a0);font-size:13px}
+.gh-paste{display:flex;gap:8px;margin:2px 0 8px}.gh-paste input{flex:1;min-width:0}.gh-done{margin-top:8px;font-size:12px}.gh-foot p{margin:4px 0}
+.gcal-help a.btn{text-decoration:none}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -1108,5 +1118,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.23.2"></script></body>
+<script src="app.bundle.js?v=1.23.3"></script></body>
 </html>
