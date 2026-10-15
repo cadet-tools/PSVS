@@ -49,9 +49,9 @@
         <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel</button><button data-act="import" data-arg="eklase">${CP.ic('upload', '⬆')} No e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
         <div class="cards2">
           ${CP.schedule?.dashCard ? CP.schedule.dashCard() : ''}
-          <section class="card" data-fill="5"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 40).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}${al.length ? `<div class="fill-more" data-total="${al.length}"><button class="sm ghost" data-page="alerts"></button></div>` : ''}</section>
-          <section class="card" data-fill="5"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 40).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}${miss.length ? `<div class="fill-more" data-total="${miss.length}"><button class="sm ghost" data-act="openList" data-arg="missing"></button></div>` : ''}</section>
-          <section class="card"><h3>Grupas</h3>${D.groups().map(g => `<div class="row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
+          <section class="card" data-fill="5" data-mcol="1"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 40).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}${al.length ? `<div class="fill-more" data-total="${al.length}"><button class="sm ghost" data-page="alerts"></button></div>` : ''}</section>
+          <section class="card" data-fill="5" data-mcol="2"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 40).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}${miss.length ? `<div class="fill-more" data-total="${miss.length}"><button class="sm ghost" data-act="openList" data-arg="missing"></button></div>` : ''}</section>
+          <section class="card" data-mcol="0"><h3>Grupas</h3>${D.groups().map(g => `<div class="row grp-row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span><span class="grp-btns"><button class="sm ghost" data-act="groupEdit" data-arg="${esc(g)}" title="Pārdēvēt vai apvienot ar citu grupu" aria-label="Pārdēvēt grupu ${esc(g)}">✎</button><button class="sm ghost danger" data-act="groupDel" data-arg="${esc(g)}" title="Dzēst grupu" aria-label="Dzēst grupu ${esc(g)}">✕</button></span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
           <section class="card wide"><h3>Pēdējās izmaiņas</h3><div class="recent-grid">${recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</div></section>
         </div></div>`;
     }
@@ -119,14 +119,15 @@
     for (const c of grid.children) {
       const span = Math.max(1, Math.ceil((c.getBoundingClientRect().height + GAP) / UNIT));
       if (c.classList.contains('wide')) { const top = Math.max(...h); c.style.gridColumn = '1 / -1'; c.style.gridRow = `${top + 1} / span ${span}`; h.fill(top + span); continue; }
-      const col = h.indexOf(Math.min(...h));
+      const col = c.dataset.mcol != null ? Math.min(Number(c.dataset.mcol), n - 1) : h.indexOf(Math.min(...h));   // noteikta kolonna vai īsākā
       c.style.gridColumn = String(col + 1); c.style.gridRow = `${h[col] + 1} / span ${span}`; at.set(c, { col, top: h[col], span }); h[col] += span;
     }
     return at;
   }
   function lay(grid) {
     if (!grid?.isConnected) return;
-    grid._laying = true;
+    grid._laying = true; clearTimeout(grid._layT);
+    for (const c of grid.children) c.classList.remove('mas-stretch');   // mēra dabisko augstumu
     const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length, kids = [...grid.children], fills = kids.filter(c => c.dataset.fill);
     if (n <= 1) { for (const c of kids) c.style.gridColumn = c.style.gridRow = ''; grid.classList.remove('masonry'); fills.forEach(c => setFill(c, Number(c.dataset.fill) + 2)); }
     else {
@@ -144,9 +145,15 @@
         const b2 = bottoms(place(grid, n));
         if (b2[col] > max || Math.max(...b2) > max) { setFill(cand, k.get(cand)); done.add(cand); } else k.set(cand, k.get(cand) + 1);
       }
-      place(grid, n);
+      // katras kolonnas pēdējā kartīte tiek izstiepta līdz kopējai apakšai → vienāda atstarpe līdz nākamajai (platajai) kartītei
+      const at = place(grid, n), last = Array(n).fill(null); let max = 0, wideTop = Infinity;
+      for (const [c, a] of at) { if (!last[a.col] || a.top > at.get(last[a.col]).top) last[a.col] = c; }
+      for (const c of grid.children) if (c.classList.contains('wide')) { const m = /^(\d+)/.exec(c.style.gridRow); if (m) wideTop = Math.min(wideTop, Number(m[1]) - 1); }
+      for (const [, a] of at) max = Math.max(max, a.top + a.span);
+      const bottom = Math.min(max, wideTop);
+      last.forEach(c => { if (!c) return; const a = at.get(c); c.style.gridRow = `${a.top + 1} / ${bottom + 1}`; c.classList.add('mas-stretch'); });
     }
-    requestAnimationFrame(() => { grid._laying = false; });
+    grid._layT = setTimeout(() => { grid._laying = false; }, 150);
   }
   function apply() {
     document.querySelectorAll('#main .cards2').forEach(g => {
@@ -157,4 +164,51 @@
   (CP.afterRender = CP.afterRender || []).push(apply);
   window.addEventListener('resize', () => document.querySelectorAll('#main .cards2').forEach(lay));
   CP.masonry = { apply, lay };
+})(window.CP);
+
+/* --- Grupu pārdēvēšana / apvienošana / dzēšana (aktīvajā mācību gadā). Personas netiek dzēstas. --- */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const members = g => (S.db.enrollments || []).filter(e => e.yearId === D.activeYear() && e.group === g);
+  function moveGroup(from, to) {
+    const list = members(from);
+    for (const e of list) { e.group = to; const p = D.person(e.personId); if (p) { p.updatedAt = U.now(); D.audit(p.id, 'update', [to ? `Grupa: ${from} → ${to}` : `Grupa “${from}” dzēsta — bez grupas`]); } }
+    const st = S.db.settings;
+    if (st.stickyGroup === from) st.stickyGroup = to;
+    if (S.list?.group === from) S.list.group = to || '';
+    if (st.groupDays?.[from]) { if (to && !st.groupDays[to]) st.groupDays[to] = st.groupDays[from]; delete st.groupDays[from]; }
+    // apmeklējuma nodarbības: pārdēvējot / apvienojot pāriet uz jauno grupu (vēsture saglabājas); dzēšot paliek ar veco nosaukumu
+    if (to) for (const s of S.db.sessions || []) if (s.group === from && s.yearId === D.activeYear() && !(S.db.sessions || []).some(x => x !== s && x.group === to && x.date === s.date)) s.group = to;
+    if (S.att?.group === from) S.att.group = to || '';
+    return list.length;
+  }
+  function dlg(html) { let d = U.$('groupDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'groupDialog'; document.body.appendChild(d); } d.innerHTML = html; d.showModal(); return d; }
+  A.groupEdit = g => {
+    const others = D.groups().filter(x => x !== g), n = members(g).length;
+    const d = dlg(`<form><header class="dlg-head"><h2>Pārdēvēt grupu “${esc(g)}”</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><div class="field"><label>Jaunais nosaukums</label><input name="to" value="${esc(g)}" list="dl_grp" required><datalist id="dl_grp">${others.map(x => `<option value="${esc(x)}">`).join('')}</datalist></div>
+      <p class="small muted">${n} personām šajā mācību gadā. Ja ieraksti jau esošas grupas nosaukumu, grupas tiks apvienotas. Apmeklējuma atzīmes un nodarbību dienas pāriet līdzi.</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="groupDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`);
+    d.querySelector('form').onsubmit = e => {
+      e.preventDefault(); const to = e.target.to.value.trim(); if (!to || to === g) return d.close();
+      const merge = D.groups().includes(to);
+      if (merge && !confirm(`Grupa “${to}” jau ir. Apvienot “${g}” ar “${to}”?`)) return;
+      const k = moveGroup(g, to); d.close(); CP.store.changed(); ui.toast(merge ? `Grupa “${g}” apvienota ar “${to}” (${k} personas)` : `Grupa pārdēvēta: “${g}” → “${to}”`, 'ok');
+    };
+  };
+  A.groupDel = g => {
+    const others = D.groups().filter(x => x !== g), n = members(g).length;
+    const d = dlg(`<form><header class="dlg-head"><h2>Dzēst grupu “${esc(g)}”</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p style="margin-top:0">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>
+        ${others.length ? `<label class="check"><input type="radio" name="how" value="move" checked> Pārcelt uz grupu <select name="to">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></label>` : ''}
+        <label class="check" style="margin-top:6px"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}> Atstāt bez grupas</label>
+        <p class="small muted">Iepriekšējo mācību gadu dalība netiek mainīta.</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="groupDialog">Atcelt</button><button class="mainbtn danger" type="submit">Dzēst grupu</button></footer></form>`);
+    d.querySelector('form').onsubmit = e => {
+      e.preventDefault(); const f = e.target, to = f.how.value === 'move' ? f.to.value : '';
+      const k = moveGroup(g, to); d.close(); CP.store.changed();
+      ui.toast(to ? `Grupa “${g}” dzēsta — ${k} personas pārceltas uz “${to}”` : `Grupa “${g}” dzēsta — ${k} personas bez grupas`, 'ok', 6000);
+    };
+  };
 })(window.CP);

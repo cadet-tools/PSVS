@@ -544,6 +544,8 @@ kbd{display:inline-block;min-width:18px;padding:0 5px;border:1px solid var(--edg
 .recent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(480px,100%),1fr));column-gap:28px}.recent-grid>.row{min-width:0}
 @media (max-width:700px){.recent-grid{grid-template-columns:1fr}}
 .fill-more{margin-top:8px}.fill-more[hidden],.card .row[hidden]{display:none!important}
+.cards2.masonry>.card.mas-stretch{align-self:stretch}
+.grp-row .grp-btns{display:inline-flex;gap:2px;opacity:.35;transition:opacity .12s}.grp-row:hover .grp-btns,.grp-row:focus-within .grp-btns{opacity:1}@media (hover:none){.grp-row .grp-btns{opacity:1}}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1128,5 +1130,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.24.1"></script></body>
+<script src="app.bundle.js?v=1.25.0"></script></body>
 </html>

@@ -528,3 +528,5 @@ kbd{display:inline-block;min-width:18px;padding:0 5px;border:1px solid var(--edg
 .recent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(480px,100%),1fr));column-gap:28px}.recent-grid>.row{min-width:0}
 @media (max-width:700px){.recent-grid{grid-template-columns:1fr}}
 .fill-more{margin-top:8px}.fill-more[hidden],.card .row[hidden]{display:none!important}
+.cards2.masonry>.card.mas-stretch{align-self:stretch}
+.grp-row .grp-btns{display:inline-flex;gap:2px;opacity:.35;transition:opacity .12s}.grp-row:hover .grp-btns,.grp-row:focus-within .grp-btns{opacity:1}@media (hover:none){.grp-row .grp-btns{opacity:1}}

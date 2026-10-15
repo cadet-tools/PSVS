@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.25.0 — 2026-10-16 — Grupu pārvaldība
+- Grupas ✎ / ✕ pārskatā (`A.groupEdit`, `A.groupDel`). Aktīvā gada `enrollments[].group` tiek mainīts uz jauno grupu vai '' (bez grupas); personas un iepriekšējie gadi netiek aiztikti; katrai personai — audita ieraksts. Līdzi pāriet `stickyGroup`, saraksta filtrs, `groupDays`; pārdēvējot / apvienojot arī šī gada apmeklējuma nodarbības (ja jaunajā grupā tajā datumā nav savas).
+- Mūra izkārtojums: `data-mcol` nosaka kolonnu (pārskatā: Grafiks + Grupas = 0, Uzdevumi = 1, Trūkstošie = 2; ja kolonnu mazāk — pēdējā). Katras kolonnas pēdējā kartīte tiek izstiepta līdz kopējai apakšai (`.mas-stretch`), tāpēc atstarpe līdz platajai kartītei ir vienāda. Pārrēķina aizsardzība pret `ResizeObserver` cilpu.
+
 ## 1.24.1 — 2026-10-16
 - Pārskats: “Pēdējās izmaiņas” atkal ir `.wide` (visā platumā, apakšā), ieraksti divās kolonnās (`.recent-grid`, 10 ieraksti). Kartītes ar `data-fill` (Trūkstošie dokumenti, Uzdevumi un brīdinājumi) sāk ar minimumu (5 rindas) un pa vienai rindai aug īsākajā kolonnā, kamēr nepārsniedz garāko; pārējās — “… un vēl N →”. `ResizeObserver` netiek izsaukts no paša izkārtojuma maiņas (`_laying`).
 

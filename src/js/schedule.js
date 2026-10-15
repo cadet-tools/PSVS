@@ -419,7 +419,7 @@
   /* --- Pārskata kartīte --- */
   CP.schedule.dashCard = () => {
     const today = U.iso(), ev = sorted(list().filter(e => endDay(e) >= today && e.date <= addDays(today, 7)));
-    return `<section class="card"><h3>${ic('calendar')}Grafiks — tuvākās 7 dienas <button class="ghost sm right" data-page="schedule">Viss →</button></h3>
+    return `<section class="card" data-mcol="0"><h3>${ic('calendar')}Grafiks — tuvākās 7 dienas <button class="ghost sm right" data-page="schedule">Viss →</button></h3>
       ${ev.slice(0, 6).map(e => `<div class="row sch-row" style="--c:${color(e.type)}"><span class="sch-bar"></span><div class="sch-when"><b>${e.date <= today ? 'Šodien' : e.date === addDays(today, 1) ? 'Rīt' : esc(WD[wd(e.date)] + ' ' + U.fmtDate(e.date).slice(0, 5))}</b><div class="small">${esc(timeTxt(e))}</div></div><div class="grow"><a href="#" data-act="schEdit" data-arg="${e.id}"><b>${esc(e.title)}</b></a>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}</div></div>`).join('') || `<p class="muted small">Tuvākajās dienās nav notikumu. <a href="#" data-act="schNew">＋ Pievienot</a></p>`}</section>`;
   };
   Object.assign(CP.schedule, { ics, sync, gEvent, askPermission, list, delQ, autoSync, TYPES, sorted, timeTxt, render: () => CP.render() });
