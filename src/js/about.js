@@ -57,7 +57,7 @@
           <div class="feat">${FEATURES.map(([i, t, d]) => `<div class="feat-item"><span class="feat-ic">${ic(i)}</span><div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
         </section>
 
-        <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
+        <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.from ? n.from + '–' + n.v : n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
           <div class="actions"><button class="sm" data-act="newsAll">Visi atjauninājumi</button></div></section>
         <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><p><b>Jānis Eglis</b></p></section>
       </div>`;

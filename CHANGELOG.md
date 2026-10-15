@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.18.2 — 2026-10-15
+- Labojums: atverot rīku, vairs neparādās “Pieejama jauna versija… pārlādē”. Paziņojumu izraisīja bezsaistes keša atjaunošana fonā, lai gan lapa jau bija ielādējusi jaunāko kodu.
+- Jaunas versijas pārbaude darba laikā: rīks salīdzina publicēto `version.json` ar ielādēto versiju (5 min pēc atvēršanas, tad ik pēc 15 min un atgriežoties logā). Paziņojums ar pogu “↻ Pārlādēt” paliek redzams, līdz to aizver, un tiek parādīts vienreiz katrai versijai. `version.json` vienmēr tiek ielādēts no tīkla.
+- Jaunumu logs un atjauninājumu žurnāls ir sakārtoti lielākos blokos pa funkcijām (piem., “Jauna veidlapa: Līgums” 1.17.0–1.18.1).
+
 ## 1.18.1 — 2026-10-15 — Līgumu labošana un versijas
 - Kopā ar līgumu tiek saglabāti visi līguma loga dati (veids, forma, veidne, pārstāvis, Nr., datumi, vieta, labotie lauki). **✎ Labot** (sarakstā Veidlapas un personas kartītē) atver logu ar šiem datiem.
 - Saglabājot labojumus, tiek izveidots jauns Word fails, un ieraksts norāda uz jaunāko versiju. Iepriekšējais fails netiek pārrakstīts (`versions` vēsture).

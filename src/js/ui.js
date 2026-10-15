@@ -20,7 +20,7 @@
     el.querySelector('.x').onclick = () => el.remove();
     host.appendChild(el);
     while (host.children.length > 3) host.firstChild.remove();
-    setTimeout(() => el.remove(), ms);
+    if (ms > 0) setTimeout(() => el.remove(), ms);   // 0 = paliek, līdz lietotājs aizver
   };
 
   ui.updateSaveState = () => {

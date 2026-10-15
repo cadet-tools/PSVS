@@ -85,14 +85,27 @@
   if (CP.WEB && 'serviceWorker' in navigator) {
     const swUrl = new URL('sw.js', location.href).href, cur = navigator.serviceWorker.controller;
     const hadController = !!cur && cur.scriptURL === swUrl;   // tikai savs kanāls (stabilais kešs kontrolē arī /test/ pirmajā reizē)
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing; if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'activated' && hadController) ui.toast('Pieejama jauna CADET PERSONĀLS versija. Saglabā darbu un pārlādē lapu.', 'ok', 30000, { act: 'reloadApp', label: '↻ Pārlādēt' });
-        });
-      });
-    }).catch(e => console.warn('Bezsaistes kešs nav pieejams:', e));
+    // Bezsaistes kešs atjaunojas fonā. Lapa jau ielādē jaunāko kodu (tīkls vispirms), tāpēc kešs pats par sevi nav iemesls pārlādēt.
+    navigator.serviceWorker.register('sw.js').then(reg => { CP._swReg = reg; }).catch(e => console.warn('Bezsaistes kešs nav pieejams:', e));
+    void hadController;
+    /* Jauna versija, kamēr lietotājs strādā: salīdzina publicēto version.json ar ielādēto kodu */
+    let told = '';
+    const check = async () => {
+      if (!navigator.onLine) return;
+      try {
+        const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+        const v = String((await r.json()).version || '');
+        if (v && v !== CP.VERSION && v !== told && newer(v, CP.VERSION)) {
+          told = v; CP._swReg?.update?.().catch(() => {});
+          ui.toast(`Ir pieejama jauna versija ${v}. Kad ērti — saglabā darbu un pārlādē lapu, lai to izmantotu.`, 'ok', 0, { act: 'reloadApp', label: '↻ Pārlādēt' });
+        }
+      } catch (e) { /* bezsaistē — nekas */ }
+    };
+    const newer = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+    setTimeout(check, 5 * 60 * 1000);
+    setInterval(check, 15 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    CP.checkUpdate = check;
   }
   A.reloadApp = () => { if (S.dirty) CP.store.save(false).then(ok => ok !== false && location.reload()); else location.reload(); };
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); CP.installPrompt = e; if (S.page === 'settings') CP.render(); });

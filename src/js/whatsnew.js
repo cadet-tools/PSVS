@@ -7,79 +7,51 @@
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, esc = U.esc;
+  /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
+     Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.18.1', date: '2026-10-15', title: 'Līgumu labošana', items: [
-      '**✎ Labot** atver līgumu ar visiem iepriekš ievadītajiem datiem: numuru, datumu, pārstāvi, adresēm u.c. Pēc izmaiņām tiek sagatavota **jauna versija**.',
-      '**⬆ Ielādēt labotu** ielādē Word programmā labotu līgumu, un tas kļūst par jaunāko versiju.',
-      'Vecās versijas netiek pārrakstītas, tās paliek personas mapē. Sarakstā redzams, kad līgums labots un kura tā ir versija.'
+    { v: '1.18.2', date: '2026-10-15', title: 'Ērtāki atjauninājumi', items: [
+      'Atverot rīku, vairs netiek lūgts pārlādēt lapu: tu jau strādā ar jaunāko versiju.',
+      'Ja jauna versija iznāk, kamēr strādā, rīks par to paziņo, un lapu var pārlādēt, kad tev ērti.',
+      'Šis jaunumu saraksts ir sakārtots pa lielākām funkcijām.'
     ] },
-    { v: '1.18.0', date: '2026-10-15', title: 'Visas veidlapas vienā sarakstā ar filtriem', items: [
-      'Lapā **Veidlapas** ir saraksts **Sagatavotās veidlapas**: instruktāžas lapas, nometņu žurnāli un **līgumi**.',
-      'Filtri: veids (Instruktāžas / Nometnes / Līgumi, ar skaitu), **datums no–līdz**, **mācību gads** un **meklēšana** pēc personas, nosaukuma vai līguma numura.',
-      'Līgumu var **apskatīt un izdrukāt** vai **lejupielādēt Word** failu tieši no saraksta, kā arī noņemt no saraksta. Fails personas mapē paliek.'
+    { v: '1.18.1', from: '1.17.0', date: '2026-10-15', title: 'Jauna veidlapa: Līgums par dalību Jaunsardzē', items: [
+      '**Aizpildās pats no kartītes**: jaunieša un pārstāvja vārds, personas kods pa cipariem, adreses, tālruņi un e-pasti. Rīks pats izvēlas līgumu ar pārstāvi (līdz 18 g.) vai ar jaunieti (no 18 g.). Formu (papīrs vai EDOC) izvēlies pats.',
+      '**Līguma Nr.** no citas sistēmas ieraksti pats. Ja tā nav, rīks pajautā, vai turpināt. Pārstāvja statusu (māte, tēvs, likumiskais pārstāvis, cits) izvēlies pats.',
+      '**Instruktora dati** un paraksta datums jāievada vienreiz, un tie tiek atcerēti. Dati, ko ievadi līgumā, papildina tukšos kartītes laukus.',
+      '**Word fails**, ko var labot un pārsūtīt. Kopija tiek saglabāta personas mapē. Līgumu var arī **priekšskatīt un izdrukāt** rīkā.',
+      '**✎ Labot** atver līgumu ar saglabātajiem datiem, un **⬆ Ielādēt labotu** ielādē Word programmā labotu failu. Katrs labojums ir jauna versija, un vecās versijas netiek pārrakstītas.',
+      'Var izmantot arī **savu līguma veidni** ar atzīmēm.'
     ] },
-    { v: '1.17.2', date: '2026-10-15', title: 'Līgums: Jaunsardzes centra tālrunis', items: [
-      'Līguma rekvizītos atkal ir Jaunsardzes centra tālrunis **67335388**. Iepriekš to kļūdaini aizstāja instruktora tālrunis.',
-      'Instruktora, jaunieša un pārstāvja tālrunis un e-pasts tiek ierakstīts tikai tukšajās rindās.',
-      'Pēc atjauninājuma līgumu veidnes vienmēr tiek ielādētas no jauna, nevis no pārlūka kešatmiņas.'
+    { v: '1.18.0', date: '2026-10-15', title: 'Visas veidlapas vienā sarakstā', items: [
+      'Lapā **Veidlapas** ir instruktāžas lapas, nometņu žurnāli un līgumi kopā.',
+      'Filtri: veids, datums no–līdz, mācību gads un meklēšana pēc personas, nosaukuma vai līguma numura.'
     ] },
-    { v: '1.17.1', date: '2026-10-15', title: 'Līguma uzlabojumi', items: [
-      'Ievadītie dati līgumā ir **centrēti** un rakstīti tādā pašā fontā kā dokuments, nevis slīprakstā.',
-      'Ja nav ievadīts **līguma numurs**, rīks to skaidri pasaka un jautā, vai turpināt.',
-      'Pārstāvja statuss jāizvēlas pašam: **Māte, Tēvs, Likumiskais pārstāvis** vai **Cits** (ieraksti pats).',
-      'Instruktora pusē ir **paraksta datums**: tāds pats kā līguma datums, cits datums vai tukšs. Izvēle tiek atcerēta.',
-      'Dati, ko ievadi līguma logā, piem., pārstāvja personas kodu un adresi, tiek saglabāti kartītē, ja tur tie nebija aizpildīti.',
-      'Lapu skaitam (“uz ____ lapām”) ir vairāk vietas.'
+    { v: '1.16.3', from: '1.16.2', date: '2026-10-15', title: 'Instruktāžas lapa un nometnes žurnāls: precīzākas veidlapas un drukāšana', items: [
+      'Veidlapā ir **tieši tik rindu, cik dalībnieku**. Tukšās rindas norādi pats ar − / +, arī nometnes darbinieku tabulā.',
+      'Tukšajās rindās datuma šūna ir tukša.',
+      '**Drukāt** parāda priekšskatījumu ar visām lapām, un pārlūka drukas logā uzreiz redzamas veidlapas.'
     ] },
-    { v: '1.17.0', date: '2026-10-15', title: 'Jauna veidlapa: Līgums', items: [
-      'Personas kartītē ir sadaļa **Līgums**, un **Veidlapas** lapā ir poga **＋ Līgums**. Līgums aizpildās pats no personas datiem: vārds, personas kods pa cipariem, adreses, tālruņi un e-pasti.',
-      'Rīks pats izvēlas veidu: līdz 18 gadiem līgums ar **likumisko pārstāvi**, no 18 gadiem ar **jaunieti**. Formu izvēlies pats: **papīrs** vai **EDOC**. Ja ir divi vecāki, var izvēlēties, ar kuru slēgt līgumu.',
-      '**Līguma Nr.** ieraksti no citas sistēmas. Tas tiek saglabāts kartītē.',
-      '**Instruktora dati** (pārvalde, nodaļa, vārds ģenitīvā, tālrunis, e-pasts) jāievada vienreiz, un tie tiek atcerēti.',
-      'Rezultāts ir **Word fails**, ko var labot un pārsūtīt. Kopija tiek saglabāta personas mapē. Līgumu var arī **priekšskatīt un izdrukāt** rīkā.',
-      'Var izmantot arī savu līguma veidni: Veidlapas → Savas Word veidnes → Līguma veidne.'
-    ] },
-    { v: '1.16.3', date: '2026-10-15', title: 'Drukāšana un tukšās rindas', items: [
-      '**Drukāšana salabota:** pārlūka drukas logā tagad uzreiz redzamas veidlapas lapas, un tās var izdrukāt.',
-      'Tukšo rindu skaitu izvēlies pats arī tad, ja dalībnieki nav izvēlēti. Rīks vairs nepievieno rindas pēc saviem ieskatiem.',
-      'Nometnes žurnālā var norādīt arī tukšas rindas **darbinieku** tabulā.'
-    ] },
-    { v: '1.16.2', date: '2026-10-15', title: 'Veidlapas: precīzs rindu skaits un drukas priekšskatījums', items: [
-      'Instruktāžas lapā un nometnes žurnālā ir **tieši tik rindu, cik izvēlēto dalībnieku**. Tukšas rindas tiek pievienotas tikai tad, ja tās norādi.',
-      'Lauks **Tukšas rindas veidlapas beigās** ar pogām − un +. Zem lauka redzams, cik rindu būs veidlapā.',
-      'Tukšajās rindās datuma šūna ir tukša, bez svītrām un punktiem.',
-      '**Drukāt** tagad atver priekšskatījumu ar visām lapām tieši tā, kā tās tiks izdrukātas. Tur ir arī pogas Drukāt un Lejupielādēt PDF.'
-    ] },
-    { v: '1.16.1', date: '2026-10-13', title: 'Statuss: Kandidāts / Jaunsargs', items: [
-      'Statusa “Aktīvs” nosaukums tagad ir **Jaunsargs**. Iespējamie statusi: Kandidāts, Jaunsargs, Pārtraukts.',
-      'Pievienojot jaunu personu, statusu var izvēlēties uzreiz pie vārda un uzvārda.'
-    ] },
-    { v: '1.16.0', date: '2026-10-13', title: 'Piezīmju žurnāls un jaunumi', items: [
-      'Piezīmes kartītē un piezīmes par mācību gadu tagad ir **ierakstu žurnāls**. Katra saglabātā piezīme parādās atsevišķi ar datumu, un to var **labot ✎** vai **dzēst ✕**.',
-      'Teksta lauki izplešas paši, kamēr raksti. **Enter** saglabā, **Shift+Enter** sāk jaunu rindu.',
-      'Agrāk ievadītās piezīmes, arī piezīmes no Excel importa, ir pārnestas uz žurnālu. Pirms pārnešanas rīks pats saglabāja datu rezerves kopiju.',
-      'Šis logs: pēc katra atjauninājuma šeit būs īss jaunumu apraksts. Visi jaunumi ir sadaļā **Par rīku**.'
+    { v: '1.16.1', from: '1.16.0', date: '2026-10-13', title: 'Piezīmju žurnāls un statuss “Jaunsargs”', items: [
+      'Piezīmes kartītē un par mācību gadu ir **ierakstu žurnāls**: katrs ieraksts atsevišķi, ar datumu, un to var labot vai dzēst. Enter saglabā, Shift+Enter sāk jaunu rindu, un lauki izplešas paši.',
+      'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Jaunai personai statusu var izvēlēties uzreiz pie vārda.',
+      'Pēc atjauninājuma tiek parādīts šis **jaunumu logs**. Visi jaunumi ir sadaļā Par rīku.'
     ] },
     { v: '1.15.0', date: '2026-10-13', title: 'Atzīmes “ievadīts DVS” un “ievadīts e-klasē”', items: [
-      'Personas kartītē ir sadaļa **Reģistrācija**. Kamēr nav atzīmēts, ka persona ievadīta DVS un e-klasē, pārskatā redzams brīdinājums.',
-      'Personu sarakstā atlasītajām personām var atzīmēt **✓ DVS** vai **✓ e-klase** uzreiz visām.',
-      'Iestatījumos var izslēgt sistēmu, kurai nav jāseko.'
+      'Personas kartītē ir sadaļa **Reģistrācija**. Kamēr nav atzīmēts, ka persona ievadīta, redzams brīdinājums.',
+      'Atzīmēt var arī vairākas personas uzreiz personu sarakstā. Iestatījumos sistēmu var izslēgt.'
     ] },
-    { v: '1.14.4', date: '2026-10-13', title: 'Imports no tava Excel saraksta', items: [
-      'Kolonnu nosaukumiem nav jābūt pirmajā rindā. Rīks pats atrod pareizo darblapu un rindu, un kolonnas var pārbaudīt un labot.',
-      'Vecāka vārds un tālrunis vienā šūnā tiek sadalīti. Tiek nolasīts arī vecāka personas kods, apliecības numurs un statuss.',
-      'Kolonnas, piem., Līgums, Ārsta zīme un MTL, tiek ierakstītas piezīmēs, lai nekas nepazustu.'
-    ] },
-    { v: '1.14.1', date: '2026-10-13', title: 'Imports no e-klases', items: [
-      'Importa logā ir cilne **No e-klases** ar soli pa solim instrukciju un eksporta palīgu.',
-      'Personām, kas jau ir uzskaitē, imports var papildināt tukšos laukus. Esošie dati netiek mainīti.'
+    { v: '1.14.4', from: '1.14.1', date: '2026-10-13', title: 'Imports no e-klases un no sava Excel saraksta', items: [
+      'Importa logā ir cilne **No e-klases** ar instrukciju un eksporta palīgu.',
+      'Excel failā kolonnu nosaukumiem nav jābūt pirmajā rindā. Rīks atrod pareizo darblapu un kolonnas, un tās var labot.',
+      'Vecāka vārds un tālrunis vienā šūnā tiek sadalīti. Pārējās kolonnas (līgums, ārsta zīme, MTL) tiek ierakstītas piezīmēs. Esošajām personām var papildināt tukšos laukus.'
     ] },
     { v: '1.14.0', date: '2026-10-13', title: 'Veidlapas: instruktāžas lapa un nometnes žurnāls', items: [
       'Jauna sadaļa **Veidlapas**: izvēlies dalībniekus, un rīks sagatavo drukāšanai gatavu PDF.',
       'Ja dalībniekam trūkst anketas, līguma vai ārsta izziņas, rīkā tiek parādīts brīdinājums. Uz veidlapas tas netiek drukāts.',
       'Nometnes darbinieki un audzinātāji tiek saglabāti nākamajām reizēm. Var izmantot arī savu Word veidni.'
     ] },
-    { v: '1.13.0', date: '2026-10-13', title: 'Pulkstenis, hronometrs un taimeris', items: [
+    { v: '1.13.0', from: '1.12.0', date: '2026-10-13', title: 'Pulkstenis, taimeris un pauzes', items: [
       'Pārskatā ir pulkstenis ar četrām ciparnīcām, hronometru un taimeri nodarbībām.',
       'Pēc 40 min darba rīks atgādina paņemt pauzi.'
     ] },
@@ -95,7 +67,7 @@
   const getSeen = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
   const setSeen = v => { try { localStorage.setItem(KEY, v); } catch (e) { /* */ } };
 
-  const block = n => `<section class="news-item"><h4>${esc(n.title)} <small class="muted">${esc(n.v)} · ${esc(U.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${md(i)}</li>`).join('')}</ul></section>`;
+  const block = n => `<section class="news-item"><h4>${esc(n.title)} <small class="muted">${esc(n.from ? n.from + '–' + n.v : n.v)} · ${esc(U.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${md(i)}</li>`).join('')}</ul></section>`;
   function show(list, title = 'Jaunumi rīkā') {
     let d = U.$('newsDialog');
     if (!d) { d = document.createElement('dialog'); d.id = 'newsDialog'; d.className = 'wide'; document.body.appendChild(d); }

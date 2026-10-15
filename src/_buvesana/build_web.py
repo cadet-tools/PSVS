@@ -44,6 +44,7 @@ def build(channel, out, vendor_rel, design=''):
     sw = open(os.path.join(here, 'sw.template.js'), encoding='utf-8').read()
     sw = sw.replace('__CACHE__', f'cadet-{channel}-{ver}').replace('__PREFIX__', f'cadet-{channel}-')
     open(f'{out}/sw.js', 'w', encoding='utf-8').write(sw)
+    json.dump({'version': ver}, open(f'{out}/version.json', 'w', encoding='utf-8'))
 
 # Dizaina karogs: CP_DESIGN_STABLE / CP_DESIGN_TEST (piem. 'v2'); testa kanālam pēc noklusējuma v2
 build('stable', repo, 'vendor/', os.environ.get('CP_DESIGN_STABLE', ''))
