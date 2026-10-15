@@ -146,12 +146,16 @@
         if (b2[col] > max || Math.max(...b2) > max) { setFill(cand, k.get(cand)); done.add(cand); } else k.set(cand, k.get(cand) + 1);
       }
       // katras kolonnas pēdējā kartīte tiek izstiepta līdz kopējai apakšai → vienāda atstarpe līdz nākamajai (platajai) kartītei
-      const at = place(grid, n), last = Array(n).fill(null); let max = 0, wideTop = Infinity;
-      for (const [c, a] of at) { if (!last[a.col] || a.top > at.get(last[a.col]).top) last[a.col] = c; }
-      for (const c of grid.children) if (c.classList.contains('wide')) { const m = /^(\d+)/.exec(c.style.gridRow); if (m) wideTop = Math.min(wideTop, Number(m[1]) - 1); }
-      for (const [, a] of at) max = Math.max(max, a.top + a.span);
-      const bottom = Math.min(max, wideTop);
-      last.forEach(c => { if (!c) return; const a = at.get(c); c.style.gridRow = `${a.top + 1} / ${bottom + 1}`; c.classList.add('mas-stretch'); });
+      const at = place(grid, n), wideTops = [...grid.children].filter(c => c.classList.contains('wide')).map(c => Number(/^(\d+)/.exec(c.style.gridRow)?.[1] || 1) - 1).sort((a, b) => a - b);
+      const band = a => wideTops.filter(t => t <= a.top).length;          // josla = cik platās kartītes ir virs
+      const last = new Map(), bottom = new Map();
+      for (const [c, a] of at) {
+        const k = `${band(a)}|${a.col}`, b = band(a);
+        if (!last.has(k) || a.top > at.get(last.get(k)).top) last.set(k, c);
+        bottom.set(b, Math.max(bottom.get(b) || 0, a.top + a.span));
+      }
+      for (const c of last.values()) { const a = at.get(c), end = bottom.get(band(a)); if (band(a) < wideTops.length && end > a.top + a.span) {   // tikai, ja zemāk seko platā kartīte
+        c.style.gridRow = `${a.top + 1} / ${end + 1}`; c.classList.add('mas-stretch'); } }
     }
     grid._layT = setTimeout(() => { grid._laying = false; }, 150);
   }

@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.25.0';
+  CP.VERSION = '1.25.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4162,12 +4162,16 @@ window.CP = window.CP || {};
         if (b2[col] > max || Math.max(...b2) > max) { setFill(cand, k.get(cand)); done.add(cand); } else k.set(cand, k.get(cand) + 1);
       }
       // katras kolonnas pēdējā kartīte tiek izstiepta līdz kopējai apakšai → vienāda atstarpe līdz nākamajai (platajai) kartītei
-      const at = place(grid, n), last = Array(n).fill(null); let max = 0, wideTop = Infinity;
-      for (const [c, a] of at) { if (!last[a.col] || a.top > at.get(last[a.col]).top) last[a.col] = c; }
-      for (const c of grid.children) if (c.classList.contains('wide')) { const m = /^(\d+)/.exec(c.style.gridRow); if (m) wideTop = Math.min(wideTop, Number(m[1]) - 1); }
-      for (const [, a] of at) max = Math.max(max, a.top + a.span);
-      const bottom = Math.min(max, wideTop);
-      last.forEach(c => { if (!c) return; const a = at.get(c); c.style.gridRow = `${a.top + 1} / ${bottom + 1}`; c.classList.add('mas-stretch'); });
+      const at = place(grid, n), wideTops = [...grid.children].filter(c => c.classList.contains('wide')).map(c => Number(/^(\d+)/.exec(c.style.gridRow)?.[1] || 1) - 1).sort((a, b) => a - b);
+      const band = a => wideTops.filter(t => t <= a.top).length;          // josla = cik platās kartītes ir virs
+      const last = new Map(), bottom = new Map();
+      for (const [c, a] of at) {
+        const k = `${band(a)}|${a.col}`, b = band(a);
+        if (!last.has(k) || a.top > at.get(last.get(k)).top) last.set(k, c);
+        bottom.set(b, Math.max(bottom.get(b) || 0, a.top + a.span));
+      }
+      for (const c of last.values()) { const a = at.get(c), end = bottom.get(band(a)); if (band(a) < wideTops.length && end > a.top + a.span) {   // tikai, ja zemāk seko platā kartīte
+        c.style.gridRow = `${a.top + 1} / ${end + 1}`; c.classList.add('mas-stretch'); } }
     }
     grid._layT = setTimeout(() => { grid._laying = false; }, 150);
   }
@@ -4984,11 +4988,12 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.25.0', date: '2026-10-16', title: 'Grupu pārvaldība un līdzenāks pārskats', items: [
+    { v: '1.25.1', from: '1.25.0', date: '2026-10-16', title: 'Grupu pārvaldība un līdzenāks pārskats', items: [
       'Pārskata kartītē **Grupas** pie katras grupas ir pogas **✎ pārdēvēt** un **✕ dzēst**.',
       '**Dzēšot grupu, personas netiek dzēstas.** Tās var pārcelt uz citu grupu vai atstāt bez grupas. Iepriekšējo mācību gadu dalība netiek mainīta.',
       '**Pārdēvējot** vai ierakstot jau esošas grupas nosaukumu, grupas tiek **apvienotas**. Apmeklējuma atzīmes un nodarbību dienas pāriet līdzi. Visas izmaiņas redzamas personu vēsturē.',
-      'Pārskatā kartītēm ir noteiktas vietas: **Grafiks un Grupas** pa kreisi, **Uzdevumi** vidū, **Trūkstošie dokumenti** pa labi. Kolonnas beidzas vienā līmenī, un atstarpe līdz “Pēdējām izmaiņām” ir vienāda, lai cik grupu būtu.'
+      'Pārskatā kartītēm ir noteiktas vietas: **Grafiks un Grupas** pa kreisi, **Uzdevumi** vidū, **Trūkstošie dokumenti** pa labi. Kolonnas beidzas vienā līmenī, un atstarpe līdz “Pēdējām izmaiņām” ir vienāda, lai cik grupu būtu.',
+      'Salabots: lapā **Veidlapas** (un citās lapās, kur platā kartīte ir augšā) kartītes vairs neuzklājas cita citai.'
     ] },
     { v: '1.24.1', from: '1.24.0', date: '2026-10-16', title: 'Sakārtots pārskats un ērtāks grafika imports', items: [
       '**Pārskata** kartītes tagad saliekas cieši cita zem citas kolonnās, bez tukšām starpām. Katra nākamā kartīte nonāk īsākajā kolonnā. Tas pats izkārtojums darbojas arī citās lapās ar kartītēm.',

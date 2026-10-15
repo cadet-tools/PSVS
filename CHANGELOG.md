@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.25.1 — 2026-10-16
+- Labots mūra izkārtojums, ja `.wide` kartīte ir virs citām (Veidlapas): izstiepšana tiek rēķināta pa joslām starp platajām kartītēm, nevis līdz pirmajai platajai kartītei (iepriekš rindu robežas apgriezās, un kartītes uzklājās). Izstiepj tikai joslās, kurām zemāk seko platā kartīte. Jauns tests: nepārklāšanās visās `.cards2` lapās trijos platumos.
+
 ## 1.25.0 — 2026-10-16 — Grupu pārvaldība
 - Grupas ✎ / ✕ pārskatā (`A.groupEdit`, `A.groupDel`). Aktīvā gada `enrollments[].group` tiek mainīts uz jauno grupu vai '' (bez grupas); personas un iepriekšējie gadi netiek aiztikti; katrai personai — audita ieraksts. Līdzi pāriet `stickyGroup`, saraksta filtrs, `groupDays`; pārdēvējot / apvienojot arī šī gada apmeklējuma nodarbības (ja jaunajā grupā tajā datumā nav savas).
 - Mūra izkārtojums: `data-mcol` nosaka kolonnu (pārskatā: Grafiks + Grupas = 0, Uzdevumi = 1, Trūkstošie = 2; ja kolonnu mazāk — pēdējā). Katras kolonnas pēdējā kartīte tiek izstiepta līdz kopējai apakšai (`.mas-stretch`), tāpēc atstarpe līdz platajai kartītei ir vienāda. Pārrēķina aizsardzība pret `ResizeObserver` cilpu.
