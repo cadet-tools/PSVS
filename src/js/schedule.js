@@ -15,7 +15,7 @@
   const ic = (n, f = '') => CP.ic(n, f);
   const TYPES = [
     ['Nodarbība', '#3fa98f'], ['VAM nodarbība', '#5b8def'], ['Pasākums', '#e6a23c'], ['Nometne', '#d9663f'], ['Sacensības', '#b46fd8'],
-    ['Sapulce / apmācības', '#4fb3c9'], ['Administratīvais darbs', '#8a9aa8'], ['Cits', '#c2a55a']
+    ['Sapulce / apmācības', '#4fb3c9'], ['Novada pārvaldes darbs', '#6f8fc9'], ['Metodiskais darbs', '#7fae7a'], ['Administratīvais darbs', '#8a9aa8'], ['Prombūtne', '#a3a7ad'], ['Cits', '#c2a55a']
   ];
   const color = t => (TYPES.find(x => x[0] === t) || TYPES.at(-1))[1];
   const REMIND = [[0, 'sākumā'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [120, '2 h'], [1440, '1 dienu'], [2880, '2 dienas'], [10080, '1 nedēļu']];
@@ -80,7 +80,8 @@
     const title = v.mode === 'month' ? `${MON[d.getMonth()]} ${d.getFullYear()}` : v.mode === 'week' ? (() => { const m = monday(v.date), s = addDays(m, 6); return `${U.fmtDate(m).slice(0, 5)}–${U.fmtDate(s)} · ${isoWeek(m)}. nedēļa`; })() : `no ${U.fmtDate(v.date)}`;
     const seg = (k, l) => `<button class="sm ${v.mode === k ? 'on' : ''}" data-act="schMode" data-arg="${k}">${l}</button>`;
     const upcoming = sorted(list().filter(e => endDay(e) >= today)).slice(0, 4);
-    return `<section class="card"><div class="att-bar">
+    const imp = st().schImport;
+    return `${imp ? `<p class="small muted sch-impinfo">⬆ Pēdējais imports: <b>${esc(imp.name)}</b> · ${esc(U.fmtDateTime(imp.at))} · ${imp.n} notikumi no Excel. Atjaunots fails? Ievelc to šeit vai spied “Imports”.</p>` : ''}<section class="card" data-schdrop><div class="att-bar">
         <span class="att-month"><button class="sm ghost" data-act="schNav" data-arg="-1" title="Atpakaļ">◀</button><button class="sm" data-act="schNav" data-arg="0">Šodien</button><button class="sm ghost" data-act="schNav" data-arg="1" title="Uz priekšu">▶</button></span>
         <b class="sch-title">${esc(title)}</b><input type="date" id="schJump" value="${esc(v.date)}" title="Pāriet uz datumu" style="width:auto">
         <span class="grow"></span><span class="seg">${seg('month', 'Mēnesis')}${seg('week', 'Nedēļa')}${seg('list', 'Saraksts')}</span></div>
@@ -202,16 +203,6 @@
     S.db.schedule = list().filter(x => !victims.includes(x)); U.$('schDialog').close(); CP.store.changed(); autoSync();
   };
   A.schDup = () => { const { id, gcalId, gsig, seriesId, createdAt, updatedAt, ...rest } = cur; cur = { ...rest, id: '', date: addDays(rest.date, 7), endDate: rest.endDate ? addDays(rest.endDate, 7) : '' }; dialog(); ui.toast('Kopija nākamajai nedēļai — pārbaudi datumu un saglabā', 'ok', 4000); };
-  A.schImport = () => {
-    let d = U.$('schImpDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'schImpDialog'; document.body.appendChild(d); }
-    d.innerHTML = `<header class="dlg-head"><h2>Darba grafika imports no Excel</h2><button type="button" class="ghost" data-close="schImpDialog" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body"><p>Šeit varēs ielādēt instruktoru darba stundu uzskaites Excel failu. Rīks pats atpazīs notikumus (datumu, laiku, veidu) un ieliks tos grafikā, ko pēc tam var sinhronizēt ar Google kalendāru.</p>
-      <p class="warn small">⏳ Funkcija tiek gatavota — tā tiks pielāgota konkrētajai uzskaites veidnei, ko izmanto instruktori.</p>
-      <p class="small muted">Pagaidām notikumus pievieno ar “＋ Notikums” (ar iespēju atkārtot katru nedēļu).</p></div>
-      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="schImpDialog">Aizvērt</button></footer>`;
-    d.showModal();
-  };
-
   /* ================== Atgādinājumi ================== */
   const NKEY = 'cp.schNotified';
   const getN = () => { try { return JSON.parse(localStorage.getItem(NKEY) || '{}'); } catch (e) { return {}; } };
@@ -325,7 +316,7 @@
     start: e.allDay ? { date: e.date } : { dateTime: `${e.date}T${e.start}:00`, timeZone: 'Europe/Riga' },
     end: e.allDay ? { date: addDays(endDay(e), 1) } : { dateTime: `${endDay(e)}T${e.end || e.start}:00`, timeZone: 'Europe/Riga' },
     reminders: { useDefault: false, overrides: (e.remind || []).slice(0, 5).map(m => ({ method: 'popup', minutes: m })) },
-    colorId: { 'Nodarbība': '2', 'VAM nodarbība': '9', 'Pasākums': '5', 'Nometne': '6', 'Sacensības': '3', 'Sapulce / apmācības': '7', 'Administratīvais darbs': '8' }[e.type] || '10',
+    colorId: { 'Nodarbība': '2', 'VAM nodarbība': '9', 'Pasākums': '5', 'Nometne': '6', 'Sacensības': '3', 'Sapulce / apmācības': '7', 'Administratīvais darbs': '8', 'Novada pārvaldes darbs': '1', 'Metodiskais darbs': '10', 'Prombūtne': '8' }[e.type] || '10',
     extendedProperties: { private: { cpId: e.id } }
   });
   const sig = e => JSON.stringify(gEvent(e));
@@ -399,5 +390,5 @@
     return `<section class="card"><h3>${ic('calendar')}Grafiks — tuvākās 7 dienas <button class="ghost sm right" data-page="schedule">Viss →</button></h3>
       ${ev.slice(0, 6).map(e => `<div class="row sch-row" style="--c:${color(e.type)}"><span class="sch-bar"></span><div class="sch-when"><b>${e.date <= today ? 'Šodien' : e.date === addDays(today, 1) ? 'Rīt' : esc(WD[wd(e.date)] + ' ' + U.fmtDate(e.date).slice(0, 5))}</b><div class="small">${esc(timeTxt(e))}</div></div><div class="grow"><a href="#" data-act="schEdit" data-arg="${e.id}"><b>${esc(e.title)}</b></a>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}</div></div>`).join('') || `<p class="muted small">Tuvākajās dienās nav notikumu. <a href="#" data-act="schNew">＋ Pievienot</a></p>`}</section>`;
   };
-  Object.assign(CP.schedule, { ics, sync, gEvent, askPermission });
+  Object.assign(CP.schedule, { ics, sync, gEvent, askPermission, list, delQ, autoSync, TYPES, sorted, timeTxt, render: () => CP.render() });
 })(window.CP);

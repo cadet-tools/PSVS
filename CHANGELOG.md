@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.23.0 — 2026-10-15 — Grafika imports no darba uzskaites Excel
+- Jauns modulis `js/schedimport.js`. Lasa .xlsm / .xlsx (makro netiek izpildīti, tiek lasītas formulu saglabātās vērtības). Tiek atvērtas tikai redzamās lapas, kurās atrasti vajadzīgie virsraksti; lielās slēptās palīglapas netiek atspiestas.
+- “Darba plāns_secīgi”: kolonnas pēc virsrakstiem (Datums no / Laiks no / Datums līdz / Laiks līdz, Mācību grupa, Pasākuma veids, Obligātais pasākums, Pasākuma nosaukums, Norises vieta, Vadītājs, Atbalsta personāls, Dalībnieki). Excel datumi (sērijas skaitļi) un laiki (dienas daļas) tiek pārvērsti; vairāku dienu notikumi saglabā sākuma un beigu laiku; prombūtne ir visu dienu, bez atgādinājumiem. “Darba plāns_Matrica” netiek lasīta (dublē secīgo).
+- “Nodarbību saraksts”: mācību gads no virsraksta “YYYY./YYYY.”; septembris–decembris = 1. gads, janvāris–augusts = 2. gads; dienas no šūnām “16.\n23.\n30.”; nosaukums no grupas līmeņa un nosaukuma, vieta = vietas nosaukums + adrese. Rindas bez datumiem mēnešu kolonnās tiek parādītas kā izlaistas.
+- Jauni grafika veidi: Novada pārvaldes darbs, Metodiskais darbs, Prombūtne (arī Google krāsas).
+- Atkārtots imports: `ikey` = avots | datums | normalizēts nosaukums (+#n). Salīdzinājums pa laukiem → jauni / mainīti (ar lauku izmaiņām, ⚠ ja labots rīkā pēc importa) / failā vairs nav (tikai no tā paša avota, pagātne netiek aiztikta) / bez izmaiņām. Katru izmaiņu var izvēlēties. Notikumi bez `ikey` (izveidoti rīkā) netiek mainīti. Noņemtie Google notikumi nonāk `scheduleDel`; pēc importa — automātiska sinhronizācija.
+- Ievilkšana grafika lapā vai poga “Imports” (faila izvēle). `settings.schImport` = pēdējā importa faila nosaukums, laiks un skaits (parādīts virs kalendāra).
+
 ## 1.22.0 — 2026-10-15 — Grafiks
 - Jauns modulis `js/schedule.js` un lapa “Grafiks” (cilnes: kalendārs, stundu kopsavilkums, atgādinājumi un Google). Grafiks nav saistīts ar personu datiem.
 - Dati: `db.schedule = [{ id, title, type, date, endDate, allDay, start, end, place, notes, remind[min], seriesId, gcalId, gsig }]`, `db.scheduleDel` (Google kalendārā vēl jādzēš). Iestatījumi: `gcal { clientId, calendarId, lastSync }`, `notify { events, alerts }`, `schDefaultRemind`.

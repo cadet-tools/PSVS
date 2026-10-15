@@ -10,6 +10,14 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.23.0', date: '2026-10-15', title: 'Darba grafiks no Excel uzskaites tabulas', items: [
+      'Sadaļā **Grafiks** var **ievilkt** instruktora darba uzskaites Excel failu (**.xlsm** / .xlsx) vai izvēlēties to ar pogu **Imports**. Rīks pats saliek kalendāru.',
+      'Tiek nolasīta lapa **“Darba plāns_secīgi”** (pasākumi, semināri, metodiskais darbs, prombūtne ar datumiem un laikiem) un lapa **“Nodarbību saraksts”** (regulārās nodarbības no mēnešu kolonnām, ar laiku un vietu). Slēptās palīglapas un tukšās rindas ar “0” tiek izlaistas.',
+      'Veidi tiek noteikti automātiski: nodarbība, VAM nodarbība, pasākums, nometne, novada pārvaldes darbs, metodiskais darbs, prombūtne. Piezīmēs tiek ielikta grupa, vadītājs, atbalsta personāls un dalībnieku skaits.',
+      '**Atkārtots imports:** ievelc atjaunoto failu vēlreiz. Pirms izmaiņām rīks parāda, kas ir **jauns**, kas **mainīts** (piem., laiks 14:00 → 15:00) un kas **failā vairs nav**. Katru izmaiņu var atķeksēt. Rīkā paša izveidotie notikumi netiek aiztikti.',
+      'Pēc noklusējuma tiek importēti tikai **šodienas un nākamie** notikumi, pagājušos var pievienot ar ķeksīti. Atvaļinājumus var neimportēt.',
+      'Ja Google kalendārs ir savienots, importa izmaiņas aiziet arī uz to. Fails netiek saglabāts un nekur nosūtīts: tiek nolasīti tikai grafika lauki.'
+    ] },
     { v: '1.22.0', date: '2026-10-15', title: 'Grafiks: darba kalendārs ar atgādinājumiem un Google kalendāru', items: [
       'Jauna sadaļa **Grafiks** (📅 kreisajā joslā). Tas ir instruktora darba kalendārs: **nodarbības, VAM nodarbības, pasākumi, nometnes, sacensības, sapulces** un administratīvais darbs, katram veidam sava krāsa.',
       'Skati: **Mēnesis**, **Nedēļa** (pa stundām, ar sarkanu līniju “tagad”) un **Saraksts**. Klikšķis uz dienas vai stundas izveido notikumu, klikšķis uz notikuma to atver labošanai.',
