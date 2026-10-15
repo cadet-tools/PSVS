@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.20.1 — 2026-10-15
+- Dokumentu cilnē noņemta augšējā sadaļa “Obligātie dokumenti”, jo tā dublēja sānjoslu. Visas tās darbības (+ Fails, + Papīrs, atgādināt pārstāvim) ir sānjoslā, kur ir arī labot / aizstāt / dzēst. Dokumentu mape un “Visi dokumenti” paliek bez izmaiņām.
+
 ## 1.20.0 — 2026-10-15 — Dokumentu derīgums un labošana kartītē
 - `settings.docValidity` (noklusējums: “Ārsta izziņa” = 12 mēn., tikai savā mācību gadā). Dokumentam ir jauns lauks `issued` (izsniegšanas datums). Ja “Derīgs līdz” nav ievadīts, termiņš ir izsniegšanas datums + 12 mēn. − 1 diena.
 - Dokuments der mācību gadam, ja tas izsniegts no 1. augusta pirms gada sākuma līdz gada beigām (31.08.). Ja izsniegšanas datuma nav, tiek ņemts saņemšanas vai pievienošanas datums. Ja nav neviena datuma, dokuments der. `D.missingDocs` to ņem vērā, tāpēc pēc pārcelšanas uz jauno gadu iepriekšējā gada izziņa tiek uzskatīta par trūkstošu.

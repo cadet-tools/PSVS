@@ -161,7 +161,7 @@
         ${!ok ? `<button class="sm" data-act="attach" data-arg="${p.id}|${esc(k)}" title="Pievienot failu">＋ Fails</button><button class="sm ghost" data-act="addDoc" data-arg="${p.id}|${esc(k)}" title="Reģistrēt papīra dokumentu">＋ Papīrs</button>` : ''}</div></div>`;
     };
     const docs = req.length ? `<div class="reqdocs">${req.map(reqRow).join('')}</div>
-      ${miss.length && cs.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt</button></div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
+      ${miss.length && cs.length ? `<div class="actions" style="margin-top:10px"><button class="sm" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt pārstāvim par trūkstošajiem</button></div>` : ''}` : '<p class="muted small">Iestatījumos nav norādīti obligātie dokumenti.</p>';
     const tools = CP.comms.toolLinks(p);
     const tasks = S.db.tasks.filter(t => t.personId === p.id && !t.done).sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9')));
     const dups = Object.keys(D.PHONE_FIELDS).flatMap(f => D.phoneMatches(p[f], p.id, f).filter(e => e.p.id !== p.id).map(e => ({ f, e })));

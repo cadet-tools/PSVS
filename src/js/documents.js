@@ -42,16 +42,9 @@
     const linked = new Set(list.map(d => (d.sourceId || 'main') + '|' + d.path));
     const fn = U.norm(p.first), ln = U.norm(p.last);
     const sugg = fn && ln ? S.index.filter(f => f.n.includes(ln) && f.n.includes(fn) && !linked.has(f.sourceId + '|' + f.path)).slice(0, 40) : [];
-    const req = S.db.settings.requiredDocs;
-    return `<section class="card"><h3>Obligātie dokumenti</h3>
-        <div class="reqgrid">${req.map(k => {
-          const has = list.filter(d => d.kind === k);
-          return `<div class="req ${miss.includes(k) ? 'miss' : 'ok'}"><span>${miss.includes(k) ? '✗' : '✓'} ${esc(k)}</span>${miss.includes(k)
-            ? `<span class="actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(k)}">📎 Fails</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(k)}">📄 Papīrs</button></span>`
-            : `<span class="small muted">${has.length > 1 ? has.length + ' faili' : ''}</span>`}</div>`;
-        }).join('') || '<p class="muted small">Obligātie dokumenti nav iestatīti.</p>'}</div>
-        ${miss.length && D.contacts(p).length ? `<button class="sm" style="margin-top:10px" data-act="remindDocs" data-arg="${p.id}">💬 Atgādināt pārstāvim par trūkstošajiem</button>` : ''}</section>
-      <section class="card docbrowser"><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span><span class="right actions"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></span></h3>
+    // Obligātie dokumenti (✓/✗, pievienot, labot, aizstāt, dzēst, atgādināt) ir sānjoslā — šeit netiek dublēti
+    void miss;
+    return `<section class="card docbrowser"><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span><span class="right actions"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></span></h3>
         <div class="crumbs" id="docCrumbs"></div>
         <input id="docTreeQ" type="search" placeholder="Meklēt dokumenta nosaukumā…" value="${esc(S.browse.q || '')}">
         <p class="muted small">Meklēšana skatās nosaukumus un ceļus, nevis failu saturu. Oriģināls datorā netiek dzēsts.</p>
