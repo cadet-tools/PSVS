@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.19.0 — 2026-10-15 — DVS reģistrācija pa dokumentiem
+- `p.reg.dvs.docs[<dokuments>] = { done, date }`. Dokumentu saraksts ir tas pats, kas obligātie dokumenti (Iestatījumi → Dokumenti). Vecā `p.reg.dvs.done` tiek nolasīta kā “visi reģistrēti” ar to pašu datumu.
+- Kartītē katram dokumentam ir izvēles rūtiņa, reģistrēšanas datums (var mainīt) un statuss rīkā (✓ pievienots / ✗ nav pievienots). Augšā ir skaitītājs “N/3 reģistrēti”. e-klase paliek viena atzīme.
+- Brīdinājumi (pārskatā un Uzdevumos): “DVS nav reģistrēts — …”, ar piebildi, kuri no tiem jau pievienoti rīkā, un atsevišķi “nav atzīmēts, ka ievadīts e-klasē”. Pārtrauktajiem un arhivētajiem brīdinājumu nav.
+- Masveida poga “✓ DVS (visi dok.)” atzīmē visus obligātos dokumentus.
+
 ## 1.18.3 — 2026-10-15
 - Nometnes žurnāls: dalībnieka izvēlei ir nosaukums “Audzinātājs:”. Noklusējuma opcija rāda grupas audzinātāja vārdu, piem., “Ilze … (grupas audzinātājs)”, vai “Kā grupai — vēl nav izvēlēts”. Agrāk tur bija neskaidrs “↳ kā grupai”, kas pārlūkā attēlojās kā “ļ, kā grupai”. Pārējās opcijās ir citi darbinieki. Ja darbinieku nav, ir paskaidrojums, kur tos pievienot.
 - Mainot grupas audzinātāju, dalībnieku saraksts atjaunojas uzreiz. Šaurā ekrānā izvēle pārceļas zem vārda.

@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.19.0', date: '2026-10-15', title: 'DVS reģistrācija pa dokumentiem', items: [
+      'Kartītes sadaļā **Reģistrācija** DVS ir sadalīts pa dokumentiem: **Pieteikuma anketa, Līgums, Ārsta izziņa**. Katru atzīmē atsevišķi, kad tas reģistrēts.',
+      'Katram dokumentam ir savs **reģistrēšanas datums**, un to var nomainīt. Redzams arī, vai dokuments jau **pievienots rīkā**.',
+      'Ja kāds dokuments nav reģistrēts DVS, pārskatā un sadaļā **Uzdevumi** redzams brīdinājums, kurā nosaukti trūkstošie dokumenti.',
+      'Personu sarakstā **✓ DVS (visi dok.)** atzīmē visus dokumentus atlasītajām personām. Agrākā vienotā DVS atzīme tiek uzskatīta par “visi reģistrēti”.'
+    ] },
     { v: '1.18.3', from: '1.18.2', date: '2026-10-15', title: 'Ērtāki atjauninājumi un sīki uzlabojumi', items: [
       'Atverot rīku, vairs netiek lūgts pārlādēt lapu: tu jau strādā ar jaunāko versiju.',
       'Ja jauna versija iznāk, kamēr strādā, rīks par to paziņo, un lapu var pārlādēt, kad tev ērti.',
