@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.34.0 — 2026-10-16 — VFS testi
+- Jauns modulis `js/vfs.js` (`CP.vfs`), cilne Apmeklējums → VFS testi. `db.vfsTests = [{ id, date, yearId, title, res: { pid: { g, lvl, v: { str, push, sit, thr, spr, run }, issued } } }]`, `settings.vfs = { unit, instructor, region, sheet, mode }`. Normatīvi no JC 1.pielikuma 2.tabulas (I–IV, zēni/meitenes, 10…2 punktu robežas; laiki sekundēs; III meitenēm ķermeņa pacelšanai 2 p. robežas nav).
+- Punkti: `strict` (norma jāsasniedz) vai `generous` (starp robežām — augstākais). Zem 2 p. — 1, virs 10 — 10. Nozīmīte: visi 6, min ≥ 4, 41/48/54. Kvalifikācijas `vfs-b|s|z` ar `src: 'vfs:<testa id>'` — sinhronizē pie katras izmaiņas, dzēšot testu — noņem.
+- Personām jauns lauks `gender` ('m'|'f'); ieteikums pēc vārda galotnes. Pakāpe pēc vecuma testa dienā.
+- Protokols: `CP.pdf.vfs` (A4 guļus, katra pakāpe — sava lapa). Nozīmīšu uzskaite: `vendor/templates/vfs-nozimites.xlsx` (JC 2.pielikums), aizpilda izvēlēto nodaļas lapu (inlineStr, stili no veidnes). `CP.docxFill.zip(entries, type)`.
+- Imports no Word protokola (tabulas ar “Vārds Uzvārds”, pakāpe no “NN – NN gadi”, dzimums pēc aizpildītās pievilkšanās/kāriena kolonnas), vārdu sakritība, punkti pārrēķināti.
+- Žurnālā kolekcija `vfsTests`.
+
 ## 1.33.0 — 2026-10-16 — Darbību žurnāls
 - Jauns modulis `js/changelog.js` (`CP.changelog`), lapa `changes`. `store.save` pirms rakstīšanas izsauc `capture(db)`: momentuzņēmuma salīdzinājums kolekcijām people, documents, equipment, events, sessions, schedule, enrollments, years, sources, tasks, relations + settings (bez lastVisit/activeYear/stickyGroup/look/activeTemplate, gcal.lastSync). Ieraksts `db.changelog[] = { id, at, b (partija), c, eid, pid, n, op: add|edit|del, ch: [{k, f, t} | {k, big, sf, st}], obj (dzēstajiem), undo?, undone? }`. Lielas vērtības (> 6000 zīmju) — tikai kopsavilkums. Termiņš 12 mēn., ≤ 8000 ierakstu.
 - Atjaunošana `clUndo`: edit → vecās vērtības (brīdina, ja lauks kopš tā mainīts vēlreiz), del → ieraksts atpakaļ, add → ieraksts prom (ne personām / mācību gadiem). Personas kodi un Google atslēga netiek rādīti.

@@ -121,9 +121,9 @@
       const v = view(), groups = D.groups();
       if (!v.group || (v.group !== '*' && !groups.includes(v.group))) v.group = groups[0] || '*';
       const tab = (k, l, i) => `<button role="tab" data-act="attTab" data-arg="${k}" class="${v.tab === k ? 'active' : ''}">${ic(i)}${l}</button>`;
-      const body = v.tab === 'journal' ? journal(v) : v.tab === 'stats' ? stats(v) : v.tab === 'quals' ? quals(v) : grid(v);
-      return `<div class="page">${ui.pageHead('Apmeklējums', 'Nodarbību žurnāls, mēneša veidlapa, rādītāji un kvalifikācijas', `<button class="mainbtn" data-act="sessNew">${ic('plus', '＋')} Nodarbība</button>`)}
-        <nav class="tabs" role="tablist">${tab('grid', 'Mēneša tabula', 'calendar')}${tab('journal', 'Žurnāls', 'list')}${tab('stats', 'Rādītāji', 'chart')}${tab('quals', 'Kvalifikācijas un dalība', 'award')}</nav>${body}</div>`;
+      const body = v.tab === 'journal' ? journal(v) : v.tab === 'stats' ? stats(v) : v.tab === 'quals' ? quals(v) : v.tab === 'vfs' && CP.vfs ? CP.vfs.page() : grid(v);
+      return `<div class="page">${ui.pageHead('Apmeklējums', 'Nodarbību žurnāls, mēneša veidlapa, rādītāji, kvalifikācijas un VFS testi', `<button class="mainbtn" data-act="sessNew">${ic('plus', '＋')} Nodarbība</button>`)}
+        <nav class="tabs" role="tablist">${tab('grid', 'Mēneša tabula', 'calendar')}${tab('journal', 'Žurnāls', 'list')}${tab('stats', 'Rādītāji', 'chart')}${tab('quals', 'Kvalifikācijas un dalība', 'award')}${tab('vfs', 'VFS testi', 'chart')}</nav>${body}</div>`;
     }
   };
   A.attTab = k => { view().tab = k; CP.render(); };
@@ -353,11 +353,13 @@
   /** Sānjosla: apmeklējums */
   function attCard(p) {
     const r = D.attRate(p), sk = streak(p), lim = Number(st().absenceStreak) || 3, ser = personSeries(p);
-    if (!personSessions(p).length) return '';
+    const vfs = CP.vfs?.personSummary(p) || '';
+    if (!personSessions(p).length) return vfs ? `<section class="card"><h3>${ic('award')}VFS testi</h3>${vfs}</section>` : '';
     return `<section class="card"><h3>${ic('calendar')}Apmeklējums</h3>
       <div class="att-mini"><div>${pctTag(r.pct)} <small class="muted">mācību gadā · ${r.present} no ${r.present + r.absent}${r.excused ? ` · ${r.excused} attaisnoti` : ''}</small></div>${spark(ser.map(x => x.y), 110, 26)}</div>
       <div style="margin:6px 0">${dots(p, 12)}</div>
       ${sk.n >= lim ? `<p class="small warn" style="margin:0">⚠ Nav apmeklējis ${sk.n} nodarbības pēc kārtas</p>` : ''}
+      ${vfs ? `<div class="small" style="margin-top:6px"><b>VFS testi:</b>${vfs}</div>` : ''}
       <div class="actions" style="margin-top:6px"><button class="sm ghost" data-page="attendance">Apmeklējuma žurnāls →</button></div></section>`;
   }
   /** Galvenā kolonna: dalība, kvalifikācijas, pārkāpumi */

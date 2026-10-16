@@ -25,6 +25,7 @@
     years: { l: 'Mācību gads', g: 'settings', name: o => o.label || U.yearLabel?.(o.id) || o.id, skip: [] },
     sources: { l: 'Papildu mape', g: 'settings', name: o => o.name || o.id, skip: [] },
     tasks: { l: 'Uzdevums', g: 'people', pid: o => o.personId, name: o => [String(o.text || o.title || 'uzdevums').slice(0, 60), pName(o.personId)].filter(Boolean).join(' — '), skip: [] },
+    vfsTests: { l: 'VFS tests', g: 'att', name: o => ['VFS tests', dd(o.date), o.title || ''].filter(Boolean).join(' · '), skip: [] },
     relations: { l: 'Saistība', g: 'people', pid: o => o.a, name: o => [pName(o.a), pName(o.b)].filter(Boolean).join(' ↔ '), skip: [] }
   };
   const SET_SKIP = new Set(['lastVisit', 'activeYear', 'stickyGroup', 'look', 'activeTemplate']);
@@ -36,7 +37,7 @@
     folder: 'Mape', date: 'Datums', endDate: 'Beigu datums', from: 'No', to: 'Līdz', title: 'Nosaukums', type: 'Veids', place: 'Vieta', start: 'Sākums', end: 'Beigas', notes: 'Piezīmes', topic: 'Tēma',
     att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
-    yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
+    res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
     templates: 'Ziņu veidnes', tools: 'Rīki', gcal: 'Google kalendārs', notify: 'Paziņojumi', ocr: 'Teksta atpazīšana', quals_s: 'Kvalifikāciju saraksts', absenceStreak: 'Kavējumu brīdinājums', docValidity: 'Dokumentu derīgums',
     formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'

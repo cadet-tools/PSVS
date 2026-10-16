@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.33.0';
+  CP.VERSION = '1.34.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -272,6 +272,7 @@ window.CP = window.CP || {};
     { k: 'status', l: 'Statuss', s: 'basic', t: 'select', opts: [['candidate', 'Kandidāts'], ['active', 'Jaunsargs'], ['paused', 'Pārtraukts']], noScan: 1 },
     { k: 'personalCode', l: 'Personas kods', s: 'basic', v: 'personalCode', sens: 1, ph: '000000-00000' },
     { k: 'birth', l: 'Dzimšanas datums', s: 'basic', t: 'date', v: 'date' },
+    { k: 'gender', l: 'Dzimums', s: 'basic', t: 'select', opts: [['', 'Nav norādīts'], ['m', 'Zēns / jaunietis'], ['f', 'Meitene / jauniete']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
     { k: 'school', l: 'Mācību iestāde', s: 'study' },
@@ -361,7 +362,7 @@ window.CP = window.CP || {};
     const d = { ...CP.blank(), ...raw };
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
-    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'changelog', 'sources', 'years', 'enrollments', 'events', 'sessions', 'schedule', 'scheduleDel']) if (!Array.isArray(d[k])) d[k] = [];
+    for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'changelog', 'sources', 'years', 'enrollments', 'events', 'sessions', 'schedule', 'scheduleDel', 'vfsTests']) if (!Array.isArray(d[k])) d[k] = [];
     for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };

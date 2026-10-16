@@ -86,7 +86,7 @@
   const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   const crc32 = u => { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
   const deflate = async u => new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
-  async function zip(entries) {
+  async function zip(entries, type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     const enc = new TextEncoder(), parts = [], central = []; let off = 0;
     const now = new Date(), dt = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)), dd = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate());
     for (const [name, data] of entries) {
@@ -103,7 +103,7 @@
     }
     const csize = central.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
     e.setUint32(0, 0x06054b50, true); e.setUint16(8, entries.length, true); e.setUint16(10, entries.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
-    return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type });
   }
 
   async function fill(buf, d) {
@@ -122,5 +122,5 @@
     return zip(out);
   }
 
-  CP.docxFill = { fill, data, FIELDS_HELP };
+  CP.docxFill = { fill, data, FIELDS_HELP, zip };
 })(window.CP);

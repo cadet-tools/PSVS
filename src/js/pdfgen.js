@@ -233,5 +233,28 @@
     return doc.save();
   }
 
-  CP.pdf = { load, instruction, camp, attendance };
+  /** VFS protokols (JC 1.pielikums, 1.tabula): katra pakāpe — sava lapa (A4 guļus) */
+  async function vfs(o) {
+    const ctx = await newDoc(`VFS protokols ${o.unit || ''}`.trim()), { doc, F, text } = ctx;
+    const W = 841.89, H = 595.28, M = 11 * MM;
+    const add = () => { const pg = doc.addPage([W, H]); pg.__top = H - 14 * MM; return pg; };
+    o.levels.forEach((lv, li) => {
+      const p1 = add(); let y = H - 14 * MM;
+      text(p1, `${li ? '1.tabulas turpinājums · ' : ''}VFS protokols${o.unit ? ` (${o.unit})` : ''}`, W / 2, y, { font: F.b, size: 12.5, align: 'center' }); y -= 15;
+      text(p1, `${lv.head}${o.date ? ` · Testa datums: ${o.date}.` : ''}`, W / 2, y, { size: 10.5, align: 'center' }); y -= 12;
+      const nW = 9 * MM, nameW = 46 * MM, rW = 14.2 * MM, pW = 10.8 * MM, totW = 12.5 * MM, bW = W - 2 * M - nW - nameW - 7 * (rW + pW) - totW;
+      const ex = [`Pievilkšanās kārienā (reizes) · ${lv.sexes[0]}`, `Kāriens saliektās rokās (sek.) · ${lv.sexes[1]}`, 'Roku saliekšana un iztaisnošana balstā guļus (reizes)', 'Ķermeņa augšdaļas pacelšana (reizes)', lv.thr, 'Īsā distance 60 m (sek.)', lv.run];
+      const cols = [{ title: 'N.p.k.', w: nW, align: 'center' }, { title: 'Vārds Uzvārds', w: nameW }];
+      ex.forEach(() => { cols.push({ title: 'Rez.', w: rW, align: 'center' }, { title: 'Punkti', w: pW, align: 'center', bold: true }); });
+      cols.push({ title: 'P kopā', w: totW, align: 'center', bold: true }, { title: 'Nozīmīte', w: bW, align: 'center' });
+      const groups = ex.map((t, i) => ({ from: 2 + i * 2, to: 3 + i * 2, title: t }));
+      const t = table(ctx, { page: p1, newPage: add, x: M, yTop: y, yMin: 22 * MM, cols, head: { h1: 40, h2: 14, groups }, rows: lv.rows, minH: 16, size: 9, headSize: 7.6 });
+      text(t.page, `Instruktors: ${o.instructor || ''} _____________________`, M, t.y - 22, { size: 10 });
+      text(t.page, 'Punkti pēc JC Vispārīgās fiziskās sagatavotības sistēmas 2.tabulas. Nozīmīte: bronza 41–47, sudrabs 48–53, zelts 54+ (visi vingrinājumi, katrā ne mazāk kā 4 punkti).', M, t.y - 38, { size: 7.5, color: ctx.grey });
+    });
+    pageNumbers(ctx, W);
+    return doc.save();
+  }
+
+  CP.pdf = { load, instruction, camp, attendance, vfs };
 })(window.CP);
