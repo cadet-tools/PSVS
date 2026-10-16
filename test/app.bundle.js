@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.2';
+  CP.VERSION = '1.38.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5495,6 +5495,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.3', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
+      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
+      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu izdrukā, pieraksti vai **saglabā failā** (piem., zibatmiņā) un glabā drošā vietā. Google neredz ne vārdus, ne failu nosaukumus.'
+    ] },
     { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
       '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
       'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
@@ -5544,10 +5548,6 @@ window.CP = window.CP || {};
     ] },
     { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Sadaļa “Ziņot”', items: [
       'Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu. Personu datus attēlā var **aizklāt** pirms sūtīšanas.'
-    ] },
-    { v: '1.29.0', from: '1.28.0', date: '2026-10-16', title: 'Šifrētā rezerves kopija', items: [
-      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
-      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu izdrukā vai pieraksti un glabā drošā vietā. Google neredz ne vārdus, ne failu nosaukumus.'
     ] },
     { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
       'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**: ievelc otra instruktora atsūtīto failu vai aizpildītu Excel veidni. Viņi glabājas tikai šajā pasākumā.'
@@ -8684,8 +8684,13 @@ window.CP = window.CP || {};
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
     const f = d.querySelector('form');
     d.querySelector('.dlg-body').addEventListener('focusin', e => { if (e.target.id === 'encCid') f.where.value = 'drive'; });
+    // viena iestatīšana vienlaikus: atkārtots “Tālāk” klikšķis, kamēr gaida Google, neizveido otru kodu
     f.onsubmit = async e => {
-      e.preventDefault();
+      e.preventDefault(); if (f.dataset.busy) return;
+      const btn = f.querySelector('[type=submit]'), txt = btn.textContent; f.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'Gaida…';
+      try { await setupGo(); } finally { delete f.dataset.busy; btn.disabled = false; btn.textContent = txt; }
+    };
+    const setupGo = async () => {
       const drv = f.where.value === 'drive', cid = (U.$('encCid')?.value || '').trim();
       if (!drv && !setupDir) return ui.toast('Izvēlies mapi kopijai', 'warn');
       if (drv && !CID_RE.test(cid)) return ui.toast('Ielīmē Google Client ID (beidzas ar .apps.googleusercontent.com). Kā to iegūt — spied “? Kā iegūt”.', 'warn', 9000);
@@ -8750,15 +8755,24 @@ window.CP = window.CP || {};
     const d = dlg('encCodeDialog', `<form><header class="dlg-head"><h2>Atkopšanas kods</h2></header>
       <div class="dlg-body"><p style="margin-top:0">Ar šo kodu kopiju var atvērt, <b>ja aizmirsti paroli</b>. Tas tiek parādīts <b>tikai tagad</b>.</p>
         <div class="enc-code">${esc(code)}</div>
-        <div class="actions"><button type="button" data-act="copy" data-arg="${esc(code)}">⧉ Kopēt</button><button type="button" id="encPrint">🖨 Izdrukāt / saglabāt PDF</button></div>
-        <p class="small muted">Izdrukā vai pieraksti un glabā drošā vietā atsevišķi no datora. Nesūti to e-pastā un neliec Google Drive.${cid ? ' Izdrukā ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
+        <div class="actions"><button type="button" data-act="copy" data-arg="${esc(code)}">⧉ Kopēt</button><button type="button" id="encSave">💾 Saglabāt failā</button><button type="button" id="encPrint">🖨 Izdrukāt / saglabāt PDF</button></div>
+        <p class="small muted">Izdrukā, pieraksti vai saglabā failā un glabā drošā vietā atsevišķi no datora (piem., zibatmiņā). Nesūti to e-pastā un neliec Google Drive.${cid ? ' Izdrukā un failā ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
         <label class="check" style="margin-top:10px"><input type="checkbox" name="ok"> Esmu kodu saglabājis drošā vietā</label></div>
       <footer class="dlg-foot"><span class="grow"></span><button class="mainbtn" type="submit" disabled>Pabeigt un izveidot kopiju</button></footer></form>`);
     const f = d.querySelector('form');
     f.ok.onchange = () => { f.querySelector('[type=submit]').disabled = !f.ok.checked; };
     d.addEventListener('cancel', e => e.preventDefault());
+    U.$('encSave').onclick = () => {
+      const txt = ['CADET PERSONĀLS — šifrētās rezerves kopijas atkopšanas kods', '', 'Kods: ' + code, '', 'Datu mape: ' + (S.rootName || ''), 'Izveidots: ' + U.fmtDate(U.iso()),
+        cid ? `Kopija: Google Drive, mape ${DIRNAME}\r\nGoogle Client ID (vajadzīgs atjaunošanai citā datorā): ${cid}` : `Kopija: mapē ${DIRNAME}`, '',
+        'Ar šo kodu kopiju var atvērt, ja aizmirsta parole: rīkā “Atjaunot no kopijas…” → “Aizmirsi paroli? Atkopšanas kods”.',
+        'Glabā šo failu atsevišķi no datora un no kopijas (piem., zibatmiņā vai ārējā diskā). Neliec to Google Drive.'].join('\r\n');
+      U.download(new Blob(['\ufeff' + txt], { type: 'text/plain;charset=utf-8' }), `CADET_atkopsanas_kods_${String(S.rootName || 'dati').replace(/[^\p{L}\p{N}_-]+/gu, '_')}_${U.iso()}.txt`);
+      ui.toast('Fails lejupielādēts. Pārvieto to uz zibatmiņu vai citu drošu vietu — ne Google Drive.', 'ok', 9000);
+    };
     U.$('encPrint').onclick = () => { const n = document.createElement('div'); n.innerHTML = codeSheet(code, cid); CP.setPrintSource({ kind: 'html', node: n }); d.close(); A.printGo(); setTimeout(() => { if (!d.open) d.showModal(); }, 800); };
-    f.onsubmit = async e => { e.preventDefault(); d.close(); await onDone(); };
+    let done = false;
+    f.onsubmit = async e => { e.preventDefault(); if (done) return; done = true; d.close(); await onDone(); };
   }
   async function editHead(fn) {
     CFG = CFG || await cfgGet();

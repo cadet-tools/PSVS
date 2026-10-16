@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.38.3 — 2026-10-17
+- Šifrētās kopijas iestatīšana: atkārtots “Tālāk” (kamēr gaida Google / mapi) vairs nesāk otru iestatīšanu — agrāk radās vairāki atkopšanas kodi un Drive varēja rasties otra CADET_rezerve mape; spēkā bija pēdējais parādītais kods. “Pabeigt” — tikai vienreiz.
+- Atkopšanas koda logā “💾 Saglabāt failā” (.txt ar kodu, datu mapi, Client ID).
+
 ## 1.38.2 — 2026-10-17
 - Atcelts 1.38.1: atkopšanas koda sūtīšana uz e-pastu noņemta (kods un kopija vienā Google kontā = viens uzlaušanas punkts). Atpakaļ iepriekšējais teksts: izdrukāt / pierakstīt, nesūtīt e-pastā.
 

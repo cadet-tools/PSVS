@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.3', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
+      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
+      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu izdrukā, pieraksti vai **saglabā failā** (piem., zibatmiņā) un glabā drošā vietā. Google neredz ne vārdus, ne failu nosaukumus.'
+    ] },
     { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
       '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
       'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
@@ -62,10 +66,6 @@
     ] },
     { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Sadaļa “Ziņot”', items: [
       'Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu. Personu datus attēlā var **aizklāt** pirms sūtīšanas.'
-    ] },
-    { v: '1.29.0', from: '1.28.0', date: '2026-10-16', title: 'Šifrētā rezerves kopija', items: [
-      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
-      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu izdrukā vai pieraksti un glabā drošā vietā. Google neredz ne vārdus, ne failu nosaukumus.'
     ] },
     { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
       'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**: ievelc otra instruktora atsūtīto failu vai aizpildītu Excel veidni. Viņi glabājas tikai šajā pasākumā.'
