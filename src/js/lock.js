@@ -69,7 +69,7 @@
   function unlock() {
     locked = false; clearInterval(tick); document.body.classList.remove('cp-locked');
     try { dlg.close(); } catch (e) { }
-    CP.watchHideBig?.(true); U.$('cplSlot')?.replaceChildren(); dlg.classList.remove('has-watch', 'pin');
+    CP.watchHideBig?.(true); U.$('cplSlot')?.replaceChildren(); dlg.classList.remove('has-watch', 'pin'); paintPinBar();
   }
   // citi modālie logi, kas atveras bloķējuma laikā, paliek ZEM pulksteņa
   { const sm = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () { const r = sm.apply(this, arguments); if (locked && this !== dlg && dlg) raise(); return r; }; }
@@ -185,7 +185,7 @@
         <span class="grow"></span><button class="ghost" data-act="lockNow" title="Ctrl+Shift+L">Bloķēt tagad</button></div>
       <p class="small muted">PIN glabājas tikai šajā datorā un pārlūkā šifrētā veidā (to nevar nolasīt). Bloķēt uzreiz: <b>Ctrl+Shift+L</b>.</p></section>`;
   }
-  const paint = () => { const el = U.$('lockCard'); if (el) el.outerHTML = card(); };
+  const paint = () => { const el = U.$('lockCard'); if (el) el.outerHTML = card(); paintPinBar(); };
   function modal(id, html) { let d = U.$(id); if (!d) { d = document.createElement('dialog'); d.id = id; document.body.appendChild(d); } d.innerHTML = html; if (!d.open) d.showModal(); return d; }
   async function verifyCurrent(f) {
     if (!hasPin()) return true;
@@ -247,5 +247,24 @@
     d.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!(await verifyCurrent(e.target))) return; C = get(); delete C.hash; delete C.salt; delete C.iter; put(C); d.close(); paint(); ui.toast('PIN noņemts', 'ok'); };
   };
   A.lockNow = () => lockNow();
+
+  /* ---------- Josla “Iestati PIN” — katru reizi, atverot rīku, līdz PIN iestatīts. ✕ paslēpj līdz nākamajai atvēršanai ---------- */
+  let pinBarHidden = false;
+  function paintPinBar() {
+    let b = U.$('pinBanner');
+    const show = S.root && !hasPin() && !pinBarHidden && !locked;
+    if (!show) { b?.remove(); return; }
+    if (b) return;
+    b = document.createElement('div'); b.id = 'pinBanner'; b.className = 'gbanner pinbanner'; b.setAttribute('role', 'status');
+    b.innerHTML = `<span>🔒 Iestati PIN kodu — tad pulkstenis aizsargās jaunsargu datus, kad neesi pie datora</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
+    ui.topHost().appendChild(b);
+  }
+  A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };
+  A.lockGoSet = () => {
+    CP.ui.go('settings');
+    setTimeout(() => { const c = U.$('lockCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintPinBar);
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintPinBar, 300));
   CP.lock = { card, lock, unlock, adopt, guard, isLocked: () => locked, hasPin };
 })(window.CP);

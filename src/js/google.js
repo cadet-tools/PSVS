@@ -136,8 +136,7 @@
     let b = document.getElementById('gBanner');
     const w = S.root && Date.now() > hideUntil ? wanted() : [];
     if (!w.length) { b?.remove(); return; }
-    if (!b) { b = document.createElement('div'); b.id = 'gBanner'; b.className = 'gbanner'; b.setAttribute('role', 'status'); document.body.prepend(b); }
-    b.classList.toggle('below-test', !!document.querySelector('.testbanner'));
+    if (!b) { b = document.createElement('div'); b.id = 'gBanner'; b.className = 'gbanner'; b.setAttribute('role', 'status'); ui.topHost().prepend(b); }
     const what = [...new Set(w.map(n => n.what))];
     const html = `<span>☁ Google savienojums beidzies — ${U.esc(what.join(' un '))} ${what.length > 1 ? 'netiek sūtīti' : 'netiek sūtīta'} uz Google</span><button type="button" data-act="gConnect">Pieslēgties</button><button type="button" class="gb-x" data-act="gBannerHide" title="Paslēpt uz 30 minūtēm" aria-label="Paslēpt">✕</button>`;
     if (b.dataset.h !== html) { b.innerHTML = html; b.dataset.h = html; }

@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.31.1';
+  CP.VERSION = '1.31.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -1877,6 +1877,13 @@ window.CP = window.CP || {};
   const ui = {};
 
   /* --- Ziņojumi: vienmēr redzami tajā logā, kurā lietotājs strādā --- */
+  /** Augšējo joslu (Google savienojums, PIN atgādinājums) kopīgais konteiners — joslas viena zem otras, zem testa joslas */
+  ui.topHost = () => {
+    let h = document.getElementById('topBars');
+    if (!h) { h = document.createElement('div'); h.id = 'topBars'; document.body.appendChild(h); }
+    h.classList.toggle('below-test', !!document.querySelector('.testbanner'));
+    return h;
+  };
   ui.toast = (msg, type = 'ok', ms = 5000, action = null) => {
     const dialogs = U.qsa('dialog[open]'), top = dialogs.at(-1);
     if (top && top.id === 'scanDialog' && CP.scan) { CP.scan.msg(msg, type); return; }
@@ -2251,7 +2258,7 @@ window.CP = window.CP || {};
   function unlock() {
     locked = false; clearInterval(tick); document.body.classList.remove('cp-locked');
     try { dlg.close(); } catch (e) { }
-    CP.watchHideBig?.(true); U.$('cplSlot')?.replaceChildren(); dlg.classList.remove('has-watch', 'pin');
+    CP.watchHideBig?.(true); U.$('cplSlot')?.replaceChildren(); dlg.classList.remove('has-watch', 'pin'); paintPinBar();
   }
   // citi modālie logi, kas atveras bloķējuma laikā, paliek ZEM pulksteņa
   { const sm = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () { const r = sm.apply(this, arguments); if (locked && this !== dlg && dlg) raise(); return r; }; }
@@ -2367,7 +2374,7 @@ window.CP = window.CP || {};
         <span class="grow"></span><button class="ghost" data-act="lockNow" title="Ctrl+Shift+L">Bloķēt tagad</button></div>
       <p class="small muted">PIN glabājas tikai šajā datorā un pārlūkā šifrētā veidā (to nevar nolasīt). Bloķēt uzreiz: <b>Ctrl+Shift+L</b>.</p></section>`;
   }
-  const paint = () => { const el = U.$('lockCard'); if (el) el.outerHTML = card(); };
+  const paint = () => { const el = U.$('lockCard'); if (el) el.outerHTML = card(); paintPinBar(); };
   function modal(id, html) { let d = U.$(id); if (!d) { d = document.createElement('dialog'); d.id = id; document.body.appendChild(d); } d.innerHTML = html; if (!d.open) d.showModal(); return d; }
   async function verifyCurrent(f) {
     if (!hasPin()) return true;
@@ -2429,6 +2436,25 @@ window.CP = window.CP || {};
     d.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!(await verifyCurrent(e.target))) return; C = get(); delete C.hash; delete C.salt; delete C.iter; put(C); d.close(); paint(); ui.toast('PIN noņemts', 'ok'); };
   };
   A.lockNow = () => lockNow();
+
+  /* ---------- Josla “Iestati PIN” — katru reizi, atverot rīku, līdz PIN iestatīts. ✕ paslēpj līdz nākamajai atvēršanai ---------- */
+  let pinBarHidden = false;
+  function paintPinBar() {
+    let b = U.$('pinBanner');
+    const show = S.root && !hasPin() && !pinBarHidden && !locked;
+    if (!show) { b?.remove(); return; }
+    if (b) return;
+    b = document.createElement('div'); b.id = 'pinBanner'; b.className = 'gbanner pinbanner'; b.setAttribute('role', 'status');
+    b.innerHTML = `<span>🔒 Iestati PIN kodu — tad pulkstenis aizsargās jaunsargu datus, kad neesi pie datora</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
+    ui.topHost().appendChild(b);
+  }
+  A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };
+  A.lockGoSet = () => {
+    CP.ui.go('settings');
+    setTimeout(() => { const c = U.$('lockCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintPinBar);
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintPinBar, 300));
   CP.lock = { card, lock, unlock, adopt, guard, isLocked: () => locked, hasPin };
 })(window.CP);
 
@@ -5340,7 +5366,8 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.31.1', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
+    { v: '1.31.2', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
+      'Kamēr PIN nav iestatīts, augšā redzama josla **“Iestati PIN kodu”**. Poga **“Iestatīt PIN”** aizved uz iestatījumiem. Ar **✕** joslu var paslēpt, bet nākamreiz, atverot rīku, tā parādās atkal.',
       'Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka **lielais pulkstenis**, un jaunsargu dati nav redzami. Noklusēti tas notiek pēc **5 minūtēm**. Laiku var mainīt **Iestatījumos → Pulkstenis un pauzes → Liels pulkstenis**.',
       '**PIN kods** (4–8 cipari): to prasa, izejot no pulksteņa un atverot rīku. Iestatīt, mainīt vai noņemt var Iestatījumos. PIN glabājas tikai tavā datorā šifrētā veidā.',
       '**Aizmirsi PIN?** Rīks nosūta 6 ciparu kodu uz tavu **atkopšanas e-pastu**, kas iestatīšanas laikā tiek apstiprināts ar kodu. Ja e-pasta nav, bloķēšanu var atiestatīt, no jauna izvēloties datu mapi. Dati netiek dzēsti.',
@@ -8210,8 +8237,7 @@ window.CP = window.CP || {};
     let b = document.getElementById('gBanner');
     const w = S.root && Date.now() > hideUntil ? wanted() : [];
     if (!w.length) { b?.remove(); return; }
-    if (!b) { b = document.createElement('div'); b.id = 'gBanner'; b.className = 'gbanner'; b.setAttribute('role', 'status'); document.body.prepend(b); }
-    b.classList.toggle('below-test', !!document.querySelector('.testbanner'));
+    if (!b) { b = document.createElement('div'); b.id = 'gBanner'; b.className = 'gbanner'; b.setAttribute('role', 'status'); ui.topHost().prepend(b); }
     const what = [...new Set(w.map(n => n.what))];
     const html = `<span>☁ Google savienojums beidzies — ${U.esc(what.join(' un '))} ${what.length > 1 ? 'netiek sūtīti' : 'netiek sūtīta'} uz Google</span><button type="button" data-act="gConnect">Pieslēgties</button><button type="button" class="gb-x" data-act="gBannerHide" title="Paslēpt uz 30 minūtēm" aria-label="Paslēpt">✕</button>`;
     if (b.dataset.h !== html) { b.innerHTML = html; b.dataset.h = html; }

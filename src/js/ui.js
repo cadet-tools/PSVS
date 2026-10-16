@@ -7,6 +7,13 @@
   const ui = {};
 
   /* --- Ziņojumi: vienmēr redzami tajā logā, kurā lietotājs strādā --- */
+  /** Augšējo joslu (Google savienojums, PIN atgādinājums) kopīgais konteiners — joslas viena zem otras, zem testa joslas */
+  ui.topHost = () => {
+    let h = document.getElementById('topBars');
+    if (!h) { h = document.createElement('div'); h.id = 'topBars'; document.body.appendChild(h); }
+    h.classList.toggle('below-test', !!document.querySelector('.testbanner'));
+    return h;
+  };
   ui.toast = (msg, type = 'ok', ms = 5000, action = null) => {
     const dialogs = U.qsa('dialog[open]'), top = dialogs.at(-1);
     if (top && top.id === 'scanDialog' && CP.scan) { CP.scan.msg(msg, type); return; }

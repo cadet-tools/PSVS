@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.31.2 — 2026-10-16
+- Josla `#pinBanner` (ja datu mape atvērta un PIN nav iestatīts; ✕ — līdz lapas pārlādei). Kopīgs augšējo joslu konteiners `ui.topHost()` (`#topBars`) arī Google joslai.
+
 ## 1.31.1 — 2026-10-16
 - Bloķēšana izmanto esošo lielo pulksteni (`watch.js`) un tā neaktivitātes iestatījumu, nevis atsevišķu pulksteni/taimeri: `CP.lock.adopt(ov)` ieliek `#watchBig` bloķējuma logā, `hideBig()` jautā `CP.lock.guard()` (→ PIN). Noņemts atsevišķais `mins` iestatījums.
 

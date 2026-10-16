@@ -578,8 +578,13 @@ input[type=radio]{width:auto;flex:none;accent-color:var(--teal)}
 .enc-code{font:700 22px/1.4 ui-monospace,Consolas,monospace;letter-spacing:2px;text-align:center;padding:14px;margin:10px 0;border:2px dashed var(--teal);border-radius:12px;background:var(--panel2);user-select:all;word-break:break-all}
 
 /* Google savienojuma josla (tāpat kā testa vides josla augšā) */
-.gbanner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:1001;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:var(--orange);color:#1b1206;font-weight:700;font-size:12.5px;padding:4px 6px 4px 14px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-.gbanner.below-test{top:28px;border-radius:10px}
+.gbanner{display:flex;max-width:100%;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:var(--orange);color:#1b1206;font-weight:700;font-size:12.5px;padding:4px 6px 4px 14px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#topBars{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:1001;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:calc(100vw - 24px);pointer-events:none}
+#topBars>*{pointer-events:auto}
+#topBars.below-test{top:28px}#topBars.below-test .gbanner,#topBars .gbanner+.gbanner{border-radius:10px}
+#topBars:empty{display:none}
+.pinbanner{background:var(--acc);color:#fff}.pinbanner button{background:rgba(0,0,0,.28)}.pinbanner button:hover{background:rgba(0,0,0,.4)}.pinbanner button.gb-x{color:#fff}
+.card.flash{animation:cardFlash 2s ease}@keyframes cardFlash{0%,40%{box-shadow:0 0 0 3px var(--acc)}100%{box-shadow:0 0 0 0 transparent}}
 .gbanner span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gbanner button{font:inherit;font-size:12px;padding:3px 12px;border-radius:7px;border:0;background:#1b1206;color:#fff;cursor:pointer;min-height:0}
 .gbanner button:hover{background:#3a2a10}
@@ -1233,5 +1238,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.31.1"></script></body>
+<script src="app.bundle.js?v=1.31.2"></script></body>
 </html>
