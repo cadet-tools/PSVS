@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.4';
+  CP.VERSION = '1.38.5';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -8712,6 +8712,7 @@ window.CP = window.CP || {};
       try {
         const master = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']), code = newRecovery();
         const head = { format: FORMAT, v: 1, set: hex(rnd(8)), created: U.now(), updated: '', root: S.rootName, hint: f.hint.value.trim(), store: drv ? 'drive' : 'local', wraps: { pw: await wrap(master, f.pw.value), rc: await wrap(master, normRecovery(code)) }, index: '' };
+        U.$('encDialog')?.close();   // iestatīšanas logs pazūd — uz tā vairs nevar uzspiest un izveidot vēl vienu kodu
         showCode(code, async () => {
           try {
             if (drv) {

@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.5 — 2026-10-17
+- Parādoties atkopšanas kodam, iestatīšanas logs tiek aizvērts (agrāk, piem., drukāšanas brīdī, zem tā varēja vēlreiz spiest “Tālāk”).
+
 ## 1.38.4 — 2026-10-17
 - PIN un šifrētās kopijas paroļu lauki: `type="text"` + `.pw-mask` (`-webkit-text-security: disc`), `autocomplete="off"` — Chrome vairs nepiedāvā saglabāt PIN / kopijas paroli Google paroļu pārvaldniekā. ATJAUNOT.html netiek mainīts.
 
