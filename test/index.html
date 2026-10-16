@@ -739,6 +739,14 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 .ret-card h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ret-card h3 .right{margin-left:auto;font-weight:400}
 .ret-row .check{align-items:flex-start}.ret-row .check input{margin-top:3px}
 @media (max-width:640px){.ret-line{grid-template-columns:1fr}}
+/* Sinhronizācijas stāvoklis zem datu mapes */
+.rl-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.syncline{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px;line-height:1.35}
+.syncline[hidden]{display:none}
+.syncline .sl-warn{color:var(--warn-tx,#f6d6a0);font-weight:600}
+.syncline .sl-ok{color:var(--muted,#98a6a0)}
+.syncline .sl-run{color:var(--muted,#98a6a0);display:inline-flex;align-items:center;gap:6px}
+.syncline .sl-btn{font-size:11.5px;padding:2px 9px;border-radius:12px;min-height:0;line-height:1.4}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -961,7 +969,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
       <button class="mainbtn" data-act="scan"><span data-ic="scan">📷</span> Ievadīt anketu</button>
       <button data-act="import" title="Imports no Excel / CSV"><span data-ic="upload">⬆</span> Imports</button>
     </div>
-    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><span id="rootLabel" class="small muted"></span><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi"><span data-ic="folder">📁</span></button></div>
+    <div class="rootline" data-rootdrop="1" title="Datu mapi var arī ievilkt šeit no File Explorer"><div class="rl-main"><span id="rootLabel" class="small muted"></span><div id="syncLine" class="syncline"></div></div><button class="ghost sm" data-act="pickRoot" title="Mainīt datu mapi"><span data-ic="folder">📁</span></button></div>
     <div id="restoreBox"></div>
     <div id="sideList" class="sidelist"></div>
   </aside>
@@ -1327,5 +1335,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.36.2"></script></body>
+<script src="app.bundle.js?v=1.36.3"></script></body>
 </html>

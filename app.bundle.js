@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.2';
+  CP.VERSION = '1.36.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -1913,6 +1913,7 @@ window.CP = window.CP || {};
       : B?.error ? '<span class="dotstate err"></span> Mape nav pieejama'
       : S.pendingRoot ? 'Jāapstiprina piekļuve' : 'Datu mape nav izvēlēta';
     U.qsa('[data-act="save"]').forEach(b => { b.classList.toggle('pending', S.dirty); });
+    CP.encBackup?.paintSync?.();
   };
 
   /* --- Maršrutēšana --- */
@@ -5435,6 +5436,10 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.36.3', from: '1.36.2', date: '2026-10-16', title: 'Google Drive sinhronizācijas stāvoklis', items: [
+      'Kreisajā joslā zem datu mapes nosaukuma redzams, vai dati sinhronizēti ar **Google Drive**. Ja šifrētā kopija nav iestatīta, ir **⚠ “Nav sinhronizēts ar Google Drive”** un poga **“Iestatīt”**, kas atver Iestatījumus pie kopijas kartītes.',
+      'Ja Google savienojums beidzies un ir nenosūtītas izmaiņas — **⚠** ar pogu **“Pieslēgties”**. Ja kopija neizdevās — **“Mēģināt vēlreiz”**. Kad viss kārtībā — **“☁ Google Drive · sinhronizēts”** ar laiku; ja ir jaunas izmaiņas, kas tiks nosūtītas automātiski, — “izmaiņas gaida nosūtīšanu” un poga **⟳** nosūtīt uzreiz.'
+    ] },
     { v: '1.36.2', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
       'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** kā parasts izsniegts priekšmets (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem) — tā ir **jāatdod**, un uz to attiecas MTL aprites lapa. Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
       'Ja nozīmīte vai cits priekšmets ir **dāvinājums**, ekipējumā spied **“🎁 Dāvināt”** (vai izsniegšanas logā atzīmē “Dāvinājums”). Tad tas paliek jaunsargam: nav jāatdod, neprasa MTL lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums dāvinājumi redzami atsevišķi.'
@@ -8440,7 +8445,7 @@ window.CP = window.CP || {};
   const isDrive = c => c?.kind === 'drive';
   const enabled = c => !!(c?.master && (c.dir || c.folderId));
   let CFG = null, running = false, status = '';
-  (async () => { CFG = await cfgGet(); paint(); G()?.paintBanner(); })();
+  (async () => { CFG = await cfgGet(); paint(); G()?.paintBanner(); CP.encBackup?.paintSync?.(); })();
 
   /* --- Failu sistēma --- */
   async function sub(dir, name, create) { return dir.getDirectoryHandle(name, { create }); }
@@ -8582,7 +8587,7 @@ window.CP = window.CP || {};
   const pending = () => !!(S.db && enabled(CFG) && (!CFG.last || S.db.revision !== CFG.last.rev));
   // automātiski: ik 10 min pārbauda; ja datos ir izmaiņas un kopija vecāka par 30 min
   setInterval(() => { if (CFG?.last && S.root && !running && pending() && Date.now() - new Date(CFG.last.at) > 30 * 60000) run({ quiet: true }); }, 10 * 60000);
-  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); G()?.paintBanner(); if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
+  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); G()?.paintBanner(); paintSync(); if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
   // Google josla: kopija Google Drive, ir nenosūtītas izmaiņas, savienojums beidzies
   G()?.needs.push(() => isDrive(CFG) && S.root && pending() ? { what: 'rezerves kopija', scope: 'drive' } : null);
   // tikko pieslēdzās Google (josla “Pieslēgties”) → nosūta uzreiz
@@ -8607,8 +8612,30 @@ window.CP = window.CP || {};
         <p class="small muted">${drv ? 'Kamēr rīks ir atvērts un esi pieslēdzies Google, kopija tiek papildināta automātiski: tikai jaunie un mainītie faili. Google savienojums ir derīgs apmēram 1 stundu; kad tas beidzas un ir ko sūtīt, augšā parādās josla ar pogu “Pieslēgties”.' : 'Kopija tiek papildināta automātiski, kamēr rīks ir atvērts: tikai jaunie un mainītie faili. Google Drive tos sinhronizē pats.'}</p>`
       : `<div class="actions"><button class="mainbtn" data-act="encSetup">🔐 Iestatīt šifrēto kopiju</button><button class="ghost" data-act="encRestore">Atjaunot no kopijas…</button></div>`}</section>`;
   }
-  const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); };
-  CP.encBackup = { card, run, paint };
+  /* --- Stāvoklis sānjoslā zem datu mapes nosaukuma: vai dati sinhronizēti ar Google Drive --- */
+  function syncHtml() {
+    if (!S.root) return '';
+    const c = CFG, drv = isDrive(c);
+    const warn = (msg, btn) => `<span class="sl-warn" title="Šifrētā rezerves kopija Google Drive">⚠ ${msg}</span>${btn}`;
+    if (!enabled(c)) return warn('Nav sinhronizēts ar Google Drive', `<button class="sl-btn" data-act="encGoSet">Iestatīt</button>`);
+    if (!drv) return `<span class="sl-ok" title="Šifrētā rezerves kopija mapē ${esc(c.dir?.name || '')}">🔐 Kopija mapē${c.last ? ' · ' + hhmmDay(c.last.at) : ''}</span>`;
+    if (running) return `<span class="sl-run"><span class="spin"></span> Sūta uz Google Drive…</span>`;
+    if (status === 'perm' || status === 'err') return warn('Google Drive: kopija neizdevās', `<button class="sl-btn" data-act="encRun">Mēģināt vēlreiz</button>`);
+    if (!c.last) return warn('Google Drive: kopija vēl nav izveidota', `<button class="sl-btn" data-act="encRun">Sinhronizēt</button>`);
+    if ((pending() || status === 'auth') && !G()?.has('drive')) return warn('Nav sinhronizēts ar Google Drive — savienojums beidzies', `<button class="sl-btn" data-act="gConnect">Pieslēgties</button>`);
+    if (pending()) return `<span class="sl-ok" title="Jaunās izmaiņas tiek nosūtītas automātiski ik pēc 30 min; var nosūtīt arī tagad">☁ Google Drive · ${hhmmDay(c.last.at)} · izmaiņas gaida nosūtīšanu</span><button class="sl-btn ghost" data-act="encRun" title="Nosūtīt tagad">⟳</button>`;
+    return `<span class="sl-ok" title="Šifrētā rezerves kopija Google Drive ir aktuāla">☁ Google Drive · sinhronizēts ${hhmmDay(c.last.at)}</span>`;
+  }
+  const hhmmDay = t => { const d = new Date(t); return U.iso(d) === U.iso() ? hhmm(t) : U.fmtDate(U.iso(d)); };
+  const paintSync = () => { const el = U.$('syncLine'); if (!el) return; const h = syncHtml(); if (el.innerHTML !== h) el.innerHTML = h; el.hidden = !h; };
+  setInterval(paintSync, 60000);
+  G()?.onToken(() => setTimeout(paintSync, 50));
+  A.encGoSet = () => {
+    ui.go('settings');
+    setTimeout(() => { const c = U.$('encCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); paintSync(); };
+  CP.encBackup = { card, run, paint, paintSync };
   // brīdinājums pārskatā: kopija sen nav atjaunota vai gaida atļauju
   { const orig = D.alerts; D.alerts = () => { const out = orig(); if (enabled(CFG) && S.root) { const age = CFG.last ? (Date.now() - new Date(CFG.last.at)) / 864e5 : 99; if (status === 'perm' || age > 7) out.push({ kind: 'backup', sev: 1, when: CFG.last?.at?.slice(0, 10) || '', msg: status === 'perm' ? 'Šifrētajai rezerves kopijai vajag atļauju — Iestatījumos spied “Izveidot kopiju tagad”' : `Šifrētā rezerves kopija nav atjaunota ${CFG.last ? Math.floor(age) + ' dienas' : 'ne reizi'} — Iestatījumos spied “Izveidot kopiju tagad”` }); } return out; }; }
 

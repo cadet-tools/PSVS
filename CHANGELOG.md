@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.36.3 — 2026-10-16
+- Sānjoslā zem datu mapes `#syncLine` (`CP.encBackup.paintSync`, izsauc `ui.updateSaveState`, `paint`, Google `onToken`, ik minūti): nav kopijas → ⚠ + `encGoSet`; Drive + nenosūtītas izmaiņas bez savienojuma → ⚠ + `gConnect`; kļūda → `encRun`; aktuāla → sinhronizēts HH:MM; gaida → info + ⟳. Lokālas mapes kopijai — tikai informācija.
+
 ## 1.36.2 — 2026-10-16
 - VFS nozīmītes ekipējumā vairs nav `keep` pēc noklusējuma — jāatdod, MTL lapa. `keep` + `keepAt` nozīmē “dāvinājums” un tiek iestatīts tikai instruktora darbībā (`giftEq` vai atzīme logā). 1.36.1 automātiski izveidotajiem ierakstiem (`keep` bez `keepAt`) `keep` noņemts.
 

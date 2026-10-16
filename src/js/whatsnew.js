@@ -10,6 +10,10 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.36.3', from: '1.36.2', date: '2026-10-16', title: 'Google Drive sinhronizācijas stāvoklis', items: [
+      'Kreisajā joslā zem datu mapes nosaukuma redzams, vai dati sinhronizēti ar **Google Drive**. Ja šifrētā kopija nav iestatīta, ir **⚠ “Nav sinhronizēts ar Google Drive”** un poga **“Iestatīt”**, kas atver Iestatījumus pie kopijas kartītes.',
+      'Ja Google savienojums beidzies un ir nenosūtītas izmaiņas — **⚠** ar pogu **“Pieslēgties”**. Ja kopija neizdevās — **“Mēģināt vēlreiz”**. Kad viss kārtībā — **“☁ Google Drive · sinhronizēts”** ar laiku; ja ir jaunas izmaiņas, kas tiks nosūtītas automātiski, — “izmaiņas gaida nosūtīšanu” un poga **⟳** nosūtīt uzreiz.'
+    ] },
     { v: '1.36.2', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
       'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** kā parasts izsniegts priekšmets (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem) — tā ir **jāatdod**, un uz to attiecas MTL aprites lapa. Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
       'Ja nozīmīte vai cits priekšmets ir **dāvinājums**, ekipējumā spied **“🎁 Dāvināt”** (vai izsniegšanas logā atzīmē “Dāvinājums”). Tad tas paliek jaunsargam: nav jāatdod, neprasa MTL lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums dāvinājumi redzami atsevišķi.'

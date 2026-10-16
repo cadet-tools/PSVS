@@ -39,6 +39,7 @@
       : B?.error ? '<span class="dotstate err"></span> Mape nav pieejama'
       : S.pendingRoot ? 'Jāapstiprina piekļuve' : 'Datu mape nav izvēlēta';
     U.qsa('[data-act="save"]').forEach(b => { b.classList.toggle('pending', S.dirty); });
+    CP.encBackup?.paintSync?.();
   };
 
   /* --- Maršrutēšana --- */
