@@ -24,6 +24,7 @@
   const tags = (n, t) => [...n.getElementsByTagNameNS('*', t)];
   const RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   /** Visas darblapas: [{ name, rows }] (secībā, kā Excel cilnēs) */
+  CP.sheetReader = { xlsx: f => parseXlsx(f), csv: t => parseCSV(t) };   // arī dokumentu skatītājam
   async function parseXlsx(file) {
     const want = n => n === 'xl/sharedStrings.xml' || n === 'xl/workbook.xml' || n === 'xl/_rels/workbook.xml.rels' || /^xl\/worksheets\/sheet\d+\.xml$/.test(n);
     const z = await U.unzip(await file.arrayBuffer(), want), dec = new TextDecoder();

@@ -153,5 +153,5 @@
   CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintBanner);
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintBanner, 500));
 
-  CP.google = { SC, token, has, valid, forget, clientId, rememberClient, drive, needs, onToken: f => listeners.push(f), paintBanner, redirectUri, expiresAt: () => tok?.exp || 0 };
+  CP.google = { SC, token, has, valid, forget, needed: () => needs.map(f => { try { return f(); } catch (e) { return null; } }).filter(Boolean), token_: () => tok?.t || '', clientId, rememberClient, drive, needs, onToken: f => listeners.push(f), paintBanner, redirectUri, expiresAt: () => tok?.exp || 0 };
 })(window.CP);

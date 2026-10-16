@@ -775,7 +775,7 @@
   store.rememberDocHandle = async (id, handle) => { await store.idbSet('doc:' + id, handle); };
 
   function compareMeta(d, file) {
-    if (d.sha256 && d.size != null && file.size === d.size && d.modified && file.lastModified === d.modified) return { state: 'available', detail: 'Pieejams' };
+    if (d.sha256 && d.size != null && file.size === d.size && d.modified && file.lastModified === d.modified) return { state: 'available', detail: 'Pārbaudīts' };
     if (d.sha256 && (file.size !== d.size || (d.modified && file.lastModified !== d.modified))) return { state: 'check', detail: 'Metadati mainījušies — jāpārbauda saturs' };
     return { state: 'check', detail: d.sha256 ? 'Jāpārbauda' : 'Vēl nav pārbaudīta kontrolsumma' };
   }

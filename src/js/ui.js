@@ -55,6 +55,8 @@
       if (navStack.length > 40) navStack.shift();
       try { history.pushState({ cp: navStack.length }, ''); } catch (e) { /* nav būtiski */ }
     }
+    // izejot no kartiņas, dokumentu cilnes papildu sadaļas atkal aizveras
+    if (page !== 'person' || (opts.person && opts.person !== S.selected)) S.docSec = null;
     S.page = page;
     if (opts.person) { S.selected = opts.person; S.tab = opts.tab || 'overview'; }
     CP.render();

@@ -5,7 +5,7 @@
   'use strict';
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
-  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
+  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat'], ['perm', 'Atļaujas', 'lock']];
   A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
   /** Ritina tā, lai kartīte būtu ekrāna vidū; ja tā ir augstāka par ekrānu — tās augša redzama zem cilnēm */
   ui.scrollToCard = c => {
@@ -19,7 +19,7 @@
   };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
-    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
+    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
     setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
@@ -115,6 +115,7 @@
         ${s.tools.map((t, i) => `<div class="inline-form"><input data-tool="${i}:name" value="${esc(t.name)}" placeholder="Nosaukums" style="max-width:180px"><input data-tool="${i}:url" value="${esc(t.url)}" placeholder="https://…"><button class="sm ghost" data-act="delTool" data-arg="${i}">✕</button></div>`).join('')}
         <button class="sm" data-act="addTool">＋ Pievienot rīku</button>
         <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section>
+      </div>${T('perm')}${CP.perms ? CP.perms.card() : ''}
       </div></div>`;
     }
   };

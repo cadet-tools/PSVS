@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 40 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 41 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.8';
+  CP.VERSION = '1.39.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -272,7 +272,7 @@ window.CP = window.CP || {};
   /* ---------------- Datu shēma ---------------- */
   CP.STATUSES = { candidate: 'Kandidāts', active: 'Jaunsargs', paused: 'Pārtraukts', archived: 'Arhīvā' };
   CP.COMM_STATUS = { prepared: 'Sagatavots', opened: 'Atvērts ārējā lietotnē', confirmed: 'Lietotājs apstiprinājis nosūtīšanu', cancelled: 'Atcelts' };
-  CP.FILE_STATUS = { available: 'Pieejams', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
+  CP.FILE_STATUS = { available: 'Pārbaudīts', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
 
   CP.SECTIONS = [
     ['basic', 'Pamatdati'], ['study', 'Dalība un mācības'], ['contact', 'Kontakti'], ['address', 'Adreses'],
@@ -1582,7 +1582,7 @@ window.CP = window.CP || {};
   store.rememberDocHandle = async (id, handle) => { await store.idbSet('doc:' + id, handle); };
 
   function compareMeta(d, file) {
-    if (d.sha256 && d.size != null && file.size === d.size && d.modified && file.lastModified === d.modified) return { state: 'available', detail: 'Pieejams' };
+    if (d.sha256 && d.size != null && file.size === d.size && d.modified && file.lastModified === d.modified) return { state: 'available', detail: 'Pārbaudīts' };
     if (d.sha256 && (file.size !== d.size || (d.modified && file.lastModified !== d.modified))) return { state: 'check', detail: 'Metadati mainījušies — jāpārbauda saturs' };
     return { state: 'check', detail: d.sha256 ? 'Jāpārbauda' : 'Vēl nav pārbaudīta kontrolsumma' };
   }
@@ -1933,6 +1933,8 @@ window.CP = window.CP || {};
       if (navStack.length > 40) navStack.shift();
       try { history.pushState({ cp: navStack.length }, ''); } catch (e) { /* nav būtiski */ }
     }
+    // izejot no kartiņas, dokumentu cilnes papildu sadaļas atkal aizveras
+    if (page !== 'person' || (opts.person && opts.person !== S.selected)) S.docSec = null;
     S.page = page;
     if (opts.person) { S.selected = opts.person; S.tab = opts.tab || 'overview'; }
     CP.render();
@@ -2995,7 +2997,7 @@ window.CP = window.CP || {};
         <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) + ' · ' : ''}${d.path ? esc(d.path) : 'Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
       </div>
       ${d.path ? `<button class="sm mainbtn" data-act="view" data-arg="${keyOf(d.sourceId, d.path)}">Atvērt</button>` : ''}
-      ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
+      ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}" title="Pārbaudīt, vai fails ir vietā un nav mainījies">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
       ${d.path && /\.(pdf|docx|edoc|asice|jpe?g|png)$/i.test(d.path) ? `<button class="sm" data-act="readDoc" data-arg="${d.id}" title="Nolasīt datus no šī dokumenta kartiņā">📥 Nolasīt</button>` : ''}
       <button class="sm" data-act="editDoc" data-arg="${d.id}" title="Labot dokumenta datus (veids, datumi, statuss)">✎ Labot</button>
       <button class="sm" data-act="replaceDoc" data-arg="${d.id}" title="Aizstāt failu ar jaunu (vecais paliek mapē)">⇄ Aizstāt failu</button>
@@ -3010,20 +3012,28 @@ window.CP = window.CP || {};
     const sugg = fn && ln ? S.index.filter(f => f.n.includes(ln) && f.n.includes(fn) && !linked.has(f.sourceId + '|' + f.path)).slice(0, 40) : [];
     // Obligātie dokumenti (✓/✗, pievienot, labot, aizstāt, dzēst, atgādināt) ir sānjoslā — šeit netiek dublēti
     void miss;
-    return `<section class="card docbrowser"><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span><span class="right actions"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></span></h3>
+    // Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā aizvērtas; atvērtas paliek tikai, kamēr instruktors ir šajā kartiņā
+    const sec = S.docSec && S.docSec.pid === p.id ? S.docSec : (S.docSec = { pid: p.id, tree: false, sugg: false });
+    return `<section class="card"><h3>Visi personas dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
+        <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot skenētu dokumentu”.</p>'}</div></section>
+      <details class="card docbrowser docsec" data-docsec="tree" ${sec.tree ? 'open' : ''}><summary><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span> <span class="muted small docsec-hint">visi faili personas mapē</span></h3></summary>
+        <div class="actions docsec-acts"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></div>
         <div class="crumbs" id="docCrumbs"></div>
         <input id="docTreeQ" type="search" placeholder="Meklēt dokumenta nosaukumā…" value="${esc(S.browse.q || '')}">
         <p class="muted small">Meklēšana skatās nosaukumus un ceļus, nevis failu saturu. Oriģināls datorā netiek dzēsts.</p>
-        <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></section>
-      <section class="card"><h3>Visi dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
-        <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot failu”.</p>'}</div></section>
-      ${sugg.length ? `<section class="card"><h3>Mapē atrasti faili ar šo vārdu (${sugg.length})</h3><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
+        <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></details>
+      ${sugg.length ? `<details class="card docsec" data-docsec="sugg" ${sec.sugg ? 'open' : ''}><summary><h3>Mapē atrasti faili ar šo vārdu (${sugg.length}) <span class="muted small docsec-hint">vēl nav piesaistīti</span></h3></summary><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
         ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small muted">${esc(f.sourceName)} / ${esc(f.path)}</div></div>
           <button class="sm" data-act="view" data-arg="${keyOf(f.sourceId, f.path)}">Skatīt</button>
           <button class="sm mainbtn" data-act="quickLink" data-arg="${keyOf(f.sourceId, f.path)}">＋ ${esc(D.guessKind(f.name))}</button>
-          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</section>`
+          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</details>`
         : (S.root ? '' : '<p class="muted small">Izvēlies datu mapi, lai pievienotu failus un meklētu esošos.</p>')}`;
   };
+  // atvērtās/aizvērtās sadaļas stāvoklis paliek, kamēr kartiņa pārzīmējas
+  document.addEventListener('toggle', e => {
+    const k = e.target?.dataset?.docsec; if (!k || !S.docSec) return;
+    S.docSec[k] = e.target.open;
+  }, true);
 
   /* --- Dokumentu lapa --- */
   CP.pages.documents = {
@@ -3182,22 +3192,68 @@ window.CP = window.CP || {};
   document.addEventListener('dragleave', e => { e.target.closest?.('[data-drop]')?.classList.remove('over'); });
   document.addEventListener('drop', e => { const z = e.target.closest?.('[data-drop]'); if (!z) return; e.preventDefault(); z.classList.remove('over'); docs.addFiles(z.dataset.drop, [...e.dataTransfer.files], '', S.browse.pid === z.dataset.drop ? (S.browse.rel || '') : ''); });
 
-  /* --- Skatītājs --- */
-  let view = null;
+  /* --- Skatītājs: PDF, attēli, teksts, Word (.docx), eDoc konteineri, Excel (.xlsx) un CSV — viss rīkā, bez lejupielādes --- */
+  let view = null, viewGen = 0;
+  const MIME = { pdf: 'application/pdf', txt: 'text/plain', csv: 'text/csv', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml' };
+  const extOf = n => (String(n).split('.').pop() || '').toLowerCase();
+  const pick = n => /\.pdf$/i.test(n) ? 0 : /\.docx$/i.test(n) ? 1 : /\.(jpe?g|png)$/i.test(n) ? 2 : 3;
+  const objUrl = blob => { const u = URL.createObjectURL(blob); view?.urls.push(u); return u; };
+  async function renderInto(box, file, depth = 0) {
+    const name = file.name, ext = extOf(name), type = MIME[ext] || file.type || '';
+    if (/^(edoc|asice|bdoc|sce)$/.test(ext) && depth < 2) {
+      const z = await U.unzip(await file.arrayBuffer(), n => !/^META-INF\//i.test(n) && !/mimetype$/i.test(n) && !n.endsWith('/'));
+      const inner = [...z.keys()].sort((x, y) => pick(x) - pick(y));
+      if (!inner.length) return box.innerHTML = ui.empty('eDoc konteinerī nav atrasts neviens dokuments.');
+      const bar = document.createElement('div'); bar.className = 'view-edoc small';
+      bar.innerHTML = `✍ Parakstīts eDoc konteiners · ${inner.length > 1 ? 'dokumenti: ' + inner.map((n, i) => `<button type="button" class="sm ${i ? '' : 'on'}" data-edoc="${i}">${esc(n.split('/').pop())}</button>`).join(' ') : 'saturs: <b>' + esc(inner[0].split('/').pop()) + '</b>'} <span class="muted">· paraksta derīgumu pārbauda eParakstītājs 3.0</span>`;
+      const body = document.createElement('div'); body.className = 'view-inner';
+      box.innerHTML = ''; box.append(bar, body);
+      const show = async i => { bar.querySelectorAll('[data-edoc]').forEach(b => b.classList.toggle('on', +b.dataset.edoc === i)); body.innerHTML = '<p class="muted pad">Atver…</p>'; const n = inner[i].split('/').pop(); await renderInto(body, new File([await z.get(inner[i])()], n, { type: MIME[extOf(n)] || '' }), depth + 1); };
+      bar.addEventListener('click', e => { const b = e.target.closest('[data-edoc]'); if (b) show(+b.dataset.edoc).catch(err => body.innerHTML = ui.empty('Neizdevās atvērt: ' + esc(err.message))); });
+      return show(0);
+    }
+    if (/^image\//.test(type) && ext !== 'heic' && ext !== 'tif' && ext !== 'tiff') return box.innerHTML = `<img class="viewimg" src="${objUrl(new Blob([file], { type }))}" alt="">`;
+    if (type === 'application/pdf' || ext === 'txt') return box.innerHTML = `<iframe class="viewer" src="${objUrl(new Blob([file], { type: type || 'text/plain' }))}" title="${esc(name)}"></iframe>`;
+    if (ext === 'docx') {
+      box.innerHTML = '<p class="muted pad">Sagatavo Word dokumentu…</p>';
+      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
+      await CP.reader.loadScript(CP.VENDOR + 'docx/docx-preview.min.js');
+      const holder = document.createElement('div'); holder.className = 'docx-holder view-docx';
+      await window.docx.renderAsync(file, holder, null, { inWrapper: false, breakPages: true, ignoreLastRenderedPageBreak: false, useBase64URL: true, renderHeaders: true, renderFooters: true });
+      box.innerHTML = ''; box.appendChild(holder); return;
+    }
+    if (ext === 'xlsx' || ext === 'csv') {
+      const sheets = ext === 'xlsx' ? await CP.sheetReader.xlsx(file) : [{ name, rows: CP.sheetReader.csv(await file.text()) }];
+      const vis = sheets.filter(s => !s.hidden && s.rows.some(r => r.some(v => v !== '')));
+      if (!vis.length) return box.innerHTML = ui.empty('Tabulā nav datu.');
+      const tbl = s => { const w = Math.min(60, Math.max(...s.rows.map(r => r.length))); return `<div class="view-sheet"><table class="table"><tbody>${s.rows.slice(0, 2000).map(r => `<tr>${Array.from({ length: w }, (_, i) => `<td>${esc(r[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>${s.rows.length > 2000 ? `<p class="muted small">… rādītas pirmās 2000 rindas no ${s.rows.length}</p>` : ''}</div>`; };
+      box.innerHTML = (vis.length > 1 ? `<nav class="tabs view-tabs">${vis.map((s, i) => `<button type="button" class="${i ? '' : 'active'}" data-sheet="${i}">${esc(s.name)}</button>`).join('')}</nav>` : '') + `<div class="view-sheetbox">${tbl(vis[0])}</div>`;
+      box.querySelector('.view-tabs')?.addEventListener('click', e => { const b = e.target.closest('[data-sheet]'); if (!b) return; box.querySelectorAll('[data-sheet]').forEach(x => x.classList.toggle('active', x === b)); box.querySelector('.view-sheetbox').innerHTML = tbl(vis[+b.dataset.sheet]); });
+      return;
+    }
+    const why = ext === 'doc' ? 'Vecais Word .doc formāts pārlūkā nav attēlojams — atver to Word un saglabā kā .docx vai PDF.'
+      : ext === 'xls' ? 'Vecais Excel .xls formāts pārlūkā nav attēlojams — saglabā to kā .xlsx.'
+      : /^(heic|tiff?)$/.test(ext) ? `Attēla formātu .${esc(ext)} pārlūks nerāda — saglabā to kā JPG vai PNG.`
+      : `Šo faila tipu (.${esc(ext)}) rīks nevar parādīt.`;
+    box.innerHTML = ui.empty(why + '<br>Spied “Lejupielādēt”, lai atvērtu to datorā.');
+  }
+  async function openView(file, title) {
+    const gen = ++viewGen;
+    if (view) view.urls.forEach(u => URL.revokeObjectURL(u));
+    const ext = extOf(file.name), tab = /^(pdf|txt|jpe?g|png|webp|gif|bmp|svg)$/.test(ext);
+    view = { url: URL.createObjectURL(tab && MIME[ext] && file.type !== MIME[ext] ? new Blob([file], { type: MIME[ext] }) : file), name: file.name, urls: [], tab }; view.urls.push(view.url);
+    const box = U.$('viewBody'); box.innerHTML = '<p class="muted pad">Atver…</p>';
+    U.$('viewName').textContent = title || file.name; if (!U.$('viewDialog').open) U.$('viewDialog').showModal();
+    try { await renderInto(box, file); }
+    catch (err) { if (gen === viewGen) box.innerHTML = ui.empty('Dokumentu neizdevās attēlot: ' + esc(err.message) + '<br>Spied “Lejupielādēt”, lai atvērtu to datorā.'); }
+  }
   A.view = async a => {
     const [sid, path] = splitKey(a), h = await CP.store.handleFor(path, sid);
     if (!h) return ui.toast('Fails nav atrasts. Pārbaudi datu mapi vai pārskenē.', 'warn');
-    try {
-      const f = await h.getFile(), ext = f.name.split('.').pop().toLowerCase();
-      const type = f.type || ({ pdf: 'application/pdf', txt: 'text/plain', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' }[ext] || '');
-      if (view) URL.revokeObjectURL(view.url);
-      view = { url: URL.createObjectURL(type && type !== f.type ? new Blob([f], { type }) : f), name: f.name };
-      U.$('viewBody').innerHTML = /^image\//.test(type) ? `<img class="viewimg" src="${view.url}" alt="">`
-        : (type === 'application/pdf' || /^text\//.test(type)) ? `<iframe class="viewer" src="${view.url}" title="${esc(f.name)}"></iframe>`
-        : ui.empty(`Šo faila tipu (.${esc(ext)}) pārlūks nevar parādīt.<br>Spied “Lejupielādēt” — .edoc failus atver ar eParakstītāju 3.0.`);
-      U.$('viewName').textContent = f.name; U.$('viewDialog').showModal();
-    } catch (err) { ui.toast('Neizdevās atvērt: ' + err.message, 'err'); }
+    let f; try { f = await h.getFile(); } catch (err) { return ui.toast('Neizdevās atvērt: ' + err.message, 'err'); }
+    openView(f);
   };
+  docs.openFile = openView;
   /** Atver jau piesaistītu dokumentu anketas ievadē, lai papildinātu kartiņu */
   A.readDoc = async id => {
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
@@ -3207,14 +3263,14 @@ window.CP = window.CP || {};
   };
   /** Rāda sagatavotu failu (piem. veidlapas PDF) tajā pašā skatītājā */
   docs.showBlob = (blob, name) => {
-    if (view) URL.revokeObjectURL(view.url);
-    view = { url: URL.createObjectURL(blob), name };
+    if (view) view.urls.forEach(u => URL.revokeObjectURL(u));
+    view = { url: URL.createObjectURL(blob), name, urls: [], tab: true }; view.urls.push(view.url);
     U.$('viewBody').innerHTML = `<iframe class="viewer" src="${view.url}" title="${esc(name)}"></iframe>`;
     U.$('viewName').textContent = name; U.$('viewDialog').showModal();
   };
-  A.viewTab = () => view && window.open(view.url, '_blank');
+  A.viewTab = () => { if (!view) return; if (!view.tab) return ui.toast('Šo faila tipu pārlūka cilne neatver — tas ir redzams šeit skatītājā. Lai atvērtu datorā, spied “Lejupielādēt”.', 'warn', 7000); window.open(view.url, '_blank'); };
   A.viewDownload = () => { if (!view) return; const a = document.createElement('a'); a.href = view.url; a.download = view.name; a.click(); };
-  U.$('viewDialog').addEventListener('close', () => { if (view) { URL.revokeObjectURL(view.url); view = null; } U.$('viewBody').innerHTML = ''; });
+  U.$('viewDialog').addEventListener('close', () => { viewGen++; if (view) { view.urls.forEach(u => URL.revokeObjectURL(u)); view = null; } U.$('viewBody').innerHTML = ''; });
 
   let probeGen = 0;
   docs.probeLinked = async () => {
@@ -3223,8 +3279,7 @@ window.CP = window.CP || {};
       if (!d.path) continue;
       if (gen !== probeGen) return;
       d._live = await CP.store.probeDoc(d);
-      const el = document.querySelector(`[data-docstatus="${CSS.escape(d.id)}"]`);
-      if (el) el.outerHTML = docs.statusHtml(d);
+      document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.outerHTML = docs.statusHtml(d); });
       await new Promise(r => setTimeout(r, 0));
     }
   };
@@ -3237,15 +3292,20 @@ window.CP = window.CP || {};
     if (result.state === 'available' && result.sha256 && !result.changed) {
       d.sha256 = result.sha256; d.size = result.size; d.modified = result.modified;
     }
-    const el = document.querySelector(`[data-docstatus="${CSS.escape(d.id)}"]`);
-    if (el) el.outerHTML = docs.statusHtml(d);
+    document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.outerHTML = docs.statusHtml(d); });
   }
   A.checkDoc = async id => {
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
-    ui.toast('Pārbauda dokumentu…', 'ok', 2500);
-    applyCheck(d, await CP.store.checkDoc(d));
+    probeGen++;   // fona pārbaude vairs nepārraksta šīs pārbaudes rezultātu
+    const btns = [...document.querySelectorAll(`[data-act="checkDoc"][data-arg="${CSS.escape(id)}"]`)];
+    btns.forEach(b => { b.disabled = true; b.textContent = 'Pārbauda…'; });
+    document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.className = 'pill'; el.textContent = 'Pārbauda…'; });
+    try { applyCheck(d, await CP.store.checkDoc(d)); }
+    catch (err) { ui.toast('Neizdevās pārbaudīt: ' + err.message, 'err'); }
     CP.store.changed({ silent: true });
-    ui.toast(d.fileDetail || 'Pārbaude pabeigta', d.fileState === 'available' ? 'ok' : 'warn', 7000);
+    if (S.page === 'person') CP.render();
+    else btns.forEach(b => { b.disabled = false; b.textContent = 'Pārbaudīt'; });
+    ui.toast(d.fileState === 'available' ? `${d.kind}: pārbaudīts — fails ir vietā${d.fileDetail === 'Saturs sakrīt' ? ' un nav mainījies' : ''}.` : (d.fileDetail || 'Pārbaude pabeigta'), d.fileState === 'available' ? 'ok' : 'warn', 5000);
   };
   A.checkDocs = async () => {
     const list = S.db.documents.filter(d => d.path);
@@ -3353,11 +3413,10 @@ window.CP = window.CP || {};
         const full = [...root, ...r.rel.split('/').filter(Boolean)].join('/');
         const linked = r.kind === 'file' ? S.db.documents.find(d => d.personId === p.id && d.path === full && (d.sourceId || 'main') === 'main') : null;
         const kind = r.kind === 'dir' ? 'mape' : (r.ext || 'fails').toUpperCase();
-        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span><button class="sm" data-act="docRename" data-arg="${enc(r.rel)}">Pārdēvēt</button></div>`;
+        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span></div>`;
         return `<div class="row"><div class="grow"><b>${esc(r.name)}</b> <span class="muted small">${esc(kind)} · ${fmtSize(r.size)}</span>${linked ? ` ${fmtTag(linked.format)} ${REVIEW[linked.review] ? `<span class="tag">${esc(REVIEW[linked.review])}</span>` : ''} ${docs.statusHtml(linked)}${linked.expires ? `<span class="muted small"> līdz ${esc(U.fmtDate(linked.expires))}</span>` : ''}` : ' <span class="muted small">nav piesaistīts</span>'}<div class="small muted">${esc(r.rel)}</div></div>
           <button class="sm mainbtn" data-act="view" data-arg="${keyOf('main', full)}">Atvērt</button>
           ${linked ? '' : `<button class="sm" data-act="docLinkHere" data-arg="${enc(r.rel)}">Piesaistīt</button>`}
-          <button class="sm" data-act="docRename" data-arg="${enc(r.rel)}">Pārdēvēt</button>
           <button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}">Pārvietot</button></div>`;
       }).join('') || '<p class="muted small">Šajā mapē vēl nav dokumentu.</p>');
     } catch (e) {
@@ -4832,6 +4891,7 @@ window.CP = window.CP || {};
   const tags = (n, t) => [...n.getElementsByTagNameNS('*', t)];
   const RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   /** Visas darblapas: [{ name, rows }] (secībā, kā Excel cilnēs) */
+  CP.sheetReader = { xlsx: f => parseXlsx(f), csv: t => parseCSV(t) };   // arī dokumentu skatītājam
   async function parseXlsx(file) {
     const want = n => n === 'xl/sharedStrings.xml' || n === 'xl/workbook.xml' || n === 'xl/_rels/workbook.xml.rels' || /^xl\/worksheets\/sheet\d+\.xml$/.test(n);
     const z = await U.unzip(await file.arrayBuffer(), want), dec = new TextDecoder();
@@ -5177,7 +5237,7 @@ window.CP = window.CP || {};
   'use strict';
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
-  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
+  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat'], ['perm', 'Atļaujas', 'lock']];
   A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
   /** Ritina tā, lai kartīte būtu ekrāna vidū; ja tā ir augstāka par ekrānu — tās augša redzama zem cilnēm */
   ui.scrollToCard = c => {
@@ -5191,7 +5251,7 @@ window.CP = window.CP || {};
   };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
-    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
+    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
     setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
@@ -5287,6 +5347,7 @@ window.CP = window.CP || {};
         ${s.tools.map((t, i) => `<div class="inline-form"><input data-tool="${i}:name" value="${esc(t.name)}" placeholder="Nosaukums" style="max-width:180px"><input data-tool="${i}:url" value="${esc(t.url)}" placeholder="https://…"><button class="sm ghost" data-act="delTool" data-arg="${i}">✕</button></div>`).join('')}
         <button class="sm" data-act="addTool">＋ Pievienot rīku</button>
         <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section>
+      </div>${T('perm')}${CP.perms ? CP.perms.card() : ''}
       </div></div>`;
     }
   };
@@ -5498,7 +5559,14 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.38.8', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+    { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
+      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās.',
+      'Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
+    ] },
+    { v: '1.39.0', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+      'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet.',
+      'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
+      '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies). Poga “Pārdēvēt” dokumentu mapē noņemta — Chrome to neļauj.',
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
       'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
@@ -8320,7 +8388,7 @@ window.CP = window.CP || {};
   CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintBanner);
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintBanner, 500));
 
-  CP.google = { SC, token, has, valid, forget, clientId, rememberClient, drive, needs, onToken: f => listeners.push(f), paintBanner, redirectUri, expiresAt: () => tok?.exp || 0 };
+  CP.google = { SC, token, has, valid, forget, needed: () => needs.map(f => { try { return f(); } catch (e) { return null; } }).filter(Boolean), token_: () => tok?.t || '', clientId, rememberClient, drive, needs, onToken: f => listeners.push(f), paintBanner, redirectUri, expiresAt: () => tok?.exp || 0 };
 })(window.CP);
 
 
@@ -8665,7 +8733,7 @@ window.CP = window.CP || {};
   G()?.onToken(() => setTimeout(paintSync, 50));
   A.encGoSet = () => CP.ui.goSettingsCard('encCard');
   const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); paintSync(); };
-  CP.encBackup = { card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
+  CP.encBackup = { localDir: () => (CFG && !isDrive(CFG) && CFG.dir) || null, card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
   // brīdinājums pārskatā: kopija sen nav atjaunota vai gaida atļauju
   { const orig = D.alerts; D.alerts = () => { const out = orig(); if (enabled(CFG) && S.root) { const age = CFG.last ? (Date.now() - new Date(CFG.last.at)) / 864e5 : 99; if (status === 'perm' || age > 7) out.push({ kind: 'backup', sev: 1, when: CFG.last?.at?.slice(0, 10) || '', msg: status === 'perm' ? 'Šifrētajai rezerves kopijai vajag atļauju — Iestatījumos spied “Izveidot kopiju tagad”' : `Šifrētā rezerves kopija nav atjaunota ${CFG.last ? Math.floor(age) + ' dienas' : 'ne reizi'} — Iestatījumos spied “Izveidot kopiju tagad”` }); } return out; }; }
 
@@ -11718,6 +11786,153 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
 
   CP.retention = { CATS, cfg, items, dueItems, dueCount: () => dueItems().length, anonymize, settingsCard, loadBackups };
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => { S.retBk = null; setTimeout(() => loadBackups(true).then(() => CP.render()).catch(() => {}), 1200); });
+})(window.CP);
+
+
+/* ==== js/perms.js ==== */
+/* =====================================================================
+   Iestatījumi → Atļaujas: kuras pārlūka atļaujas rīks izmanto, kāds ir
+   to stāvoklis un kas nestrādā bez tām. Atļaut var tieši šeit (pārlūks
+   prasa apstiprinājumu); atņemt — pārlūka vietnes iestatījumos.
+   Rīks pats nevienu atļauju neslēdz ārā un neko nesūta internetā
+   (izņemot Google atvienošanu, kas Google paziņo, ka piekļuve atsaukta).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
+  let popupOk = null;            // uznirstošo logu pārbaudes rezultāts šajā sesijā
+  let last = [];                 // pēdējais aprēķinātais saraksts (cilnes brīdinājumam)
+
+  async function fsPerm(h, mode) {
+    if (!h) return 'none';
+    try { return h.queryPermission ? await h.queryPermission({ mode }) : 'granted'; } catch (e) { return 'prompt'; }
+  }
+  /** Visas atļaujas: { k, title, why, state: ok|ask|bad|off, label, btn, act, arg } */
+  async function collect() {
+    const out = [];
+    // 1. Datu mape
+    const root = S.root || S.pendingRoot, rp = await fsPerm(root, 'readwrite');
+    out.push({ k: 'root', icon: 'folder', title: 'Datu mape — skatīt un rediģēt failus', need: true,
+      why: 'Bez tās rīks nevar nolasīt un saglabāt datus, pievienot dokumentus un veidot kopijas mapē.',
+      state: !root ? 'bad' : rp === 'granted' ? 'ok' : rp === 'denied' ? 'bad' : 'ask',
+      label: !root ? 'Mape nav izvēlēta' : rp === 'granted' ? `Atļauts · ${root.name}` : rp === 'denied' ? 'Aizliegts' : 'Jāapstiprina',
+      btn: !root ? '📁 Izvēlēties mapi' : rp === 'granted' ? '' : '🔓 Atļaut', act: !root ? 'pickRoot' : 'permRoot' });
+    // 2. Papildu dokumentu mapes
+    for (const r of S.roots.filter(x => x.id !== 'main')) {
+      const h = r.handle || r.pending, pp = await fsPerm(h, 'read');
+      out.push({ k: 'src:' + r.id, icon: 'files', title: `Papildu dokumentu mape “${r.name}” — skatīt failus`, need: true,
+        why: 'Bez tās šīs mapes dokumentus nevar atvērt un pārbaudīt (saites kartiņās paliek).',
+        state: pp === 'granted' && r.ok ? 'ok' : pp === 'denied' ? 'bad' : 'ask', label: pp === 'granted' && r.ok ? 'Atļauts' : pp === 'denied' ? 'Aizliegts' : 'Jāapstiprina',
+        btn: pp === 'granted' && r.ok ? '' : '🔓 Atļaut', act: 'reconnectSource', arg: r.id });
+    }
+    // 3. Šifrētās kopijas mape datorā
+    const bd = CP.encBackup?.localDir?.();
+    if (bd) {
+      const bp = await fsPerm(bd, 'readwrite');
+      out.push({ k: 'enc', icon: 'shield', title: `Šifrētās kopijas mape “${bd.name}” — rediģēt failus`, need: true,
+        why: 'Bez tās šifrētā rezerves kopija netiek papildināta.',
+        state: bp === 'granted' ? 'ok' : bp === 'denied' ? 'bad' : 'ask', label: bp === 'granted' ? 'Atļauts' : bp === 'denied' ? 'Aizliegts' : 'Jāapstiprina',
+        btn: bp === 'granted' ? '' : '🔓 Atļaut', act: 'permEnc' });
+    }
+    // 4. Google konts
+    const G = CP.google, needs = G?.needed?.() || [], scopes = [...new Set(needs.map(n => n.scope))];
+    const conn = G?.valid?.(), missing = needs.filter(n => !G.has(n.scope));
+    out.push({ k: 'google', icon: 'external', title: 'Google konts (Drive kopija, kalendārs)', need: needs.length > 0,
+      why: needs.length ? `Vajadzīgs: ${esc([...new Set(needs.map(n => n.what))].join(', '))}. Bez tā tas netiek sūtīts uz tavu Google.` : 'Šobrīd nav vajadzīgs — nav ieslēgta kopija Google Drive vai kalendāra sinhronizācija.',
+      state: !needs.length ? (conn ? 'ok' : 'off') : missing.length ? 'ask' : 'ok',
+      label: conn ? `Pieslēgts līdz ${new Date(G.expiresAt()).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' })}` : (needs.length ? 'Nav pieslēgts' : 'Nav pieslēgts (nav vajadzīgs)'),
+      btn: missing.length ? 'Pieslēgties' : '', act: 'gConnect', btn2: conn ? 'Atvienot' : '', act2: 'permGoogleOff', scopes });
+    // 5. Uznirstošie logi
+    out.push({ k: 'popup', icon: 'layout', title: 'Uznirstošie logi', need: needs.length > 0,
+      why: 'Vajadzīgi Google pieteikšanās logam. Ja tie bloķēti, pieslēgties Google nevar.',
+      state: popupOk === null ? 'off' : popupOk ? 'ok' : 'bad', label: popupOk === null ? 'Nav pārbaudīts' : popupOk ? 'Atļauti' : 'Bloķēti',
+      btn: 'Pārbaudīt', act: 'permPopup' });
+    // 6. Paziņojumi
+    const np = 'Notification' in window ? Notification.permission : 'unsupported';
+    out.push({ k: 'notif', icon: 'bell', title: 'Paziņojumi uz darbvirsmas', need: false,
+      why: 'Atgādinājumi par grafika notikumiem, kad rīks nav priekšplānā. Bez tiem atgādinājumi redzami tikai rīkā.',
+      state: np === 'granted' ? 'ok' : np === 'denied' ? 'bad' : np === 'unsupported' ? 'off' : 'off',
+      label: np === 'granted' ? 'Atļauti' : np === 'denied' ? 'Bloķēti' : np === 'unsupported' ? 'Pārlūks neatbalsta' : 'Nav jautāts',
+      btn: np === 'default' ? '🔔 Atļaut' : '', act: 'permNotif' });
+    last = out; return out;
+  }
+  const PILL = { ok: 'ok', ask: 'warn', bad: 'bad', off: '' };
+  const problems = list => list.filter(x => x.need && (x.state === 'bad' || x.state === 'ask'));
+  const settingsAddr = () => 'chrome://settings/content/siteDetails?site=' + encodeURIComponent(location.origin);
+
+  function card() {
+    return `<section class="card" id="permsCard"><h3>${CP.ic('shield')}Pārlūka atļaujas</h3>
+      <p class="small muted" style="margin-top:0">Šeit redzams, kādas atļaujas rīks izmanto un kas nestrādās bez tām. <b>Atļaut</b> var ar pogu — Chrome parādīs savu jautājumu. Stāvoklis atjaunojas, atgriežoties šajā logā.</p>
+      <div id="permsList"><p class="muted small">Pārbauda atļaujas…</p></div></section>
+      <section class="card"><h3>${CP.ic('lock')}Kā atņemt vai atjaunot bloķētu atļauju</h3>
+      <ol class="small perm-how">
+        <li>Adreses joslā pa kreisi no adreses noklikšķini uz ikonas <b>⚙ / 🔒</b> (“Skatīt vietnes informāciju”).</li>
+        <li>Tur var ieslēgt vai izslēgt atļaujas (Faili, Paziņojumi, Uznirstošie logi). Pilns saraksts — <b>“Vietnes iestatījumi”</b>.</li>
+        <li>Vai atver šo adresi jaunā cilnē: <code class="perm-addr">${esc(settingsAddr())}</code> <button type="button" class="sm" data-act="permCopy">📋 Kopēt</button></li>
+        <li>Pēc izmaiņām atgriezies šeit — stāvoklis atjaunosies. Ja atņem datu mapes atļauju, nākamreiz atverot rīks lūgs to atkal atļaut.</li>
+      </ol>
+      <p class="small muted">Google piekļuvi var atsaukt arī Google kontā: myaccount.google.com → Drošība → Trešo pušu lietotnes un pakalpojumi.</p></section>`;
+  }
+  async function paint() {
+    const box = U.$('permsList'); if (!box) return;
+    const list = await collect();
+    box.innerHTML = list.map(x => `<div class="row perm-row" data-perm="${esc(x.k)}"><div class="perm-ic">${CP.ic(x.icon)}</div>
+      <div class="grow"><b>${esc(x.title)}</b>${x.need ? '' : ' <span class="muted small">· nav obligāta</span>'}<div class="small muted">${x.why}</div></div>
+      <span class="pill ${PILL[x.state]}">${esc(x.label)}</span>
+      ${x.btn ? `<button type="button" class="sm ${x.state === 'bad' || x.state === 'ask' ? 'mainbtn' : ''}" data-act="${x.act}" ${x.arg ? `data-arg="${esc(x.arg)}"` : ''}>${x.btn}</button>` : ''}
+      ${x.btn2 ? `<button type="button" class="sm ghost" data-act="${x.act2}">${x.btn2}</button>` : ''}
+      ${x.state === 'bad' && x.k !== 'root' ? `<span class="small warn perm-blocked">Bloķēts pārlūkā — atļauj, kā aprakstīts zemāk</span>` : ''}</div>`).join('');
+    tabBadge(list);
+  }
+  function tabBadge(list) {
+    const n = problems(list).length, b = document.querySelector('.set-tabs [data-arg="perm"]'); if (!b) return;
+    let m = b.querySelector('.tab-warn'); if (!n) { m?.remove(); return; }
+    if (!m) { m = document.createElement('span'); m.className = 'tab-warn'; b.appendChild(m); }
+    m.textContent = ' ⚠' + n; m.title = `${n} vajadzīgas atļaujas nav dotas`;
+  }
+  const repaint = () => { if (S.page === 'settings') paint(); };
+
+  A.permRoot = async () => {
+    if (S.pendingRoot && !S.root) return CP.store.restoreRoot()?.then(repaint);
+    try { await S.root.requestPermission({ mode: 'readwrite' }); } catch (e) { ui.toast('Atļauju neizdevās pieprasīt: ' + e.message, 'err', 9000); }
+    repaint();
+  };
+  A.permEnc = async () => {
+    const h = CP.encBackup?.localDir?.(); if (!h) return;
+    try { const r = await h.requestPermission({ mode: 'readwrite' }); if (r === 'granted') { ui.toast('Kopijas mapei piekļuve atļauta', 'ok'); CP.encBackup.run?.(); } } catch (e) { ui.toast(e.message, 'err'); }
+    repaint();
+  };
+  A.permNotif = async () => {
+    if (!('Notification' in window)) return;
+    const r = await Notification.requestPermission();
+    ui.toast(r === 'granted' ? 'Paziņojumi atļauti' : 'Paziņojumi netika atļauti', r === 'granted' ? 'ok' : 'warn');
+    repaint();
+  };
+  A.permPopup = () => {
+    let w = null; try { w = window.open('about:blank', 'cp-popup-test', 'width=120,height=80'); } catch (e) { w = null; }
+    popupOk = !!w; try { w?.close(); } catch (e) { }
+    ui.toast(popupOk ? 'Uznirstošie logi ir atļauti' : 'Uznirstošie logi ir bloķēti. Adreses joslas labajā pusē spied uz bloķētā loga ikonas → “Vienmēr atļaut”.', popupOk ? 'ok' : 'warn', popupOk ? 3000 : 12000);
+    repaint();
+  };
+  A.permGoogleOff = async () => {
+    const G = CP.google; if (!G?.valid()) return repaint();
+    if (!confirm('Atvienot Google kontu šajā pārlūkā? Kamēr nepieslēgsies no jauna, kopija netiks sūtīta uz Google Drive un kalendārs netiks sinhronizēts. Dati netiek dzēsti.')) return;
+    const t = G.token_();
+    try { if (t) await fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(t) }); } catch (e) { /* tīkla kļūda — vietējo pieslēgumu tik un tā aizmirst */ }
+    G.forget(); ui.toast('Google konts atvienots', 'ok'); repaint();
+  };
+  A.permCopy = async () => {
+    try { await navigator.clipboard.writeText(settingsAddr()); ui.toast('Adrese nokopēta — ielīmē to jaunā cilnē', 'ok'); }
+    catch (e) { ui.toast('Nokopē adresi ar peli: ' + settingsAddr(), 'warn', 12000); }
+  };
+  // stāvoklis mainās pārlūka iestatījumos — pārzīmē, atgriežoties rīkā
+  window.addEventListener('focus', repaint);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) repaint(); });
+  try { navigator.permissions?.query({ name: 'notifications' }).then(st => { st.onchange = repaint; }); } catch (e) { }
+  const oldAfter = CP.pages.settings.after;
+  CP.pages.settings.after = async (...a) => { paint(); return oldAfter?.(...a); };
+
+  CP.perms = { card, paint, collect, problems: () => problems(last) };
 })(window.CP);
 
 

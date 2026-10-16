@@ -29,7 +29,7 @@
         <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) + ' · ' : ''}${d.path ? esc(d.path) : 'Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
       </div>
       ${d.path ? `<button class="sm mainbtn" data-act="view" data-arg="${keyOf(d.sourceId, d.path)}">Atvērt</button>` : ''}
-      ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
+      ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}" title="Pārbaudīt, vai fails ir vietā un nav mainījies">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
       ${d.path && /\.(pdf|docx|edoc|asice|jpe?g|png)$/i.test(d.path) ? `<button class="sm" data-act="readDoc" data-arg="${d.id}" title="Nolasīt datus no šī dokumenta kartiņā">📥 Nolasīt</button>` : ''}
       <button class="sm" data-act="editDoc" data-arg="${d.id}" title="Labot dokumenta datus (veids, datumi, statuss)">✎ Labot</button>
       <button class="sm" data-act="replaceDoc" data-arg="${d.id}" title="Aizstāt failu ar jaunu (vecais paliek mapē)">⇄ Aizstāt failu</button>
@@ -44,20 +44,28 @@
     const sugg = fn && ln ? S.index.filter(f => f.n.includes(ln) && f.n.includes(fn) && !linked.has(f.sourceId + '|' + f.path)).slice(0, 40) : [];
     // Obligātie dokumenti (✓/✗, pievienot, labot, aizstāt, dzēst, atgādināt) ir sānjoslā — šeit netiek dublēti
     void miss;
-    return `<section class="card docbrowser"><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span><span class="right actions"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></span></h3>
+    // Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā aizvērtas; atvērtas paliek tikai, kamēr instruktors ir šajā kartiņā
+    const sec = S.docSec && S.docSec.pid === p.id ? S.docSec : (S.docSec = { pid: p.id, tree: false, sugg: false });
+    return `<section class="card"><h3>Visi personas dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
+        <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot skenētu dokumentu”.</p>'}</div></section>
+      <details class="card docbrowser docsec" data-docsec="tree" ${sec.tree ? 'open' : ''}><summary><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span> <span class="muted small docsec-hint">visi faili personas mapē</span></h3></summary>
+        <div class="actions docsec-acts"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></div>
         <div class="crumbs" id="docCrumbs"></div>
         <input id="docTreeQ" type="search" placeholder="Meklēt dokumenta nosaukumā…" value="${esc(S.browse.q || '')}">
         <p class="muted small">Meklēšana skatās nosaukumus un ceļus, nevis failu saturu. Oriģināls datorā netiek dzēsts.</p>
-        <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></section>
-      <section class="card"><h3>Visi dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
-        <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot failu”.</p>'}</div></section>
-      ${sugg.length ? `<section class="card"><h3>Mapē atrasti faili ar šo vārdu (${sugg.length})</h3><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
+        <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></details>
+      ${sugg.length ? `<details class="card docsec" data-docsec="sugg" ${sec.sugg ? 'open' : ''}><summary><h3>Mapē atrasti faili ar šo vārdu (${sugg.length}) <span class="muted small docsec-hint">vēl nav piesaistīti</span></h3></summary><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
         ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small muted">${esc(f.sourceName)} / ${esc(f.path)}</div></div>
           <button class="sm" data-act="view" data-arg="${keyOf(f.sourceId, f.path)}">Skatīt</button>
           <button class="sm mainbtn" data-act="quickLink" data-arg="${keyOf(f.sourceId, f.path)}">＋ ${esc(D.guessKind(f.name))}</button>
-          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</section>`
+          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</details>`
         : (S.root ? '' : '<p class="muted small">Izvēlies datu mapi, lai pievienotu failus un meklētu esošos.</p>')}`;
   };
+  // atvērtās/aizvērtās sadaļas stāvoklis paliek, kamēr kartiņa pārzīmējas
+  document.addEventListener('toggle', e => {
+    const k = e.target?.dataset?.docsec; if (!k || !S.docSec) return;
+    S.docSec[k] = e.target.open;
+  }, true);
 
   /* --- Dokumentu lapa --- */
   CP.pages.documents = {
@@ -216,22 +224,68 @@
   document.addEventListener('dragleave', e => { e.target.closest?.('[data-drop]')?.classList.remove('over'); });
   document.addEventListener('drop', e => { const z = e.target.closest?.('[data-drop]'); if (!z) return; e.preventDefault(); z.classList.remove('over'); docs.addFiles(z.dataset.drop, [...e.dataTransfer.files], '', S.browse.pid === z.dataset.drop ? (S.browse.rel || '') : ''); });
 
-  /* --- Skatītājs --- */
-  let view = null;
+  /* --- Skatītājs: PDF, attēli, teksts, Word (.docx), eDoc konteineri, Excel (.xlsx) un CSV — viss rīkā, bez lejupielādes --- */
+  let view = null, viewGen = 0;
+  const MIME = { pdf: 'application/pdf', txt: 'text/plain', csv: 'text/csv', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml' };
+  const extOf = n => (String(n).split('.').pop() || '').toLowerCase();
+  const pick = n => /\.pdf$/i.test(n) ? 0 : /\.docx$/i.test(n) ? 1 : /\.(jpe?g|png)$/i.test(n) ? 2 : 3;
+  const objUrl = blob => { const u = URL.createObjectURL(blob); view?.urls.push(u); return u; };
+  async function renderInto(box, file, depth = 0) {
+    const name = file.name, ext = extOf(name), type = MIME[ext] || file.type || '';
+    if (/^(edoc|asice|bdoc|sce)$/.test(ext) && depth < 2) {
+      const z = await U.unzip(await file.arrayBuffer(), n => !/^META-INF\//i.test(n) && !/mimetype$/i.test(n) && !n.endsWith('/'));
+      const inner = [...z.keys()].sort((x, y) => pick(x) - pick(y));
+      if (!inner.length) return box.innerHTML = ui.empty('eDoc konteinerī nav atrasts neviens dokuments.');
+      const bar = document.createElement('div'); bar.className = 'view-edoc small';
+      bar.innerHTML = `✍ Parakstīts eDoc konteiners · ${inner.length > 1 ? 'dokumenti: ' + inner.map((n, i) => `<button type="button" class="sm ${i ? '' : 'on'}" data-edoc="${i}">${esc(n.split('/').pop())}</button>`).join(' ') : 'saturs: <b>' + esc(inner[0].split('/').pop()) + '</b>'} <span class="muted">· paraksta derīgumu pārbauda eParakstītājs 3.0</span>`;
+      const body = document.createElement('div'); body.className = 'view-inner';
+      box.innerHTML = ''; box.append(bar, body);
+      const show = async i => { bar.querySelectorAll('[data-edoc]').forEach(b => b.classList.toggle('on', +b.dataset.edoc === i)); body.innerHTML = '<p class="muted pad">Atver…</p>'; const n = inner[i].split('/').pop(); await renderInto(body, new File([await z.get(inner[i])()], n, { type: MIME[extOf(n)] || '' }), depth + 1); };
+      bar.addEventListener('click', e => { const b = e.target.closest('[data-edoc]'); if (b) show(+b.dataset.edoc).catch(err => body.innerHTML = ui.empty('Neizdevās atvērt: ' + esc(err.message))); });
+      return show(0);
+    }
+    if (/^image\//.test(type) && ext !== 'heic' && ext !== 'tif' && ext !== 'tiff') return box.innerHTML = `<img class="viewimg" src="${objUrl(new Blob([file], { type }))}" alt="">`;
+    if (type === 'application/pdf' || ext === 'txt') return box.innerHTML = `<iframe class="viewer" src="${objUrl(new Blob([file], { type: type || 'text/plain' }))}" title="${esc(name)}"></iframe>`;
+    if (ext === 'docx') {
+      box.innerHTML = '<p class="muted pad">Sagatavo Word dokumentu…</p>';
+      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
+      await CP.reader.loadScript(CP.VENDOR + 'docx/docx-preview.min.js');
+      const holder = document.createElement('div'); holder.className = 'docx-holder view-docx';
+      await window.docx.renderAsync(file, holder, null, { inWrapper: false, breakPages: true, ignoreLastRenderedPageBreak: false, useBase64URL: true, renderHeaders: true, renderFooters: true });
+      box.innerHTML = ''; box.appendChild(holder); return;
+    }
+    if (ext === 'xlsx' || ext === 'csv') {
+      const sheets = ext === 'xlsx' ? await CP.sheetReader.xlsx(file) : [{ name, rows: CP.sheetReader.csv(await file.text()) }];
+      const vis = sheets.filter(s => !s.hidden && s.rows.some(r => r.some(v => v !== '')));
+      if (!vis.length) return box.innerHTML = ui.empty('Tabulā nav datu.');
+      const tbl = s => { const w = Math.min(60, Math.max(...s.rows.map(r => r.length))); return `<div class="view-sheet"><table class="table"><tbody>${s.rows.slice(0, 2000).map(r => `<tr>${Array.from({ length: w }, (_, i) => `<td>${esc(r[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>${s.rows.length > 2000 ? `<p class="muted small">… rādītas pirmās 2000 rindas no ${s.rows.length}</p>` : ''}</div>`; };
+      box.innerHTML = (vis.length > 1 ? `<nav class="tabs view-tabs">${vis.map((s, i) => `<button type="button" class="${i ? '' : 'active'}" data-sheet="${i}">${esc(s.name)}</button>`).join('')}</nav>` : '') + `<div class="view-sheetbox">${tbl(vis[0])}</div>`;
+      box.querySelector('.view-tabs')?.addEventListener('click', e => { const b = e.target.closest('[data-sheet]'); if (!b) return; box.querySelectorAll('[data-sheet]').forEach(x => x.classList.toggle('active', x === b)); box.querySelector('.view-sheetbox').innerHTML = tbl(vis[+b.dataset.sheet]); });
+      return;
+    }
+    const why = ext === 'doc' ? 'Vecais Word .doc formāts pārlūkā nav attēlojams — atver to Word un saglabā kā .docx vai PDF.'
+      : ext === 'xls' ? 'Vecais Excel .xls formāts pārlūkā nav attēlojams — saglabā to kā .xlsx.'
+      : /^(heic|tiff?)$/.test(ext) ? `Attēla formātu .${esc(ext)} pārlūks nerāda — saglabā to kā JPG vai PNG.`
+      : `Šo faila tipu (.${esc(ext)}) rīks nevar parādīt.`;
+    box.innerHTML = ui.empty(why + '<br>Spied “Lejupielādēt”, lai atvērtu to datorā.');
+  }
+  async function openView(file, title) {
+    const gen = ++viewGen;
+    if (view) view.urls.forEach(u => URL.revokeObjectURL(u));
+    const ext = extOf(file.name), tab = /^(pdf|txt|jpe?g|png|webp|gif|bmp|svg)$/.test(ext);
+    view = { url: URL.createObjectURL(tab && MIME[ext] && file.type !== MIME[ext] ? new Blob([file], { type: MIME[ext] }) : file), name: file.name, urls: [], tab }; view.urls.push(view.url);
+    const box = U.$('viewBody'); box.innerHTML = '<p class="muted pad">Atver…</p>';
+    U.$('viewName').textContent = title || file.name; if (!U.$('viewDialog').open) U.$('viewDialog').showModal();
+    try { await renderInto(box, file); }
+    catch (err) { if (gen === viewGen) box.innerHTML = ui.empty('Dokumentu neizdevās attēlot: ' + esc(err.message) + '<br>Spied “Lejupielādēt”, lai atvērtu to datorā.'); }
+  }
   A.view = async a => {
     const [sid, path] = splitKey(a), h = await CP.store.handleFor(path, sid);
     if (!h) return ui.toast('Fails nav atrasts. Pārbaudi datu mapi vai pārskenē.', 'warn');
-    try {
-      const f = await h.getFile(), ext = f.name.split('.').pop().toLowerCase();
-      const type = f.type || ({ pdf: 'application/pdf', txt: 'text/plain', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' }[ext] || '');
-      if (view) URL.revokeObjectURL(view.url);
-      view = { url: URL.createObjectURL(type && type !== f.type ? new Blob([f], { type }) : f), name: f.name };
-      U.$('viewBody').innerHTML = /^image\//.test(type) ? `<img class="viewimg" src="${view.url}" alt="">`
-        : (type === 'application/pdf' || /^text\//.test(type)) ? `<iframe class="viewer" src="${view.url}" title="${esc(f.name)}"></iframe>`
-        : ui.empty(`Šo faila tipu (.${esc(ext)}) pārlūks nevar parādīt.<br>Spied “Lejupielādēt” — .edoc failus atver ar eParakstītāju 3.0.`);
-      U.$('viewName').textContent = f.name; U.$('viewDialog').showModal();
-    } catch (err) { ui.toast('Neizdevās atvērt: ' + err.message, 'err'); }
+    let f; try { f = await h.getFile(); } catch (err) { return ui.toast('Neizdevās atvērt: ' + err.message, 'err'); }
+    openView(f);
   };
+  docs.openFile = openView;
   /** Atver jau piesaistītu dokumentu anketas ievadē, lai papildinātu kartiņu */
   A.readDoc = async id => {
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
@@ -241,14 +295,14 @@
   };
   /** Rāda sagatavotu failu (piem. veidlapas PDF) tajā pašā skatītājā */
   docs.showBlob = (blob, name) => {
-    if (view) URL.revokeObjectURL(view.url);
-    view = { url: URL.createObjectURL(blob), name };
+    if (view) view.urls.forEach(u => URL.revokeObjectURL(u));
+    view = { url: URL.createObjectURL(blob), name, urls: [], tab: true }; view.urls.push(view.url);
     U.$('viewBody').innerHTML = `<iframe class="viewer" src="${view.url}" title="${esc(name)}"></iframe>`;
     U.$('viewName').textContent = name; U.$('viewDialog').showModal();
   };
-  A.viewTab = () => view && window.open(view.url, '_blank');
+  A.viewTab = () => { if (!view) return; if (!view.tab) return ui.toast('Šo faila tipu pārlūka cilne neatver — tas ir redzams šeit skatītājā. Lai atvērtu datorā, spied “Lejupielādēt”.', 'warn', 7000); window.open(view.url, '_blank'); };
   A.viewDownload = () => { if (!view) return; const a = document.createElement('a'); a.href = view.url; a.download = view.name; a.click(); };
-  U.$('viewDialog').addEventListener('close', () => { if (view) { URL.revokeObjectURL(view.url); view = null; } U.$('viewBody').innerHTML = ''; });
+  U.$('viewDialog').addEventListener('close', () => { viewGen++; if (view) { view.urls.forEach(u => URL.revokeObjectURL(u)); view = null; } U.$('viewBody').innerHTML = ''; });
 
   let probeGen = 0;
   docs.probeLinked = async () => {
@@ -257,8 +311,7 @@
       if (!d.path) continue;
       if (gen !== probeGen) return;
       d._live = await CP.store.probeDoc(d);
-      const el = document.querySelector(`[data-docstatus="${CSS.escape(d.id)}"]`);
-      if (el) el.outerHTML = docs.statusHtml(d);
+      document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.outerHTML = docs.statusHtml(d); });
       await new Promise(r => setTimeout(r, 0));
     }
   };
@@ -271,15 +324,20 @@
     if (result.state === 'available' && result.sha256 && !result.changed) {
       d.sha256 = result.sha256; d.size = result.size; d.modified = result.modified;
     }
-    const el = document.querySelector(`[data-docstatus="${CSS.escape(d.id)}"]`);
-    if (el) el.outerHTML = docs.statusHtml(d);
+    document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.outerHTML = docs.statusHtml(d); });
   }
   A.checkDoc = async id => {
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
-    ui.toast('Pārbauda dokumentu…', 'ok', 2500);
-    applyCheck(d, await CP.store.checkDoc(d));
+    probeGen++;   // fona pārbaude vairs nepārraksta šīs pārbaudes rezultātu
+    const btns = [...document.querySelectorAll(`[data-act="checkDoc"][data-arg="${CSS.escape(id)}"]`)];
+    btns.forEach(b => { b.disabled = true; b.textContent = 'Pārbauda…'; });
+    document.querySelectorAll(`[data-docstatus="${CSS.escape(d.id)}"]`).forEach(el => { el.className = 'pill'; el.textContent = 'Pārbauda…'; });
+    try { applyCheck(d, await CP.store.checkDoc(d)); }
+    catch (err) { ui.toast('Neizdevās pārbaudīt: ' + err.message, 'err'); }
     CP.store.changed({ silent: true });
-    ui.toast(d.fileDetail || 'Pārbaude pabeigta', d.fileState === 'available' ? 'ok' : 'warn', 7000);
+    if (S.page === 'person') CP.render();
+    else btns.forEach(b => { b.disabled = false; b.textContent = 'Pārbaudīt'; });
+    ui.toast(d.fileState === 'available' ? `${d.kind}: pārbaudīts — fails ir vietā${d.fileDetail === 'Saturs sakrīt' ? ' un nav mainījies' : ''}.` : (d.fileDetail || 'Pārbaude pabeigta'), d.fileState === 'available' ? 'ok' : 'warn', 5000);
   };
   A.checkDocs = async () => {
     const list = S.db.documents.filter(d => d.path);
@@ -387,11 +445,10 @@
         const full = [...root, ...r.rel.split('/').filter(Boolean)].join('/');
         const linked = r.kind === 'file' ? S.db.documents.find(d => d.personId === p.id && d.path === full && (d.sourceId || 'main') === 'main') : null;
         const kind = r.kind === 'dir' ? 'mape' : (r.ext || 'fails').toUpperCase();
-        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span><button class="sm" data-act="docRename" data-arg="${enc(r.rel)}">Pārdēvēt</button></div>`;
+        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span></div>`;
         return `<div class="row"><div class="grow"><b>${esc(r.name)}</b> <span class="muted small">${esc(kind)} · ${fmtSize(r.size)}</span>${linked ? ` ${fmtTag(linked.format)} ${REVIEW[linked.review] ? `<span class="tag">${esc(REVIEW[linked.review])}</span>` : ''} ${docs.statusHtml(linked)}${linked.expires ? `<span class="muted small"> līdz ${esc(U.fmtDate(linked.expires))}</span>` : ''}` : ' <span class="muted small">nav piesaistīts</span>'}<div class="small muted">${esc(r.rel)}</div></div>
           <button class="sm mainbtn" data-act="view" data-arg="${keyOf('main', full)}">Atvērt</button>
           ${linked ? '' : `<button class="sm" data-act="docLinkHere" data-arg="${enc(r.rel)}">Piesaistīt</button>`}
-          <button class="sm" data-act="docRename" data-arg="${enc(r.rel)}">Pārdēvēt</button>
           <button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}">Pārvietot</button></div>`;
       }).join('') || '<p class="muted small">Šajā mapē vēl nav dokumentu.</p>');
     } catch (e) {

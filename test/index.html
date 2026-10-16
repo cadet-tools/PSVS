@@ -775,6 +775,30 @@ input.pw-mask{-webkit-text-security:disc;text-security:disc;font-family:inherit;
 .pw-meter[data-level="1"] .pwm-bar span,.pw-meter[data-level="2"] .pwm-bar span{background:var(--bad-tx,#ffb4b4)}.pw-meter[data-level="3"] .pwm-bar span{background:var(--ok-tx,#9fe8c0);opacity:.75}.pw-meter[data-level="4"] .pwm-bar span{background:var(--ok-tx,#9fe8c0)}
 .pwm-miss{margin:6px 0 0;padding-left:18px}.pwm-miss li{margin:1px 0}
 
+/* Dokumentu skatītājs rīkā: Word, eDoc, Excel */
+#viewBody .view-docx{display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0;color:#000}
+#viewBody .view-docx section.docx{background:#fff;box-shadow:0 4px 18px #0006;margin:0;max-width:100%}
+.view-edoc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;margin-bottom:10px;border:1px solid var(--edge);border-radius:10px}
+.view-edoc button.on{border-color:var(--accent,#3b82f6)}
+.view-sheet{overflow:auto;max-height:74vh;background:#fff;color:#000;border-radius:8px}
+.view-sheet .table td{border:1px solid #d5d9dd;padding:3px 7px;white-space:nowrap;color:#000}
+.view-tabs{margin-bottom:8px}
+/* Personas dokumentu cilne: izvēršamās sadaļas */
+details.docsec > summary h3{display:inline-flex;align-items:center;gap:8px;margin:0}
+details.docsec > summary::-webkit-details-marker{display:none}
+details.docsec > summary h3::before{content:'▸';display:inline-block;transition:transform .15s;color:var(--muted,#98a6a0)}
+details.docsec[open] > summary h3::before{transform:rotate(90deg)}
+details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .docsec-hint{display:none}
+.docsec-acts{margin-bottom:8px}
+
+/* Iestatījumi → Atļaujas */
+.perm-row{align-items:center;gap:10px;flex-wrap:wrap}
+.perm-ic{width:28px;display:flex;justify-content:center;color:var(--muted,#98a6a0)}
+.perm-blocked{flex-basis:100%;padding-left:38px}
+.perm-how li{margin:4px 0}
+.perm-addr{user-select:all;word-break:break-all;background:var(--edge);padding:1px 5px;border-radius:5px}
+.set-tabs .tab-warn{color:#f0b35a;font-weight:600}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -1362,5 +1386,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.38.8"></script></body>
+<script src="app.bundle.js?v=1.39.0"></script></body>
 </html>

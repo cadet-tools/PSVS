@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.39.0 — 2026-10-17
+- Dokumentu skatītājs (`renderInto`): .docx ar docx-preview, eDoc/ASiC-E/BDOC — iekšējie faili (PDF/DOCX/attēls) ar pārslēgšanu, .xlsx/.csv kā tabula (`CP.sheetReader`), attēli un PDF kā līdz šim; .doc/.xls/.heic/.tiff — skaidrojums. “Jaunā cilnē” tikai pārlūkā atveramiem tipiem.
+- Personas Dokumentu cilne: secība “Visi personas dokumenti” → “Dokumentu mape” → “Mapē atrasti faili”; abas pēdējās — `<details>`, sākumā aizvērtas, stāvoklis `S.docSec` tiek atiestatīts `ui.go`, izejot no kartiņas vai mainot personu.
+- “Pārbaudīt”: statusa nozīme tiek atjaunota visos elementos ar `data-docstatus` (agrāk tikai pirmajā — mapes kokā), fona pārbaude tiek pārtraukta, kartiņa pārzīmējas; `FILE_STATUS.available` = “Pārbaudīts”.
+- Iestatījumi → jauna cilne “Atļaujas” (`js/perms.js`): `queryPermission` datu mapei (readwrite), papildu mapēm (read), lokālajai šifrētās kopijas mapei; Google savienojums pēc `CP.google.needed()`, atvienošana ar `oauth2.googleapis.com/revoke`; uznirstošo logu pārbaude; `Notification.permission`. Pārzīmējas pie `focus`/`visibilitychange`; cilnē ⚠ ar vajadzīgo, bet nedoto atļauju skaitu. Atņemšana — instrukcija + `chrome://settings/content/siteDetails` adrese kopēšanai.
+- Noņemta poga “Pārdēvēt” dokumentu mapē (Chrome neļauj `FileSystemHandle.move` šādai darbībai).
+
 ## 1.38.8 — 2026-10-17
 - Noņemta pievienošana “Papīrs” (obligātie dokumenti, Dokumentu cilne, MTL lapa, apliecības skenējums). `D.missingDocs` — obligātajam dokumentam vajag `path` (skenētu failu). Esošajiem papīra ierakstiem kartītē “⚠ tikai papīrā” un “＋ Fails” (`replaceDoc` — fails tiek pievienots tam pašam ierakstam). Pēc viena faila pievienošanas vienmēr atveras rediģēšanas logs (piezīmes laukam skaidrojums pēc dokumenta veida).
 

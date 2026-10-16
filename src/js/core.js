@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.8';
+  CP.VERSION = '1.39.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -269,7 +269,7 @@ window.CP = window.CP || {};
   /* ---------------- Datu shēma ---------------- */
   CP.STATUSES = { candidate: 'Kandidāts', active: 'Jaunsargs', paused: 'Pārtraukts', archived: 'Arhīvā' };
   CP.COMM_STATUS = { prepared: 'Sagatavots', opened: 'Atvērts ārējā lietotnē', confirmed: 'Lietotājs apstiprinājis nosūtīšanu', cancelled: 'Atcelts' };
-  CP.FILE_STATUS = { available: 'Pieejams', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
+  CP.FILE_STATUS = { available: 'Pārbaudīts', noaccess: 'Nav piekļuves', missing: 'Nav atrasts', check: 'Jāpārbauda' };
 
   CP.SECTIONS = [
     ['basic', 'Pamatdati'], ['study', 'Dalība un mācības'], ['contact', 'Kontakti'], ['address', 'Adreses'],
