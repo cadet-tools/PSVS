@@ -10,6 +10,14 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.29.0', date: '2026-10-16', title: 'Rezerves kopija tieši Google Drive', items: [
+      'Šifrēto rezerves kopiju tagad var glabāt **tieši Google Drive**: rīks pieslēdzas tavam Google kontam. **Nekas nav jāinstalē**, un datorā nav vajadzīga Google Drive programma vai papildu mape.',
+      'Iestatīšana: **Iestatījumi → Šifrētā rezerves kopija → Iestatīt** → izvēlies **“☁ Google Drive”**. Vajag to pašu **Google Client ID**, kas kalendāram. Google projektā papildus jāieslēdz **Google Drive API** (palīgā “? Kā iegūt” tas ir 2. solis).',
+      'Kopija tiek **šifrēta tavā datorā** un tikai tad nosūtīta. Google redz tikai nesalasāmus failus. Rīks Google Drive redz **tikai savu mapi CADET_rezerve**, nevis citus tavus failus.',
+      'Google savienojums ir derīgs apmēram **1 stundu**. Kad tas beidzies un ir nenosūtītas izmaiņas, **augšā parādās josla** ar pogu **“Pieslēgties”**: viens klikšķis, un kopija aiziet uzreiz. Tā pati pieslēgšanās der arī **Google kalendāram**.',
+      '**Jauns vai pazaudēts dators:** sākuma lapā **“🔐 Atjaunot no šifrētās kopijas” → “☁ Google Drive”**, ievadi Client ID (tas ir uz izdrukātās atkopšanas koda lapas), pieslēdzies Google, ievadi paroli vai atkopšanas kodu un izvēlies tukšu mapi.',
+      'Kopija mapē datorā vai zibatmiņā strādā tāpat kā līdz šim. Tavi esošie iestatījumi netiek mainīti.'
+    ] },
     { v: '1.28.0', date: '2026-10-16', title: 'Šifrētā rezerves kopija (piem., Google Drive)', items: [
       '**Iestatījumos** ir jauna sadaļa **“Šifrētā rezerves kopija”**. Viss datu mapes saturs (personas, dokumenti, veidlapas, veidnes, arī papildu mapju dokumenti) tiek saglabāts **šifrētā veidā** citā mapē, piem., **Google Drive** mapē datorā. Darba mapes faili netiek mainīti.',
       'Kopija tiek **papildināta automātiski**, kamēr rīks ir atvērts: tikai jaunie un mainītie faili. Pogu **“Izveidot kopiju tagad”** var spiest jebkurā brīdī. Ja kopija ilgi nav atjaunota, parādās brīdinājums.',

@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.29.0 — 2026-10-16 — Rezerves kopija tieši Google Drive
+- Jauns modulis `js/google.js` (`CP.google`): kopīga OAuth “token” plūsma (uznirstošais logs → `oauth.html` → BroadcastChannel) kalendāram (`calendar.app.created`) un Drive (`drive.file`), `include_granted_scopes`; atļauja glabājas tikai cilnes `sessionStorage` (~1 h). Client ID arī `localStorage` (`cp.gClientId`), lai atjaunotu bez datu mapes. `schedule.js` izmanto `CP.google`.
+- Josla `#gBanner` (testa vides joslas stilā): moduļi reģistrē `CP.google.needs` → parādās, ja savienojums beidzies un ir ko sūtīt (rezerves kopija ar nenosūtītu revīziju; kalendārs ar nesinhronizētiem notikumiem). “Pieslēgties” → jauna atļauja → `onToken` āķi nosūta uzreiz; ✕ paslēpj uz 30 min.
+- `CP.google.drive`: list/children/findFolders/mkdir/put (multipart ≤ 4,5 MB, lielākiem resumable)/get/meta/del; atkārtošana pie 429/5xx; skaidrs ziņojums, ja Drive API nav ieslēgts.
+- `encbackup.js`: glabātuvju abstrakcija `localStore` / `driveStore` ar vienu struktūru (`CADET_rezerve/KOPIJA.json`, `ATJAUNOT.html`, `dati/<id>.bin`). Iestatījums `{ kind: 'drive', folderId }` vai līdzšinējais `{ dir }`. Mainīts fails vienmēr iet jaunā blobā; vecie un pārtraukto kopiju blobi tiek dzēsti tikai pēc `KOPIJA.json` saglabāšanas. Drive augšupielāde/lejupielāde paralēli (4).
+- Atjaunošana: izvēle Google Drive (Client ID → pieslēgšanās → atrod rīka izveidotās `CADET_rezerve` mapes; vairākām — izvēle) vai mape. Atkopšanas koda izdrukā Drive gadījumā arī Client ID.
+- Google palīgā jauns 2. solis “Ieslēdz Google Drive API”; atvērts no rezerves kopijas — poga “Saglabāt” bez kalendāra sinhronizācijas.
+
 ## 1.28.0 — 2026-10-16 — Šifrētā rezerves kopija
 - Jauns modulis `js/encbackup.js`. Kopijas mapē `CADET_rezerve/`: `KOPIJA.json` (galva: formāts, kopas id, laiki, mājiens, ietītās atslēgas, šifrēts indekss, statistika), `dati/<nejaušs id>.bin` (IV + AES-GCM šifrteksts katram failam), `ATJAUNOT.html` (atšifrēšana bez rīka).
 - Galvenā atslēga: nejauša AES-GCM 256, ietīta ar paroli un ar atkopšanas kodu (25 zīmju Crockford base32, ~125 biti) — PBKDF2-SHA-256, 600 000 iterācijas, nejaušs salt. Šifrētais indekss: ceļš → { id, izmērs, lastModified, SHA-256 } un mapju saraksts. Atklāti ir tikai laiki, mājiens un skaits.
