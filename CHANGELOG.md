@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.35.0 — 2026-10-16 — Centra arhīvs
+- `registry.js`: jauna atzīme `arhivs` (`p.reg.arhivs.docs[kind] = { done, date }`), `settings.archiveDocs` (noklusēti anketa, līgums), `D.arcMissing(p)` — tikai saņemtie (pievienoti rīkā vai reģistrēti DVS), brīdinājums `registry`. Kartītē sadaļa “Centra arhīvs”, masveida `bulkReg('arhivs')`, iestatījumos dokumentu saraksts. Esošajām datu mapēm `registries` papildināts ar `arhivs` vienu reizi (`arhivsAdded`).
+
 ## 1.34.1 — 2026-10-16
 - VFS — atsevišķa lapa `vfs` navigācijā (vairs nav Apmeklējuma cilne). Personas kartītē cilne `vfs` (`CP.vfs.personTab`): pēdējais tests, grafiks, visi rezultāti; skaits cilnē. Vārds VFS tabulā / dinamikā → personas VFS cilne.
 

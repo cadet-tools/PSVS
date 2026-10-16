@@ -1,7 +1,9 @@
 /* =====================================================================
-   Reģistrācija ārējās sistēmās: DVS (pa dokumentiem) un e-klase.
+   Reģistrācija ārējās sistēmās: DVS (pa dokumentiem), dokumentu nodošana Centra arhīvam (pa dokumentiem) un e-klase.
    p.reg = { dvs: { docs: { 'Pieteikuma anketa': { done, date }, 'Līgums': {…}, … } },
+             arhivs: { docs: { 'Pieteikuma anketa': { done, date }, … } },
              eklase: { done: true, date } }
+   Arhīvam nododamie dokumenti = settings.archiveDocs (noklusēti anketa un līgums).
    DVS dokumentu saraksts = obligātie dokumenti (Iestatījumi → Dokumenti).
    Katru dokumentu var reģistrēt citā datumā. Kamēr kāds nav atzīmēts — brīdinājums
    pārskatā un sadaļā Uzdevumi. Vecā vienotā DVS atzīme tiek nolasīta kā “visi dokumenti”.
@@ -9,7 +11,7 @@
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, A = CP.actions, esc = U.esc;
-  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }];
+  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'arhivs', l: 'Centra arhīvs', loc: 'Centra arhīvā', long: 'Oriģināls nodots Jaunsardzes centra arhīvam' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }];
   CP.REGS = REGS;
   const on = () => { const s = S.db.settings.registries; return REGS.filter(r => !Array.isArray(s) || s.includes(r.k)); };
   const dvsDocs = () => (S.db.settings.requiredDocs || []).filter(Boolean);
@@ -17,10 +19,32 @@
   /** DVS atzīme konkrētam dokumentam (ar vecās vienotās atzīmes atbalstu) */
   const dvsOf = (p, kind) => { const d = p.reg?.dvs; if (!d) return null; if (d.docs?.[kind]?.done) return d.docs[kind]; if (d.done && !d.docs) return { done: true, date: d.date }; return null; };
   D.dvsMissing = p => followed(p) && on().some(r => r.k === 'dvs') ? dvsDocs().filter(k => !dvsOf(p, k)) : [];
+  /* --- Centra arhīvs: oriģināli nodoti (anketa, līgums …) --- */
+  const arcDocs = () => (S.db.settings.archiveDocs || ['Pieteikuma anketa', 'Līgums']).filter(Boolean);
+  const arcOf = (p, kind) => p.reg?.arhivs?.docs?.[kind]?.done ? p.reg.arhivs.docs[kind] : null;
+  /** Nenodotie: tikai tie, kas jau saņemti (pievienoti rīkā vai reģistrēti DVS) — lai nav brīdinājuma par dokumentu, kura vēl nav */
+  D.arcMissing = (p, all = false) => followed(p) && on().some(r => r.k === 'arhivs') ? arcDocs().filter(k => !arcOf(p, k) && (all || !D.missingDocs(p).includes(k) || dvsOf(p, k))) : [];
+  function setArc(p, kind, done, date) {
+    p.reg = { ...(p.reg || {}) };
+    const a = { docs: { ...(p.reg.arhivs?.docs || {}) } };
+    if (done) a.docs[kind] = { done: true, date: date || a.docs[kind]?.date || U.iso() }; else delete a.docs[kind];
+    p.reg.arhivs = a; p.updatedAt = U.now();
+  }
+  A.arcToggle = arg => {
+    const [id, i] = String(arg).split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind) return;
+    const was = !!arcOf(p, kind); setArc(p, kind, !was);
+    D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: ${was ? 'atzīme noņemta' : 'nodots'}`]); CP.store.changed();
+  };
+  CP.changeHandlers.push(e => {
+    const t = e.target, v = t.dataset?.arcdate; if (v == null) return false;
+    const [id, i] = v.split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind || !t.value) return true;
+    setArc(p, kind, true, t.value); D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: datums ${U.fmtDate(t.value)}`]);
+    setTimeout(() => CP.store.changed(), 0); return true;
+  });
   /** Saderībai: sistēmas, kur kaut kas nav atzīmēts */
   D.regMissing = p => {
     if (!followed(p)) return [];
-    return on().filter(r => r.k === 'dvs' ? D.dvsMissing(p).length : !p.reg?.[r.k]?.done);
+    return on().filter(r => r.k === 'dvs' ? D.dvsMissing(p).length : r.k === 'arhivs' ? D.arcMissing(p).length : !p.reg?.[r.k]?.done);
   };
   D.regAlerts = roster => {
     const out = [];
@@ -32,6 +56,8 @@
         out.push({ kind: 'registry', personId: p.id, sev: 1, when: '',
           msg: `${U.full(p)}: DVS nav reģistrēts — ${dm.join(', ')}${inTool.length ? ` (rīkā jau pievienots: ${inTool.join(', ')})` : ''}` });
       }
+      const am = D.arcMissing(p);
+      if (am.length) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: Centra arhīvam nav nodots — ${am.join(', ')}` });
       if (ek) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav atzīmēts, ka ievadīts e-klasē` });
     }
     return out;
@@ -50,6 +76,7 @@
   }
   function setReg(p, k, done) {
     if (k === 'dvs') { for (const kind of dvsDocs()) setDvs(p, kind, done); D.audit(p.id, 'update', [`DVS: ${done ? 'reģistrēti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
+    if (k === 'arhivs') { for (const kind of arcDocs()) setArc(p, kind, done); D.audit(p.id, 'update', [`Centra arhīvs: ${done ? 'nodoti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
     p.reg = { ...(p.reg || {}) };
     if (done) p.reg[k] = { done: true, date: U.iso() }; else delete p.reg[k];
     p.updatedAt = U.now();
@@ -75,9 +102,9 @@
     let n = 0;
     for (const id of S.list.sel) {
       const p = D.person(id); if (!p) continue;
-      if (k === 'dvs' ? D.dvsMissing(p).length || !dvsDocs().every(x => dvsOf(p, x)) : !p.reg?.[k]?.done) { setReg(p, k, true); n++; }
+      if (k === 'dvs' ? D.dvsMissing(p).length || !dvsDocs().every(x => dvsOf(p, x)) : k === 'arhivs' ? !arcDocs().every(x => arcOf(p, x)) : !p.reg?.[k]?.done) { setReg(p, k, true); n++; }
     }
-    CP.store.changed(); CP.ui.toast(k === 'dvs' ? `DVS: visi dokumenti atzīmēti kā reģistrēti ${n} personām` : `${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
+    CP.store.changed(); CP.ui.toast(k === 'dvs' ? `DVS: visi dokumenti atzīmēti kā reģistrēti ${n} personām` : k === 'arhivs' ? `Centra arhīvs: visi dokumenti atzīmēti kā nodoti ${n} personām` : `${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
   };
 
   /** Kartītes sānu panelis */
@@ -95,12 +122,22 @@
         }).join('')}
         ${fol && dm.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē katru dokumentu, kad tas reģistrēts DVS. Datumu var nomainīt.</p>` : ''}</div>`;
     })() : '';
+    const arc = list.some(r => r.k === 'arhivs') ? (() => {
+      const docs = arcDocs(), okN = docs.filter(k => arcOf(p, k)).length;
+      return `<div class="reg-group"><div class="reg-title"><b>Centra arhīvs</b> <span class="pill ${okN === docs.length ? 'ok' : ''}">${okN}/${docs.length} nodoti</span></div>
+        ${docs.map((kind, i) => {
+          const v = arcOf(p, kind), got = !missTool.includes(kind) || dvsOf(p, kind), miss = fol && !v && got;
+          return `<div class="reg-row ${v ? 'ok' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
+            <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : 'vēl nav saņemts'}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}</div>`;
+        }).join('')}</div>`;
+    })() : '';
     const ek = list.some(r => r.k === 'eklase') ? (() => {
       const v = p.reg?.eklase, miss = fol && !v?.done;
       return `<div class="reg-group"><label class="reg-row ${v?.done ? 'ok' : (miss ? 'miss' : '')}"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|eklase" ${v?.done ? 'checked' : ''}>
         <span class="grow"><b>e-klase</b> <small class="muted">${v?.done ? 'ievadīts ' + esc(U.fmtDate(v.date)) : (miss ? '— vēl nav ievadīts' : '')}</small></span></label></div>`;
     })() : '';
-    return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija</h3>${dvs}${ek}</section>`;
+    return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija un arhīvs</h3>${dvs}${arc}${ek}</section>`;
   }
-  CP.registry = { personCard, setReg, REGS, dvsOf };
+  CP.registry = { personCard, setReg, REGS, dvsOf, arcOf, arcDocs };
 })(window.CP);

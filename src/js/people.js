@@ -35,6 +35,7 @@
       <button class="sm" data-act="bulkGroup">Mainīt grupu…</button>
       <select class="sm" data-bulk="status"><option value="">Mainīt statusu…</option><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option><option value="paused">Pārtraukts</option></select>
       <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītajiem visi obligātie dokumenti reģistrēti DVS">✓ DVS (visi dok.)</button>
+      <button class="sm" data-act="bulkReg" data-arg="arhivs" title="Atzīmēt, ka atlasītajiem visi dokumenti (anketa, līgums) nodoti Centra arhīvam">✓ Arhīvam (visi dok.)</button>
       <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
       <button class="sm" data-act="bulkVcard" title="Kontakti Google / telefonam">📇 vCard</button>

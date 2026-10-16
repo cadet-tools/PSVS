@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.35.0', date: '2026-10-16', title: 'Dokumentu nodošana Centra arhīvam', items: [
+      'Jaunsarga kartītē sadaļā **“Reģistrācija un arhīvs”** ir jauna daļa **“Centra arhīvs”**. Tāpat kā DVS, katram dokumentam (noklusēti **pieteikuma anketa** un **līgums**) var atzīmēt, ka oriģināls nodots Jaunsardzes centra arhīvam, un nodošanas datumu var mainīt.',
+      'Ja dokuments ir saņemts (pievienots rīkā vai reģistrēts DVS), bet vēl nav nodots arhīvam, tas parādās **brīdinājumos** un sadaļā **Uzdevumi**. Par dokumentu, kas vēl nav saņemts, brīdinājuma nav.',
+      '**Personu sarakstā** atlasītajiem var atzīmēt visu uzreiz: **“✓ Arhīvam (visi dok.)”**.',
+      '**Iestatījumi → Dokumenti**: var mainīt, kuri dokumenti jānodod arhīvam, un ieslēgt vai izslēgt atgādinājumu “Centra arhīvs”.'
+    ] },
     { v: '1.34.1', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
       'Jaunsarga kartītē ir cilne **“VFS”**: pēdējā testa rezultāti un punkti, nozīmīte, dinamikas grafiks un visi rezultāti pa testiem. Uzspiežot jaunsarga vārdu VFS tabulā, atveras tieši šī cilne.',
       'Kreisajā izvēlnē ir atsevišķa sadaļa **“VFS”**: vispārējās fiziskās sagatavotības testi pēc JC sistēmas (spēkā no 01.09.2024). **Jauns VFS tests** pievieno visus aktīvos jaunsargus un sadala tos pa pakāpēm (I 10–12, II 13–14, III 15–16, IV 17–21 g.) pēc vecuma testa dienā.',
