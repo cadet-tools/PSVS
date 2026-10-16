@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.37.2 — 2026-10-16
+- `CP.setup.chip()` Pārskata galvenē (`.setup-chip.ok|.todo`): ✓ / ✕ n/m + josla; klikšķis `setupShow` atver/aizver sarakstu (`S.setupOpen` — arī pabeigtu).
+
 ## 1.37.1 — 2026-10-16
 - Lapa `archive` (`CP.pages.archive`, people.js): visi `status === 'archived'` neatkarīgi no mācību gada; nav vairs pāradresācijas uz `people`.
 - Sākuma saraksts: paslēpšana tikai sesijai (`S.setupHidden`); `settings.setupHidden` vairs netiek ņemts vērā.

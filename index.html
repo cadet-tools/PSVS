@@ -758,6 +758,13 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 /* Datu kvalitāte */
 .q-chips{margin-bottom:10px}.q-row .q-k{color:var(--warn-tx,#f6d6a0);font-weight:600}
 .set-tabs{position:sticky;top:0;z-index:3;background:var(--bg,#0f1418)}
+/* Iestatīšanas statuss pie pogām */
+.setup-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px 6px 8px;font-weight:600;font-size:13px;line-height:1.2}
+.setup-chip .sc-ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800}
+.setup-chip.ok{background:var(--ok-bg,#173a29);color:var(--ok-tx,#9fe8c0);border-color:transparent}.setup-chip.ok .sc-ic{background:var(--ok-tx,#9fe8c0);color:var(--ok-bg,#173a29)}
+.setup-chip.todo{background:var(--warn-bg,#352a17);color:var(--warn-tx,#f6d6a0);border-color:var(--warn-edge,#7d6331)}.setup-chip.todo .sc-ic{background:var(--bad-tx,#ffb4b4);color:var(--bad-bg,#3d1f22)}
+.setup-chip .sc-bar{width:56px;height:5px;border-radius:3px;background:rgba(127,127,127,.3);overflow:hidden}.setup-chip .sc-bar span{display:block;height:100%;background:currentColor;border-radius:3px}
+.setup-card.done .setup-bar span{background:var(--ok-tx,#9fe8c0)}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1346,5 +1353,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.37.1"></script></body>
+<script src="app.bundle.js?v=1.37.2"></script></body>
 </html>

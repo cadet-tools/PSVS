@@ -45,15 +45,26 @@
   }
   function setupCard() {
     if (!S.root || S.setupHidden) return '';   // paslēpts tikai līdz nākamajai rīka atvēršanai
-    const list = steps(), n = list.filter(s => s.ok).length;
-    if (n === list.length) return '';
-    return `<section class="card setup-card" id="setupCard"><h3>${ic('check')}Sagatavo rīku darbam <span class="pill ${n >= list.length - 1 ? 'ok' : 'warn'}">${n}/${list.length}</span>
-        <button class="ghost sm right" data-act="setupHide" title="Paslēpt līdz nākamajai rīka atvēršanai">Paslēpt</button></h3>
+    const list = steps(), n = list.filter(s => s.ok).length, all = n === list.length;
+    if (all && !S.setupOpen) return '';   // viss izdarīts — paliek tikai statuss pie pogām; atver, uzspiežot uz tā
+    return `<section class="card setup-card ${all ? 'done' : ''}" id="setupCard"><h3>${ic('check')}${all ? 'Rīks ir sagatavots darbam' : 'Sagatavo rīku darbam'} <span class="pill ${all ? 'ok' : 'warn'}">${n}/${list.length}</span>
+        <button class="ghost sm right" data-act="setupHide" title="${all ? 'Aizvērt' : 'Paslēpt līdz nākamajai rīka atvēršanai — statuss paliek pie pogām augšā'}">${all ? 'Aizvērt' : 'Paslēpt'}</button></h3>
       <div class="setup-bar"><span style="width:${Math.round(n / list.length * 100)}%"></span></div>
       <div class="setup-list">${list.map(s => `<div class="setup-row ${s.ok ? 'ok' : ''}"><span class="setup-ic">${s.ok ? '✓' : ''}</span><div class="grow"><b>${esc(s.l)}</b><div class="small muted">${s.hint}</div></div>${!s.ok && s.act ? `<button class="sm ${s.k === list.find(x => !x.ok)?.k ? 'mainbtn' : ''}" data-act="${s.act}" ${s.arg ? `data-arg="${esc(s.arg)}"` : ''}>${esc(s.btn)}</button>` : ''}</div>`).join('')}</div></section>`;
   }
-  A.setupHide = () => { S.setupHidden = true; CP.render(); ui.toast('Saraksts paslēpts līdz nākamajai rīka atvēršanai — tad tas parādīsies atkal, ja kas vēl nav izdarīts.', 'ok', 8000); };
-  A.setupShow = () => { S.setupHidden = false; ui.go('dashboard'); };
+  A.setupHide = () => { const all = steps().every(s => s.ok); S.setupHidden = !all; S.setupOpen = false; CP.render(); if (!all) ui.toast('Saraksts paslēpts līdz nākamajai rīka atvēršanai. Progress redzams augšā pie pogām.', 'ok', 7000); };
+  A.setupShow = () => {
+    if (U.$('setupCard')) { S.setupOpen = false; S.setupHidden = !steps().every(s => s.ok); return CP.render(); }   // atkārtots klikšķis — aizver
+    S.setupHidden = false; S.setupOpen = true; ui.go('dashboard');
+    setTimeout(() => { const c = U.$('setupCard'); if (c) { ui.scrollToCard?.(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); } }, 60);
+  };
+  /** Vienmēr redzams statuss pie pogām “Bloķēt rīku” un “Saglabāt”: ✓ iestatīts vai ✕ n/m ar progresu */
+  function chip() {
+    if (!S.root) return '';
+    const list = steps(), n = list.filter(s => s.ok).length, all = n === list.length, miss = list.filter(s => !s.ok).map(s => s.l);
+    return `<button type="button" class="setup-chip ${all ? 'ok' : 'todo'}" data-act="setupShow" title="${esc(all ? 'Visi iestatīšanas soļi izdarīti' : 'Nav izdarīts: ' + miss.join(', '))}">
+      <span class="sc-ic">${all ? '✓' : '✕'}</span><span class="sc-t">${all ? 'Rīks iestatīts' : `Iestatīšana ${n}/${list.length}`}</span>${all ? '' : `<span class="sc-bar"><span style="width:${Math.round(n / list.length * 100)}%"></span></span>`}</button>`;
+  }
   A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
 
   /* ---------------- 21 gads ---------------- */
@@ -137,5 +148,5 @@
     xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
   };
 
-  CP.setup = { card: setupCard, steps, instCard, issues, at21 };
+  CP.setup = { chip, card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);
