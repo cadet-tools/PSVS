@@ -708,3 +708,8 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 .vfs-prog{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px 18px}
 .vfs-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:4px 14px;max-height:55vh;overflow:auto}
 .vfs-mini{margin-top:6px}
+.vfs-pt-sum{display:flex;gap:18px;align-items:center;margin-bottom:10px}
+.vfs-big{font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+/* navigācija: kompaktāka, ja ekrāns nav augsts (15 sadaļas) */
+@media (min-width:821px) and (max-height:1000px){html.d2 .nav{gap:1px!important;padding-top:10px!important;padding-bottom:6px!important}html.d2 .nav button{padding:5px 0 3px!important;gap:1px!important}html.d2 .nav button span .ic,html.d2 .nav button .ic{width:19px!important;height:19px!important}html.d2 .nav .logo{width:36px!important;height:36px!important;margin-bottom:2px!important}}
+@media (min-width:821px) and (max-height:780px){html.d2 .nav button small{display:none!important}html.d2 .nav button{padding:8px 0!important}}

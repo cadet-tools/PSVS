@@ -154,7 +154,7 @@
     const p = D.person(id), r = rowOf(t, id), s = score(r), sugg = !r.g ? guessG(p.first) : '';
     const g = r.g || sugg;
     return `<tr data-vrow="${id}">
-      <td class="nm"><a href="#" data-person="${id}">${esc(U.sortName(p))}</a><div class="small muted">${esc(D.groupOf(p) || '')}${p.birth ? ` · ${ageAt(p.birth, t.date)} g.` : ''}</div></td>
+      <td class="nm"><a href="#" data-act="vfsPersonDyn" data-arg="${id}" title="Jaunsarga VFS rezultāti un dinamika">${esc(U.sortName(p))}</a><div class="small muted">${esc(D.groupOf(p) || '')}${p.birth ? ` · ${ageAt(p.birth, t.date)} g.` : ''}</div></td>
       <td><select data-vfsg="${id}" class="${!r.g && sugg ? 'sugg' : ''}" title="${!r.g && sugg ? 'Ieteikums pēc vārda — apstiprini' : ''}"><option value="" ${!g ? 'selected' : ''}>?</option><option value="m" ${g === 'm' ? 'selected' : ''}>Z${!r.g && sugg === 'm' ? '?' : ''}</option><option value="f" ${g === 'f' ? 'selected' : ''}>M${!r.g && sugg === 'f' ? '?' : ''}</option></select></td>
       <td><select data-vfsl="${id}"><option value="">—</option>${LVLS.map(l => `<option ${r.lvl === l ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       ${EX.map(k => `<td class="ex"><div class="vfs-cell"><input data-vfs="${id}|${k}" value="${esc(show(k, r.g, r.v?.[k]))}" placeholder="${k === 'str' ? (r.g === 'f' ? 's' : r.g === 'm' ? 'reizes' : '') : UNIT_PH[k]}" title="${esc(exName(k, r.lvl, r.g))}" inputmode="decimal" autocomplete="off">${ptsTag(s.pts[k])}</div></td>`).join('')}
@@ -315,9 +315,10 @@
           ${EX.map(k => `<tr><td>${esc(exName(k, ph.at(-1).r.lvl, ph.at(-1).r.g, true))}</td>${ph.map((x, i) => { const val = x.r.v?.[k], pr = i ? ph[i - 1].r.v?.[k] : null, better = val != null && pr != null && val !== pr ? ((LOW.has(k) ? val < pr : val > pr) ? 'up' : 'down') : ''; return `<td>${val == null ? '<span class="muted">—</span>' : esc(show(k, x.r.g, val))} ${ptsTag(x.s.pts[k])}${better ? `<span class="vfs-tr ${better}">${better === 'up' ? '▲' : '▼'}</span>` : ''}</td>`; }).join('')}</tr>`).join('')}
           <tr class="tot"><td>Kopā</td>${ph.map(x => `<td><b>${x.s.total ?? '—'}</b> ${badgeTag(x.s.badge, x.s.badgeName)}</td>`).join('')}</tr></tbody></table></div>` : '<p class="muted small">Izvēlies jaunsargu, lai redzētu viņa rezultātus visos testos.</p>'}</section>
       <section class="card wide"><h3>${ic('chart')}Kurš uzlabojies (pēdējie divi testi)</h3>
-        ${prog.length ? `<div class="vfs-prog">${prog.map(x => `<div class="row"><a href="#" data-act="vfsPersonDyn" data-arg="${x.p.id}" class="grow">${esc(U.sortName(x.p))}</a><span class="small muted">${x.a.s.total} → ${x.b.s.total}</span><b class="${x.d > 0 ? 'okc' : x.d < 0 ? 'red' : 'muted'}">${x.d > 0 ? '+' : ''}${x.d}</b></div>`).join('')}</div>` : '<p class="muted small">Vajag vismaz divus testus ar vienu un to pašu jaunsargu.</p>'}</section></div>`;
+        ${prog.length ? `<div class="vfs-prog">${prog.map(x => `<div class="row"><a href="#" data-act="vfsPersonDyn" data-arg="${x.p.id}" class="grow" title="Atvērt jaunsarga VFS rezultātus">${esc(U.sortName(x.p))}</a><span class="small muted">${x.a.s.total} → ${x.b.s.total}</span><b class="${x.d > 0 ? 'okc' : x.d < 0 ? 'red' : 'muted'}">${x.d > 0 ? '+' : ''}${x.d}</b></div>`).join('')}</div>` : '<p class="muted small">Vajag vismaz divus testus ar vienu un to pašu jaunsargu.</p>'}</section></div>`;
   }
-  A.vfsPersonDyn = pid => { V().person = pid; V().view = 'dyn'; (S.att = S.att || {}).tab = 'vfs'; if (S.page !== 'attendance') CP.ui.go('attendance'); else CP.render(); };
+  A.vfsPersonDyn = pid => CP.ui.go('person', { person: pid, tab: 'vfs' });
+  A.vfsOpenTest = id => { V().test = id; V().view = 'res'; CP.ui.go('vfs'); };
 
   /* --- Protokols (PDF, 1.tabulas formā) --- */
   A.vfsProtocol = async () => {
@@ -447,11 +448,36 @@
     return out;
   }
 
+  /* --- Lapa “VFS testi” (navigācijā) --- */
+  CP.pages.vfs = { render: () => `<div class="page">${ui.pageHead('VFS testi', 'Vispārējās fiziskās sagatavotības testi: rezultāti, punkti, sporta nozīmītes un dinamika', '')}${page()}</div>` };
+
+  /* --- Personas kartītes cilne “VFS”: šīs personas rezultāti un dinamika --- */
+  const countFor = pid => tests().filter(t => t.res[pid]).length || '';
+  function personTab(p) {
+    const h = personHistory(p.id), last = h.at(-1);
+    if (!h.length) return `<section class="card"><h3>${ic('award')}VFS testi</h3><p class="muted">${esc(U.full(p))} vēl nav piedalījies(-usies) nevienā VFS testā.</p>
+      <div class="actions"><button class="mainbtn sm" data-page="vfs">Uz VFS testiem →</button></div></section>`;
+    const best = h.reduce((a, x) => (x.s.total ?? -1) > (a?.s.total ?? -1) ? x : a, null);
+    const badges = h.filter(x => x.s.badge);
+    return `<div class="cards2">
+      <section class="card"><h3>${ic('award')}Pēdējais tests · ${esc(U.fmtDate(last.t.date))}</h3>
+        <div class="vfs-pt-sum"><div><div class="vfs-big">${last.s.total ?? '—'}</div><div class="small muted">punkti no 60</div></div>
+          <div>${badgeTag(last.s.badge, last.s.badgeName)}${!last.s.badge && last.s.done ? `<div class="small muted">${esc(last.s.why)}</div>` : ''}<div class="small muted" style="margin-top:4px">${last.r.lvl ? last.r.lvl + ' pakāpe · ' + LVL_AGE[last.r.lvl] : 'pakāpe nav noteikta'}</div></div></div>
+        <table class="vfs-sum">${EX.map(k => `<tr><td>${esc(exName(k, last.r.lvl, last.r.g))}</td><td>${last.r.v?.[k] == null ? '<span class="muted">—</span>' : esc(show(k, last.r.g, last.r.v[k]))}</td><td>${ptsTag(last.s.pts[k]) || '<span class="muted">—</span>'}</td></tr>`).join('')}</table>
+        <div class="actions" style="margin-top:8px"><button class="sm" data-act="vfsOpenTest" data-arg="${last.t.id}">Atvērt testu →</button></div></section>
+      <section class="card"><h3>${ic('chart')}Dinamika</h3>
+        ${h.length > 1 ? chart(h.map(x => ({ v: x.s.total, b: x.s.badge, l: U.fmtDate(x.t.date).slice(3) }))) : '<p class="small muted">Dinamika būs redzama pēc nākamā testa.</p>'}
+        <div class="small">${best ? `Labākais: <b>${best.s.total}</b> punkti (${esc(U.fmtDate(best.t.date))})` : ''}${badges.length ? ` · Nozīmītes: ${badges.map(x => `${badgeTag(x.s.badge, x.s.badgeName)} <span class="muted">${esc(U.fmtDate(x.t.date))}${x.r.issued ? ', izsniegta' : ''}</span>`).join(' ')}` : ''}</div></section>
+      <section class="card wide"><h3>${ic('list')}Visi rezultāti</h3><div class="vfs-wrap"><table class="vfs-sum"><thead><tr><th>Vingrinājums</th>${h.map(x => `<th><a href="#" data-act="vfsOpenTest" data-arg="${x.t.id}">${esc(U.fmtDate(x.t.date))}</a><br><small>${x.r.lvl || '—'} pak.</small></th>`).join('')}</tr></thead><tbody>
+        ${EX.map(k => `<tr><td>${esc(exName(k, last.r.lvl, last.r.g, true))}</td>${h.map((x, i) => { const val = x.r.v?.[k], pr = i ? h[i - 1].r.v?.[k] : null, better = val != null && pr != null && val !== pr ? ((LOW.has(k) ? val < pr : val > pr) ? 'up' : 'down') : ''; return `<td>${val == null ? '<span class="muted">—</span>' : esc(show(k, x.r.g, val))} ${ptsTag(x.s.pts[k])}${better ? `<span class="vfs-tr ${better}">${better === 'up' ? '▲' : '▼'}</span>` : ''}</td>`; }).join('')}</tr>`).join('')}
+        <tr class="tot"><td>Kopā</td>${h.map(x => `<td><b>${x.s.total ?? '—'}</b> ${badgeTag(x.s.badge, x.s.badgeName)}</td>`).join('')}</tr></tbody></table></div></section></div>`;
+  }
+
   /* --- Personas kartītē: īss VFS kopsavilkums (kvalifikāciju sadaļā) --- */
   function personSummary(p) {
     const h = personHistory(p.id); if (!h.length) return '';
     return `<div class="vfs-mini small">${h.slice(-4).map(x => `<span>${esc(U.fmtDate(x.t.date))}: <b>${x.s.total ?? '—'}</b> p. ${x.s.badge ? badgeTag(x.s.badge, x.s.badgeName) : ''}</span>`).join(' · ')} <a href="#" data-act="vfsPersonDyn" data-arg="${p.id}">Dinamika →</a></div>`;
   }
 
-  CP.vfs = { page, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
+  CP.vfs = { page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
 })(window.CP);

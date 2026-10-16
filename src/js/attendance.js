@@ -121,9 +121,9 @@
       const v = view(), groups = D.groups();
       if (!v.group || (v.group !== '*' && !groups.includes(v.group))) v.group = groups[0] || '*';
       const tab = (k, l, i) => `<button role="tab" data-act="attTab" data-arg="${k}" class="${v.tab === k ? 'active' : ''}">${ic(i)}${l}</button>`;
-      const body = v.tab === 'journal' ? journal(v) : v.tab === 'stats' ? stats(v) : v.tab === 'quals' ? quals(v) : v.tab === 'vfs' && CP.vfs ? CP.vfs.page() : grid(v);
-      return `<div class="page">${ui.pageHead('Apmeklējums', 'Nodarbību žurnāls, mēneša veidlapa, rādītāji, kvalifikācijas un VFS testi', `<button class="mainbtn" data-act="sessNew">${ic('plus', '＋')} Nodarbība</button>`)}
-        <nav class="tabs" role="tablist">${tab('grid', 'Mēneša tabula', 'calendar')}${tab('journal', 'Žurnāls', 'list')}${tab('stats', 'Rādītāji', 'chart')}${tab('quals', 'Kvalifikācijas un dalība', 'award')}${tab('vfs', 'VFS testi', 'chart')}</nav>${body}</div>`;
+      const body = v.tab === 'journal' ? journal(v) : v.tab === 'stats' ? stats(v) : v.tab === 'quals' ? quals(v) : grid(v);
+      return `<div class="page">${ui.pageHead('Apmeklējums', 'Nodarbību žurnāls, mēneša veidlapa, rādītāji un kvalifikācijas', `<button class="mainbtn" data-act="sessNew">${ic('plus', '＋')} Nodarbība</button>`)}
+        <nav class="tabs" role="tablist">${tab('grid', 'Mēneša tabula', 'calendar')}${tab('journal', 'Žurnāls', 'list')}${tab('stats', 'Rādītāji', 'chart')}${tab('quals', 'Kvalifikācijas un dalība', 'award')}</nav>${body}</div>`;
     }
   };
   A.attTab = k => { view().tab = k; CP.render(); };

@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.34.1 — 2026-10-16
+- VFS — atsevišķa lapa `vfs` navigācijā (vairs nav Apmeklējuma cilne). Personas kartītē cilne `vfs` (`CP.vfs.personTab`): pēdējais tests, grafiks, visi rezultāti; skaits cilnē. Vārds VFS tabulā / dinamikā → personas VFS cilne.
+
 ## 1.34.0 — 2026-10-16 — VFS testi
 - Jauns modulis `js/vfs.js` (`CP.vfs`), cilne Apmeklējums → VFS testi. `db.vfsTests = [{ id, date, yearId, title, res: { pid: { g, lvl, v: { str, push, sit, thr, spr, run }, issued } } }]`, `settings.vfs = { unit, instructor, region, sheet, mode }`. Normatīvi no JC 1.pielikuma 2.tabulas (I–IV, zēni/meitenes, 10…2 punktu robežas; laiki sekundēs; III meitenēm ķermeņa pacelšanai 2 p. robežas nav).
 - Punkti: `strict` (norma jāsasniedz) vai `generous` (starp robežām — augstākais). Zem 2 p. — 1, virs 10 — 10. Nozīmīte: visi 6, min ≥ 4, 41/48/54. Kvalifikācijas `vfs-b|s|z` ar `src: 'vfs:<testa id>'` — sinhronizē pie katras izmaiņas, dzēšot testu — noņem.

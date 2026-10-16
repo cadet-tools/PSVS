@@ -10,13 +10,14 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
-      '**Apmeklējums → VFS testi**: vispārējās fiziskās sagatavotības testi pēc JC sistēmas (spēkā no 01.09.2024). **Jauns VFS tests** pievieno visus aktīvos jaunsargus un sadala tos pa pakāpēm (I 10–12, II 13–14, III 15–16, IV 17–21 g.) pēc vecuma testa dienā.',
+    { v: '1.34.1', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
+      'Jaunsarga kartītē ir cilne **“VFS”**: pēdējā testa rezultāti un punkti, nozīmīte, dinamikas grafiks un visi rezultāti pa testiem. Uzspiežot jaunsarga vārdu VFS tabulā, atveras tieši šī cilne.',
+      'Kreisajā izvēlnē ir atsevišķa sadaļa **“VFS”**: vispārējās fiziskās sagatavotības testi pēc JC sistēmas (spēkā no 01.09.2024). **Jauns VFS tests** pievieno visus aktīvos jaunsargus un sadala tos pa pakāpēm (I 10–12, II 13–14, III 15–16, IV 17–21 g.) pēc vecuma testa dienā.',
       'Rezultātus ievada tabulā, un **punkti tiek aprēķināti uzreiz** pēc JC vērtējumu tabulām: pievilkšanās (zēni) vai kāriens (meitenes), atspiešanās, ķermeņa augšdaļas pacelšana, bumbiņas vai granātas mešana, 60 m un garā distance. Laikus var rakstīt kā 9,8 vai 5:49. Enter pārvieto uz nākamo jaunsargu.',
       '**Sporta nozīmīte** tiek noteikta automātiski: bronza 41–47, sudrabs 48–53, zelts 54+ punkti, ja izpildīti visi vingrinājumi un katrā ir vismaz 4 punkti. Ja nozīmīte netiek piešķirta, redzams iemesls. Nozīmīte automātiski tiek ierakstīta jaunsarga **kvalifikācijās**, un var atzīmēt, ka tā **izsniegta**.',
       '**⎙ Protokols (PDF)** oficiālās 1. tabulas formā, katra pakāpe atsevišķā lapā. **⇩ Nozīmīšu uzskaite (Excel)** tiek aizpildīta oficiālajā 2. pielikuma veidnē.',
       '**⇪ Importēt protokolu (Word)**: agrāko gadu protokolus var ievilkt, lai dinamikā būtu vēsture. Vārdi tiek atpazīti automātiski, un punkti pārrēķināti.',
-      '**Dinamika**: vienības vidējie punkti un nozīmīšu skaits pa testiem, katra jaunsarga rezultātu līkne un vingrinājumu tabula ar ▲▼, kā arī saraksts, kurš uzlabojies. Personas kartītē redzams VFS kopsavilkums.',
+      '**Dinamika**: vienības vidējie punkti un nozīmīšu skaits pa testiem, katra jaunsarga rezultātu līkne un vingrinājumu tabula ar ▲▼, kā arī saraksts, kurš uzlabojies.',
       'Personas kartītē ir jauns lauks **“Dzimums”**. VFS tabulā rīks to iesaka pēc vārda, un ieteikumus var apstiprināt ar vienu pogu.',
       '⚙ **VFS iestatījumos**: vienības nosaukums, instruktors, novada pārvalde un tas, kā vērtēt rezultātu starp divām punktu robežām (“norma jāsasniedz” vai “par labu jaunsargam”).'
     ] },
