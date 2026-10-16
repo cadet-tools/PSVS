@@ -597,3 +597,28 @@ input[type=radio]{width:auto;flex:none;accent-color:var(--teal)}
 .fb-capbar button{font:inherit;font-size:12.5px;padding:5px 12px;border-radius:8px;border:0;background:#1b1206;color:#fff;cursor:pointer;min-height:0}
 .fb-capbar button.x{background:transparent;color:#1b1206}
 .fb-card .field{margin-bottom:14px}
+
+/* Ekrāna bloķēšana */
+dialog.cplock{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0!important;box-shadow:none;background:radial-gradient(ellipse at 50% 35%,color-mix(in srgb,var(--acc) 14%,var(--bg)) 0%,var(--bg) 70%);color:var(--txt);display:none;overflow:hidden}
+dialog.cplock[open]{display:flex;align-items:center;justify-content:center}
+dialog.cplock::backdrop{background:var(--bg)}
+dialog.cplock .toast-host{display:none!important}
+.cpl-in{display:flex;flex-direction:column;align-items:center;gap:6px;padding:24px;text-align:center;width:min(440px,100%)}
+.cpl-time{font-size:clamp(84px,17vw,220px);font-weight:200;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;transition:font-size .25s}
+.cpl-date{font-size:clamp(16px,2.2vw,24px);color:var(--muted);margin-bottom:28px}.cpl-date::first-letter{text-transform:uppercase}
+dialog.cplock.pin .cpl-time{font-size:clamp(56px,9vw,110px)}
+dialog.cplock.pin .cpl-date{margin-bottom:14px}
+.cpl-hint{color:var(--muted);font-size:14px;margin:0;animation:cplPulse 2.4s ease-in-out infinite}
+@keyframes cplPulse{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.cpl-hint{animation:none}.cpl-time{transition:none}}
+.cpl-brand{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);opacity:.7}
+.cpl-box{width:100%}
+.cpl-form{display:flex;flex-direction:column;gap:10px;align-items:stretch;background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--edge);border-radius:18px;padding:18px 20px;text-align:left;backdrop-filter:blur(6px)}
+.cpl-form label{font-size:13px;color:var(--muted)}
+.cpl-form p{margin:0}
+#cplPin{font-size:26px;letter-spacing:.5em;text-align:center;padding:10px}
+.cpl-msg{min-height:1.2em;color:var(--red);font-size:13.5px}
+.cpl-form .ghost.sm{align-self:center}.cpl-form .mainbtn{justify-content:center;text-align:center}
+.cpl-box.shake{animation:cplShake .35s}
+@keyframes cplShake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lock-st{padding:9px 0}

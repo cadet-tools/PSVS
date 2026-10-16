@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
+      'Ja rīku kādu laiku nelieto, ekrānu aizsedz **liels pulkstenis**, un jaunsargu dati nav redzami. Noklusēti tas notiek pēc **5 minūtēm**. Laiku var mainīt **Iestatījumos → Ekrāna bloķēšana**.',
+      '**PIN kods** (4–8 cipari): to prasa, izejot no pulksteņa un atverot rīku. Iestatīt, mainīt vai noņemt var Iestatījumos. PIN glabājas tikai tavā datorā šifrētā veidā.',
+      '**Aizmirsi PIN?** Rīks nosūta 6 ciparu kodu uz tavu **atkopšanas e-pastu**, kas iestatīšanas laikā tiek apstiprināts ar kodu. Ja e-pasta nav, bloķēšanu var atiestatīt, no jauna izvēloties datu mapi. Dati netiek dzēsti.',
+      'Bloķēt uzreiz: **Ctrl+Shift+L** vai poga “Bloķēt tagad”. Pēc 5 nepareiziem PIN mēģinājumiem ievade uz laiku tiek atslēgta.'
+    ] },
     { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Jauna sadaļa “Ziņot”', items: [
       'Kreisajā izvēlnē ir jauna sadaļa **“⚑ Ziņot”**. Tur var nosūtīt rīka izstrādātājam **kļūdu, ieteikumu, atsauksmi vai jautājumu**.',
       'Izvēlies tēmu, īsi uzraksti, par ko ir ziņojums, un apraksti situāciju. Teksts saglabājas, arī ja lapu aizver.',

@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.31.0 — 2026-10-16 — Ekrāna bloķēšana
+- Jauns modulis `js/lock.js` (`CP.lock`). Pulksteņa ekrāns ir modāls `dialog#cpLock`: citi `showModal` bloķējuma laikā paliek zem tā (`showModal` ietīts), toasti paslēpti, taustiņu notikumi neiziet ārpus.
+- Neaktivitāte (`pointermove`/`keydown`/`wheel`/`touchstart`/`input`) un `visibilitychange`; `localStorage['cp.lock'] = { mins (5), salt, hash, iter, email, fails, until, sent }`. PIN — PBKDF2-SHA-256 150 000 iterāciju. Pēc 5 kļūdām pauze 30 s → līdz 15 min. Ctrl+Shift+L.
+- Atkopšana: 6 ciparu kods (glabājas kā SHA-256, derīgs 15 min, ≤4/h) caur Apps Script (`k: 'cadet-pin-v1'`, `purpose: verify|reset`); `tools/zinojumi_apps_script.gs` → `pinMail` (fiksēts teksts, ≤5/h uz adresi, ≤60/h kopā). Bez e-pasta — atiestatīšana: PIN noņemts, saglabātā datu mapes atļauja aizmirsta.
+
 ## 1.30.1 — 2026-10-16
 - Ieslēgta “Ziņot” sūtīšana: `CP.FEEDBACK_URL` = izstrādātāja Apps Script tīmekļa lietotne.
 
