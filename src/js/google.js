@@ -114,6 +114,7 @@
       const r = await dfetch(`${UAPI}/files?uploadType=multipart&fields=id`, { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${b}` }, body });
       return (await r.json()).id;
     },
+    async rename(id, name) { const r = await dfetch(`${DAPI}/files/${encodeURIComponent(id)}?fields=id,name`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }); return r ? r.json() : null; },
     async meta(id) { const r = await dfetch(`${DAPI}/files/${encodeURIComponent(id)}?fields=id,name,trashed`); return r ? r.json() : null; },
     async get(id) { const r = await dfetch(`${DAPI}/files/${encodeURIComponent(id)}?alt=media`); if (!r) throw Error('fails Google Drive nav atrasts'); return r.arrayBuffer(); },
     async text(id) { return new TextDecoder().decode(await drive.get(id)); },

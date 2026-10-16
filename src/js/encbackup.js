@@ -6,13 +6,14 @@
      ar paroli un ar atkopšanas kodu (PBKDF2-SHA-256, 600 000 iterācijas). Jebkurš no tiem atver kopiju.
    • Paroles mājiens glabājas atklāti (nedrīkst saturēt paroli). Savā datorā paroli var nomainīt bez vecās.
    • Papildu kopijas: tikai jaunie / mainītie faili. Kopijas mapē ir ATJAUNOT.html — atšifrē arī bez rīka.
-   Kopijas struktūra (abos gadījumos):  CADET_rezerve/KOPIJA.json  +  CADET_rezerve/dati/<id>.bin  +  CADET_rezerve/ATJAUNOT.html
+   Kopijas struktūra (abos gadījumos):  CADET_PERSONĀLS_ATJAUNOŠANA/KOPIJA.json  +  …/dati/<id>.bin  +  …/ATJAUNOT.html
+   (līdz 1.38.7 mape saucās CADET_rezerve — to joprojām atrod; Google Drive mape tiek pārdēvēta automātiski)
    ===================================================================== */
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, store = CP.store;
   const ic = (n, f = '') => CP.ic(n, f);
-  const FORMAT = 'cadet-rezerve', DIRNAME = 'CADET_rezerve', ITER = 600000;
+  const FORMAT = 'cadet-rezerve', DIRNAME = 'CADET_PERSONĀLS_ATJAUNOŠANA', OLD_DIR = 'CADET_rezerve', DIRNAMES = [DIRNAME, OLD_DIR], ITER = 600000;
   const SKIP = n => /^(_arhivi|_rezerves|\..*|~\$.*|desktop\.ini|thumbs\.db)$/i.test(n) || /\.crswap$/i.test(n);
   const te = new TextEncoder(), td = new TextDecoder();
   const b64 = u => { u = new Uint8Array(u); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -78,7 +79,7 @@
   }
   async function backupDirOf(h) {   // izvēlēta mape: pati CADET_rezerve vai tās vecākmape
     if (await readText(h, 'KOPIJA.json')) return h;
-    try { const d = await h.getDirectoryHandle(DIRNAME); if (await readText(d, 'KOPIJA.json')) return d; } catch (e) { }
+    for (const n of DIRNAMES) { try { const d = await h.getDirectoryHandle(n); if (await readText(d, 'KOPIJA.json')) return d; } catch (e) { } }
     return null;
   }
   /** Paralēli (n vienlaikus); pirmā kļūda aptur pārējos */
@@ -132,10 +133,15 @@
       if (!await G().token(['drive'], ask)) { status = 'auth'; paint(); G().paintBanner(); return null; }
       const m = await G().drive.meta(CFG.folderId);
       if (!m || m.trashed) throw Error(`Google Drive mape ${DIRNAME} nav atrasta (izdzēsta vai atkritnē). Atjauno to no Drive atkritnes vai iestati kopiju no jauna`);
+      if (m.name === OLD_DIR) { try { await G().drive.rename(CFG.folderId, DIRNAME); } catch (e) { console.warn('mapi neizdevās pārdēvēt', e); } }   // vecais nosaukums → jaunais (vienreiz)
       return driveStore(CFG.folderId).open();
     }
     if (!(await perm(CFG.dir, 'readwrite', ask))) { status = 'perm'; paint(); return null; }
-    return localStore(await sub(CFG.dir, DIRNAME, true)).open(true);
+    if (!CFG.dirName) {   // esošā kopija mapē ar veco nosaukumu paliek tur (mapes datorā rīks nepārdēvē)
+      let old = false; try { await CFG.dir.getDirectoryHandle(OLD_DIR); old = true; } catch (e) { }
+      CFG.dirName = old ? OLD_DIR : DIRNAME; await cfgSet(CFG);
+    }
+    return localStore(await sub(CFG.dir, CFG.dirName, true)).open(true);
   }
 
   /* --- Kopijas izveide / papildināšana --- */
@@ -301,7 +307,7 @@
       : status === 'perm' ? '<span class="warn">Kopijas mapei vajag atļauju — spied “Izveidot kopiju tagad”.</span>'
       : status === 'auth' ? '<span class="warn">Google savienojums beidzies — spied “Izveidot kopiju tagad” vai “Pieslēgties” joslā augšā.</span>'
       : L ? `<span class="${L.failed ? 'warn' : 'okc'}">✓ Pēdējā kopija: ${esc(U.fmtDateTime(L.at))} · ${faili(L.files)} · ${fmtB(L.bytes)}${L.failed ? ` · ${L.failed} nav iekļauti` : ''}</span>` : '<span class="muted">Kopija vēl nav izveidota.</span>';
-    const where = drv ? `☁ Google Drive / ${DIRNAME} <a class="small" href="https://drive.google.com/drive/folders/${encodeURIComponent(c.folderId)}" target="_blank" rel="noopener noreferrer">↗ atvērt</a>` : c?.dir ? `📁 ${esc(c.dir.name)} / ${DIRNAME}` : '';
+    const where = drv ? `☁ Google Drive / ${DIRNAME} <a class="small" href="https://drive.google.com/drive/folders/${encodeURIComponent(c.folderId)}" target="_blank" rel="noopener noreferrer">↗ atvērt</a>` : c?.dir ? `📁 ${esc(c.dir.name)} / ${esc(c.dirName || DIRNAME)}` : '';
     const gstate = drv ? (G().has('drive') ? `<span class="okc">✓ pieslēgts līdz ${hhmm(G().expiresAt())}</span>` : '<span class="muted">nav pieslēgts — pieslēgsies, spiežot “Izveidot kopiju tagad”</span>') : '';
     return `<section class="card" id="encCard"><h3>${ic('shield', '🔐')}Šifrētā rezerves kopija</h3>
       <p class="small" style="margin-top:0">Viss datu mapes saturs (personas, dokumenti, veidlapas) šifrētā veidā <b>Google Drive</b> vai citā mapē. Darba mapes faili netiek mainīti. Pazaudējot datoru, visu var atjaunot ar paroli vai atkopšanas kodu.</p>
@@ -414,7 +420,7 @@
         if (!gcs.clientId) { gcs.clientId = cid; store.changed({ silent: true }); }
         if (!await G().token(['drive'], true, cid)) return;
         try {
-          for (const fo of await G().drive.findFolders(DIRNAME, 'root')) { const k = await G().drive.children(fo.id, " and name='KOPIJA.json'"); if (k.length) { existing = fo.id; break; } }
+          for (const fo of [...await G().drive.findFolders(DIRNAME, 'root'), ...await G().drive.findFolders(OLD_DIR, 'root')]) { const k = await G().drive.children(fo.id, " and name='KOPIJA.json'"); if (k.length) { existing = fo.id; break; } }
         } catch (x) { return ui.toast(x.message, 'err', 12000); }
         if (existing && !confirm(`Tavā Google Drive jau ir CADET rezerves kopija (mape ${DIRNAME}).\n\nJa tā ir no cita tava datora un gribi strādāt ar tiem pašiem datiem — spied “Atcelt” un izvēlies “Atjaunot no kopijas…”.\n\nIzveidot jaunu kopiju? Vecā tiks aizstāta.`)) return;
       } else {
@@ -437,7 +443,7 @@
               const bdir = await sub(setupDir, DIRNAME, true);
               if (existing) await localStore(bdir).wipe();
               await writeBytes(bdir, 'KOPIJA.json', JSON.stringify(head, null, 1));
-              CFG = { dir: setupDir, master, set: head.set, hint: head.hint, created: head.created };
+              CFG = { dir: setupDir, dirName: DIRNAME, master, set: head.set, hint: head.hint, created: head.created };
             }
             await cfgSet(CFG); U.$('encDialog').close(); status = ''; paint(); run({ ask: true });
           } catch (x) { console.error(x); ui.toast('Neizdevās: ' + x.message, 'err', 12000); }
@@ -543,7 +549,7 @@
     if (el) { el.disabled = true; el.innerHTML = '<span class="spin"></span> Meklē Google Drive…'; }
     const found = [];
     try {
-      for (const fo of await G().drive.findFolders(DIRNAME)) {
+      for (const fo of [...await G().drive.findFolders(DIRNAME), ...await G().drive.findFolders(OLD_DIR)]) {
         const k = await G().drive.children(fo.id, " and name='KOPIJA.json'"); if (!k.length) continue;
         try { const head = JSON.parse(await G().drive.text(k[0].id)); if (head.format === FORMAT && head.index) found.push({ id: fo.id, head }); } catch (e) { }
       }
@@ -647,7 +653,7 @@ async function unwrap(w,s){var k=await kek(s,unb64(w.salt),w.iter);return crypto
 async function dec(m,buf){var u=new Uint8Array(buf);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.subarray(0,12)},m,u.subarray(12)))}
 function norm(s){return String(s||'').toUpperCase().replace(/[IL]/g,'1').replace(/O/g,'0').replace(/[^0-9A-Z]/g,'')}
 async function txt(d,n){try{return await (await (await d.getFileHandle(n)).getFile()).text()}catch(e){return null}}
-document.getElementById('b1').onclick=async function(){try{var h=await showDirectoryPicker();var t=await txt(h,'KOPIJA.json');if(!t){try{h=await h.getDirectoryHandle('${DIRNAME}');t=await txt(h,'KOPIJA.json')}catch(e){}}if(!t)throw Error('mapē nav KOPIJA.json');bdir=h;head=JSON.parse(t);document.getElementById('s1').innerHTML='<span class=ok>✓ '+(head.root||'')+' · '+(head.stats?head.stats.files+' faili':'')+'</span>';if(head.hint)document.getElementById('hint').textContent='(mājiens: '+head.hint+')'}catch(e){document.getElementById('s1').innerHTML='<span class=err>'+e.message+'</span>'}};
+document.getElementById('b1').onclick=async function(){try{var h=await showDirectoryPicker();var t=await txt(h,'KOPIJA.json');if(!t){for(var nn of ['${DIRNAME}','${OLD_DIR}']){try{var h2=await h.getDirectoryHandle(nn);t=await txt(h2,'KOPIJA.json');if(t){h=h2;break}}catch(e){}}}if(!t)throw Error('mapē nav KOPIJA.json');bdir=h;head=JSON.parse(t);document.getElementById('s1').innerHTML='<span class=ok>✓ '+(head.root||'')+' · '+(head.stats?head.stats.files+' faili':'')+'</span>';if(head.hint)document.getElementById('hint').textContent='(mājiens: '+head.hint+')'}catch(e){document.getElementById('s1').innerHTML='<span class=err>'+e.message+'</span>'}};
 document.getElementById('b3').onclick=async function(){var s=document.getElementById('s3');try{if(!head)throw Error('vispirms izvēlies kopijas mapi');var pw=document.getElementById('pw').value,rc=document.getElementById('rc').value,m;
 try{m=rc?await unwrap(head.wraps.rc,norm(rc)):await unwrap(head.wraps.pw,pw)}catch(e){throw Error(rc?'nepareizs atkopšanas kods':'nepareiza parole')}
 var out=await showDirectoryPicker({mode:'readwrite'});for await(var e of out.entries()){throw Error('izvēlētā mape nav tukša')}
