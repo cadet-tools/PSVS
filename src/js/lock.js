@@ -1,7 +1,8 @@
 /* =====================================================================
    Ekrāna bloķēšana: pulkstenis + PIN kods.
-   • Pēc N min bez darbības (noklusēti 5) ekrānu aizsedz liels pulkstenis — dati nav redzami.
-   • Ja iestatīts PIN: to prasa, izejot no pulksteņa un atverot rīku. Bez PIN pulkstenis aizveras ar klikšķi.
+   • Ekrānu aizsedz rīka esošais lielais pulkstenis (watch.js, “Pulkstenis un pauzes” → Liels pulkstenis pēc N min, noklusēti 5).
+   • Ja iestatīts PIN: pulkstenis tiek ielikts modālā logā virs visa, un izejot no tā (kā arī atverot rīku) prasa PIN.
+     Bez PIN pulkstenis strādā tāpat kā līdz šim.
    • PIN glabājas tikai šajā pārlūkā kā PBKDF2-SHA-256 jaucējvērtība (nekad kā teksts). 5 kļūdas → pauze, kas pieaug.
    • Aizmirsts PIN: 6 ciparu kods uz iepriekš apstiprinātu e-pastu (caur izstrādātāja Google Apps Script),
      vai — ja e-pasta nav — rīka atiestatīšana šajā datorā (no jauna jāizvēlas datu mape).
@@ -28,24 +29,34 @@
   const pinOk = p => /^\d{4,8}$/.test(p);
 
   /* ---------- Pulksteņa ekrāns ---------- */
-  let locked = false, dlg = null, mode = 'clock', tick = 0;
+  let locked = false, dlg = null, mode = 'clock', tick = 0, shownAt = 0;
   const DF = new Intl.DateTimeFormat('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' });
   function build() {
     dlg = document.createElement('dialog'); dlg.id = 'cpLock'; dlg.className = 'cplock'; dlg.setAttribute('aria-label', 'Ekrāns bloķēts');
-    dlg.innerHTML = `<div class="cpl-in"><div class="cpl-time" id="cplTime"></div><div class="cpl-date" id="cplDate"></div>
+    dlg.innerHTML = `<div class="cpl-in"><div class="cpl-slot" id="cplSlot"></div><div class="cpl-time" id="cplTime"></div><div class="cpl-date" id="cplDate"></div>
       <div class="cpl-box" id="cplBox"></div><div class="cpl-brand">CADET PERSONĀLS · ekrāns bloķēts</div></div>`;
     dlg.addEventListener('cancel', e => e.preventDefault());
     dlg.addEventListener('keydown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
     dlg.addEventListener('pointerdown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
+    dlg.addEventListener('pointermove', () => { if (mode === 'clock' && Date.now() - shownAt > 600) wake(); });
     for (const ev of ['keydown', 'keyup', 'keypress', 'paste']) dlg.addEventListener(ev, e => e.stopPropagation());   // rīka īsinājumtaustiņi nedarbojas zem bloķējuma
     document.body.appendChild(dlg);
   }
   function clock() { const d = new Date(), t = U.$('cplTime'), dd = U.$('cplDate'); if (t) t.textContent = d.toTimeString().slice(0, 5); if (dd) dd.textContent = DF.format(d); }
   function box(html) { const b = U.$('cplBox'); if (b) b.innerHTML = html; }
-  const clockHint = () => `<p class="cpl-hint">${hasPin() ? 'Nospied jebkuru taustiņu, lai ievadītu PIN' : 'Nospied jebkuru taustiņu vai klikšķini, lai turpinātu'}</p>`;
+  const clockHint = () => `<p class="cpl-hint">${hasPin() ? 'Pakustini peli vai nospied taustiņu, lai ievadītu PIN' : 'Nospied jebkuru taustiņu vai klikšķini, lai turpinātu'}</p>`;
+  /** Lielais pulkstenis (watch.js) parādās bez darbības → ja ir PIN, ieliek to bloķējuma logā. */
+  function adopt(ov) {
+    if (!hasPin()) return false;
+    if (!locked) lock('idle');
+    U.$('cplSlot').replaceChildren(ov); dlg.classList.add('has-watch');
+    return true;
+  }
+  /** watch.js grib aizvērt pulksteni (kustība / taustiņš) → ja bloķēts, tā vietā PIN */
+  function guard() { if (!locked) return false; if (mode !== 'pin') wake(); return true; }
   function lock(reason = 'idle') {
     if (!dlg) build();
-    document.body.classList.add('cp-locked');
+    document.body.classList.add('cp-locked'); shownAt = Date.now();
     mode = reason === 'open' && hasPin() ? 'pin' : 'clock';
     dlg.classList.toggle('pin', mode === 'pin');
     if (mode === 'pin') pinView(); else box(clockHint());
@@ -57,7 +68,8 @@
   function wake() { if (!hasPin()) return unlock(); mode = 'pin'; dlg.classList.add('pin'); pinView(); setTimeout(() => U.$('cplPin')?.focus(), 30); }
   function unlock() {
     locked = false; clearInterval(tick); document.body.classList.remove('cp-locked');
-    try { dlg.close(); } catch (e) { } last = Date.now();
+    try { dlg.close(); } catch (e) { }
+    CP.watchHideBig?.(true); U.$('cplSlot')?.replaceChildren(); dlg.classList.remove('has-watch', 'pin');
   }
   // citi modālie logi, kas atveras bloķējuma laikā, paliek ZEM pulksteņa
   { const sm = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () { const r = sm.apply(this, arguments); if (locked && this !== dlg && dlg) raise(); return r; }; }
@@ -153,30 +165,20 @@
     };
   }
 
-  /* ---------- Neaktivitāte ---------- */
-  let last = Date.now(), hiddenAt = 0;
-  const bump = () => { if (!locked) last = Date.now(); };
-  for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'input']) document.addEventListener(ev, bump, { capture: true, passive: true });
-  const idleMs = () => (C.mins > 0 ? C.mins * 60000 : 0);
-  setInterval(() => { if (!locked && idleMs() && Date.now() - last > idleMs()) lock('idle'); }, 5000);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) hiddenAt = Date.now();
-    else if (!locked && idleMs() && hiddenAt && Date.now() - Math.max(hiddenAt, last) > idleMs()) lock('idle');
-  });
-  // Ctrl+Shift+L — bloķēt uzreiz
-  document.addEventListener('keydown', e => { if (!locked && e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) { e.preventDefault(); lock('now'); } });
-  // atverot rīku
-  if (hasPin()) lock('open');
+  /* ---------- Bloķēt uzreiz / atverot rīku ---------- */
+  // Neaktivitāti skaita watch.js (Iestatījumi → Pulkstenis un pauzes → Liels pulkstenis pēc N min).
+  function lockNow() { if (CP.watchShowBig && hasPin()) { lock('now'); CP.watchShowBig(false); } else if (CP.watchShowBig) CP.watchShowBig(false); else lock('now'); }
+  document.addEventListener('keydown', e => { if (!locked && e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) { e.preventDefault(); lockNow(); } });
+  if (hasPin()) { lock('open'); setTimeout(() => { if (locked && CP.watchShowBig && !U.$('watchBig')) CP.watchShowBig(false); }, 0); }
 
   /* ---------- Iestatījumi ---------- */
-  const MINS = [[1, '1 min'], [2, '2 min'], [5, '5 min'], [10, '10 min'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [0, 'nekad']];
   function card() {
     C = get();
     return `<section class="card" id="lockCard"><h3>${CP.ic('lock', '🔒')}Ekrāna bloķēšana</h3>
-      <p class="small" style="margin-top:0">Ja rīku kādu laiku nelieto, ekrānu aizsedz liels pulkstenis, un jaunsargu dati nav redzami. Ar PIN kodu rīku var atbloķēt tikai tu: to prasa, izejot no pulksteņa un atverot rīku.</p>
-      <div class="fieldgrid"><div class="field"><label for="lockMins">Pulkstenis pēc neaktivitātes</label><select id="lockMins">${MINS.map(([v, l]) => `<option value="${v}" ${+C.mins === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        <div class="field"><label>PIN kods</label><div class="lock-st">${hasPin() ? '<span class="okc">✓ iestatīts</span>' : '<span class="warn">nav iestatīts</span>'}</div></div></div>
-      ${ui.dl([['Atkopšanas e-pasts', C.email ? esc(C.email) + ' <span class="okc small">✓ apstiprināts</span>' : '<span class="muted">nav — aizmirstot PIN, datu mape būs jāizvēlas no jauna</span>', 1]])}
+      <p class="small" style="margin-top:0">Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka lielais pulkstenis, un jaunsargu dati nav redzami. Ar PIN kodu rīku var atbloķēt tikai tu: to prasa, izejot no pulksteņa un atverot rīku.</p>
+      ${ui.dl([['PIN kods', hasPin() ? '<span class="okc">✓ iestatīts</span>' : '<span class="warn">nav iestatīts</span>', 1],
+        ['Liels pulkstenis', (() => { const w = CP.watchPrefs?.() || {}; return w.idle === false ? '<span class="warn">izslēgts</span> — PIN prasīs tikai, atverot rīku vai spiežot “Bloķēt tagad”' : `pēc ${w.idleMin || 5} min bez darbības <span class="small muted">(maina sadaļā “Pulkstenis un pauzes”)</span>`; })(), 1],
+        ['Atkopšanas e-pasts', C.email ? esc(C.email) + ' <span class="okc small">✓ apstiprināts</span>' : '<span class="muted">nav — aizmirstot PIN, datu mape būs jāizvēlas no jauna</span>', 1]])}
       <div class="actions" style="margin-top:10px">${hasPin()
         ? `<button data-act="lockPinSet">Mainīt PIN</button><button data-act="lockMail">${C.email ? 'Mainīt e-pastu' : 'Pievienot atkopšanas e-pastu'}</button><button class="ghost danger" data-act="lockPinOff">Noņemt PIN</button>`
         : `<button class="mainbtn" data-act="lockPinSet">🔒 Iestatīt PIN</button>`}
@@ -184,7 +186,6 @@
       <p class="small muted">PIN glabājas tikai šajā datorā un pārlūkā šifrētā veidā (to nevar nolasīt). Bloķēt uzreiz: <b>Ctrl+Shift+L</b>.</p></section>`;
   }
   const paint = () => { const el = U.$('lockCard'); if (el) el.outerHTML = card(); };
-  document.addEventListener('change', e => { if (e.target.id === 'lockMins') { C = get(); C.mins = +e.target.value; put(C); last = Date.now(); ui.toast(C.mins ? `Pulkstenis pēc ${C.mins} min neaktivitātes` : 'Pulkstenis automātiski neparādīsies', 'ok', 3000); } });
   function modal(id, html) { let d = U.$(id); if (!d) { d = document.createElement('dialog'); d.id = id; document.body.appendChild(d); } d.innerHTML = html; if (!d.open) d.showModal(); return d; }
   async function verifyCurrent(f) {
     if (!hasPin()) return true;
@@ -245,6 +246,6 @@
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="lockDlg">Atcelt</button><button class="mainbtn danger" type="submit">Noņemt PIN</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!(await verifyCurrent(e.target))) return; C = get(); delete C.hash; delete C.salt; delete C.iter; put(C); d.close(); paint(); ui.toast('PIN noņemts', 'ok'); };
   };
-  A.lockNow = () => lock('now');
-  CP.lock = { card, lock, unlock, isLocked: () => locked, hasPin };
+  A.lockNow = () => lockNow();
+  CP.lock = { card, lock, unlock, adopt, guard, isLocked: () => locked, hasPin };
 })(window.CP);

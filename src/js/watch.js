@@ -5,7 +5,7 @@
    Taustiņi uz korpusa: LIGHT — lielais skats, UP·MENU — ciparnīca, DOWN — režīms,
    START·STOP — sākt/apturēt, BACK·LAP — aplis / atiestatīt.
    Darba laiks: skaita, kamēr rīks atvērts; pēc N min atgādina par pauzi.
-   Bez darbības N min — pulkstenis lielā skatā virs rīka (paslēpj arī datus).
+   Bez darbības N min — pulkstenis lielā skatā virs rīka (paslēpj arī datus). Ja iestatīts PIN (lock.js) — izejot prasa PIN.
    ===================================================================== */
 (function (CP) {
   'use strict';
@@ -255,10 +255,12 @@
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
     ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
-    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on')); paint(true);
+    // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
+    if (manual || !CP.lock?.adopt?.(ov)) document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('on')); paint(true);
   }
-  function hideBig() { document.getElementById('watchBig')?.remove(); }
-  CP.watchShowBig = showBig;
+  function hideBig(force) { if (force !== true && CP.lock?.guard?.()) return; document.getElementById('watchBig')?.remove(); }
+  CP.watchShowBig = showBig; CP.watchHideBig = hideBig;
 
   let customLast = '';
   CP.changeHandlers.push(e => {

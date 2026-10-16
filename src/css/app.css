@@ -622,3 +622,13 @@ dialog.cplock.pin .cpl-date{margin-bottom:14px}
 .cpl-box.shake{animation:cplShake .35s}
 @keyframes cplShake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .lock-st{padding:9px 0}
+/* bloķējumā — rīka lielais pulkstenis (watch.js) */
+dialog.cplock.has-watch .cpl-time,dialog.cplock.has-watch .cpl-date{display:none}
+.cpl-slot:empty{display:none}
+dialog.cplock .watch-big{position:static;inset:auto;background:none;backdrop-filter:none;opacity:1;gap:0}
+dialog.cplock .watch-big .wb-hint{display:none}
+dialog.cplock .watch-big .wb-host{width:min(66vh,70vw);transition:width .25s}
+dialog.cplock.pin .watch-big .wb-host{width:min(40vh,50vw)}
+dialog.cplock.has-watch .cpl-in{width:auto;max-width:100%}
+dialog.cplock.has-watch .cpl-box{width:min(400px,92vw)}
+@media (prefers-reduced-motion:reduce){dialog.cplock .watch-big .wb-host{transition:none}}

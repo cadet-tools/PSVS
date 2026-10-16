@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.31.1 — 2026-10-16
+- Bloķēšana izmanto esošo lielo pulksteni (`watch.js`) un tā neaktivitātes iestatījumu, nevis atsevišķu pulksteni/taimeri: `CP.lock.adopt(ov)` ieliek `#watchBig` bloķējuma logā, `hideBig()` jautā `CP.lock.guard()` (→ PIN). Noņemts atsevišķais `mins` iestatījums.
+
 ## 1.31.0 — 2026-10-16 — Ekrāna bloķēšana
 - Jauns modulis `js/lock.js` (`CP.lock`). Pulksteņa ekrāns ir modāls `dialog#cpLock`: citi `showModal` bloķējuma laikā paliek zem tā (`showModal` ietīts), toasti paslēpti, taustiņu notikumi neiziet ārpus.
 - Neaktivitāte (`pointermove`/`keydown`/`wheel`/`touchstart`/`input`) un `visibilitychange`; `localStorage['cp.lock'] = { mins (5), salt, hash, iter, email, fails, until, sent }`. PIN — PBKDF2-SHA-256 150 000 iterāciju. Pēc 5 kļūdām pauze 30 s → līdz 15 min. Ctrl+Shift+L.
