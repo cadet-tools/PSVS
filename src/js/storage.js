@@ -166,6 +166,7 @@
       const seen = S.rev;
       S.db.revision = prevRev + 1;
       S.db.updatedAt = U.now();
+      try { CP.changelog?.capture(S.db); } catch (e) { console.error('žurnāls', e); }
       CP.validateDb(S.db);
       let text = JSON.stringify(S.db, null, 2);
       const tmp = await S.root.getFileHandle(TMP, { create: true });

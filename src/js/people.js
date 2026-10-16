@@ -236,7 +236,7 @@
     const chip = (k, t) => `<button class="chipbtn ${f === k ? 'on' : ''}" data-act="histFilter" data-arg="${k}">${t}</button>`;
     return `<section class="card"><h3>Jauns ieraksts</h3><div class="composer"><textarea id="noteText" data-autogrow rows="2" placeholder="Piemēram: “Runāju ar mammu par nometni” vai uzdevums “Paņemt parakstītu līgumu”"></textarea>
         <div class="actions"><label class="inline">Atgādināt <input type="date" id="noteDue"></label><span class="muted small">Ar datumu ieraksts kļūst par uzdevumu. Enter — pievienot, Shift+Enter — jauna rinda.</span><span class="grow"></span><button class="mainbtn" data-act="addNote" data-arg="${p.id}">Pievienot</button></div></div></section>
-      <section class="card"><div class="chips" style="margin-bottom:10px">${chip('all', 'Viss')}${chip('comms', 'Saziņa')}${chip('notes', 'Piezīmes')}${chip('tasks', 'Uzdevumi')}${chip('changes', 'Izmaiņas')}</div>
+      <section class="card"><div class="chips" style="margin-bottom:10px">${chip('all', 'Viss')}${chip('comms', 'Saziņa')}${chip('notes', 'Piezīmes')}${chip('tasks', 'Uzdevumi')}${chip('changes', 'Izmaiņas')}<span class="grow"></span><button class="sm ghost" data-act="clPerson" data-arg="${p.id}" title="Visas izmaiņas ar vērtībām un atjaunošanu">Darbību žurnāls →</button></div>
       ${items.map(timelineRow).join('') || '<p class="muted small">Nav ierakstu.</p>'}</section>`;
   }
   /* --- Piezīmju žurnāls: katrs saglabātais ieraksts ir atsevišķs, to var labot vai dzēst.
@@ -449,6 +449,7 @@
     db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
     db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
     db.audit = db.audit.filter(x => x.personId !== pid);
+    CP.changelog?.forget(pid);
     db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'erase', fields: [`dzēsts reģistra ieraksts un ${nDocs} dokumentu ieraksti; ${nFiles} faili un rezerves kopijas palika`] });
     U.$('eraseDialog').close();
     S.page = 'people'; CP.store.changed();

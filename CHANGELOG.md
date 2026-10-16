@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.33.0 — 2026-10-16 — Darbību žurnāls
+- Jauns modulis `js/changelog.js` (`CP.changelog`), lapa `changes`. `store.save` pirms rakstīšanas izsauc `capture(db)`: momentuzņēmuma salīdzinājums kolekcijām people, documents, equipment, events, sessions, schedule, enrollments, years, sources, tasks, relations + settings (bez lastVisit/activeYear/stickyGroup/look/activeTemplate, gcal.lastSync). Ieraksts `db.changelog[] = { id, at, b (partija), c, eid, pid, n, op: add|edit|del, ch: [{k, f, t} | {k, big, sf, st}], obj (dzēstajiem), undo?, undone? }`. Lielas vērtības (> 6000 zīmju) — tikai kopsavilkums. Termiņš 12 mēn., ≤ 8000 ierakstu.
+- Atjaunošana `clUndo`: edit → vecās vērtības (brīdina, ja lauks kopš tā mainīts vēlreiz), del → ieraksts atpakaļ, add → ieraksts prom (ne personām / mācību gadiem). Personas kodi un Google atslēga netiek rādīti.
+- `erase` → `changelog.forget(pid)`: dzēš personas ierakstus, citos ierakstos izņem viņas id (apmeklējuma atzīmes, saraksti), dzēš arī viņas `enrollments`.
+- Pārskata “Pēdējās izmaiņas” no žurnāla (+ “Viss žurnāls →”); personas vēsturē poga “Darbību žurnāls →”.
+
 ## 1.32.2 — 2026-10-16
 - Logo — oriģinālais fails `vendor/brand/CADET_TRANSP_.png` bez krāsu maiņas (iepriekšējā maska noņemta).
 

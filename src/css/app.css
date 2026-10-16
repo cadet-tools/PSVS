@@ -653,3 +653,20 @@ dialog.cplock.has-watch .cpl-box{width:min(400px,92vw)}
 #topBars .pinbanner button{background:rgba(0,0,0,.3)!important}#topBars .pinbanner button.gb-x{background:transparent!important;color:#fff!important}
 .wb-brand{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);height:32px}
 dialog.cplock .wb-brand{display:none}
+/* Darbību žurnāls */
+.cl-filters{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.cl-f2{display:flex;gap:8px;flex-wrap:wrap}.cl-f2 input{flex:1 1 260px;min-width:0}.cl-f2 select{width:auto}
+.cl-day{margin:18px 0 6px;font-size:13px;color:var(--muted);font-weight:600}.cl-day::first-letter{text-transform:uppercase}
+.cl-row{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line,var(--edge))}
+.cl-time{width:44px;flex:none;padding-top:2px;font-variant-numeric:tabular-nums}
+.cl-body{min-width:0}
+.cl-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.cl-type{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.cl-op{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid var(--edge2);color:var(--muted)}
+.cl-op.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 50%,transparent)}
+.cl-op.del{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,transparent)}
+.cl-op.edit{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 50%,transparent)}
+.cl-op.undo{color:var(--orange);border-color:color-mix(in srgb,var(--orange) 50%,transparent)}
+.cl-ch{margin:5px 0 0;padding-left:18px;font-size:13.5px}.cl-ch li{margin:2px 0;overflow-wrap:anywhere}
+.cl-ch .arrow{color:var(--muted)}
+.cl-act{flex:none}

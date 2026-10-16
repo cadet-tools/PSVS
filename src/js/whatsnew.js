@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.33.0', date: '2026-10-16', title: 'Darbību žurnāls', items: [
+      'Jauna lapa **“Darbību žurnāls”**: rīks pats pieraksta **visas izmaiņas datos**, kad tās tiek saglabātas. Tas attiecas uz personām, dokumentiem, ekipējumu, pasākumiem, nodarbību apmeklējumu, grafiku, mācību gadiem un iestatījumiem. Pie katras izmaiņas redzams, **kas mainīts, no kā uz ko** un kad.',
+      'Pie katra ieraksta ir poga **“↶ Atjaunot”**: atgriež iepriekšējo vērtību vai dzēstu ierakstu. **“↶ Atsaukt”** noņem nejauši izveidotu ierakstu. Arī pati atjaunošana tiek pierakstīta žurnālā.',
+      'Žurnālu atver no **Pārskata → Pēdējās izmaiņas → “Viss žurnāls →”** vai no personas kartītes **Vēsture → “Darbību žurnāls →”**. Personas žurnālā redzamas tikai šīs personas izmaiņas. Ierakstus var filtrēt pēc veida un perioda un meklēt.',
+      'Personas kodi žurnālā netiek rādīti. Žurnāls glabājas datu failā un rezerves kopijās, ne ilgāk par 12 mēnešiem. **Dzēšot personu neatgriezeniski**, tiek izdzēsti arī viņas ieraksti žurnālā un viņas dalība mācību gados.'
+    ] },
     { v: '1.32.2', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
       'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**. Uzspiežot logo, atveras **cadet.lv**.'
     ] },
