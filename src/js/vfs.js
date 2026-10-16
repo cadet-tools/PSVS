@@ -275,14 +275,14 @@
     const d = dlg('vfsDlg', `<form><header class="dlg-head"><h2>VFS iestatījumi</h2><button type="button" class="ghost" data-close="vfsDlg" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="fieldgrid">
         <div class="field wide"><label>Vienība (protokola virsrakstā)</label><input name="unit" value="${esc(c.unit)}" placeholder="piem., X pamatskolas jaunsargu vienība"></div>
-        <div class="field"><label>Instruktors</label><input name="instructor" value="${esc(c.instructor)}" placeholder="Vārds Uzvārds"></div>
+        <div class="field"><label>Instruktors</label><input name="instructor" data-cap="words" value="${esc(c.instructor)}" placeholder="Vārds Uzvārds"></div>
         <div class="field"><label>Nozīmīšu uzskaites lapa</label><select name="sheet">${[1, 2, 3, 4].map(n => `<option value="${n - 1}" ${+c.sheet === n - 1 ? 'selected' : ''}>${n}. nodaļa</option>`).join('')}</select></div>
         <div class="field wide"><label>Novada pārvalde un nodaļa (uzskaites tabulas galvenē)</label><input name="region" value="${esc(c.region)}" placeholder="piem., 5. novada pārvaldes 1.nodaļa"></div>
         <div class="field wide"><label>Rezultāts starp divām punktu robežām</label><div class="choice-list">
           <label class="choice"><input type="radio" name="mode" value="strict" ${c.mode !== 'generous' ? 'checked' : ''}><div class="grow"><b>Norma jāsasniedz</b><div class="small muted">Piem., 60 m 10,32 s, kur 7 punktiem jāskrien 10,3 s: <b>6 punkti</b>.</div></div></label>
           <label class="choice"><input type="radio" name="mode" value="generous" ${c.mode === 'generous' ? 'checked' : ''}><div class="grow"><b>Par labu jaunsargam</b><div class="small muted">Rezultāts labāks par zemākā punkta robežu (10,6 s), tāpēc <b>7 punkti</b>.</div></div></label></div></div></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="vfsDlg">Atcelt</button><button class="mainbtn">Saglabāt</button></footer></form>`);
-    d.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target; const was = c.mode; Object.assign(c, { unit: f.unit.value.trim(), instructor: f.instructor.value.trim(), region: f.region.value.trim(), sheet: +f.sheet.value, mode: f.mode.value }); if (was !== c.mode) tests().forEach(syncQuals); d.close(); CP.store.changed(); };
+    d.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target; const was = c.mode; Object.assign(c, { unit: f.unit.value.trim(), instructor: U.capWords(f.instructor.value), region: f.region.value.trim(), sheet: +f.sheet.value, mode: f.mode.value }); if (was !== c.mode) tests().forEach(syncQuals); d.close(); CP.store.changed(); };
   };
 
   /* --- Normatīvi (uzziņai) --- */

@@ -299,7 +299,7 @@
       if (f.v && o[f.k]) {
         const r = U.validate(f.v, o[f.k]);
         if (!r.ok) { box.classList.add('warn'); hint.textContent = 'Pārbaudi: ' + r.msg; warnings++; }
-        else if (['personalCode', 'phone', 'email'].includes(f.v)) { o[f.k] = r.value; el.value = r.value; }
+        else if (['personalCode', 'phone', 'email', 'name', 'fullname', 'place'].includes(f.v)) { o[f.k] = r.value; el.value = r.value; }
       }
     }
     return { errors, warnings };

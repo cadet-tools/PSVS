@@ -182,7 +182,7 @@
       <div class="dlg-body"><div class="fieldgrid">
         <div class="field wide"><label>Nosaukums</label><input name="title" value="${esc(e.title)}" list="dl_schT" required placeholder="piem., Nodarbība J1 grupai, VAM 10.b klasei, Rudens nometne"><datalist id="dl_schT">${titles.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field"><label>Veids</label><select name="type">${TYPES.map(([t]) => `<option ${t === e.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-        <div class="field"><label>Vieta</label><input name="place" value="${esc(e.place || '')}" list="dl_schP" placeholder="piem., skolas sporta zāle"><datalist id="dl_schP">${places.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
+        <div class="field"><label>Vieta</label><input name="place" data-cap="first" value="${esc(e.place || '')}" list="dl_schP" placeholder="piem., skolas sporta zāle"><datalist id="dl_schP">${places.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field"><label>Datums</label><input type="date" name="date" value="${esc(e.date)}" required></div>
         <div class="field"><label>Beigu datums <small class="muted">(vairāku dienu notikumam)</small></label><input type="date" name="endDate" value="${esc(e.endDate || '')}"></div>
         <div class="field"><label class="check"><input type="checkbox" name="allDay" ${e.allDay ? 'checked' : ''}> Visu dienu</label></div>

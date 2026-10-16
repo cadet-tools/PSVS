@@ -119,7 +119,7 @@
   U.$('staffForm').addEventListener('submit', e => {
     e.preventDefault();
     const f = e.target, o = Object.fromEntries(new FormData(f)); for (const k in o) o[k] = String(o[k]).trim();
-    o.counselor = f.elements.counselor.checked;
+    o.counselor = f.elements.counselor.checked; o.name = U.capWords(o.name);
     if (!o.name) return;
     const list = st().staff = staffList();
     if (f.dataset.id) Object.assign(list.find(s => s.id === f.dataset.id), o);
@@ -215,7 +215,7 @@
           <div class="field wide"><label>Norises laiks (tā, kā rakstīts veidlapā)</label><input data-ev="when" value="${esc(ev.when)}" placeholder="piem., 2026. gada 17.–18. oktobris"><small class="muted">${ev.whenAuto ? 'Tiek veidots no datumiem — vari pārrakstīt.' : '<a href="#" data-act="formWhenAuto">Veidot no datumiem</a>'}</small></div>
           ${f('instrDate', 'Instruktāžas datums', 'date')}
           ${ev.type === 'instr' ? `<div class="field"><label>Grupa</label><input data-ev="group" value="${esc(ev.group)}" list="dl_groups"><small class="muted">${ev.groupAuto ? 'No izvēlētajiem dalībniekiem.' : '<a href="#" data-act="formGroupAuto">No dalībniekiem</a>'}</small></div>` : ''}
-          ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats')}${f('instrName', 'Vārds, uzvārds')}` : ''}
+          ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats', 'text', 'data-cap="first"')}${f('instrName', 'Vārds, uzvārds', 'text', 'data-cap="words"')}` : ''}
           ${ev.type === 'camp' ? `<div class="field"><label>Nometnes vadītājs</label><select data-ev="leaderId">${counselorOpts(ev.leaderId, '— izvēlies —')}</select></div>` : ''}
           <div class="field wide"><label>Piezīmes</label><textarea data-ev="notes" rows="2">${esc(ev.notes)}</textarea></div>
           ${stepper('blankRows', 'Tukšas rindas veidlapas beigās', evPeople(ev).length ? (Number(ev.blankRows) || 0) ? `Veidlapā būs ${evPeople(ev).length} dalībnieki + ${Number(ev.blankRows)} tukšas rindas.` : `Veidlapā būs tieši ${evPeople(ev).length} rindas — bez tukšām.` : (Number(ev.blankRows) || 0) ? `Nav izvēlētu dalībnieku — veidlapā būs ${Number(ev.blankRows)} tukšas rindas.` : 'Nav izvēlētu dalībnieku — norādi, cik tukšu rindu vajag.', !evPeople(ev).length && !(Number(ev.blankRows) || 0))}

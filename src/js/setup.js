@@ -16,17 +16,34 @@
   /* ---------------- Instruktora dati ---------------- */
   const inst = () => (S.db.settings.instructor = S.db.settings.instructor || { parvalde: '', nodala: '', name: '', nameGen: '', position: 'Jaunsargu instruktors', phone: '', email: '', place: '' });
   function instCard() {
-    const I = inst(), f = (k, l, ph = '', t = 'text') => `<div class="field"><label>${l}</label><input type="${t}" data-inst="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
+    const I = inst(), bad = instProblems(I), f = (k, l, ph = '', t = 'text', cap = '') => `<div class="field ${bad[k] ? 'check' : ''}"><label>${l}${k === 'nameGen' ? '' : ' <b class="red">*</b>'}</label><input type="${t}" data-inst="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" autocomplete="off" ${cap ? `data-cap="${cap}"` : ''}>${bad[k] ? `<div class="hint warn">${esc(bad[k])}</div>` : ''}</div>`;
     return `<section class="card" id="instCard"><h3>${ic('user')}Instruktora dati</h3>
-      <p class="small" style="margin-top:0">Izmanto līgumos un veidlapās. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
-      <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs')}${f('position', 'Amats', 'Jaunsargu instruktors')}
+      <p class="small" style="margin-top:0"><b>Darba dati</b> — tie tiek ierakstīti līgumos un veidlapās, tāpēc privātu e-pastu vai tālruni šeit neliec. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
+      <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs', 'text', 'words')}${f('position', 'Amats', 'Jaunsargu instruktors', 'text', 'first')}
         ${f('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${f('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
-        ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski')}</div></section>`;
+        ${f('phone', 'Darba tālrunis', '', 'tel')}${f('email', 'Darba e-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga', 'text', 'first')}
+        ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski', 'text', 'words')}</div>
+      <p class="small muted">Ar <b class="red">*</b> atzīmētie lauki ir obligāti. Vārds ģenitīvā tiek izveidots automātiski (pārbaudi līguma logā).</p></section>`;
+  }
+  /** Instruktora datu problēmas: { lauks: teksts }. Vārds ģenitīvā nav obligāts (veidojas automātiski). */
+  const INST_REQ = { name: 'Vārds, uzvārds', position: 'Amats', parvalde: 'Novada pārvaldes nr.', nodala: 'Nodaļas nr.', phone: 'Darba tālrunis', email: 'Darba e-pasts', place: 'Vieta' };
+  const JC_MAIL = /^[^\s@]+@jc\.gov\.lv$/i;
+  function instProblems(I = S.db.settings.instructor || {}) {
+    const out = {};
+    for (const k of Object.keys(INST_REQ)) if (!String(I[k] || '').trim()) out[k] = 'jāaizpilda';
+    if (I.email && !JC_MAIL.test(I.email)) out.email = 'jābūt darba e-pastam: vards.uzvards@jc.gov.lv';
+    if (I.phone && !U.validate('phone', I.phone).ok) out.phone = 'nav derīgs tālruņa numurs';
+    if (I.name && !U.validate('fullname', I.name).ok) out.name = 'vajag vārdu un uzvārdu';
+    return out;
   }
   CP.changeHandlers.push(e => {
     const k = e.target.dataset?.inst; if (!k) return false;
-    inst()[k] = e.target.value.trim(); CP.store.changed(); return true;
+    let v = e.target.value.trim();
+    if (k === 'email') v = v.toLowerCase();
+    if (k === 'phone' && v) { const r = U.validate('phone', v); if (r.ok) v = r.value; }
+    inst()[k] = v; e.target.value = v;
+    if (k === 'email' && v && !JC_MAIL.test(v)) ui.toast('Darba e-pastam jābeidzas ar @jc.gov.lv (piem., vards.uzvards@jc.gov.lv). Privātu e-pastu līgumā neliek.', 'warn', 9000);
+    CP.store.changed(); return true;
   });
 
   /* ---------------- Sākuma iestatīšanas saraksts ---------------- */
@@ -35,7 +52,7 @@
     const st = CP.encBackup?.state?.() || {}, I = S.db.settings.instructor || {};
     return [
       { k: 'root', l: 'Datu mape izvēlēta', ok: !!S.root, hint: 'Visi dati glabājas tavā datorā šajā mapē.' },
-      { k: 'inst', l: 'Instruktora dati', ok: !!(I.name && I.parvalde && I.nodala), hint: 'Vārds, pārvalde un nodaļa — līgumiem un veidlapām.', act: 'goSetCard', arg: 'instCard', btn: 'Aizpildīt' },
+      (() => { const bad = instProblems(I), n = Object.keys(bad).length; return { k: 'inst', l: 'Instruktora dati', ok: !n, hint: n ? `Nav aizpildīts vai nav pareizs: ${esc(Object.keys(bad).map(x => INST_REQ[x]).join(', '))}.` : 'Darba dati līgumiem un veidlapām.', act: 'goSetCard', arg: 'instCard', btn: 'Aizpildīt' }; })(),
       { k: 'pin', l: 'PIN kods rīka bloķēšanai', ok: !!CP.lock?.hasPin?.(), hint: 'Aizsargā datus, kad dators paliek bez uzraudzības.', act: 'lockGoSet', btn: 'Iestatīt' },
       { k: 'backup', l: 'Šifrētā rezerves kopija Google Drive', ok: !!st.enabled, hint: 'Pazaudējot datoru, datus var atjaunot.', act: 'encGoSet', btn: 'Iestatīt' },
       { k: 'groups', l: 'Grupas šajā mācību gadā', ok: D.groups().length > 0, hint: 'Piemēram, J1, J2 — pēc tām filtrē sarakstus un apmeklējumu.', act: 'groupNew', btn: 'Pievienot' },
@@ -148,5 +165,5 @@
     xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
   };
 
-  CP.setup = { chip, card: setupCard, steps, instCard, issues, at21 };
+  CP.setup = { instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);

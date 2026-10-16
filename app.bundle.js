@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.3';
+  CP.VERSION = '1.37.4';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -124,12 +124,12 @@ window.CP = window.CP || {};
       case 'name': {
         const s = v.replace(/\s+/g, ' ');
         if (!LETTERS.test(s) || s.length > 40 || s.split(' ').length > 3) return { ok: false, msg: 'nav līdzīgs vārdam' };
-        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : s };
+        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : U.capWords(s) };
       }
       case 'fullname': {
         const s = v.replace(/\s+/g, ' ');
         if (!LETTERS.test(s) || s.split(' ').length < 2 || s.length > 60) return { ok: false, msg: 'vajag vārdu un uzvārdu' };
-        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : s };
+        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : U.capWords(s) };
       }
       case 'personalCode': {
         const d = U.codeDigits(v); if (d.length !== 11) return { ok: false, msg: 'jābūt 11 cipariem' };
@@ -154,6 +154,10 @@ window.CP = window.CP || {};
       case 'schoolClass': {
         if (v.length > 20) return { ok: false, msg: 'pārāk garš' };
         return { ok: true, value: v.replace(/\s+/g, ' ') };
+      }
+      case 'place': {
+        if (v.length > 120) return { ok: false, msg: 'pārāk garš' };
+        return { ok: true, value: U.capFirst(v) };
       }
       case 'address': {
         const letters = (v.match(/\p{L}/gu) || []).length;
@@ -188,6 +192,12 @@ window.CP = window.CP || {};
     }
     return files;
   };
+  /** Vārdi, uzvārdi: katra vārda pirmais burts lielais (pārējais paliek); viss ar lielajiem → “Jānis Bērziņš” */
+  U.capWords = v => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); if (!s) return s; const base = s === s.toUpperCase() && /\p{Lu}{2}/u.test(s) ? s.toLocaleLowerCase('lv') : s; return base.replace(/(^|[\s\-'’.])(\p{Ll})/gu, (m, a, c) => a + c.toLocaleUpperCase('lv')); };
+  /** Vietas nosaukums: tikai pirmais burts lielais (“Rīgas novads”, “Skolas sporta zāle”) */
+  U.capFirst = v => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); return s ? s[0].toLocaleUpperCase('lv') + s.slice(1) : s; };
+  // Ievades laukiem ar data-cap="words|first" — pārveido, pirms citi apstrādātāji nolasa vērtību
+  document.addEventListener('change', e => { const t = e.target, m = t?.dataset?.cap; if (!m || typeof t.value !== 'string') return; const v = m === 'words' ? U.capWords(t.value) : U.capFirst(t.value); if (v !== t.value) t.value = v; }, true);
   U.download = (blob, name) => {
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -278,7 +288,7 @@ window.CP = window.CP || {};
     { k: 'gender', l: 'Dzimums', s: 'basic', t: 'select', opts: [['', 'Nav norādīts'], ['m', 'Zēns / jaunietis'], ['f', 'Meitene / jauniete']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
-    { k: 'school', l: 'Mācību iestāde', s: 'study' },
+    { k: 'school', l: 'Mācību iestāde', s: 'study', v: 'place' },
     { k: 'schoolClass', l: 'Klase / kurss', s: 'study', v: 'schoolClass' },
     { k: 'phone', l: 'Tālrunis', s: 'contact', t: 'tel', v: 'phone' },
     { k: 'email', l: 'E-pasts', s: 'contact', t: 'email', v: 'email' },
@@ -2173,7 +2183,7 @@ window.CP = window.CP || {};
       if (f.v && o[f.k]) {
         const r = U.validate(f.v, o[f.k]);
         if (!r.ok) { box.classList.add('warn'); hint.textContent = 'Pārbaudi: ' + r.msg; warnings++; }
-        else if (['personalCode', 'phone', 'email'].includes(f.v)) { o[f.k] = r.value; el.value = r.value; }
+        else if (['personalCode', 'phone', 'email', 'name', 'fullname', 'place'].includes(f.v)) { o[f.k] = r.value; el.value = r.value; }
       }
     }
     return { errors, warnings };
@@ -5484,6 +5494,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.4', from: '1.37.1', date: '2026-10-16', title: 'Instruktora darba dati un lielie burti', items: [
+      '**Instruktora dati** ir darba dati (tie nonāk līgumos): visi lauki ir obligāti, izņemot vārdu ģenitīvā, kas veidojas automātiski. Iestatīšanas statuss rāda ✓ tikai tad, kad viss aizpildīts.',
+      '**Darba e-pastam** jābūt @jc.gov.lv adresei (piem., vards.uzvards@jc.gov.lv) — citādi brīdinājums gan iestatījumos, gan līguma logā. Tālrunis tiek pārbaudīts.',
+      '**Lielie burti**: vārdi un uzvārdi (jaunsargi, vecāki, instruktors, darbinieki) automātiski sākas ar lielo burtu — “jānis bērziņš” → “Jānis Bērziņš”. Vietu nosaukumiem un mācību iestādei lielais ir pirmais burts (“rīgas novads” → “Rīgas novads”). E-pastus, tālruņus un citus laukus tas neskar.'
+    ] },
     { v: '1.37.3', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
       'Pārskatā pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams, vai rīks ir iestatīts: **✕ Iestatīšana 4/7** ar progresa joslu, kamēr kaut kas nav izdarīts, vai **✓ Rīks iestatīts**, kad viss kārtībā. Ja kāds solis atkal nav izpildīts (piem., noņemts PIN), statuss atkal rāda ✕.',
       'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).',
@@ -7799,7 +7814,7 @@ window.CP = window.CP || {};
   U.$('staffForm').addEventListener('submit', e => {
     e.preventDefault();
     const f = e.target, o = Object.fromEntries(new FormData(f)); for (const k in o) o[k] = String(o[k]).trim();
-    o.counselor = f.elements.counselor.checked;
+    o.counselor = f.elements.counselor.checked; o.name = U.capWords(o.name);
     if (!o.name) return;
     const list = st().staff = staffList();
     if (f.dataset.id) Object.assign(list.find(s => s.id === f.dataset.id), o);
@@ -7895,7 +7910,7 @@ window.CP = window.CP || {};
           <div class="field wide"><label>Norises laiks (tā, kā rakstīts veidlapā)</label><input data-ev="when" value="${esc(ev.when)}" placeholder="piem., 2026. gada 17.–18. oktobris"><small class="muted">${ev.whenAuto ? 'Tiek veidots no datumiem — vari pārrakstīt.' : '<a href="#" data-act="formWhenAuto">Veidot no datumiem</a>'}</small></div>
           ${f('instrDate', 'Instruktāžas datums', 'date')}
           ${ev.type === 'instr' ? `<div class="field"><label>Grupa</label><input data-ev="group" value="${esc(ev.group)}" list="dl_groups"><small class="muted">${ev.groupAuto ? 'No izvēlētajiem dalībniekiem.' : '<a href="#" data-act="formGroupAuto">No dalībniekiem</a>'}</small></div>` : ''}
-          ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats')}${f('instrName', 'Vārds, uzvārds')}` : ''}
+          ${ev.type === 'instr' ? `${f('instrPosition', 'Instruktāžas veicēja amats', 'text', 'data-cap="first"')}${f('instrName', 'Vārds, uzvārds', 'text', 'data-cap="words"')}` : ''}
           ${ev.type === 'camp' ? `<div class="field"><label>Nometnes vadītājs</label><select data-ev="leaderId">${counselorOpts(ev.leaderId, '— izvēlies —')}</select></div>` : ''}
           <div class="field wide"><label>Piezīmes</label><textarea data-ev="notes" rows="2">${esc(ev.notes)}</textarea></div>
           ${stepper('blankRows', 'Tukšas rindas veidlapas beigās', evPeople(ev).length ? (Number(ev.blankRows) || 0) ? `Veidlapā būs ${evPeople(ev).length} dalībnieki + ${Number(ev.blankRows)} tukšas rindas.` : `Veidlapā būs tieši ${evPeople(ev).length} rindas — bez tukšām.` : (Number(ev.blankRows) || 0) ? `Nav izvēlētu dalībnieku — veidlapā būs ${Number(ev.blankRows)} tukšas rindas.` : 'Nav izvēlētu dalībnieku — norādi, cik tukšu rindu vajag.', !evPeople(ev).length && !(Number(ev.blankRows) || 0))}
@@ -9093,17 +9108,34 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   /* ---------------- Instruktora dati ---------------- */
   const inst = () => (S.db.settings.instructor = S.db.settings.instructor || { parvalde: '', nodala: '', name: '', nameGen: '', position: 'Jaunsargu instruktors', phone: '', email: '', place: '' });
   function instCard() {
-    const I = inst(), f = (k, l, ph = '', t = 'text') => `<div class="field"><label>${l}</label><input type="${t}" data-inst="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
+    const I = inst(), bad = instProblems(I), f = (k, l, ph = '', t = 'text', cap = '') => `<div class="field ${bad[k] ? 'check' : ''}"><label>${l}${k === 'nameGen' ? '' : ' <b class="red">*</b>'}</label><input type="${t}" data-inst="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" autocomplete="off" ${cap ? `data-cap="${cap}"` : ''}>${bad[k] ? `<div class="hint warn">${esc(bad[k])}</div>` : ''}</div>`;
     return `<section class="card" id="instCard"><h3>${ic('user')}Instruktora dati</h3>
-      <p class="small" style="margin-top:0">Izmanto līgumos un veidlapās. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
-      <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs')}${f('position', 'Amats', 'Jaunsargu instruktors')}
+      <p class="small" style="margin-top:0"><b>Darba dati</b> — tie tiek ierakstīti līgumos un veidlapās, tāpēc privātu e-pastu vai tālruni šeit neliec. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
+      <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs', 'text', 'words')}${f('position', 'Amats', 'Jaunsargu instruktors', 'text', 'first')}
         ${f('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${f('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
-        ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski')}</div></section>`;
+        ${f('phone', 'Darba tālrunis', '', 'tel')}${f('email', 'Darba e-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga', 'text', 'first')}
+        ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski', 'text', 'words')}</div>
+      <p class="small muted">Ar <b class="red">*</b> atzīmētie lauki ir obligāti. Vārds ģenitīvā tiek izveidots automātiski (pārbaudi līguma logā).</p></section>`;
+  }
+  /** Instruktora datu problēmas: { lauks: teksts }. Vārds ģenitīvā nav obligāts (veidojas automātiski). */
+  const INST_REQ = { name: 'Vārds, uzvārds', position: 'Amats', parvalde: 'Novada pārvaldes nr.', nodala: 'Nodaļas nr.', phone: 'Darba tālrunis', email: 'Darba e-pasts', place: 'Vieta' };
+  const JC_MAIL = /^[^\s@]+@jc\.gov\.lv$/i;
+  function instProblems(I = S.db.settings.instructor || {}) {
+    const out = {};
+    for (const k of Object.keys(INST_REQ)) if (!String(I[k] || '').trim()) out[k] = 'jāaizpilda';
+    if (I.email && !JC_MAIL.test(I.email)) out.email = 'jābūt darba e-pastam: vards.uzvards@jc.gov.lv';
+    if (I.phone && !U.validate('phone', I.phone).ok) out.phone = 'nav derīgs tālruņa numurs';
+    if (I.name && !U.validate('fullname', I.name).ok) out.name = 'vajag vārdu un uzvārdu';
+    return out;
   }
   CP.changeHandlers.push(e => {
     const k = e.target.dataset?.inst; if (!k) return false;
-    inst()[k] = e.target.value.trim(); CP.store.changed(); return true;
+    let v = e.target.value.trim();
+    if (k === 'email') v = v.toLowerCase();
+    if (k === 'phone' && v) { const r = U.validate('phone', v); if (r.ok) v = r.value; }
+    inst()[k] = v; e.target.value = v;
+    if (k === 'email' && v && !JC_MAIL.test(v)) ui.toast('Darba e-pastam jābeidzas ar @jc.gov.lv (piem., vards.uzvards@jc.gov.lv). Privātu e-pastu līgumā neliek.', 'warn', 9000);
+    CP.store.changed(); return true;
   });
 
   /* ---------------- Sākuma iestatīšanas saraksts ---------------- */
@@ -9112,7 +9144,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const st = CP.encBackup?.state?.() || {}, I = S.db.settings.instructor || {};
     return [
       { k: 'root', l: 'Datu mape izvēlēta', ok: !!S.root, hint: 'Visi dati glabājas tavā datorā šajā mapē.' },
-      { k: 'inst', l: 'Instruktora dati', ok: !!(I.name && I.parvalde && I.nodala), hint: 'Vārds, pārvalde un nodaļa — līgumiem un veidlapām.', act: 'goSetCard', arg: 'instCard', btn: 'Aizpildīt' },
+      (() => { const bad = instProblems(I), n = Object.keys(bad).length; return { k: 'inst', l: 'Instruktora dati', ok: !n, hint: n ? `Nav aizpildīts vai nav pareizs: ${esc(Object.keys(bad).map(x => INST_REQ[x]).join(', '))}.` : 'Darba dati līgumiem un veidlapām.', act: 'goSetCard', arg: 'instCard', btn: 'Aizpildīt' }; })(),
       { k: 'pin', l: 'PIN kods rīka bloķēšanai', ok: !!CP.lock?.hasPin?.(), hint: 'Aizsargā datus, kad dators paliek bez uzraudzības.', act: 'lockGoSet', btn: 'Iestatīt' },
       { k: 'backup', l: 'Šifrētā rezerves kopija Google Drive', ok: !!st.enabled, hint: 'Pazaudējot datoru, datus var atjaunot.', act: 'encGoSet', btn: 'Iestatīt' },
       { k: 'groups', l: 'Grupas šajā mācību gadā', ok: D.groups().length > 0, hint: 'Piemēram, J1, J2 — pēc tām filtrē sarakstus un apmeklējumu.', act: 'groupNew', btn: 'Pievienot' },
@@ -9225,7 +9257,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
   };
 
-  CP.setup = { chip, card: setupCard, steps, instCard, issues, at21 };
+  CP.setup = { instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);
 
 
@@ -9350,14 +9382,15 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const opt = (v, l, curV) => `<option value="${esc(v)}" ${v === curV ? 'selected' : ''}>${esc(l)}</option>`;
     const people = D.peopleInYear().filter(x => x.status !== 'archived').sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     const inp = (k, label, val, extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ct="${k}" value="${esc(val ?? '')}"></div>`;
-    const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}"></div>`;
+    const CAPS = { name: 'words', nameGen: 'words', position: 'first', place: 'first' };
+    const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" ${CAPS[k] ? `data-cap="${CAPS[k]}"` : ''}></div>`;
     const warn = [];
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
     if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
     if (!c.no) warn.push('nav ievadīts līguma numurs (vietā paliks tukša līnija)');
-    if (!I.name || !I.parvalde || !I.nodala) warn.push('aizpildi instruktora datus');
+    { const bad = CP.setup?.instProblems?.(I) || (!I.name || !I.parvalde || !I.nodala ? { x: 1 } : {}); if (Object.keys(bad).length) warn.push('aizpildi instruktora darba datus' + (bad.email && I.email ? ' (e-pastam jābūt …@jc.gov.lv)' : '')); }
     U.$('contractBody').innerHTML = `
       <div class="fieldgrid">
         <div class="field wide"><label>Persona</label><select id="ctPerson" ${c.editId ? "disabled title=\"Labojot personu mainīt nevar\"" : ""}><option value="">— izvēlies —</option>${people.map(x => opt(x.id, `${U.sortName(x)}${D.groupOf(x) ? ' · ' + D.groupOf(x) : ''}`, c.pid)).join('')}</select>
@@ -9367,7 +9400,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         <div class="field"><label>Veidne</label><select data-cc="tpl">${opt('', 'Standarta veidne', c.tpl)}${own.map(t => opt(t.id, 'Mana: ' + t.name, c.tpl)).join('')}</select></div>
         <div class="field"><label>Līguma Nr. <small class="muted">(no citas sistēmas)</small></label><input data-cc="no" value="${esc(c.no)}" placeholder="piem. 124/JS-2026/8"></div>
         <div class="field"><label>Datums</label><input type="date" data-cc="date" value="${esc(c.date)}"></div>
-        <div class="field"><label>Vieta</label><input data-cc="place" value="${esc(c.place)}" placeholder="piem. Rīga"></div>
+        <div class="field"><label>Vieta</label><input data-cc="place" data-cap="first" value="${esc(c.place)}" placeholder="piem. Rīga"></div>
         ${c.form === 'papirs' ? `<div class="field"><label>Instruktora paraksta datums</label><select data-cc="signMode">${opt('same', 'Tāds pats kā līguma datums', c.signMode)}${opt('custom', 'Cits datums…', c.signMode)}${opt('blank', 'Tukšs — rakstīšu ar roku', c.signMode)}</select>${c.signMode === 'custom' ? `<input type="date" data-cc="signDate" value="${esc(c.signDate || c.date)}" style="margin-top:6px">` : ''}</div>` : ''}
         ${c.kind === 'parstavis' && p && p.parent2Name ? `<div class="field wide"><label>Likumiskais pārstāvis</label><div class="actions"><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="1" ${c.parent === 1 ? 'checked' : ''}> ${esc(p.parentName || '1. pārstāvis')}</label><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="2" ${c.parent === 2 ? 'checked' : ''}> ${esc(p.parent2Name)}</label></div></div>` : ''}
       </div>
@@ -9383,7 +9416,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       </div></details>` : ''}
       <details class="ct-box" ${!I.name ? 'open' : ''}><summary><b>Instruktora dati</b> <small class="muted">— saglabājas nākamajiem līgumiem</small></summary><div class="fieldgrid">
         ${iinp('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${iinp('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" value="${esc(I.nameGen || genitive(I.name))}"></div>
+        ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" data-cap="words" value="${esc(I.nameGen || genitive(I.name))}"></div>
         ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts', 'vards.uzvards@jc.gov.lv')}
       </div></details>`;
   }
@@ -9399,7 +9432,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       return;
     }
     if (t.dataset.ci) {
-      const I = inst(); I[t.dataset.ci] = t.value.trim();
+      const I = inst(); I[t.dataset.ci] = t.dataset.ci === 'email' ? t.value.trim().toLowerCase() : t.value.trim();
+      if (t.dataset.ci === 'email' && I.email && !/^[^\s@]+@jc\.gov\.lv$/i.test(I.email)) ui.toast('Darba e-pastam jābeidzas ar @jc.gov.lv (piem., vards.uzvards@jc.gov.lv). Privātu e-pastu līgumā neliek.', 'warn', 9000);
       if (t.dataset.ci === 'name') { I.nameGen = genitive(I.name); const g = ctDlg().querySelector('[data-ci="nameGen"]'); if (g) g.value = I.nameGen; }
       CP.store.changed({ silent: true }); return;
     }
@@ -10234,14 +10268,14 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const d = dlg('vfsDlg', `<form><header class="dlg-head"><h2>VFS iestatījumi</h2><button type="button" class="ghost" data-close="vfsDlg" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="fieldgrid">
         <div class="field wide"><label>Vienība (protokola virsrakstā)</label><input name="unit" value="${esc(c.unit)}" placeholder="piem., X pamatskolas jaunsargu vienība"></div>
-        <div class="field"><label>Instruktors</label><input name="instructor" value="${esc(c.instructor)}" placeholder="Vārds Uzvārds"></div>
+        <div class="field"><label>Instruktors</label><input name="instructor" data-cap="words" value="${esc(c.instructor)}" placeholder="Vārds Uzvārds"></div>
         <div class="field"><label>Nozīmīšu uzskaites lapa</label><select name="sheet">${[1, 2, 3, 4].map(n => `<option value="${n - 1}" ${+c.sheet === n - 1 ? 'selected' : ''}>${n}. nodaļa</option>`).join('')}</select></div>
         <div class="field wide"><label>Novada pārvalde un nodaļa (uzskaites tabulas galvenē)</label><input name="region" value="${esc(c.region)}" placeholder="piem., 5. novada pārvaldes 1.nodaļa"></div>
         <div class="field wide"><label>Rezultāts starp divām punktu robežām</label><div class="choice-list">
           <label class="choice"><input type="radio" name="mode" value="strict" ${c.mode !== 'generous' ? 'checked' : ''}><div class="grow"><b>Norma jāsasniedz</b><div class="small muted">Piem., 60 m 10,32 s, kur 7 punktiem jāskrien 10,3 s: <b>6 punkti</b>.</div></div></label>
           <label class="choice"><input type="radio" name="mode" value="generous" ${c.mode === 'generous' ? 'checked' : ''}><div class="grow"><b>Par labu jaunsargam</b><div class="small muted">Rezultāts labāks par zemākā punkta robežu (10,6 s), tāpēc <b>7 punkti</b>.</div></div></label></div></div></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="vfsDlg">Atcelt</button><button class="mainbtn">Saglabāt</button></footer></form>`);
-    d.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target; const was = c.mode; Object.assign(c, { unit: f.unit.value.trim(), instructor: f.instructor.value.trim(), region: f.region.value.trim(), sheet: +f.sheet.value, mode: f.mode.value }); if (was !== c.mode) tests().forEach(syncQuals); d.close(); CP.store.changed(); };
+    d.querySelector('form').onsubmit = e => { e.preventDefault(); const f = e.target; const was = c.mode; Object.assign(c, { unit: f.unit.value.trim(), instructor: U.capWords(f.instructor.value), region: f.region.value.trim(), sheet: +f.sheet.value, mode: f.mode.value }); if (was !== c.mode) tests().forEach(syncQuals); d.close(); CP.store.changed(); };
   };
 
   /* --- Normatīvi (uzziņai) --- */
@@ -10650,7 +10684,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       <div class="dlg-body"><div class="fieldgrid">
         <div class="field wide"><label>Nosaukums</label><input name="title" value="${esc(e.title)}" list="dl_schT" required placeholder="piem., Nodarbība J1 grupai, VAM 10.b klasei, Rudens nometne"><datalist id="dl_schT">${titles.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field"><label>Veids</label><select name="type">${TYPES.map(([t]) => `<option ${t === e.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-        <div class="field"><label>Vieta</label><input name="place" value="${esc(e.place || '')}" list="dl_schP" placeholder="piem., skolas sporta zāle"><datalist id="dl_schP">${places.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
+        <div class="field"><label>Vieta</label><input name="place" data-cap="first" value="${esc(e.place || '')}" list="dl_schP" placeholder="piem., skolas sporta zāle"><datalist id="dl_schP">${places.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field"><label>Datums</label><input type="date" name="date" value="${esc(e.date)}" required></div>
         <div class="field"><label>Beigu datums <small class="muted">(vairāku dienu notikumam)</small></label><input type="date" name="endDate" value="${esc(e.endDate || '')}"></div>
         <div class="field"><label class="check"><input type="checkbox" name="allDay" ${e.allDay ? 'checked' : ''}> Visu dienu</label></div>

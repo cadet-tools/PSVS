@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.3';
+  CP.VERSION = '1.37.4';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -121,12 +121,12 @@ window.CP = window.CP || {};
       case 'name': {
         const s = v.replace(/\s+/g, ' ');
         if (!LETTERS.test(s) || s.length > 40 || s.split(' ').length > 3) return { ok: false, msg: 'nav līdzīgs vārdam' };
-        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : s };
+        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : U.capWords(s) };
       }
       case 'fullname': {
         const s = v.replace(/\s+/g, ' ');
         if (!LETTERS.test(s) || s.split(' ').length < 2 || s.length > 60) return { ok: false, msg: 'vajag vārdu un uzvārdu' };
-        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : s };
+        return { ok: true, value: (s === s.toUpperCase() || s === s.toLowerCase()) ? titleCase(s) : U.capWords(s) };
       }
       case 'personalCode': {
         const d = U.codeDigits(v); if (d.length !== 11) return { ok: false, msg: 'jābūt 11 cipariem' };
@@ -151,6 +151,10 @@ window.CP = window.CP || {};
       case 'schoolClass': {
         if (v.length > 20) return { ok: false, msg: 'pārāk garš' };
         return { ok: true, value: v.replace(/\s+/g, ' ') };
+      }
+      case 'place': {
+        if (v.length > 120) return { ok: false, msg: 'pārāk garš' };
+        return { ok: true, value: U.capFirst(v) };
       }
       case 'address': {
         const letters = (v.match(/\p{L}/gu) || []).length;
@@ -185,6 +189,12 @@ window.CP = window.CP || {};
     }
     return files;
   };
+  /** Vārdi, uzvārdi: katra vārda pirmais burts lielais (pārējais paliek); viss ar lielajiem → “Jānis Bērziņš” */
+  U.capWords = v => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); if (!s) return s; const base = s === s.toUpperCase() && /\p{Lu}{2}/u.test(s) ? s.toLocaleLowerCase('lv') : s; return base.replace(/(^|[\s\-'’.])(\p{Ll})/gu, (m, a, c) => a + c.toLocaleUpperCase('lv')); };
+  /** Vietas nosaukums: tikai pirmais burts lielais (“Rīgas novads”, “Skolas sporta zāle”) */
+  U.capFirst = v => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); return s ? s[0].toLocaleUpperCase('lv') + s.slice(1) : s; };
+  // Ievades laukiem ar data-cap="words|first" — pārveido, pirms citi apstrādātāji nolasa vērtību
+  document.addEventListener('change', e => { const t = e.target, m = t?.dataset?.cap; if (!m || typeof t.value !== 'string') return; const v = m === 'words' ? U.capWords(t.value) : U.capFirst(t.value); if (v !== t.value) t.value = v; }, true);
   U.download = (blob, name) => {
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -275,7 +285,7 @@ window.CP = window.CP || {};
     { k: 'gender', l: 'Dzimums', s: 'basic', t: 'select', opts: [['', 'Nav norādīts'], ['m', 'Zēns / jaunietis'], ['f', 'Meitene / jauniete']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
-    { k: 'school', l: 'Mācību iestāde', s: 'study' },
+    { k: 'school', l: 'Mācību iestāde', s: 'study', v: 'place' },
     { k: 'schoolClass', l: 'Klase / kurss', s: 'study', v: 'schoolClass' },
     { k: 'phone', l: 'Tālrunis', s: 'contact', t: 'tel', v: 'phone' },
     { k: 'email', l: 'E-pasts', s: 'contact', t: 'email', v: 'email' },

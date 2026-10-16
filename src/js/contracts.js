@@ -118,14 +118,15 @@
     const opt = (v, l, curV) => `<option value="${esc(v)}" ${v === curV ? 'selected' : ''}>${esc(l)}</option>`;
     const people = D.peopleInYear().filter(x => x.status !== 'archived').sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     const inp = (k, label, val, extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ct="${k}" value="${esc(val ?? '')}"></div>`;
-    const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}"></div>`;
+    const CAPS = { name: 'words', nameGen: 'words', position: 'first', place: 'first' };
+    const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" ${CAPS[k] ? `data-cap="${CAPS[k]}"` : ''}></div>`;
     const warn = [];
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
     if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
     if (!c.no) warn.push('nav ievadīts līguma numurs (vietā paliks tukša līnija)');
-    if (!I.name || !I.parvalde || !I.nodala) warn.push('aizpildi instruktora datus');
+    { const bad = CP.setup?.instProblems?.(I) || (!I.name || !I.parvalde || !I.nodala ? { x: 1 } : {}); if (Object.keys(bad).length) warn.push('aizpildi instruktora darba datus' + (bad.email && I.email ? ' (e-pastam jābūt …@jc.gov.lv)' : '')); }
     U.$('contractBody').innerHTML = `
       <div class="fieldgrid">
         <div class="field wide"><label>Persona</label><select id="ctPerson" ${c.editId ? "disabled title=\"Labojot personu mainīt nevar\"" : ""}><option value="">— izvēlies —</option>${people.map(x => opt(x.id, `${U.sortName(x)}${D.groupOf(x) ? ' · ' + D.groupOf(x) : ''}`, c.pid)).join('')}</select>
@@ -135,7 +136,7 @@
         <div class="field"><label>Veidne</label><select data-cc="tpl">${opt('', 'Standarta veidne', c.tpl)}${own.map(t => opt(t.id, 'Mana: ' + t.name, c.tpl)).join('')}</select></div>
         <div class="field"><label>Līguma Nr. <small class="muted">(no citas sistēmas)</small></label><input data-cc="no" value="${esc(c.no)}" placeholder="piem. 124/JS-2026/8"></div>
         <div class="field"><label>Datums</label><input type="date" data-cc="date" value="${esc(c.date)}"></div>
-        <div class="field"><label>Vieta</label><input data-cc="place" value="${esc(c.place)}" placeholder="piem. Rīga"></div>
+        <div class="field"><label>Vieta</label><input data-cc="place" data-cap="first" value="${esc(c.place)}" placeholder="piem. Rīga"></div>
         ${c.form === 'papirs' ? `<div class="field"><label>Instruktora paraksta datums</label><select data-cc="signMode">${opt('same', 'Tāds pats kā līguma datums', c.signMode)}${opt('custom', 'Cits datums…', c.signMode)}${opt('blank', 'Tukšs — rakstīšu ar roku', c.signMode)}</select>${c.signMode === 'custom' ? `<input type="date" data-cc="signDate" value="${esc(c.signDate || c.date)}" style="margin-top:6px">` : ''}</div>` : ''}
         ${c.kind === 'parstavis' && p && p.parent2Name ? `<div class="field wide"><label>Likumiskais pārstāvis</label><div class="actions"><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="1" ${c.parent === 1 ? 'checked' : ''}> ${esc(p.parentName || '1. pārstāvis')}</label><label class="check"><input type="radio" name="ctParent" data-cc="parent" value="2" ${c.parent === 2 ? 'checked' : ''}> ${esc(p.parent2Name)}</label></div></div>` : ''}
       </div>
@@ -151,7 +152,7 @@
       </div></details>` : ''}
       <details class="ct-box" ${!I.name ? 'open' : ''}><summary><b>Instruktora dati</b> <small class="muted">— saglabājas nākamajiem līgumiem</small></summary><div class="fieldgrid">
         ${iinp('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${iinp('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" value="${esc(I.nameGen || genitive(I.name))}"></div>
+        ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" data-cap="words" value="${esc(I.nameGen || genitive(I.name))}"></div>
         ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts', 'vards.uzvards@jc.gov.lv')}
       </div></details>`;
   }
@@ -167,7 +168,8 @@
       return;
     }
     if (t.dataset.ci) {
-      const I = inst(); I[t.dataset.ci] = t.value.trim();
+      const I = inst(); I[t.dataset.ci] = t.dataset.ci === 'email' ? t.value.trim().toLowerCase() : t.value.trim();
+      if (t.dataset.ci === 'email' && I.email && !/^[^\s@]+@jc\.gov\.lv$/i.test(I.email)) ui.toast('Darba e-pastam jābeidzas ar @jc.gov.lv (piem., vards.uzvards@jc.gov.lv). Privātu e-pastu līgumā neliek.', 'warn', 9000);
       if (t.dataset.ci === 'name') { I.nameGen = genitive(I.name); const g = ctDlg().querySelector('[data-ci="nameGen"]'); if (g) g.value = I.nameGen; }
       CP.store.changed({ silent: true }); return;
     }

@@ -10,6 +10,11 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.4', from: '1.37.1', date: '2026-10-16', title: 'Instruktora darba dati un lielie burti', items: [
+      '**Instruktora dati** ir darba dati (tie nonāk līgumos): visi lauki ir obligāti, izņemot vārdu ģenitīvā, kas veidojas automātiski. Iestatīšanas statuss rāda ✓ tikai tad, kad viss aizpildīts.',
+      '**Darba e-pastam** jābūt @jc.gov.lv adresei (piem., vards.uzvards@jc.gov.lv) — citādi brīdinājums gan iestatījumos, gan līguma logā. Tālrunis tiek pārbaudīts.',
+      '**Lielie burti**: vārdi un uzvārdi (jaunsargi, vecāki, instruktors, darbinieki) automātiski sākas ar lielo burtu — “jānis bērziņš” → “Jānis Bērziņš”. Vietu nosaukumiem un mācību iestādei lielais ir pirmais burts (“rīgas novads” → “Rīgas novads”). E-pastus, tālruņus un citus laukus tas neskar.'
+    ] },
     { v: '1.37.3', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
       'Pārskatā pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams, vai rīks ir iestatīts: **✕ Iestatīšana 4/7** ar progresa joslu, kamēr kaut kas nav izdarīts, vai **✓ Rīks iestatīts**, kad viss kārtībā. Ja kāds solis atkal nav izpildīts (piem., noņemts PIN), statuss atkal rāda ✕.',
       'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).',

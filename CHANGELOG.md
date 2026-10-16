@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.37.4 — 2026-10-16
+- `CP.setup.instProblems(I)`: obligāti name, position, parvalde, nodala, phone (derīgs), email (`@jc.gov.lv`), place; nameGen — nē. Sākuma solis un līguma brīdinājums to izmanto.
+- `U.capWords` / `U.capFirst`; `data-cap="words|first"` (globāls `change` klausītājs capture fāzē). `validate('name'|'fullname')` vienmēr ar lielo sākumburtu; jauns veids `place` (mācību iestāde).
+
 ## 1.37.3 — 2026-10-16
 - Instruktora e-pasta laukam (Iestatījumi un līguma logs) paraugs `vards.uzvards@jc.gov.lv`.
 
