@@ -553,3 +553,9 @@ input[type=radio]{width:auto;flex:none;accent-color:var(--teal)}
 .choice{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--edge);border-radius:12px;cursor:pointer;background:var(--panel2)}
 .choice input[type=radio]{margin-top:3px}.choice:has(input:checked){border-color:var(--teal);background:var(--sel, var(--panel2))}.choice b{display:block}.choice select{margin-top:8px}
 .choice-list[hidden]{display:none}
+
+/* --- Dalībnieki no citām vienībām --- */
+.ext-card .ext-unit{margin:6px 0}.ext-uh{text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin:6px 0 2px}.ext-row{gap:8px}.ext-row select{width:auto;max-width:190px}
+.ext-drop{display:flex;flex-direction:column;align-items:center;gap:2px;margin:10px 0;padding:14px;border:2px dashed var(--edge2);border-radius:12px;cursor:pointer;text-align:center;background:var(--panel2)}
+.ext-drop:hover,.ext-drop:focus-visible,[data-extdrop].over .ext-drop{border-color:var(--teal);background:var(--sel, var(--panel2));outline:none}
+.ext-prev{max-height:46vh;overflow:auto;border:1px solid var(--edge);border-radius:10px;padding:4px 10px;margin:8px 0}.ext-prow{align-items:flex-start;padding:6px 0;border-top:1px solid var(--line, var(--edge))}.ext-prow:first-child{border-top:0}.ext-prow input{margin-top:3px}

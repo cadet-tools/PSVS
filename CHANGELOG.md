@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.27.0 — 2026-10-16 — Dalībnieki no citām vienībām
+- Jauns modulis `js/extpeople.js`. Pasākumā: `ev.external = [{ id: 'x…', first, last, personalCode, birth, group, adreses, tālruņi, vecāki, unit, counselorId }]` un `ev.extStaff` (nometnes darbinieki; to id tiek ielikti `ev.staff`). Tie netiek pievienoti `db.people` un nav brīdinājumos / auditā.
+- `forms.js`: `evPeople(ev)` = savējie + ārējie (`_ext`), `evStaff(ev)` = darbinieki + ārējie; `D.groupOf` ārējiem atgriež viņu grupu; `D.eventDocIssues` ārējiem — tukšs. PDF (instruktāža, nometne) un Word veidnes iekļauj ārējos.
+- Eksports: `{ format: 'cadet-dalibnieki', v: 1, from, event, people, staff }` JSON; pēc izvēles šifrēts: AES-GCM 256, atslēga PBKDF2-SHA-256 (250 000 iterācijas, nejaušs salt un iv). Imports: CADET fails (ar paroles pieprasījumu) vai Excel/CSV (`CP.io.peopleFromFile` — tā pati kolonnu atpazīšana kā personu importā); vienība no šūnas “Vienība / instruktors:”. Priekšskatījums: izvēle pa rindām, sakritība ar savu sarakstu (personas kods vai vārds + dzimšanas datums) → izvēlas savu ierakstu; jau pasākumā esošs → atjauno.
+- Excel veidne `vendor/templates/dalibnieku-veidne.xlsx` (personas koda / tālruņa kolonnas kā teksts).
+- Personu importam jaunas kolonnas: `parent2Name`, `parent2Phone` (“Otrs vecāks”, “Otra vecāka tālrunis”).
+
 ## 1.26.3 — 2026-10-16
 - Noklusējuma akcents: zils `#4f9cff` (`CP.DEFAULT_ACCENT`, `--acc` design.css); tēma joprojām tumšā. Lietotāja izvēle (`localStorage` `cp-accent` / datu faila izskats) netiek mainīta.
 

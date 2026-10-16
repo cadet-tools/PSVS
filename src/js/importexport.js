@@ -75,6 +75,7 @@
     parentName: ['vecaks', 'vecaki', 'vecakavardsuzvards', 'vecakavards', 'likumiskaisparstavis', 'parstavis', 'aizbildnis'],
     mother: ['mate', 'matesvardsuzvards'], motherPhone: ['matestalrunis', 'matestalr'], father: ['tevs', 'tevavardsuzvards'], fatherPhone: ['tevatalrunis', 'tevatalr'],
     other: ['citaatbildigapersona'], otherPhone: ['citaspersonastalrunis'],
+    parent2Name: ['otravecakavardsuzvards', 'otrsvecaks', 'otravecakavards', 'vecaks2', '2vecaks', 'otrsparstavis'], parent2Phone: ['otravecakatalrunis', 'vecaka2talrunis', '2vecakatalrunis', 'otraparstavjatalrunis'],
     parentPhone: ['vecakatalrunis', 'vecakutalrunis', 'vecakatelefons', 'parstavjatalrunis', 'vecakatalr'], parentEmail: ['vecakaepasts', 'vecakuepasts', 'parstavjaepasts'],
     addressDeclared: ['deklaretaadrese', 'adrese', 'dzivesvieta'], addressActual: ['faktiskaadrese', 'faktiskadzivesvieta'], notes: ['piezimes', 'notes', 'komentars', 'komentari']
   };
@@ -85,11 +86,12 @@
     birth: /dzim(?!um)/, addressActual: /fakt.*(adres|dzivesv)|(adres|dzivesv).*fakt/, addressDeclared: /^(?!e(adres|past)).*(adres|dzivesviet)/, email: /epast|mail|^eadres/, phone: /talr|telef|phone|mobil/,
     schoolClass: /klase|kurss|class/, school: /skola|macibuiestad|izglitibasiestad/, group: /grupa|vieniba|nodala|group/, notes: /piezim|komentar|note/,
     other: /citaatbildig|aizbildn.*vard/, otherPhone: /cit.*persona.*(talr|telef)/,
+    parent2Phone: /^(otr|2).*(vecak|parstav).*(talr|telef|mob|tel)/, parent2Name: /^(otr|2).*(vecak|parstav)(?!.*(talr|telef|mob|epast|kod))/,
     name: /vardsuzvards|uzvardsvards|pilnsvards|fullname/, last: /uzvard|surname|lastname/, first: /vards|firstname/
   };
-  const PRIORITY = ['parentCode', 'idCardNo', 'status', 'personalCode', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
+  const PRIORITY = ['parentCode', 'idCardNo', 'status', 'personalCode', 'parent2Phone', 'parent2Name', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
   const MAP_FIELDS = [['first', 'Vārds'], ['last', 'Uzvārds'], ['name', 'Vārds un uzvārds vienā kolonnā'], ['birth', 'Dzimšanas datums'], ['personalCode', 'Personas kods'], ['group', 'Grupa'], ['school', 'Skola'], ['schoolClass', 'Klase'],
-    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'], ['parentCode', 'Vecāka personas kods'],
+    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'], ['parentCode', 'Vecāka personas kods'], ['parent2Name', 'Otrs vecāks'], ['parent2Phone', 'Otra vecāka tālrunis'],
     ['mother', 'Māte'], ['motherPhone', 'Mātes tālrunis'], ['father', 'Tēvs'], ['fatherPhone', 'Tēva tālrunis'], ['other', 'Cita atbildīgā persona'], ['otherPhone', 'Citas personas tālrunis'], ['status', 'Statuss'], ['idCardNo', 'Jaunsarga apliecības nr.'], ['notes', 'Piezīmes']];
   const colName = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
   /** Virsraksta šūnas rindā r: savs teksts un (ja ir) virsraksts rindā virs tās (apvienotām šūnām — no kreisās) */
@@ -179,11 +181,12 @@
       if (U.norm(p.addressActual) === U.norm(p.addressDeclared)) p.addressActual = '';
       // e-klase: māte, tēvs, cita atbildīgā persona → 1. un 2. pārstāvis
       const fam = [['Māte', val('mother'), val('motherPhone')], ['Tēvs', val('father'), val('fatherPhone')], ['Cita atbildīgā persona', val('other'), val('otherPhone')]].filter(x => x[1]);
+      if (val('parent2Name') || val('parent2Phone')) { p.parent2Name = val('parent2Name'); p.parent2Phone = val('parent2Phone'); }
       if (fam.length) {
         const i1 = Math.max(0, fam.findIndex(x => U.norm(x[1]) === U.norm(p.parentName)));
         const [r1, n1, t1] = fam[i1]; p.parentName = p.parentName || n1; p.parentPhone = p.parentPhone || t1; p.parentRelation = r1;
         const second = fam.find((x, i) => i !== i1);
-        if (second) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
+        if (second && !p.parent2Name) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
       }
       // vārds un tālrunis vienā šūnā (arī divi vecāki vienā šūnā)
       if (/\d{6}/.test(p.parentName || '') || /\p{L}{2}/u.test(p.parentPhone || '')) {
@@ -341,5 +344,18 @@
   A.exportCsv = () => io.exportCsv(D.peopleInYear().filter(D.isCurrent));
   A.backup = () => U.download(new Blob([JSON.stringify(S.db, null, 2)], { type: 'application/json' }), `CADET_REZERVE_${U.iso()}.json`);
 
+  /** Personas no Excel/CSV faila (bez saglabāšanas): { people, sheet, rows } — izmanto arī ārējo dalībnieku imports */
+  io.peopleFromFile = async file => {
+    if (/\.xls$/i.test(file.name)) throw Error('vecais .xls formāts netiek atbalstīts — saglabā kā .xlsx');
+    const sheets = /\.xlsx$/i.test(file.name) ? await parseXlsx(file) : [{ name: file.name, rows: parseCSV(await file.text()) }];
+    let best = null;
+    for (const sh of sheets.filter(s => !s.hidden && s.rows.length)) {
+      const r = detectHeader(sh.rows), map = mapHeader(sh.rows, r);
+      if (!hasName(map)) continue;
+      const score = Object.keys(map).length; if (!best || score > best.score) best = { sh, r, map, score };
+    }
+    if (!best) throw Error('failā netika atrasta tabula ar kolonnām “Vārds”, “Uzvārds”');
+    return { people: rowsToPeople(best.sh.rows, best.r, best.map), sheet: best.sh.name, rows: best.sh.rows, headerRow: best.r };
+  };
   CP.io = io;
 })(window.CP);

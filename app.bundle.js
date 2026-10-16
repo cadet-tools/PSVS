@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 31 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 32 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.26.3';
+  CP.VERSION = '1.27.0';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -4497,6 +4497,7 @@ window.CP = window.CP || {};
     parentName: ['vecaks', 'vecaki', 'vecakavardsuzvards', 'vecakavards', 'likumiskaisparstavis', 'parstavis', 'aizbildnis'],
     mother: ['mate', 'matesvardsuzvards'], motherPhone: ['matestalrunis', 'matestalr'], father: ['tevs', 'tevavardsuzvards'], fatherPhone: ['tevatalrunis', 'tevatalr'],
     other: ['citaatbildigapersona'], otherPhone: ['citaspersonastalrunis'],
+    parent2Name: ['otravecakavardsuzvards', 'otrsvecaks', 'otravecakavards', 'vecaks2', '2vecaks', 'otrsparstavis'], parent2Phone: ['otravecakatalrunis', 'vecaka2talrunis', '2vecakatalrunis', 'otraparstavjatalrunis'],
     parentPhone: ['vecakatalrunis', 'vecakutalrunis', 'vecakatelefons', 'parstavjatalrunis', 'vecakatalr'], parentEmail: ['vecakaepasts', 'vecakuepasts', 'parstavjaepasts'],
     addressDeclared: ['deklaretaadrese', 'adrese', 'dzivesvieta'], addressActual: ['faktiskaadrese', 'faktiskadzivesvieta'], notes: ['piezimes', 'notes', 'komentars', 'komentari']
   };
@@ -4507,11 +4508,12 @@ window.CP = window.CP || {};
     birth: /dzim(?!um)/, addressActual: /fakt.*(adres|dzivesv)|(adres|dzivesv).*fakt/, addressDeclared: /^(?!e(adres|past)).*(adres|dzivesviet)/, email: /epast|mail|^eadres/, phone: /talr|telef|phone|mobil/,
     schoolClass: /klase|kurss|class/, school: /skola|macibuiestad|izglitibasiestad/, group: /grupa|vieniba|nodala|group/, notes: /piezim|komentar|note/,
     other: /citaatbildig|aizbildn.*vard/, otherPhone: /cit.*persona.*(talr|telef)/,
+    parent2Phone: /^(otr|2).*(vecak|parstav).*(talr|telef|mob|tel)/, parent2Name: /^(otr|2).*(vecak|parstav)(?!.*(talr|telef|mob|epast|kod))/,
     name: /vardsuzvards|uzvardsvards|pilnsvards|fullname/, last: /uzvard|surname|lastname/, first: /vards|firstname/
   };
-  const PRIORITY = ['parentCode', 'idCardNo', 'status', 'personalCode', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
+  const PRIORITY = ['parentCode', 'idCardNo', 'status', 'personalCode', 'parent2Phone', 'parent2Name', 'parentPhone', 'parentEmail', 'motherPhone', 'fatherPhone', 'otherPhone', 'other', 'mother', 'father', 'parentName', 'birth', 'addressActual', 'addressDeclared', 'email', 'phone', 'schoolClass', 'school', 'group', 'notes', 'name', 'last', 'first'];
   const MAP_FIELDS = [['first', 'Vārds'], ['last', 'Uzvārds'], ['name', 'Vārds un uzvārds vienā kolonnā'], ['birth', 'Dzimšanas datums'], ['personalCode', 'Personas kods'], ['group', 'Grupa'], ['school', 'Skola'], ['schoolClass', 'Klase'],
-    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'], ['parentCode', 'Vecāka personas kods'],
+    ['phone', 'Tālrunis'], ['email', 'E-pasts'], ['addressDeclared', 'Deklarētā adrese'], ['addressActual', 'Faktiskā adrese'], ['parentName', 'Vecāks'], ['parentPhone', 'Vecāka tālrunis'], ['parentEmail', 'Vecāka e-pasts'], ['parentCode', 'Vecāka personas kods'], ['parent2Name', 'Otrs vecāks'], ['parent2Phone', 'Otra vecāka tālrunis'],
     ['mother', 'Māte'], ['motherPhone', 'Mātes tālrunis'], ['father', 'Tēvs'], ['fatherPhone', 'Tēva tālrunis'], ['other', 'Cita atbildīgā persona'], ['otherPhone', 'Citas personas tālrunis'], ['status', 'Statuss'], ['idCardNo', 'Jaunsarga apliecības nr.'], ['notes', 'Piezīmes']];
   const colName = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
   /** Virsraksta šūnas rindā r: savs teksts un (ja ir) virsraksts rindā virs tās (apvienotām šūnām — no kreisās) */
@@ -4601,11 +4603,12 @@ window.CP = window.CP || {};
       if (U.norm(p.addressActual) === U.norm(p.addressDeclared)) p.addressActual = '';
       // e-klase: māte, tēvs, cita atbildīgā persona → 1. un 2. pārstāvis
       const fam = [['Māte', val('mother'), val('motherPhone')], ['Tēvs', val('father'), val('fatherPhone')], ['Cita atbildīgā persona', val('other'), val('otherPhone')]].filter(x => x[1]);
+      if (val('parent2Name') || val('parent2Phone')) { p.parent2Name = val('parent2Name'); p.parent2Phone = val('parent2Phone'); }
       if (fam.length) {
         const i1 = Math.max(0, fam.findIndex(x => U.norm(x[1]) === U.norm(p.parentName)));
         const [r1, n1, t1] = fam[i1]; p.parentName = p.parentName || n1; p.parentPhone = p.parentPhone || t1; p.parentRelation = r1;
         const second = fam.find((x, i) => i !== i1);
-        if (second) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
+        if (second && !p.parent2Name) { p.parent2Relation = second[0]; p.parent2Name = second[1]; p.parent2Phone = second[2]; }
       }
       // vārds un tālrunis vienā šūnā (arī divi vecāki vienā šūnā)
       if (/\d{6}/.test(p.parentName || '') || /\p{L}{2}/u.test(p.parentPhone || '')) {
@@ -4763,6 +4766,19 @@ window.CP = window.CP || {};
   A.exportCsv = () => io.exportCsv(D.peopleInYear().filter(D.isCurrent));
   A.backup = () => U.download(new Blob([JSON.stringify(S.db, null, 2)], { type: 'application/json' }), `CADET_REZERVE_${U.iso()}.json`);
 
+  /** Personas no Excel/CSV faila (bez saglabāšanas): { people, sheet, rows } — izmanto arī ārējo dalībnieku imports */
+  io.peopleFromFile = async file => {
+    if (/\.xls$/i.test(file.name)) throw Error('vecais .xls formāts netiek atbalstīts — saglabā kā .xlsx');
+    const sheets = /\.xlsx$/i.test(file.name) ? await parseXlsx(file) : [{ name: file.name, rows: parseCSV(await file.text()) }];
+    let best = null;
+    for (const sh of sheets.filter(s => !s.hidden && s.rows.length)) {
+      const r = detectHeader(sh.rows), map = mapHeader(sh.rows, r);
+      if (!hasName(map)) continue;
+      const score = Object.keys(map).length; if (!best || score > best.score) best = { sh, r, map, score };
+    }
+    if (!best) throw Error('failā netika atrasta tabula ar kolonnām “Vārds”, “Uzvārds”');
+    return { people: rowsToPeople(best.sh.rows, best.r, best.map), sheet: best.sh.name, rows: best.sh.rows, headerRow: best.r };
+  };
   CP.io = io;
 })(window.CP);
 
@@ -5061,6 +5077,14 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
+      'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**. Pasākuma logā ir jauna sadaļa **“Dalībnieki no citām vienībām”**: ievelc tajā otra instruktora atsūtīto failu, un viņa jaunsargi (un nometnei arī darbinieki) nonāk tavā dokumentā kopā ar taviem.',
+      '**Ja otrs instruktors lieto CADET PERSONĀLS:** viņš savā pasākumā izvēlas savus dalībniekus un spiež **“⇪ Nosūtīt savus dalībniekus citam instruktoram”**. Failu var **aizsargāt ar paroli** (paroli pasaka atsevišķi, piem., piezvanot).',
+      '**Ja rīka nav:** nosūti viņam **“⇩ Excel veidni”**. Viņš to aizpilda un atsūta atpakaļ, bet tu to ievelc tāpat. Der arī cits Excel vai CSV saraksts ar kolonnām Vārds, Uzvārds, Personas kods…',
+      'Citu vienību jaunsargi **glabājas tikai šajā pasākumā**. Tie neparādās tavā personu sarakstā, pārskatā vai brīdinājumos. Ja kāds jau ir tavā sarakstā (tas pats personas kods), rīks izvēlas tavu ierakstu, bet atkārtots fails datus atjauno, nevis dublē.',
+      'Rīks neko nesūta internetā. Failu instruktori nodod paši.',
+      'Personu importā tagad atpazīst arī kolonnas **“Otrs vecāks”** un **“Otra vecāka tālrunis”**.'
+    ] },
     { v: '1.26.3', from: '1.26.0', date: '2026-10-16', title: 'Sakārtota grupas izvēle un dzēšanas logs', items: [
       'Personas formā pie lauka **Grupa** poga **▾** atver rīka stila sarakstu tieši zem lauka. Tajā redzamas grupas ar personu skaitu, **“— bez grupas —”** un lauks **jaunai grupai** turpat sarakstā.',
       'Rakstot grupas laukā, saraksts **filtrējas**. Ja tādas grupas vēl nav, var spiest **“＋ Izveidot grupu …”**. Darbojas arī ar tastatūru: ↑↓ un Enter izvēlas, Esc aizver.',
@@ -7150,7 +7174,7 @@ window.CP = window.CP || {};
   const staffById = id => staffList().find(s => s.id === id);
 
   /** Dokumentu problēmas dalībai pasākumā (tikai rīkā, nevis uz veidlapas) */
-  D.eventDocIssues = p => D.missingDocs(p);
+  D.eventDocIssues = p => p?._ext ? [] : D.missingDocs(p);
   const MONTHS_GEN = ['janvāris', 'februāris', 'marts', 'aprīlis', 'maijs', 'jūnijs', 'jūlijs', 'augusts', 'septembris', 'oktobris', 'novembris', 'decembris'];
   /** “2026. gada 17.–18. oktobris” no datumiem */
   function whenText(from, to) {
@@ -7164,7 +7188,11 @@ window.CP = window.CP || {};
   }
 
   /* ---------------- Saraksts ---------------- */
-  const evPeople = ev => (ev.participants || []).map(x => D.person(x.pid)).filter(Boolean);
+  /** Dalībnieki: savējie (no personu saraksta) + citu vienību (glabājas tikai pasākumā: ev.external) */
+  const extPerson = x => ({ ...x, _ext: true, _extGroup: x.group || '' });
+  const evPeople = ev => [...(ev.participants || []).map(x => D.person(x.pid)).filter(Boolean), ...(ev.external || []).map(extPerson)];
+  const evStaff = ev => [...staffList(), ...(ev.extStaff || [])];
+  { const og = D.groupOf; D.groupOf = (p, y) => p?._ext ? (p._extGroup || '') : og(p, y); }
   /* Visas sagatavotās veidlapas vienā sarakstā: pasākumi (instruktāža, nometne) + līgumi no personu kartītēm */
   const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' } };
   const CVAR = { 'jaunietis-papirs': 'ar jaunieti, papīrs', 'parstavis-papirs': 'ar pārstāvi, papīrs', 'jaunietis-edoc': 'ar jaunieti, EDOC', 'parstavis-edoc': 'ar pārstāvi, EDOC' };
@@ -7329,14 +7357,14 @@ window.CP = window.CP || {};
       const f = (k, label, type = 'text', extra = '') => `<div class="field"><label>${label}</label><input type="${type}" data-ev="${k}" value="${esc(ev[k] ?? '')}" ${extra}></div>`;
       /* Dalībnieka audzinātājs: noklusējumā — grupas audzinātājs (redzams vārds), vai cits darbinieks tikai šim dalībniekam */
       const personCoun = (p, part) => {
-        if (!staffList().length) return `<small class="muted ev-coun">Audzinātāju sarakstā vēl nav — pievieno sadaļā “Darbinieki nometnē”</small>`;
-        const g = D.groupOf(p, ev.yearId) || '(bez grupas)', gc = staffById(ev.groupCounselors?.[g]);
+        if (!evStaff(ev).length) return `<small class="muted ev-coun">Audzinātāju sarakstā vēl nav — pievieno sadaļā “Darbinieki nometnē”</small>`;
+        const g = D.groupOf(p, ev.yearId) || '(bez grupas)', gc = evStaff(ev).find(s => s.id === ev.groupCounselors?.[g]);
         const own = part?.counselorId || '';
         return `<label class="ev-coun small"><span class="muted">Audzinātājs:</span><select class="sm" data-evcoun="${p.id}" title="Šī dalībnieka audzinātājs nometnē">
           <option value="" ${own ? '' : 'selected'}>${gc ? `${esc(gc.name)} (grupas audzinātājs)` : 'Kā grupai — vēl nav izvēlēts'}</option>
-          ${staffList().filter(s => s.id !== gc?.id).map(s => `<option value="${s.id}" ${own === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('')}</select></label>`;
+          ${evStaff(ev).filter(s => s.id !== gc?.id).map(s => `<option value="${s.id}" ${own === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('')}</select></label>`;
       };
-      const counselorOpts = (cur, empty = '— nav —') => `<option value="">${empty}</option>` + staffList().map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('');
+      const counselorOpts = (cur, empty = '— nav —') => `<option value="">${empty}</option>` + evStaff(ev).map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)}${s.counselor ? '' : ' (darbinieks)'}</option>`).join('');
       const evGroups = [...new Set(ps.map(p => D.groupOf(p, ev.yearId) || '(bez grupas)'))].sort(U.cmp);
 
       const left = `<section class="card"><h3>${ic(T.icon)}${esc(T.l)}</h3><div class="fieldgrid">
@@ -7353,7 +7381,7 @@ window.CP = window.CP || {};
           ${ev.type === 'instr' ? `<div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" data-ev="fillDates" ${ev.fillDates !== false ? 'checked' : ''}> Datumu ierakstīt katrā rindā</label></div>` : ''}
         </div></section>
         ${ev.type === 'camp' ? `<section class="card"><h3>${ic('users')}Darbinieki nometnē</h3>
-          ${staffList().length ? staffList().map(s => `<label class="check ev-staff"><input type="checkbox" data-evstaff="${s.id}" ${(ev.staff || []).includes(s.id) ? 'checked' : ''}> <b>${esc(s.name)}</b> <span class="small muted">${esc([s.role, s.counselor ? 'audzinātājs' : ''].filter(Boolean).join(' · '))}</span></label>`).join('') : '<p class="muted small">Vēl nav neviena darbinieka.</p>'}
+          ${evStaff(ev).length ? evStaff(ev).map(s => `<label class="check ev-staff"><input type="checkbox" data-evstaff="${s.id}" ${(ev.staff || []).includes(s.id) ? 'checked' : ''}> <b>${esc(s.name)}</b> <span class="small muted">${esc([s.role, s.counselor ? 'audzinātājs' : '', s._ext ? 'cita vienība: ' + (s.unit || '') : ''].filter(Boolean).join(' · '))}</span></label>`).join('') : '<p class="muted small">Vēl nav neviena darbinieka.</p>'}
           <div class="actions" style="margin-top:8px"><button class="sm" data-act="staffEdit">${ic('userPlus', '＋')} Pievienot darbinieku vai audzinātāju</button></div></section>
           <section class="card"><h3>${ic('userCheck')}Audzinātāji</h3>
           ${evGroups.length ? evGroups.map(g => `<div class="inline-form"><span class="grow"><b>${esc(g)}</b> <span class="small muted">${ps.filter(p => (D.groupOf(p, ev.yearId) || '(bez grupas)') === g).length} dal.</span></span><select data-evgroup="${esc(g)}" style="max-width:240px">${counselorOpts(ev.groupCounselors?.[g])}</select></div>`).join('') : '<p class="muted small">Izvēlies dalībniekus — tad varēs piešķirt audzinātāju katrai grupai.</p>'}
@@ -7365,7 +7393,8 @@ window.CP = window.CP || {};
           ${m.length ? `<br><small class="warn" title="Bez šiem dokumentiem jaunsargs nedrīkst piedalīties pasākumā">⚠ Trūkst: ${esc(m.join(', '))}</small>` : ''}</span></label>
           ${on && ev.type === 'camp' ? personCoun(p, part) : ''}</div>`;
       };
-      const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ps.length} izvēlēti</span></h3>
+      const ownN = ps.filter(p => !p._ext).length, extN = ps.length - ownN;
+      const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ownN} izvēlēti${extN ? ` + ${extN} no citām vienībām` : ''}</span></h3>
           <div class="ev-pickbar"><input type="search" id="evQ" placeholder="Meklēt vārdu…" value="${esc(pick.q)}" autocomplete="off">
             <select id="evGroup"><option value="">Visas grupas</option>${groups.map(g => `<option ${g === pick.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
             <label class="check small"><input type="checkbox" id="evOnlySel" ${pick.onlySel ? 'checked' : ''}> Tikai izvēlētie</label></div>
@@ -7377,7 +7406,7 @@ window.CP = window.CP || {};
       const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
         ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
       return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
-        <div class="ev-layout"><div>${left}</div><div>${right}</div></div></div>`;
+        <div class="ev-layout"><div>${left}</div><div>${right}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div></div></div>`;
     }
   };
 
@@ -7438,7 +7467,7 @@ window.CP = window.CP || {};
     const fd = st().formDefaults = st().formDefaults || {};
     if (ev.type === 'instr') { fd.instrPosition = ev.instrPosition; fd.instrName = ev.instrName; fd.fillDates = ev.fillDates !== false; }
     if (ev.type === 'camp') { fd.leaderId = ev.leaderId; for (const s of staffList()) s.lastUsed = (ev.staff || []).includes(s.id) || undefined; }
-    for (const p of evPeople(ev)) if (!before.has(p.id)) D.audit(p.id, 'event', [ev.title || TYPES[ev.type].short]);   // tikai jaunpievienotajiem
+    for (const p of evPeople(ev)) if (!p._ext && !before.has(p.id)) D.audit(p.id, 'event', [ev.title || TYPES[ev.type].short]);   // tikai jaunpievienotajiem
     CP.store.changed({ silent: true });
     if (!quiet) ui.toast('Pasākums saglabāts', 'ok');
     return copy;
@@ -7448,16 +7477,16 @@ window.CP = window.CP || {};
   /* --- PDF --- */
   function counselorFor(ev) {
     return p => {
-      const own = (ev.participants || []).find(x => x.pid === p.id)?.counselorId;
-      const g = D.groupOf(p, ev.yearId) || '(bez grupas)';
-      return staffById(own || ev.groupCounselors?.[g])?.name || '';
+      const own = (ev.participants || []).find(x => x.pid === p.id)?.counselorId || (p._ext ? p.counselorId : '');
+      const g = D.groupOf(p, ev.yearId) || '(bez grupas)', all = evStaff(ev), by = id => all.find(s => s.id === id);
+      return by(own || ev.groupCounselors?.[g])?.name || '';
     };
   }
   async function buildPdf(ev) {
     const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     ui.toast('Sagatavo PDF…', 'ok', 2500);
     const bytes = ev.type === 'camp'
-      ? await CP.pdf.camp(ev, people, staffList(), counselorFor(ev))
+      ? await CP.pdf.camp(ev, people, evStaff(ev), counselorFor(ev))
       : await CP.pdf.instruction(ev, people);
     return new Blob([bytes], { type: 'application/pdf' });
   }
@@ -7540,7 +7569,7 @@ window.CP = window.CP || {};
     try {
       const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
       const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
-      const blob = await CP.docxFill.fill(await (await h.getFile()).arrayBuffer(), CP.docxFill.data(ev, people, staffList(), counselorFor(ev)));
+      const blob = await CP.docxFill.fill(await (await h.getFile()).arrayBuffer(), CP.docxFill.data(ev, people, evStaff(ev), counselorFor(ev)));
       U.download(blob, `${fileBase(ev)}.docx`);
       if (S.root) { const path = await CP.store.saveFile(['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)], `${t.name}.docx`, blob); const x = S.db.events.find(e => e.id === ev.id); if (x) { (x.files = x.files || []).push({ path, at: U.now(), kind: 'docx' }); CP.store.changed({ silent: true }); } }
     } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
@@ -7548,6 +7577,7 @@ window.CP = window.CP || {};
 
   /* --- Personas kartītē: dalība pasākumos --- */
   CP.forms = {
+    evPeople, evStaff, renderKeepScroll: () => renderKeepScroll(), commit: q => commit(q),
     personCard(p) {
       const evs = (S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).sort((a, b) => String(b.dateFrom || b.instrDate).localeCompare(String(a.dateFrom || a.instrDate)));
       if (!evs.length) return '';
@@ -7555,6 +7585,195 @@ window.CP = window.CP || {};
     },
     whenText
   };
+})(window.CP);
+
+
+/* ==== js/extpeople.js ==== */
+/* =====================================================================
+   Dalībnieki no citām vienībām (instruktāžas lapai / nometnes žurnālam).
+   • Eksports: instruktors savam pasākumam izvēlētos dalībniekus (un, ja vajag, darbiniekus) saglabā
+     failā “CADET dalībnieki … .json” — pēc izvēles šifrētu ar paroli (AES-GCM, PBKDF2-SHA-256).
+   • Imports: pasākuma logā ievelk šādu failu vai Excel/CSV (arī no tiem, kam rīka nav — ir veidne).
+     Dalībnieki glabājas TIKAI šajā pasākumā (ev.external), netiek pievienoti personu sarakstam.
+   Rīks neko nesūta internetā — failu instruktori nodod paši (e-pasts, WhatsApp…).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const FORMAT = 'cadet-dalibnieki';
+  const PF = ['first', 'last', 'personalCode', 'birth', 'group', 'school', 'schoolClass', 'phone', 'email', 'addressDeclared', 'addressActual',
+    'parentName', 'parentRelation', 'parentPhone', 'parentEmail', 'parent2Name', 'parent2Relation', 'parent2Phone', 'emergencyName', 'emergencyPhone'];
+  const SF = ['name', 'role', 'personalCode', 'phone', 'address', 'counselor'];
+  const pick = (o, keys) => Object.fromEntries(keys.filter(k => o[k] != null && o[k] !== '').map(k => [k, o[k]]));
+  const inst = () => S.db.settings.instructor || {};
+  const ev = () => S.formEdit;
+
+  /* --- Šifrēšana (pārlūka WebCrypto) --- */
+  const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u)));
+  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  async function key(pw, salt, iter) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  async function encrypt(obj, pw) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 250000;
+    const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await key(pw, salt, iter), new TextEncoder().encode(JSON.stringify(obj)));
+    return { format: FORMAT, v: 1, enc: { alg: 'AES-GCM', kdf: 'PBKDF2-SHA256', iter, salt: b64(salt), iv: b64(iv) }, data: b64(data) };
+  }
+  async function decrypt(file, pw) {
+    const e = file.enc, k = await key(pw, unb64(e.salt), e.iter || 250000);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(e.iv) }, k, unb64(file.data));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  /* --- Sadaļa pasākuma logā --- */
+  function card(e) {
+    const ext = e.external || [], xs = e.extStaff || [], camp = e.type === 'camp';
+    const staff = [...(S.db.settings.staff || []), ...xs];
+    const units = [...new Set(ext.map(x => x.unit || 'Cita vienība'))];
+    const coun = x => camp && staff.length ? `<select class="sm" data-extcoun="${x.id}" title="Audzinātājs nometnē"><option value="">${esc(x.group ? 'Kā grupai' : '— audzinātājs —')}</option>${staff.map(s => `<option value="${s.id}" ${x.counselorId === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : '';
+    return `<section class="card ext-card" data-extdrop><h3>${ic('users')}Dalībnieki no citām vienībām ${ext.length ? `<span class="pill">${ext.length}</span>` : ''}</h3>
+      ${ext.length ? units.map(u => `<div class="ext-unit"><div class="small muted ext-uh">${esc(u)}</div>${ext.filter(x => (x.unit || 'Cita vienība') === u).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b))).map(x => `<div class="row ext-row"><div class="grow"><b>${esc(U.sortName(x))}</b> <small class="muted">${esc([x.group, x.birth && U.fmtDate(x.birth)].filter(Boolean).join(' · '))}</small>${!x.personalCode && !x.birth ? ' <small class="warn">nav personas koda</small>' : ''}</div>${coun(x)}<button class="sm ghost danger" data-act="extDel" data-arg="${x.id}" title="Noņemt no pasākuma">✕</button></div>`).join('')}</div>`).join('')
+        : '<p class="small muted" style="margin-top:0">Ja pasākumā piedalās jaunsargi no citas vienības, ievelc šeit to instruktora atsūtīto failu. Dati glabāsies tikai šajā pasākumā, nevis tavā personu sarakstā.</p>'}
+      ${xs.length ? `<div class="small muted" style="margin-top:6px">Darbinieki no citām vienībām: ${xs.map(s => esc(s.name)).join(', ')} <a href="#" data-act="extStaffClear">noņemt</a></div>` : ''}
+      <div class="ext-drop" data-act="extImport" role="button" tabindex="0"><b>⬆ Ievelc failu vai spied šeit</b><span class="small muted">CADET dalībnieku fails (.json) vai Excel / CSV saraksts</span></div>
+      <div class="actions"><button class="sm" data-act="extExport" title="Sagatavot failu ar taviem šī pasākuma dalībniekiem citam instruktoram">⇪ Nosūtīt savus dalībniekus citam instruktoram</button><button class="sm ghost" data-act="extTemplate" title="Excel veidne instruktoriem, kam nav CADET PERSONĀLS">⇩ Excel veidne</button></div></section>`;
+  }
+  CP.changeHandlers.push(e => {
+    const id = e.target.dataset?.extcoun; if (!id || !ev()) return false;
+    const x = (ev().external || []).find(y => y.id === id); if (x) x.counselorId = e.target.value; return true;
+  });
+  A.extDel = id => { const e = ev(), x = (e?.external || []).find(y => y.id === id); if (!x || !confirm(`Noņemt ${U.full(x)} no šī pasākuma?`)) return; e.external = e.external.filter(y => y !== x); CP.forms.renderKeepScroll(); };
+  A.extStaffClear = () => { const e = ev(); if (!e || !confirm('Noņemt citu vienību darbiniekus no šī pasākuma?')) return; const ids = new Set((e.extStaff || []).map(s => s.id)); e.staff = (e.staff || []).filter(x => !ids.has(x)); e.extStaff = []; CP.forms.renderKeepScroll(); };
+
+  /* --- Eksports --- */
+  function dlg(id, html, cls = '') { let d = U.$(id); if (!d) { d = document.createElement('dialog'); d.id = id; document.body.appendChild(d); } d.className = cls; d.innerHTML = html; if (!d.open) d.showModal(); return d; }
+  A.extExport = () => {
+    const e = ev(); if (!e) return;
+    const own = CP.forms.evPeople(e).filter(p => !p._ext);
+    if (!own.length) return ui.toast('Vispirms izvēlies savus dalībniekus sarakstā augšā', 'warn', 6000);
+    const st = (S.db.settings.staff || []).filter(s => (e.staff || []).includes(s.id));
+    const d = dlg('extExpDialog', `<form><header class="dlg-head"><h2>Nosūtīt dalībniekus citam instruktoram</h2><button type="button" class="ghost" data-close="extExpDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p style="margin-top:0">Failā būs <b>${own.length}</b> ${own.length === 1 ? 'dalībnieks' : 'dalībnieki'} ar datiem, kas vajadzīgi instruktāžas lapai un nometnes žurnālam (vārds, personas kods, dzimšanas datums, grupa, adrese, tālrunis, vecāki).</p>
+        ${st.length ? `<label class="check"><input type="checkbox" name="staff" checked> Pievienot arī darbiniekus / audzinātājus (${st.length}): ${esc(st.map(s => s.name).join(', '))}</label>` : ''}
+        <div class="choice-list">
+          <label class="choice"><input type="radio" name="prot" value="pw" checked><div class="grow"><b>Aizsargāt ar paroli (ieteicams)</b><div class="small muted">Paroli pasaki otram instruktoram atsevišķi, piem., piezvanot. Bez paroles failu nevar atvērt.</div><input type="text" name="pw" placeholder="Parole (vismaz 6 zīmes)" autocomplete="off" style="margin-top:8px"></div></label>
+          <label class="choice"><input type="radio" name="prot" value="none"><div class="grow"><b>Bez paroles</b><div class="small muted">Fails ir lasāms jebkuram, kas to saņem.</div></div></label>
+        </div>
+        <p class="small muted">Fails tiek saglabāts tavā datorā. Rīks to nekur nesūta — nodod to pats (e-pastā, WhatsApp…).</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="extExpDialog">Atcelt</button><button class="mainbtn" type="submit">⇩ Saglabāt failu</button></footer></form>`);
+    const f = d.querySelector('form');
+    f.pw.addEventListener('focus', () => { f.prot.value = 'pw'; });
+    f.onsubmit = async x => {
+      x.preventDefault();
+      const pw = f.prot.value === 'pw' ? f.pw.value : '';
+      if (f.prot.value === 'pw' && pw.length < 6) { ui.toast('Parolei jābūt vismaz 6 zīmes garai', 'warn'); f.pw.focus(); return; }
+      const I = inst(), unit = [I.name, [I.parvalde, I.nodala].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      const body = { format: FORMAT, v: 1, created: U.now(), from: { instructor: I.name || '', unit, phone: I.phone || '' }, event: { title: e.title || '', when: e.when || '', dateFrom: e.dateFrom || '', type: e.type },
+        people: own.map(p => ({ ...pick(p, PF), group: D.groupOf(p, e.yearId) || '' })), staff: f.staff?.checked ? st.map(s => pick(s, SF)) : [] };
+      try {
+        const out = pw ? await encrypt(body, pw) : body;
+        const name = `CADET dalībnieki — ${(e.title || 'pasākums').slice(0, 40)} — ${(I.name || 'instruktors')}.json`.replace(/[\\/:*?"<>|]+/g, ' ');
+        U.download(new Blob([JSON.stringify(out, null, pw ? 0 : 1)], { type: 'application/json' }), name);
+        d.close(); ui.toast(pw ? 'Fails saglabāts. Paroli pasaki otram instruktoram atsevišķi.' : 'Fails saglabāts', 'ok', 8000);
+      } catch (err) { console.error(err); ui.toast('Failu neizdevās sagatavot: ' + err.message, 'err', 9000); }
+    };
+  };
+  A.extTemplate = async () => {
+    try { const r = await fetch(CP.VENDOR + `templates/dalibnieku-veidne.xlsx?v=${CP.VERSION}`, { cache: 'no-cache' }); if (!r.ok) throw Error(r.status); U.download(await r.blob(), 'Dalībnieku saraksts (veidne).xlsx'); ui.toast('Nosūti šo veidni otram instruktoram — viņš aizpilda un atsūta atpakaļ, tu to ievelc pasākumā', 'ok', 9000); }
+    catch (e) { ui.toast('Veidni neizdevās ielādēt: ' + e.message, 'err'); }
+  };
+
+  /* --- Imports --- */
+  A.extImport = () => {
+    let inp = U.$('extFile'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.id = 'extFile'; inp.hidden = true; inp.accept = '.json,.xlsx,.csv,.txt,application/json'; document.body.appendChild(inp); inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) take(f); }; }
+    inp.click();
+  };
+  const askPw = (msg = '') => new Promise(res => {
+    const d = dlg('extPwDialog', `<form><header class="dlg-head"><h2>🔒 Fails ir aizsargāts ar paroli</h2></header>
+      <div class="dlg-body"><p style="margin-top:0">Ievadi paroli, ko tev pateica instruktors, kurš atsūtīja failu.</p>${msg ? `<p class="red small">${esc(msg)}</p>` : ''}<input type="password" name="pw" autocomplete="off" required autofocus></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-v="cancel">Atcelt</button><button class="mainbtn" type="submit">Atvērt</button></footer></form>`);
+    const f = d.querySelector('form'); let done = false;
+    const fin = v => { if (done) return; done = true; d.close(); res(v); };
+    f.onsubmit = x => { x.preventDefault(); fin(f.pw.value); };
+    f.querySelector('[data-v=cancel]').onclick = () => fin(null);
+    d.addEventListener('close', () => fin(null), { once: true });
+    setTimeout(() => f.pw.focus(), 30);
+  });
+  async function take(file) {
+    if (!ev()) return;
+    try {
+      let people = [], staff = [], unit = '', src = file.name;
+      if (/\.json$/i.test(file.name) || file.type === 'application/json') {
+        let obj = JSON.parse(await file.text());
+        if (obj.format !== FORMAT) throw Error('šis nav CADET dalībnieku fails');
+        if (obj.enc) {
+          let msg = '';
+          for (;;) {
+            const pw = await askPw(msg); if (pw == null) return;
+            try { obj = await decrypt(obj, pw); break; } catch (e) { msg = 'Nepareiza parole. Mēģini vēlreiz.'; }
+          }
+        }
+        people = (obj.people || []).map(p => pick(p, PF)); staff = (obj.staff || []).map(s => pick(s, SF));
+        unit = obj.from?.unit || obj.from?.instructor || '';
+        src = `${obj.from?.instructor || 'cits instruktors'}${obj.event?.title ? ' — ' + obj.event.title : ''}`;
+      } else {
+        const r = await CP.io.peopleFromFile(file);
+        people = r.people.map(p => pick(p, PF));
+        // veidnē: “Vienība / instruktors:” šūna virs tabulas
+        for (const row of r.rows.slice(0, r.headerRow)) { const i = row.findIndex(c => /vien[īi]ba|instruktors/i.test(String(c))); if (i >= 0) { const v = row.slice(i + 1).find(c => String(c).trim()); if (v) { unit = String(v).trim(); break; } } }
+      }
+      if (!people.length && !staff.length) throw Error('failā nav neviena dalībnieka');
+      preview(people, staff, unit, src);
+    } catch (e) { console.error(e); ui.toast('Failu neizdevās nolasīt: ' + e.message, 'err', 10000); }
+  }
+  const code = p => U.codeDigits ? U.codeDigits(p.personalCode || '') : String(p.personalCode || '').replace(/\D/g, '');
+  const same = (a, b) => (code(a).length === 11 && code(a) === code(b)) || (U.norm(U.full(a)) === U.norm(U.full(b)) && (a.birth || '') === (b.birth || '') && !!a.birth);
+  function preview(people, staff, unit, src) {
+    const e = ev(), ext = e.external || [], ownIds = new Set((e.participants || []).map(x => x.pid));
+    const rows = people.map((p, i) => {
+      const mine = D.peopleInYear(e.yearId).find(q => same(q, p)), dup = ext.find(x => same(x, p));
+      return { i, p, mine, dup, on: !(mine && ownIds.has(mine.id)) };
+    });
+    const d = dlg('extImpDialog', `<form><header class="dlg-head"><h2>Dalībnieki no citas vienības</h2><button type="button" class="ghost" data-close="extImpDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p class="small muted" style="margin-top:0">Fails: ${esc(src)}</p>
+        <div class="field"><label>Vienība / instruktors (redzams tikai rīkā)</label><input name="unit" value="${esc(unit)}" placeholder="piem., 3. novada pārvalde, J. Bērziņš"></div>
+        <div class="ext-prev">${rows.map(r => `<label class="check ext-prow"><input type="checkbox" name="r" value="${r.i}" ${r.on ? 'checked' : ''}><span class="grow"><b>${esc(U.sortName(r.p))}</b> <small class="muted">${esc([r.p.group, r.p.birth && U.fmtDate(r.p.birth), r.p.personalCode ? 'p.k. ' + String(r.p.personalCode).slice(0, 6) + '-…' : ''].filter(Boolean).join(' · '))}</small>
+          ${r.mine ? `<br><small class="okc">ir tavā personu sarakstā — tiks izvēlēts no tava saraksta${ownIds.has(r.mine.id) ? ' (jau izvēlēts)' : ''}</small>` : r.dup ? '<br><small class="warn">jau ir pasākumā — dati tiks atjaunoti</small>' : ''}${!r.p.personalCode && !r.p.birth ? '<br><small class="warn">nav personas koda un dzimšanas datuma</small>' : ''}</span></label>`).join('')}</div>
+        ${staff.length && e.type === 'camp' ? `<label class="check" style="margin-top:8px"><input type="checkbox" name="staff" checked> Pievienot darbiniekus / audzinātājus: ${esc(staff.map(s => s.name).join(', '))}</label>` : ''}
+        <p class="small muted">Dati glabājas tikai šajā pasākumā un nonāk instruktāžas lapā / nometnes žurnālā kopā ar taviem dalībniekiem.</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="extImpDialog">Atcelt</button><button class="mainbtn" type="submit">Pievienot pasākumam</button></footer></form>`, 'wide');
+    const f = d.querySelector('form');
+    f.onsubmit = x => {
+      x.preventDefault();
+      const u = f.unit.value.trim(), chosen = new Set([...f.querySelectorAll('[name=r]:checked')].map(c => Number(c.value)));
+      let add = 0, upd = 0, own = 0;
+      e.external = e.external || []; e.participants = e.participants || [];
+      for (const r of rows) {
+        if (!chosen.has(r.i)) continue;
+        if (r.mine) { if (!e.participants.some(y => y.pid === r.mine.id)) { e.participants.push({ pid: r.mine.id }); own++; } continue; }
+        if (r.dup) { Object.assign(r.dup, r.p, { unit: u || r.dup.unit, updatedAt: U.now() }); upd++; continue; }
+        e.external.push({ id: 'x' + U.uid(), ...r.p, unit: u, addedAt: U.now() }); add++;
+      }
+      if (f.staff?.checked) {
+        e.extStaff = e.extStaff || []; e.staff = e.staff || [];
+        for (const s of staff) { let y = e.extStaff.find(z => U.norm(z.name) === U.norm(s.name)); if (!y) { y = { id: 'xs' + U.uid(), ...s, _ext: true, unit: u }; e.extStaff.push(y); } else Object.assign(y, s); if (!e.staff.includes(y.id)) e.staff.push(y.id); }
+      }
+      d.close(); CP.forms.renderKeepScroll();
+      ui.toast([add && `pievienoti ${add}`, upd && `atjaunoti ${upd}`, own && `${own} izvēlēti no tava saraksta`].filter(Boolean).join(', ') || 'Nekas netika mainīts', 'ok', 6000);
+    };
+  }
+
+  /* --- Ievilkšana pasākuma logā --- */
+  const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+  const zone = e => S.page === 'formEdit' && !U.qs('dialog[open]') ? e.target.closest?.('[data-extdrop]') : null;
+  document.addEventListener('dragover', e => { if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; zone(e).classList.add('over'); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget?.closest?.('[data-extdrop]')) document.querySelectorAll('[data-extdrop].over').forEach(x => x.classList.remove('over')); });
+  document.addEventListener('drop', e => { if (!hasFiles(e) || !zone(e)) return; e.preventDefault(); zone(e).classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) take(f); });
+  document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.ext-drop')) { e.preventDefault(); A.extImport(); } });
+
+  CP.extPeople = { card, encrypt, decrypt, take, FORMAT };
 })(window.CP);
 
 
