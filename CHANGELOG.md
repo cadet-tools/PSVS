@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.2 — 2026-10-17
+- Atcelts 1.38.1: atkopšanas koda sūtīšana uz e-pastu noņemta (kods un kopija vienā Google kontā = viens uzlaušanas punkts). Atpakaļ iepriekšējais teksts: izdrukāt / pierakstīt, nesūtīt e-pastā.
+
 ## 1.38.1 — 2026-10-17
 - Atkopšanas koda logā “Nosūtīt sev uz e-pastu”: Gmail rakstīšanas logs (`mail.google.com/mail/?view=cm`) vai `mailto:` ar kodu, datu mapi un Client ID. Kods netiek sūtīts caur Apps Script (citādi tas paliktu izstrādātāja nosūtīto vēstuļu mapē).
 
