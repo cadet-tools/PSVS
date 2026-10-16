@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.32.1';
+  CP.VERSION = '1.32.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5372,7 +5372,7 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.32.1', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
+    { v: '1.32.2', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
       'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**. Uzspiežot logo, atveras **cadet.lv**.'
     ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [

@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.32.2 — 2026-10-16
+- Logo — oriģinālais fails `vendor/brand/CADET_TRANSP_.png` bez krāsu maiņas (iepriekšējā maska noņemta).
+
 ## 1.32.1 — 2026-10-16
 - Logo augšā un “Par rīku” — saite uz https://cadet.lv.
 
