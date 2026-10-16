@@ -90,6 +90,7 @@
     if (CP.state.root) CP.store.changed({ silent: true });
   }
   const HEX = /^#[0-9a-f]{6}$/i;
+  CP.DEFAULT_ACCENT = '#4f9cff';   // noklusējums: zils (tēma — tumšā)
   CP.ACCENTS = [['#3ccf7e', 'Zaļš'], ['#7cb342', 'Meža'], ['#2ec4b6', 'Tirkīzs'], ['#4f9cff', 'Zils'], ['#7c83ff', 'Indigo'], ['#a879ff', 'Violets'], ['#f472b6', 'Rozā'], ['#ef5b5b', 'Sarkans'], ['#ff9f43', 'Oranžs'], ['#e6b422', 'Zelts'], ['#94a3a0', 'Pelēks']];
   /** Teksta krāsa uz akcenta pogas: balta vai tumša pēc kontrasta (WCAG relatīvais spilgtums) */
   function inkFor(hex, factor) {
@@ -101,7 +102,7 @@
   CP.theme = {
     get() { return ls.get('cp-theme') || look().theme || 'dark'; },
     set(v) { remember('theme', v); CP.theme.apply(); },
-    accent() { const v = ls.get('cp-accent') || look().accent || CP.ACCENTS[0][0]; return HEX.test(v) ? v : CP.ACCENTS[0][0]; },
+    accent() { const v = ls.get('cp-accent') || look().accent || CP.DEFAULT_ACCENT; return HEX.test(v) ? v : CP.DEFAULT_ACCENT; },
     setAccent(v) { if (!HEX.test(v)) return; remember('accent', v.toLowerCase()); CP.theme.apply(); },
     apply() {
       if (!CP.D2) return;

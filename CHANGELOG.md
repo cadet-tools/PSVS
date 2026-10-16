@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.26.3 — 2026-10-16
+- Noklusējuma akcents: zils `#4f9cff` (`CP.DEFAULT_ACCENT`, `--acc` design.css); tēma joprojām tumšā. Lietotāja izvēle (`localStorage` `cp-accent` / datu faila izskats) netiek mainīta.
+
 ## 1.26.2 — 2026-10-16
 - Grupas lauks: `select[data-grppick]` un datalist aizstāti ar `ui.grpPop` sarakstu (`.grp-pop` laukā `.grp-field`, visā lauka platumā zem tā): grupas ar skaitu, filtrs rakstot, “izveidot grupu …”, “bez grupas”, jaunas grupas ievade; ↑↓ / Enter / Esc (Esc neaizver logu), aizveras pie klikšķa ārpusē vai aizverot logu. Ievades lauks ar `name="group"` paliek (OCR, piespraušana, saglabāšana nemainās).
 - Grupas dzēšanas logs: izvēles kartītes `.choice` (radio + apraksts / saraksts); saraksta fokuss atzīmē “Pārcelt”.

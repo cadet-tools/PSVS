@@ -10,7 +10,7 @@
 /* --- Tumšā tēma --- */
 html.d2 {
   color-scheme: dark;
-  --acc: #3ccf7e;
+  --acc: #4f9cff;
   /* fons un virsmas — neitrāli tumši toņi ar vieglu akcenta nokrāsu */
   --bg: color-mix(in srgb, var(--acc) 5%, #0b0f0e); --rail: color-mix(in srgb, var(--acc) 4%, #090c0b); --side: color-mix(in srgb, var(--acc) 5%, #0e1211);
   --panel: color-mix(in srgb, var(--acc) 6%, #131817); --panel2: color-mix(in srgb, var(--acc) 8%, #181e1c); --field: color-mix(in srgb, var(--acc) 4%, #0d1110);

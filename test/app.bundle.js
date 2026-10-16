@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.26.2';
+  CP.VERSION = '1.26.3';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -755,6 +755,7 @@ window.CP = window.CP || {};
     if (CP.state.root) CP.store.changed({ silent: true });
   }
   const HEX = /^#[0-9a-f]{6}$/i;
+  CP.DEFAULT_ACCENT = '#4f9cff';   // noklusējums: zils (tēma — tumšā)
   CP.ACCENTS = [['#3ccf7e', 'Zaļš'], ['#7cb342', 'Meža'], ['#2ec4b6', 'Tirkīzs'], ['#4f9cff', 'Zils'], ['#7c83ff', 'Indigo'], ['#a879ff', 'Violets'], ['#f472b6', 'Rozā'], ['#ef5b5b', 'Sarkans'], ['#ff9f43', 'Oranžs'], ['#e6b422', 'Zelts'], ['#94a3a0', 'Pelēks']];
   /** Teksta krāsa uz akcenta pogas: balta vai tumša pēc kontrasta (WCAG relatīvais spilgtums) */
   function inkFor(hex, factor) {
@@ -766,7 +767,7 @@ window.CP = window.CP || {};
   CP.theme = {
     get() { return ls.get('cp-theme') || look().theme || 'dark'; },
     set(v) { remember('theme', v); CP.theme.apply(); },
-    accent() { const v = ls.get('cp-accent') || look().accent || CP.ACCENTS[0][0]; return HEX.test(v) ? v : CP.ACCENTS[0][0]; },
+    accent() { const v = ls.get('cp-accent') || look().accent || CP.DEFAULT_ACCENT; return HEX.test(v) ? v : CP.DEFAULT_ACCENT; },
     setAccent(v) { if (!HEX.test(v)) return; remember('accent', v.toLowerCase()); CP.theme.apply(); },
     apply() {
       if (!CP.D2) return;
@@ -5060,10 +5061,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.26.2', from: '1.26.0', date: '2026-10-16', title: 'Sakārtota grupas izvēle un dzēšanas logs', items: [
+    { v: '1.26.3', from: '1.26.0', date: '2026-10-16', title: 'Sakārtota grupas izvēle un dzēšanas logs', items: [
       'Personas formā pie lauka **Grupa** poga **▾** atver rīka stila sarakstu tieši zem lauka. Tajā redzamas grupas ar personu skaitu, **“— bez grupas —”** un lauks **jaunai grupai** turpat sarakstā.',
       'Rakstot grupas laukā, saraksts **filtrējas**. Ja tādas grupas vēl nav, var spiest **“＋ Izveidot grupu …”**. Darbojas arī ar tastatūru: ↑↓ un Enter izvēlas, Esc aizver.',
-      '**Grupas dzēšanas logā** ir divas skaidras izvēles: **“Pārcelt uz citu grupu”** ar grupas sarakstu un **“Atstāt bez grupas”**.'
+      '**Grupas dzēšanas logā** ir divas skaidras izvēles: **“Pārcelt uz citu grupu”** ar grupas sarakstu un **“Atstāt bez grupas”**.',
+      'Jauns noklusējuma izskats: **tumšā tēma ar zilu akcentu**. Ja krāsu jau esi izvēlējies pats (Iestatījumi → Izskats), tā paliek nemainīta.'
     ] },
     { v: '1.26.1', from: '1.26.0', date: '2026-10-16', title: 'Notikuma kartīte kalendārā', items: [
       'Klikšķis uz notikuma kalendārā tagad atver **kartīti tikai skatīšanai**: datums, laiks un ilgums, vieta, piezīmes, atgādinājumi, atkārtošanās un vai notikums ir importēts vai Google kalendārā. Nejauši neko izmainīt vairs nevar.',

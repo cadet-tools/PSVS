@@ -1,6 +1,6 @@
 /* CADET PERSONĀLS — bezsaistes kešs. Kešo TIKAI programmas failus (kodu, bibliotēkas).
    Personu dati un dokumenti caur šo nekad neiet: tie tiek lasīti tieši no datora mapes. */
-const CACHE = 'cadet-test-1.26.2', PREFIX = 'cadet-test-';
+const CACHE = 'cadet-test-1.26.3', PREFIX = 'cadet-test-';
 const CORE = ['./', 'index.html', 'app.bundle.js', 'PS_LOGO.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
