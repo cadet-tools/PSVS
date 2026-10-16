@@ -17,9 +17,9 @@
         return `<tr class="${e.returned ? 'done' : ''}">${showPerson ? `<td><a href="#" data-person="${e.personId}" data-goto="equipment">${esc(U.sortName(p))}</a>${mtlBadge(p)}</td>` : ''}
           <td><b>${esc(e.item)}</b></td><td>${esc(e.inventory || '—')}</td><td>${esc(e.size || '—')}</td><td>${esc(e.qty || 1)}</td>
           <td>${U.fmtDate(e.issued)}${e.yearId ? `<div class="muted small">${esc(U.yearLabel(e.yearId))}</div>` : ''}</td><td class="${late ? 'red' : ''}">${e.keep ? '—' : U.fmtDate(e.due) || '—'}</td>
-          <td>${e.keep ? `<span class="pill ok" title="Apbalvojums / nozīmīte — nav jāatdod">Pasniegts${e.src?.startsWith('vfs:') ? ' (VFS)' : ''}</span>` : e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
+          <td>${e.keep ? `<span class="pill ok" title="Dāvinājums — paliek jaunsargam, nav jāatdod">🎁 Dāvināts${e.keepAt ? ' ' + U.fmtDate(e.keepAt) : ''}</span>` : e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
           <td class="small">${esc(e.notes || '')}${e.returnNote ? `<div class="muted">Atdodot: ${esc(e.returnNote)}</div>` : ''}</td>
-          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned || e.keep ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button>`}</td></tr>`;
+          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned || e.keep ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button><button class="sm ghost" data-act="giftEq" data-arg="${e.id}" title="Dāvinājums — paliek jaunsargam, nav jāatdod">🎁 Dāvināt</button>`}</td></tr>`;
       }).join('')}</tbody></table></div>`;
   }
   const mtlBadge = p => { const m = D.mtlStatus(p); return m.state === 'missing' ? ' <span class="pill bad" title="Nav MTL aprites lapas">MTL ✗</span>' : m.state === 'outdated' ? ' <span class="pill warn" title="MTL lapa nav atjaunota pēc izmaiņām">MTL ⟳</span>' : ''; };
@@ -52,7 +52,7 @@
       return `<div class="page">${ui.pageHead('Ekipējums', `${out.reduce((n, e) => n + Number(e.qty || 1), 0)} vienības izsniegtas ${new Set(out.map(e => e.personId)).size} personām`, `<button class="mainbtn" data-act="addEq">＋ Izsniegt</button>`)}
         ${mtlIssues.length ? `<section class="card dupcard"><h3>⚠ MTL aprites lapas (${mtlIssues.length})</h3>${mtlIssues.map(x => `<div class="row"><div class="grow"><a href="#" data-person="${x.p.id}" data-goto="equipment">${esc(U.full(x.p))}</a> — <span class="warn">${x.m.state === 'missing' ? 'nav MTL lapas' : 'MTL lapa nav atjaunota pēc izmaiņām'}</span></div><button class="sm" data-act="attach" data-arg="${x.p.id}|${esc(D.MTL)}">📎 Pievienot</button></div>`).join('')}</section>` : ''}
         <section class="card"><h3>Izsniegts</h3>${table(out.sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9'))))}</section>
-        ${awards.length ? `<details class="card"><summary><b>Pasniegtās nozīmītes un apbalvojumi (${awards.length})</b> <span class="small muted">— paliek jaunsargam, nav jāatdod</span></summary>${table(awards.sort((a, b) => String(b.issued).localeCompare(String(a.issued))))}</details>` : ''}
+        ${awards.length ? `<details class="card"><summary><b>Dāvinājumi (${awards.length})</b> <span class="small muted">— paliek jaunsargam, nav jāatdod</span></summary>${table(awards.sort((a, b) => String(b.issued).localeCompare(String(a.issued))))}</details>` : ''}
         <details class="card"><summary><b>Atdotais (${back.length})</b></summary>${table(back.sort((a, b) => String(b.returned).localeCompare(String(a.returned))))}</details></div>`;
     }
   };
@@ -74,10 +74,11 @@
   };
   f.addEventListener('submit', ev => {
     ev.preventDefault(); const o = Object.fromEntries(new FormData(f)); o.qty = Number(o.qty || 1); o.keep = fld('keep').checked || undefined; if (o.keep) { o.due = ''; o.returned = ''; }
+    const prev = f.dataset.edit && S.db.equipment.find(x => x.id === f.dataset.edit); o.keepAt = o.keep ? (prev?.keepAt || U.iso()) : undefined;
     if (f.dataset.edit) {
       const e = S.db.equipment.find(x => x.id === f.dataset.edit), changed = Object.keys(o).filter(k => String(e[k] ?? '') !== String(o[k] ?? ''));
-      if (changed.length) { Object.assign(e, o); if (!e.keep) delete e.keep; e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); CP.vfs?.eqChanged(e); }
-    } else { if (!o.keep) delete o.keep; S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
+      if (changed.length) { Object.assign(e, o); if (!e.keep) { delete e.keep; delete e.keepAt; } e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); CP.vfs?.eqChanged(e); }
+    } else { if (!o.keep) { delete o.keep; delete o.keepAt; } S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
     U.$('equipmentDialog').close(); CP.store.changed(); mtlReminder(o.personId);
   });
   A.delEq = () => {
@@ -88,6 +89,10 @@
     const x = S.db.equipment.find(z => z.id === id); if (!x) return;
     const note = prompt(`“${x.item}” atdots. Piezīme par stāvokli (nav obligāta):`, ''); if (note === null) return;
     x.returned = U.iso(); x.returnNote = note.trim(); x.changedAt = U.now(); D.audit(x.personId, 'eq-return', [x.item]); CP.store.changed(); mtlReminder(x.personId);
+  };
+  A.giftEq = id => {
+    const x = S.db.equipment.find(z => z.id === id); if (!x || !confirm(`Atzīmēt “${x.item}” kā dāvinājumu? Tas paliks jaunsargam, un atdot nevajadzēs.`)) return;
+    x.keep = true; x.keepAt = U.iso(); x.due = ''; x.changedAt = U.now(); D.audit(x.personId, 'eq-edit', [x.item + ' — dāvināts']); CP.store.changed(); mtlReminder(x.personId);
   };
   /** Pēc izmaiņām ekipējumā atgādina pievienot jaunu MTL lapu */
   function mtlReminder(pid) {

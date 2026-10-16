@@ -117,8 +117,8 @@
       const s = score(r), cur = db.equipment.find(e => e.src === src && e.personId === pid);
       if (!(r.issued && s.badge && D.person(pid))) { if (cur) { db.equipment = db.equipment.filter(e => e !== cur); ch = true; } continue; }
       const want = { item: `VFS sporta nozīmīte — ${s.badgeName.toLowerCase()}`, issued: r.issued, notes: `VFS tests ${U.fmtDate(t.date)}, ${s.total} punkti` };
-      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', keep: true, src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
-      else if (Object.keys(want).some(k => cur[k] !== want[k]) || !cur.keep) { Object.assign(cur, want, { keep: true }); cur.changedAt = U.now(); ch = true; }
+      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
+      else if (Object.keys(want).some(k => cur[k] !== want[k]) || (cur.keep && !cur.keepAt)) { Object.assign(cur, want); if (!cur.keepAt) delete cur.keep; cur.changedAt = U.now(); ch = true; }   // 1.36.1 “paliek” bez instruktora lēmuma → atpakaļ uz “jāatdod”
     }
     for (const e of [...db.equipment]) if (e.src === src && !t.res[e.personId]) { db.equipment = db.equipment.filter(x => x !== e); ch = true; }
     return ch;
@@ -209,7 +209,7 @@
     } else if (el.dataset.vfsiss) {
       const r = t.res[el.dataset.vfsiss]; if (!r) return;
       r.issued = el.checked ? U.iso() : ''; syncEq(t); CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
-      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā (paliek jaunsargam, nav jāatdod)', 'ok');
+      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā. Ja tā ir dāvinājums, atzīmē to ekipējumā (🎁 Dāvināt).', 'ok', 8000);
     } else if (el.id === 'vfsPerson') { V().person = el.value; CP.render(); }
     else if (el.id === 'vfsDynGroup') { V().group = el.value; CP.render(); }
   });

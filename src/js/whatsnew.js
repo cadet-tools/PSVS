@@ -10,10 +10,9 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.36.1', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
-      'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem). Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
-      'Nozīmīte **paliek jaunsargam**: tai nav “Atdot līdz”, nav pogas “Atdots”, tā neprasa MTL aprites lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums tās redzamas atsevišķi — **“Pasniegtās nozīmītes un apbalvojumi”**.',
-      'Arī citus apbalvojumus var ierakstīt tāpat: izsniegšanas logā atzīme **“Paliek jaunsargam”**.'
+    { v: '1.36.2', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
+      'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** kā parasts izsniegts priekšmets (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem) — tā ir **jāatdod**, un uz to attiecas MTL aprites lapa. Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
+      'Ja nozīmīte vai cits priekšmets ir **dāvinājums**, ekipējumā spied **“🎁 Dāvināt”** (vai izsniegšanas logā atzīmē “Dāvinājums”). Tad tas paliek jaunsargam: nav jāatdod, neprasa MTL lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums dāvinājumi redzami atsevišķi.'
     ] },
     { v: '1.36.0', date: '2026-10-16', title: 'Datu glabāšanas termiņi', items: [
       '**Iestatījumi → Datu glabāšanas termiņi**: katrai datu grupai ir savs termiņš mēnešos, un to var mainīt. Noklusējumi: izstājušies jaunsargi — **12 mēn.** pēc izstāšanās (anonimizēt vai dzēst pilnībā), kandidāti, kas neiestājās — **6 mēn.**, ārsta izziņas — **3 mēn.** pēc derīguma beigām, saziņas vēsture — **24 mēn.**, citu vienību dalībnieki pasākumos — **12 mēn.**, JSON rezerves kopijas — **6 mēn.** (10 jaunākās paliek vienmēr), darbību žurnāls — **12 mēn.**',

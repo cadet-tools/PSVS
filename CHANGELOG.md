@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.36.2 — 2026-10-16
+- VFS nozīmītes ekipējumā vairs nav `keep` pēc noklusējuma — jāatdod, MTL lapa. `keep` + `keepAt` nozīmē “dāvinājums” un tiek iestatīts tikai instruktora darbībā (`giftEq` vai atzīme logā). 1.36.1 automātiski izveidotajiem ierakstiem (`keep` bez `keepAt`) `keep` noņemts.
+
 ## 1.36.1 — 2026-10-16
 - Ekipējumam lauks `keep` (paliek jaunsargam): nav `due`/`returned`, neskaitās `D.openEquipment`, `D.mtlStatus`, brīdinājumos un “izsniegts” skaitā; lapā atsevišķa sadaļa. Izsniegšanas logā atzīme.
 - `vfs.js` `syncEq(t)`: `r.issued` + nozīmīte → `equipment { keep: true, src: 'vfs:<testa id>' }`; izsaucas no `syncQuals`, atzīmes maiņas, `vfsRemove`, dzēšot testu (`dropEq`), un `afterRootLoad` (esošajiem datiem). Ekipējuma ieraksta dzēšana/labošana → `CP.vfs.eqChanged` atjauno `r.issued`.

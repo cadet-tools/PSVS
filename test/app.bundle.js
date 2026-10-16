@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.1';
+  CP.VERSION = '1.36.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -3690,9 +3690,9 @@ window.CP = window.CP || {};
         return `<tr class="${e.returned ? 'done' : ''}">${showPerson ? `<td><a href="#" data-person="${e.personId}" data-goto="equipment">${esc(U.sortName(p))}</a>${mtlBadge(p)}</td>` : ''}
           <td><b>${esc(e.item)}</b></td><td>${esc(e.inventory || '—')}</td><td>${esc(e.size || '—')}</td><td>${esc(e.qty || 1)}</td>
           <td>${U.fmtDate(e.issued)}${e.yearId ? `<div class="muted small">${esc(U.yearLabel(e.yearId))}</div>` : ''}</td><td class="${late ? 'red' : ''}">${e.keep ? '—' : U.fmtDate(e.due) || '—'}</td>
-          <td>${e.keep ? `<span class="pill ok" title="Apbalvojums / nozīmīte — nav jāatdod">Pasniegts${e.src?.startsWith('vfs:') ? ' (VFS)' : ''}</span>` : e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
+          <td>${e.keep ? `<span class="pill ok" title="Dāvinājums — paliek jaunsargam, nav jāatdod">🎁 Dāvināts${e.keepAt ? ' ' + U.fmtDate(e.keepAt) : ''}</span>` : e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
           <td class="small">${esc(e.notes || '')}${e.returnNote ? `<div class="muted">Atdodot: ${esc(e.returnNote)}</div>` : ''}</td>
-          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned || e.keep ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button>`}</td></tr>`;
+          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned || e.keep ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button><button class="sm ghost" data-act="giftEq" data-arg="${e.id}" title="Dāvinājums — paliek jaunsargam, nav jāatdod">🎁 Dāvināt</button>`}</td></tr>`;
       }).join('')}</tbody></table></div>`;
   }
   const mtlBadge = p => { const m = D.mtlStatus(p); return m.state === 'missing' ? ' <span class="pill bad" title="Nav MTL aprites lapas">MTL ✗</span>' : m.state === 'outdated' ? ' <span class="pill warn" title="MTL lapa nav atjaunota pēc izmaiņām">MTL ⟳</span>' : ''; };
@@ -3725,7 +3725,7 @@ window.CP = window.CP || {};
       return `<div class="page">${ui.pageHead('Ekipējums', `${out.reduce((n, e) => n + Number(e.qty || 1), 0)} vienības izsniegtas ${new Set(out.map(e => e.personId)).size} personām`, `<button class="mainbtn" data-act="addEq">＋ Izsniegt</button>`)}
         ${mtlIssues.length ? `<section class="card dupcard"><h3>⚠ MTL aprites lapas (${mtlIssues.length})</h3>${mtlIssues.map(x => `<div class="row"><div class="grow"><a href="#" data-person="${x.p.id}" data-goto="equipment">${esc(U.full(x.p))}</a> — <span class="warn">${x.m.state === 'missing' ? 'nav MTL lapas' : 'MTL lapa nav atjaunota pēc izmaiņām'}</span></div><button class="sm" data-act="attach" data-arg="${x.p.id}|${esc(D.MTL)}">📎 Pievienot</button></div>`).join('')}</section>` : ''}
         <section class="card"><h3>Izsniegts</h3>${table(out.sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9'))))}</section>
-        ${awards.length ? `<details class="card"><summary><b>Pasniegtās nozīmītes un apbalvojumi (${awards.length})</b> <span class="small muted">— paliek jaunsargam, nav jāatdod</span></summary>${table(awards.sort((a, b) => String(b.issued).localeCompare(String(a.issued))))}</details>` : ''}
+        ${awards.length ? `<details class="card"><summary><b>Dāvinājumi (${awards.length})</b> <span class="small muted">— paliek jaunsargam, nav jāatdod</span></summary>${table(awards.sort((a, b) => String(b.issued).localeCompare(String(a.issued))))}</details>` : ''}
         <details class="card"><summary><b>Atdotais (${back.length})</b></summary>${table(back.sort((a, b) => String(b.returned).localeCompare(String(a.returned))))}</details></div>`;
     }
   };
@@ -3747,10 +3747,11 @@ window.CP = window.CP || {};
   };
   f.addEventListener('submit', ev => {
     ev.preventDefault(); const o = Object.fromEntries(new FormData(f)); o.qty = Number(o.qty || 1); o.keep = fld('keep').checked || undefined; if (o.keep) { o.due = ''; o.returned = ''; }
+    const prev = f.dataset.edit && S.db.equipment.find(x => x.id === f.dataset.edit); o.keepAt = o.keep ? (prev?.keepAt || U.iso()) : undefined;
     if (f.dataset.edit) {
       const e = S.db.equipment.find(x => x.id === f.dataset.edit), changed = Object.keys(o).filter(k => String(e[k] ?? '') !== String(o[k] ?? ''));
-      if (changed.length) { Object.assign(e, o); if (!e.keep) delete e.keep; e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); CP.vfs?.eqChanged(e); }
-    } else { if (!o.keep) delete o.keep; S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
+      if (changed.length) { Object.assign(e, o); if (!e.keep) { delete e.keep; delete e.keepAt; } e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); CP.vfs?.eqChanged(e); }
+    } else { if (!o.keep) { delete o.keep; delete o.keepAt; } S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
     U.$('equipmentDialog').close(); CP.store.changed(); mtlReminder(o.personId);
   });
   A.delEq = () => {
@@ -3761,6 +3762,10 @@ window.CP = window.CP || {};
     const x = S.db.equipment.find(z => z.id === id); if (!x) return;
     const note = prompt(`“${x.item}” atdots. Piezīme par stāvokli (nav obligāta):`, ''); if (note === null) return;
     x.returned = U.iso(); x.returnNote = note.trim(); x.changedAt = U.now(); D.audit(x.personId, 'eq-return', [x.item]); CP.store.changed(); mtlReminder(x.personId);
+  };
+  A.giftEq = id => {
+    const x = S.db.equipment.find(z => z.id === id); if (!x || !confirm(`Atzīmēt “${x.item}” kā dāvinājumu? Tas paliks jaunsargam, un atdot nevajadzēs.`)) return;
+    x.keep = true; x.keepAt = U.iso(); x.due = ''; x.changedAt = U.now(); D.audit(x.personId, 'eq-edit', [x.item + ' — dāvināts']); CP.store.changed(); mtlReminder(x.personId);
   };
   /** Pēc izmaiņām ekipējumā atgādina pievienot jaunu MTL lapu */
   function mtlReminder(pid) {
@@ -5430,10 +5435,9 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.36.1', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
-      'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem). Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
-      'Nozīmīte **paliek jaunsargam**: tai nav “Atdot līdz”, nav pogas “Atdots”, tā neprasa MTL aprites lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums tās redzamas atsevišķi — **“Pasniegtās nozīmītes un apbalvojumi”**.',
-      'Arī citus apbalvojumus var ierakstīt tāpat: izsniegšanas logā atzīme **“Paliek jaunsargam”**.'
+    { v: '1.36.2', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
+      'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** kā parasts izsniegts priekšmets (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem) — tā ir **jāatdod**, un uz to attiecas MTL aprites lapa. Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
+      'Ja nozīmīte vai cits priekšmets ir **dāvinājums**, ekipējumā spied **“🎁 Dāvināt”** (vai izsniegšanas logā atzīmē “Dāvinājums”). Tad tas paliek jaunsargam: nav jāatdod, neprasa MTL lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums dāvinājumi redzami atsevišķi.'
     ] },
     { v: '1.36.0', date: '2026-10-16', title: 'Datu glabāšanas termiņi', items: [
       '**Iestatījumi → Datu glabāšanas termiņi**: katrai datu grupai ir savs termiņš mēnešos, un to var mainīt. Noklusējumi: izstājušies jaunsargi — **12 mēn.** pēc izstāšanās (anonimizēt vai dzēst pilnībā), kandidāti, kas neiestājās — **6 mēn.**, ārsta izziņas — **3 mēn.** pēc derīguma beigām, saziņas vēsture — **24 mēn.**, citu vienību dalībnieki pasākumos — **12 mēn.**, JSON rezerves kopijas — **6 mēn.** (10 jaunākās paliek vienmēr), darbību žurnāls — **12 mēn.**',
@@ -9728,8 +9732,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       const s = score(r), cur = db.equipment.find(e => e.src === src && e.personId === pid);
       if (!(r.issued && s.badge && D.person(pid))) { if (cur) { db.equipment = db.equipment.filter(e => e !== cur); ch = true; } continue; }
       const want = { item: `VFS sporta nozīmīte — ${s.badgeName.toLowerCase()}`, issued: r.issued, notes: `VFS tests ${U.fmtDate(t.date)}, ${s.total} punkti` };
-      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', keep: true, src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
-      else if (Object.keys(want).some(k => cur[k] !== want[k]) || !cur.keep) { Object.assign(cur, want, { keep: true }); cur.changedAt = U.now(); ch = true; }
+      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
+      else if (Object.keys(want).some(k => cur[k] !== want[k]) || (cur.keep && !cur.keepAt)) { Object.assign(cur, want); if (!cur.keepAt) delete cur.keep; cur.changedAt = U.now(); ch = true; }   // 1.36.1 “paliek” bez instruktora lēmuma → atpakaļ uz “jāatdod”
     }
     for (const e of [...db.equipment]) if (e.src === src && !t.res[e.personId]) { db.equipment = db.equipment.filter(x => x !== e); ch = true; }
     return ch;
@@ -9820,7 +9824,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     } else if (el.dataset.vfsiss) {
       const r = t.res[el.dataset.vfsiss]; if (!r) return;
       r.issued = el.checked ? U.iso() : ''; syncEq(t); CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
-      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā (paliek jaunsargam, nav jāatdod)', 'ok');
+      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā. Ja tā ir dāvinājums, atzīmē to ekipējumā (🎁 Dāvināt).', 'ok', 8000);
     } else if (el.id === 'vfsPerson') { V().person = el.value; CP.render(); }
     else if (el.id === 'vfsDynGroup') { V().group = el.value; CP.render(); }
   });
@@ -10880,7 +10884,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const KL = {
     noteLog: 'Piezīmes', contracts: 'Līgumi', quals: 'Kvalifikācijas', incidents: 'Uzvedības ieraksti', reg: 'Reģistri', dvs: 'DVS', idcard: 'Apliecība', left: 'Izstāšanās datums', reason: 'Iemesls',
     folder: 'Mape', date: 'Datums', endDate: 'Beigu datums', from: 'No', to: 'Līdz', title: 'Nosaukums', type: 'Veids', place: 'Vieta', start: 'Sākums', end: 'Beigas', notes: 'Piezīmes', topic: 'Tēma',
-    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', keep: 'Paliek jaunsargam', group: 'Grupa', status: 'Statuss',
+    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', keep: 'Dāvinājums', keepAt: 'Dāvināts', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',

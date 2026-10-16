@@ -36,7 +36,7 @@
   const KL = {
     noteLog: 'Piezīmes', contracts: 'Līgumi', quals: 'Kvalifikācijas', incidents: 'Uzvedības ieraksti', reg: 'Reģistri', dvs: 'DVS', idcard: 'Apliecība', left: 'Izstāšanās datums', reason: 'Iemesls',
     folder: 'Mape', date: 'Datums', endDate: 'Beigu datums', from: 'No', to: 'Līdz', title: 'Nosaukums', type: 'Veids', place: 'Vieta', start: 'Sākums', end: 'Beigas', notes: 'Piezīmes', topic: 'Tēma',
-    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', keep: 'Paliek jaunsargam', group: 'Grupa', status: 'Statuss',
+    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', keep: 'Dāvinājums', keepAt: 'Dāvināts', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
