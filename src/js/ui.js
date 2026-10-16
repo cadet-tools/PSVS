@@ -37,7 +37,7 @@
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
+  const PAGE_NAMES = { feedback: 'Ziņot', dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -65,9 +65,9 @@
   CP.actions.goBack = () => { if (!navStack.length) return; try { history.back(); } catch (e) { doBack(); } };
   window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   /* --- Bez datu mapes nevar strādāt: skaidrs paziņojums un aizliegtas darbības --- */
-  const NOROOT_OK = /^(pickRoot|restoreRoot|retryRestore|bootNew|reloadApp|installApp|newsAll|setTheme|setAccent|watch\w*|break\w*|goBack|jCancel|needRootPick|encRestore\w*|copy)$/;
+  const NOROOT_OK = /^(pickRoot|restoreRoot|retryRestore|bootNew|reloadApp|installApp|newsAll|setTheme|setAccent|watch\w*|break\w*|goBack|jCancel|needRootPick|encRestore\w*|fb\w*|copy)$/;
   CP.noRootOk = act => NOROOT_OK.test(act);
-  const NOROOT_PAGES = new Set(['dashboard', 'about']);
+  const NOROOT_PAGES = new Set(['dashboard', 'about', 'feedback']);
   ui.rootSteps = () => `<ol class="root-steps">
       <li><b>Izveido datorā mapi</b> rīka datiem, piem., <i>Dokumenti\\CADET PERSONALS</i>, vai uz šifrētas zibatmiņas. Ja rīku jau lieto, izmanto to pašu mapi, kur ir dati.</li>
       <li>Spied <b>📁 Izvēlēties datu mapi</b> un izvēlies šo mapi. Mapi var arī ievilkt no File Explorer.</li>

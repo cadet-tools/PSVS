@@ -8,7 +8,9 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.29.0';
+  CP.VERSION = '1.30.0';
+  /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
+  CP.FEEDBACK_URL = '';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */

@@ -13,7 +13,7 @@ for n in os.listdir(repo):
     p = os.path.join(repo, n); shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; "
-       "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com; worker-src 'self' blob:; frame-src 'self' blob:; "
+       "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; frame-src 'self' blob:; "
        "object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'")
 
 def build(channel, out, vendor_rel, design=''):

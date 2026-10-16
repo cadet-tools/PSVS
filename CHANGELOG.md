@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.30.0 — 2026-10-16 — Ziņot
+- Jauns modulis `js/feedback.js`, lapa `feedback` (pieejama arī bez datu mapes), navigācijas poga “Ziņot”. Tēmas: kļūda / ieteikums / atsauksme / jautājums; virsraksts, apraksts, vārds, kontakts; melnraksts `localStorage` (`cp.fbDraft`, `cp.fbContact`), vēsture `cp.fbSent`.
+- Ekrānuzņēmumi (līdz 5, samazināti līdz 1600 px): ievilkšana, Ctrl+V, faila izvēle, `getDisplayMedia` (šī cilne) ar peldošu joslu “Uzņemt / Pēc 5 s / Atcelt”. Aizklāšana uz kanvas (taisnstūri, atsaukt, notīrīt); sūtīšanā aizklātais iededzināts JPEG; neaizklātam attēlam — apstiprinājums.
+- Tehniskā informācija: versija, kanāls, lapa, pārlūks, ekrāns, pēdējās 10 JS kļūdas (`error` / `unhandledrejection`).
+- Sūtīšana: `POST` (text/plain, bez CORS priekšpieprasījuma) uz `CP.FEEDBACK_URL` — izstrādātāja Google Apps Script tīmekļa lietotne (`tools/zinojumi_apps_script.gs`: Google tabula, attēli Drive mapē, e-pasts; ierobežojums 30/h). CSP `connect-src` + `script.google.com`, `script.googleusercontent.com`. Bez adreses vai kļūdas gadījumā — “Saglabāt failā” (HTML ar attēliem).
+
 ## 1.29.0 — 2026-10-16 — Rezerves kopija tieši Google Drive
 - Jauns modulis `js/google.js` (`CP.google`): kopīga OAuth “token” plūsma (uznirstošais logs → `oauth.html` → BroadcastChannel) kalendāram (`calendar.app.created`) un Drive (`drive.file`), `include_granted_scopes`; atļauja glabājas tikai cilnes `sessionStorage` (~1 h). Client ID arī `localStorage` (`cp.gClientId`), lai atjaunotu bez datu mapes. `schedule.js` izmanto `CP.google`.
 - Josla `#gBanner` (testa vides joslas stilā): moduļi reģistrē `CP.google.needs` → parādās, ja savienojums beidzies un ir ko sūtīt (rezerves kopija ar nenosūtītu revīziju; kalendārs ar nesinhronizētiem notikumiem). “Pieslēgties” → jauna atļauja → `onToken` āķi nosūta uzreiz; ✕ paslēpj uz 30 min.
