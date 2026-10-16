@@ -421,7 +421,7 @@
     return `<div style="font:14px/1.5 Arial;padding:24mm;color:#000"><h1 style="font-size:20px">CADET PERSONĀLS — rezerves kopijas atkopšanas kods</h1>
       <p>Datu mape: <b>${esc(S.rootName || '')}</b> · Izveidots: ${esc(U.fmtDate(U.iso()))}</p>
       <p style="font:700 24px/1.6 monospace;letter-spacing:2px;border:2px solid #000;padding:12px 16px;display:inline-block">${esc(code)}</p>
-      <p>Ar šo kodu var atvērt šifrēto rezerves kopiju, ja aizmirsta parole. Glabā drošā vietā (piem., aizslēgtā atvilktnē), atsevišķi no datora. Nefotografē un nesūti to.</p>
+      <p>Ar šo kodu var atvērt šifrēto rezerves kopiju, ja aizmirsta parole. Glabā drošā vietā (piem., aizslēgtā atvilktnē), atsevišķi no datora. Nefotografē to un neliec Google Drive blakus kopijai.</p>
       ${cid ? `<p><b>Kopija glabājas Google Drive</b> (mape ${DIRNAME}). Atjaunojot citā datorā, vajadzēs šo Google Client ID (tas nav slepens):<br><span style="font:12px monospace;word-break:break-all">${esc(cid)}</span><br>To var atrast arī console.cloud.google.com → Google Auth Platform → Clients.</p>` : ''}
       <p>Atjaunošana: rīkā “Atjaunot no šifrētās kopijas” vai kopijas mapē atver failu ATJAUNOT.html.</p></div>`;
   }
@@ -430,12 +430,27 @@
       <div class="dlg-body"><p style="margin-top:0">Ar šo kodu kopiju var atvērt, <b>ja aizmirsti paroli</b>. Tas tiek parādīts <b>tikai tagad</b>.</p>
         <div class="enc-code">${esc(code)}</div>
         <div class="actions"><button type="button" data-act="copy" data-arg="${esc(code)}">⧉ Kopēt</button><button type="button" id="encPrint">🖨 Izdrukāt / saglabāt PDF</button></div>
-        <p class="small muted">Izdrukā vai pieraksti un glabā drošā vietā atsevišķi no datora. Nesūti to e-pastā un neliec Google Drive.${cid ? ' Izdrukā ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
+        <div class="enc-mail"><label class="small" for="encMailTo"><b>✉ Nosūtīt sev uz e-pastu</b> — vēstule tiek sagatavota tavā e-pastā, un to nosūti pats (kods neiet caur rīku vai citiem serveriem).</label>
+          <div class="inline-form" style="margin:6px 0 0"><input id="encMailTo" type="email" value="${esc(S.db?.settings?.instructor?.email || '')}" placeholder="vards.uzvards@jc.gov.lv" autocomplete="off">
+            <button type="button" id="encMailG">Gmail</button><button type="button" id="encMailM">E-pasta programmā</button></div>
+          <p class="small muted" style="margin:6px 0 0">Ieteicams sūtīt uz <b>citu</b> e-pastu nekā Google konts, kurā glabājas kopija (piem., darba e-pastu) — tad viena konta uzlaušana neatver visu.</p></div>
+        <p class="small muted">Izdrukā vai pieraksti un glabā drošā vietā atsevišķi no datora; vari to arī nosūtīt sev e-pastā. Neliec kodu Google Drive blakus kopijai.${cid ? ' Izdrukā un vēstulē ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
         <label class="check" style="margin-top:10px"><input type="checkbox" name="ok"> Esmu kodu saglabājis drošā vietā</label></div>
       <footer class="dlg-foot"><span class="grow"></span><button class="mainbtn" type="submit" disabled>Pabeigt un izveidot kopiju</button></footer></form>`);
     const f = d.querySelector('form');
     f.ok.onchange = () => { f.querySelector('[type=submit]').disabled = !f.ok.checked; };
     d.addEventListener('cancel', e => e.preventDefault());
+    const mail = () => {
+      const subject = `CADET PERSONĀLS — rezerves kopijas atkopšanas kods (${S.rootName || 'datu mape'})`;
+      const body = [`CADET PERSONĀLS — šifrētās rezerves kopijas atkopšanas kods`, '', `Kods: ${code}`, '', `Datu mape: ${S.rootName || ''}`, `Izveidots: ${U.fmtDate(U.iso())}`,
+        cid ? `Kopija: Google Drive, mape ${DIRNAME}` : `Kopija: mapē ${DIRNAME}`, cid ? `Google Client ID (vajadzīgs atjaunošanai citā datorā): ${cid}` : '', '',
+        'Ar šo kodu kopiju var atvērt, ja aizmirsta parole: rīkā “Atjaunot no kopijas…” → “Aizmirsi paroli? Atkopšanas kods”.', 'Neizdzēs šo vēstuli un nepārsūti to citiem.'].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');
+      const to = (U.$('encMailTo')?.value || '').trim();
+      if (to && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) { ui.toast('Pārbaudi e-pasta adresi', 'warn'); return null; }
+      return { to, subject, body };
+    };
+    U.$('encMailG').onclick = () => { const m = mail(); if (!m) return; window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.to)}&su=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`, '_blank', 'noopener'); ui.toast('Gmail logā pārbaudi adresi un spied “Sūtīt”', 'ok', 7000); };
+    U.$('encMailM').onclick = () => { const m = mail(); if (!m) return; location.href = `mailto:${encodeURIComponent(m.to)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`; };
     U.$('encPrint').onclick = () => { const n = document.createElement('div'); n.innerHTML = codeSheet(code, cid); CP.setPrintSource({ kind: 'html', node: n }); d.close(); A.printGo(); setTimeout(() => { if (!d.open) d.showModal(); }, 800); };
     f.onsubmit = async e => { e.preventDefault(); d.close(); await onDone(); };
   }

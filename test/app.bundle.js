@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.0';
+  CP.VERSION = '1.38.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5495,6 +5495,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.1', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
+      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
+      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu var izdrukāt vai **nosūtīt sev uz e-pastu** (vēstuli sagatavo tavā Gmail vai e-pasta programmā). Google neredz ne vārdus, ne failu nosaukumus.'
+    ] },
     { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
       '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
       'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
@@ -5544,10 +5548,6 @@ window.CP = window.CP || {};
     ] },
     { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Sadaļa “Ziņot”', items: [
       'Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu. Personu datus attēlā var **aizklāt** pirms sūtīšanas.'
-    ] },
-    { v: '1.29.0', from: '1.28.0', date: '2026-10-16', title: 'Šifrētā rezerves kopija', items: [
-      'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
-      'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu** (izdrukā un glabā drošā vietā). Google neredz ne vārdus, ne failu nosaukumus.'
     ] },
     { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
       'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**: ievelc otra instruktora atsūtīto failu vai aizpildītu Excel veidni. Viņi glabājas tikai šajā pasākumā.'
@@ -8742,7 +8742,7 @@ window.CP = window.CP || {};
     return `<div style="font:14px/1.5 Arial;padding:24mm;color:#000"><h1 style="font-size:20px">CADET PERSONĀLS — rezerves kopijas atkopšanas kods</h1>
       <p>Datu mape: <b>${esc(S.rootName || '')}</b> · Izveidots: ${esc(U.fmtDate(U.iso()))}</p>
       <p style="font:700 24px/1.6 monospace;letter-spacing:2px;border:2px solid #000;padding:12px 16px;display:inline-block">${esc(code)}</p>
-      <p>Ar šo kodu var atvērt šifrēto rezerves kopiju, ja aizmirsta parole. Glabā drošā vietā (piem., aizslēgtā atvilktnē), atsevišķi no datora. Nefotografē un nesūti to.</p>
+      <p>Ar šo kodu var atvērt šifrēto rezerves kopiju, ja aizmirsta parole. Glabā drošā vietā (piem., aizslēgtā atvilktnē), atsevišķi no datora. Nefotografē to un neliec Google Drive blakus kopijai.</p>
       ${cid ? `<p><b>Kopija glabājas Google Drive</b> (mape ${DIRNAME}). Atjaunojot citā datorā, vajadzēs šo Google Client ID (tas nav slepens):<br><span style="font:12px monospace;word-break:break-all">${esc(cid)}</span><br>To var atrast arī console.cloud.google.com → Google Auth Platform → Clients.</p>` : ''}
       <p>Atjaunošana: rīkā “Atjaunot no šifrētās kopijas” vai kopijas mapē atver failu ATJAUNOT.html.</p></div>`;
   }
@@ -8751,12 +8751,27 @@ window.CP = window.CP || {};
       <div class="dlg-body"><p style="margin-top:0">Ar šo kodu kopiju var atvērt, <b>ja aizmirsti paroli</b>. Tas tiek parādīts <b>tikai tagad</b>.</p>
         <div class="enc-code">${esc(code)}</div>
         <div class="actions"><button type="button" data-act="copy" data-arg="${esc(code)}">⧉ Kopēt</button><button type="button" id="encPrint">🖨 Izdrukāt / saglabāt PDF</button></div>
-        <p class="small muted">Izdrukā vai pieraksti un glabā drošā vietā atsevišķi no datora. Nesūti to e-pastā un neliec Google Drive.${cid ? ' Izdrukā ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
+        <div class="enc-mail"><label class="small" for="encMailTo"><b>✉ Nosūtīt sev uz e-pastu</b> — vēstule tiek sagatavota tavā e-pastā, un to nosūti pats (kods neiet caur rīku vai citiem serveriem).</label>
+          <div class="inline-form" style="margin:6px 0 0"><input id="encMailTo" type="email" value="${esc(S.db?.settings?.instructor?.email || '')}" placeholder="vards.uzvards@jc.gov.lv" autocomplete="off">
+            <button type="button" id="encMailG">Gmail</button><button type="button" id="encMailM">E-pasta programmā</button></div>
+          <p class="small muted" style="margin:6px 0 0">Ieteicams sūtīt uz <b>citu</b> e-pastu nekā Google konts, kurā glabājas kopija (piem., darba e-pastu) — tad viena konta uzlaušana neatver visu.</p></div>
+        <p class="small muted">Izdrukā vai pieraksti un glabā drošā vietā atsevišķi no datora; vari to arī nosūtīt sev e-pastā. Neliec kodu Google Drive blakus kopijai.${cid ? ' Izdrukā un vēstulē ir arī Google Client ID, kas vajadzīgs atjaunošanai citā datorā.' : ''}</p>
         <label class="check" style="margin-top:10px"><input type="checkbox" name="ok"> Esmu kodu saglabājis drošā vietā</label></div>
       <footer class="dlg-foot"><span class="grow"></span><button class="mainbtn" type="submit" disabled>Pabeigt un izveidot kopiju</button></footer></form>`);
     const f = d.querySelector('form');
     f.ok.onchange = () => { f.querySelector('[type=submit]').disabled = !f.ok.checked; };
     d.addEventListener('cancel', e => e.preventDefault());
+    const mail = () => {
+      const subject = `CADET PERSONĀLS — rezerves kopijas atkopšanas kods (${S.rootName || 'datu mape'})`;
+      const body = [`CADET PERSONĀLS — šifrētās rezerves kopijas atkopšanas kods`, '', `Kods: ${code}`, '', `Datu mape: ${S.rootName || ''}`, `Izveidots: ${U.fmtDate(U.iso())}`,
+        cid ? `Kopija: Google Drive, mape ${DIRNAME}` : `Kopija: mapē ${DIRNAME}`, cid ? `Google Client ID (vajadzīgs atjaunošanai citā datorā): ${cid}` : '', '',
+        'Ar šo kodu kopiju var atvērt, ja aizmirsta parole: rīkā “Atjaunot no kopijas…” → “Aizmirsi paroli? Atkopšanas kods”.', 'Neizdzēs šo vēstuli un nepārsūti to citiem.'].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');
+      const to = (U.$('encMailTo')?.value || '').trim();
+      if (to && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) { ui.toast('Pārbaudi e-pasta adresi', 'warn'); return null; }
+      return { to, subject, body };
+    };
+    U.$('encMailG').onclick = () => { const m = mail(); if (!m) return; window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.to)}&su=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`, '_blank', 'noopener'); ui.toast('Gmail logā pārbaudi adresi un spied “Sūtīt”', 'ok', 7000); };
+    U.$('encMailM').onclick = () => { const m = mail(); if (!m) return; location.href = `mailto:${encodeURIComponent(m.to)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`; };
     U.$('encPrint').onclick = () => { const n = document.createElement('div'); n.innerHTML = codeSheet(code, cid); CP.setPrintSource({ kind: 'html', node: n }); d.close(); A.printGo(); setTimeout(() => { if (!d.open) d.showModal(); }, 800); };
     f.onsubmit = async e => { e.preventDefault(); d.close(); await onDone(); };
   }

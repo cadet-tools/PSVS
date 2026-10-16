@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.1 — 2026-10-17
+- Atkopšanas koda logā “Nosūtīt sev uz e-pastu”: Gmail rakstīšanas logs (`mail.google.com/mail/?view=cm`) vai `mailto:` ar kodu, datu mapi un Client ID. Kods netiek sūtīts caur Apps Script (citādi tas paliktu izstrādātāja nosūtīto vēstuļu mapē).
+
 ## 1.38.0 — 2026-10-16
 - `setup.js` `ageNotices(p)`: `adult18` (no 60 d. pirms līdz `adultContract(p)` — līgums `kind 'jaunietis'` neaktīvs/nearhivēts vai `p.adultContractAt`; netiek rādīts, ja persona pievienota jau pilngadīga) un `age21` (no 60 d. pirms, līdz arhivēšanai). Kartītē `personNotices(p)`; brīdinājumiem `nkey`. Vecais `adult` brīdinājums (core) noņemts.
 - `dashboard.js` paziņojumu logs: `nkey` brīdinājumi ne vairāk kā 3 reizes (`localStorage cp-notice-count`).
