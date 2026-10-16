@@ -49,7 +49,7 @@
         <input id="docTreeQ" type="search" placeholder="Meklēt dokumenta nosaukumā…" value="${esc(S.browse.q || '')}">
         <p class="muted small">Meklēšana skatās nosaukumus un ceļus, nevis failu saturu. Oriģināls datorā netiek dzēsts.</p>
         <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></section>
-      <section class="card"><h3>Visi dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="addDoc" data-arg="${p.id}">＋ Papīra dokuments</button></span></h3>
+      <section class="card"><h3>Visi dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
         <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot failu”.</p>'}</div></section>
       ${sugg.length ? `<section class="card"><h3>Mapē atrasti faili ar šo vārdu (${sugg.length})</h3><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
         ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small muted">${esc(f.sourceName)} / ${esc(f.path)}</div></div>
@@ -140,6 +140,8 @@
     const kind = dform.elements.kind.value, r = D.docRule(kind), iss = dform.elements.issued, exp = dform.elements.expires;
     U.$('docIssuedLbl').innerHTML = r ? `${U.esc(kind)}: izsniegšanas datums <b class="red">*</b>` : 'Dokumenta datums (izsniegts)';
     iss.required = !!r;
+    const arc = (S.db.settings.archiveDocs || []).includes(kind);
+    U.$('docPaperHint').textContent = r ? 'Ārsta izziņas papīrs paliek pie instruktora — vari pierakstīt, kur to glabā.' : arc ? 'Papīra oriģināls jānodod Centra arhīvam (atzīme kartītē “Reģistrācija un arhīvs”).' : '';
     if (r && iss.value && (dform.dataset.autoExp || !exp.value)) { exp.value = D.docExpiry({ kind, issued: iss.value }); dform.dataset.autoExp = '1'; }
     U.$('docExpHint').textContent = r ? `Derīga ${r.months} mēn. no izsniegšanas${r.schoolYear ? ' un tikai savā mācību gadā — rīks atgādinās pirms termiņa, mācību gada beigās un jaunā gada sākumā' : ''}.` : '';
   }
@@ -189,7 +191,8 @@
       CP.store.changed();
       const last = n === 1 && S.db.documents.find(x => x.id === docs.lastLinked);
       // dokumentam ar derīguma termiņu (ārsta izziņa) uzreiz jautā izsniegšanas datumu
-      if (last && D.docRule(last.kind) && !last.issued) { A.editDoc(last.id); setTimeout(() => dform.elements.issued.focus(), 50); ui.toast(`${last.kind} pievienota. Norādi izsniegšanas datumu — rīks atgādinās, kad beidzas derīgums.`, 'ok', 8000); }
+      if (last && !(D.docRule(last.kind) && !last.issued)) { A.editDoc(last.id); ui.toast('Fails pievienots. Pārbaudi datus un, ja vajag, ieraksti piezīmi.', 'ok', 6000); }
+      else if (last) { A.editDoc(last.id); setTimeout(() => dform.elements.issued.focus(), 50); ui.toast(`${last.kind} pievienota. Norādi izsniegšanas datumu — rīks atgādinās, kad beidzas derīgums.`, 'ok', 8000); }
       else ui.toast(`Pievienoti ${n} faili personas mapē. Oriģināli nav dzēsti.`, 'ok', 7000, last ? { act: 'editDoc', arg: last.id, label: '✎ Labot datus' } : null);
     }
   };

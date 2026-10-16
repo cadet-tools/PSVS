@@ -32,7 +32,7 @@
       : m.state === 'ok' ? `<p class="good">✓ MTL lapa ir aktuāla (${U.fmtDate(last.received)}).</p>`
       : `<p class="muted small">Nav izsniegta ekipējuma — MTL lapa nav nepieciešama.</p>`;
     return `<section class="card ${m.state === 'missing' || m.state === 'outdated' ? 'dupcard' : ''}"><h3>${CP.ic('clipboard')}MTL aprites lapa
-        <span class="right actions"><button class="sm mainbtn" data-act="attach" data-arg="${p.id}|${esc(D.MTL)}">📎 Pievienot ${last ? 'jaunu ' : ''}lapu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(D.MTL)}">📄 Papīra</button></span></h3>
+        <span class="right actions"><button class="sm mainbtn" data-act="attach" data-arg="${p.id}|${esc(D.MTL)}">📎 Pievienot ${last ? 'jaunu ' : ''}lapu</button></span></h3>
       ${status}
       ${m.all.length ? m.all.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : ''}</section>`;
   }

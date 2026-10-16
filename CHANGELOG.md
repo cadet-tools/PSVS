@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.8 — 2026-10-17
+- Noņemta pievienošana “Papīrs” (obligātie dokumenti, Dokumentu cilne, MTL lapa, apliecības skenējums). `D.missingDocs` — obligātajam dokumentam vajag `path` (skenētu failu). Esošajiem papīra ierakstiem kartītē “⚠ tikai papīrā” un “＋ Fails” (`replaceDoc` — fails tiek pievienots tam pašam ierakstam). Pēc viena faila pievienošanas vienmēr atveras rediģēšanas logs (piezīmes laukam skaidrojums pēc dokumenta veida).
+
 ## 1.38.7 — 2026-10-17
 - Kopijas mape: `CADET_PERSONĀLS_ATJAUNOŠANA` (bija `CADET_rezerve`). Google Drive esošā mape tiek pārdēvēta nākamajā kopēšanā (`drive.rename`). Mapē datorā esošā kopija paliek ar veco nosaukumu (`CFG.dirName`), jaunās — ar jauno. Atjaunošana un ATJAUNOT.html atrod abus nosaukumus.
 

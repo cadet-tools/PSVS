@@ -1097,12 +1097,12 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
     <div class="dlg-body"><div class="fieldgrid">
       <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
       <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
-      <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīra dokuments</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
+      <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
       <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
       <div class="field"><label>Saņemts</label><input name="received" type="date"></div>
       <div class="field"><label id="docIssuedLbl">Dokumenta datums (izsniegts)</label><input name="issued" type="date"></div>
       <div class="field"><label>Derīgs līdz</label><input name="expires" type="date"><small class="muted" id="docExpHint"></small></div>
-      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="Piem., oriģināls sarkanajā mapē"></textarea></div>
+      <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" placeholder="piem., papīra oriģināls instruktora mapē, skapī"></textarea><small class="muted" id="docPaperHint"></small></div>
     </div></div>
     <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="documentDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer>
   </form>
@@ -1362,5 +1362,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.38.7"></script></body>
+<script src="app.bundle.js?v=1.38.8"></script></body>
 </html>

@@ -67,7 +67,7 @@
         ${al.length ? al.map(a => `<p class="${a.sev ? 'warn' : 'muted'}">${a.sev ? '⚠' : 'ℹ'} ${esc(a.msg.replace(U.full(p) + ': ', ''))}</p>`).join('') : ''}
         ${rows}</section>
         <section class="card"><h3>Apliecības kopija
-          <span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(KIND)}">📎 Pievienot skenējumu</button><button class="sm" data-act="addDoc" data-arg="${p.id}|${esc(KIND)}">📄 Papīra</button></span></h3>
+          <span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}|${esc(KIND)}">📎 Pievienot skenējumu</button></span></h3>
         ${sc.length ? sc.map((d, i) => `<div class="row doc"><div class="grow"><b>${i === 0 ? 'Pēdējā' : 'Iepriekšējā'}</b> · ${U.fmtDate(d.received)}<div class="small muted">${esc(d.path || 'papīrs (bez faila)')}</div></div>${d.path ? `<button class="sm ${i === 0 ? 'mainbtn' : ''}" data-act="view" data-arg="${esc(d.sourceId || 'main')}|${esc(d.path)}">Atvērt</button>` : ''}</div>`).join('') : '<p class="muted small">Nav pievienota.</p>'}</section>`;
     }
   };

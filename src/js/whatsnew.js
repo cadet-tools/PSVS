@@ -13,6 +13,11 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.8', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
+      'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
+      '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
+    ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
       'Pazaudējot datoru, visu var atjaunot ar paroli vai **atkopšanas kodu**. Kodu izdrukā, pieraksti vai **saglabā failā** (piem., zibatmiņā) un glabā drošā vietā. Google neredz ne vārdus, ne failu nosaukumus.',
@@ -83,10 +88,6 @@
     { v: '1.21.1', from: '1.21.0', date: '2026-10-15', title: 'Apmeklējums un kvalifikācijas', items: [
       'Sadaļa **Apmeklējums**: mēneša tabula ar atzīmēm (+, n, k, a, s), ko var likt ar peli vai tastatūru, drukājama veidlapa un apmeklējuma rādītāji ar dinamiku.',
       'Brīdinājums, ja jaunsargs nav bijis **3 nodarbības pēc kārtas**. Kvalifikācijas (piem., Pamatnometne) un uzvedības ieraksti personas kartītē.'
-    ] },
-    { v: '1.20.1', from: '1.19.0', date: '2026-10-15', title: 'Dokumenti un reģistrācija', items: [
-      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
-      '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
     ] },
     { v: '1.18.3', from: '1.14.0', date: '2026-10-15', title: 'Veidlapas un līgumi', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes.',
