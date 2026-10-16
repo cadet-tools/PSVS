@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.32.1 — 2026-10-16
+- Logo augšā un “Par rīku” — saite uz https://cadet.lv.
+
 ## 1.32.0 — 2026-10-16 — CADET.LV
 - CADET.LV logo (`.cadet-logo`, PNG maska CSS, krāsa `--brand`: tumšajā #d64a40, gaišajā #530b08) — augšējās joslas centrā (`.yearbar`, paslēpts < 820 px), lielajā pulkstenī, bloķēšanas ekrānā, “Par rīku → Izstrādātājs: CADET.LV”. Testa josla un `#topBars` pārcelti zem augšējās joslas (52 px).
 

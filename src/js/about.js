@@ -59,7 +59,7 @@
 
         <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.from ? n.from + '–' + n.v : n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
           <div class="actions"><button class="sm" data-act="newsAll">Visi atjauninājumi</button></div></section>
-        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><div class="about-brand"><span class="cadet-logo" role="img" aria-label="CADET.LV"></span><p><b>CADET.LV</b><br><span class="small muted">CADET PERSONĀLS ir daļa no CADET.LV rīku saimes.</span></p></div></section>
+        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><div class="about-brand"><a class="cadet-logo" href="https://cadet.lv" target="_blank" rel="noopener" aria-label="CADET.LV"></a><p><a href="https://cadet.lv" target="_blank" rel="noopener"><b>CADET.LV</b></a><br><span class="small muted">CADET PERSONĀLS ir daļa no CADET.LV rīku saimes.</span></p></div></section>
       </div>`;
     }
   };

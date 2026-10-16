@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.32.0';
+  CP.VERSION = '1.32.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5352,7 +5352,7 @@ window.CP = window.CP || {};
 
         <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.from ? n.from + '–' + n.v : n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
           <div class="actions"><button class="sm" data-act="newsAll">Visi atjauninājumi</button></div></section>
-        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><div class="about-brand"><span class="cadet-logo" role="img" aria-label="CADET.LV"></span><p><b>CADET.LV</b><br><span class="small muted">CADET PERSONĀLS ir daļa no CADET.LV rīku saimes.</span></p></div></section>
+        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><div class="about-brand"><a class="cadet-logo" href="https://cadet.lv" target="_blank" rel="noopener" aria-label="CADET.LV"></a><p><a href="https://cadet.lv" target="_blank" rel="noopener"><b>CADET.LV</b></a><br><span class="small muted">CADET PERSONĀLS ir daļa no CADET.LV rīku saimes.</span></p></div></section>
       </div>`;
     }
   };
@@ -5372,8 +5372,8 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
-      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**.'
+    { v: '1.32.1', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
+      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**. Uzspiežot logo, atveras **cadet.lv**.'
     ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       '**Pārskatā** blakus pogai “Saglabāt” ir poga **“🔒 Bloķēt rīku”**.',
