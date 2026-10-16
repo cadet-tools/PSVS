@@ -338,7 +338,40 @@
 
   /* --- Iestatīšana --- */
   function dlg(id, html, cls = '') { let d = U.$(id); if (!d) { d = document.createElement('dialog'); d.id = id; document.body.appendChild(d); } d.className = cls; d.innerHTML = html; if (!d.open) d.showModal(); return d; }
-  const pwOk = (pw, hint) => pw.length < 8 ? 'Parolei jābūt vismaz 8 zīmes garai' : hint && U.norm(hint).includes(U.norm(pw)) ? 'Mājiens nedrīkst saturēt pašu paroli' : '';
+  /* --- Paroles stiprums: ne tikai garums. Atgriež { ok, msg, miss: [prasības, kas nav izpildītas], level 0–4 } --- */
+  const SEQ = ['0123456789', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm', 'qwertzuiop', 'yxcvbnm', 'ēŗūīōāšģķļžčņ'];
+  const COMMON = ['parole', 'password', 'passw', 'jaunsard', 'jaunsarg', 'cadet', 'personal', 'admin', 'letmein', 'welcome', 'latvija', 'qwerty', 'iloveyou', 'drosiba', 'slepen', 'secret', 'monkey', 'dragon', 'sunshine'];
+  function pwCheck(pw, hint = '') {
+    pw = String(pw || ''); const low = pw.toLocaleLowerCase('lv'), nrm = U.norm(pw).replace(/\s+/g, '');
+    const words = pw.trim().split(/\s+/).filter(w => w.length >= 3), phrase = pw.length >= 20 && words.length >= 4;
+    const cls = [/\p{Ll}/u, /\p{Lu}/u, /\p{N}/u, /[^\p{L}\p{N}\s]/u].filter(r => r.test(pw)).length;
+    const miss = [];
+    if (pw.length < 12) miss.push('vismaz 12 zīmes (vai garāka frāze no 4+ vārdiem, 20+ zīmes)');
+    if (!phrase && cls < 3) miss.push('vismaz 3 no 4: mazie burti, lielie burti, cipari, simboli');
+    if (new Set(low.replace(/\s/g, '')).size < 6) miss.push('vismaz 6 dažādas zīmes');
+    if (/(.)\1{3,}/u.test(low)) miss.push('bez 4 vienādām zīmēm pēc kārtas (aaaa, 1111)');
+    const seqHit = SEQ.some(q => { for (let i = 0; i + 4 <= q.length; i++) { const part = q.slice(i, i + 4); if (low.includes(part) || low.includes([...part].reverse().join(''))) return true; } return false; });
+    if (seqHit) miss.push('bez secībām (1234, abcd, qwer, 4321)');
+    if (COMMON.some(w => nrm.includes(w))) miss.push('bez vispārzināmiem vārdiem (parole, password, jaunsardze, cadet…)');
+    const I = S.db?.settings?.instructor || {}, own = [S.rootName, ...(String(I.name || '').split(/\s+/)), String(I.email || '').split('@')[0], ...String(I.email || '').split('@')[0].split(/[._-]/)].map(x => U.norm(x || '').replace(/\s+/g, '')).filter(x => x.length >= 4);
+    if (own.some(x => nrm.includes(x))) miss.push('bez sava vārda, uzvārda, e-pasta vai datu mapes nosaukuma');
+    if (hint && pw && U.norm(hint).replace(/\s+/g, '').includes(nrm)) miss.push('mājiens nedrīkst saturēt pašu paroli');
+    const level = !pw ? 0 : miss.length ? Math.max(1, Math.min(2, 3 - miss.length)) : (pw.length >= 16 || phrase ? 4 : 3);
+    return { ok: !miss.length, miss, level, msg: miss.length ? 'Parole nav pietiekami droša: ' + miss.join('; ') : '' };
+  }
+  const pwOk = (pw, hint) => pwCheck(pw, hint).msg;
+  /** Dzīvais stipruma rādītājs zem paroles lauka */
+  const pwMeter = () => `<div class="pw-meter" id="pwMeter"><div class="pwm-bar"><span></span></div><ul class="pwm-miss small"></ul></div>`;
+  function bindMeter(f) {
+    const m = f.querySelector('.pw-meter'); if (!m) return;
+    const upd = () => {
+      const r = pwCheck(f.pw.value, f.hint?.value || ''), L = ['', 'vāja', 'vāja', 'laba', 'ļoti laba'];
+      m.dataset.level = r.level; m.querySelector('.pwm-bar span').style.width = (r.level * 25) + '%';
+      m.querySelector('.pwm-miss').innerHTML = !f.pw.value ? '<li class="muted">Vismaz 12 zīmes, 3 no 4: mazie, lielie burti, cipari, simboli — vai garāka frāze no 4+ vārdiem.</li>'
+        : r.ok ? `<li class="okc">✓ Parole ir ${L[r.level]}</li>` : r.miss.map(x => `<li class="warn">✗ ${esc(x)}</li>`).join('');
+    };
+    f.pw.addEventListener('input', upd); f.hint?.addEventListener('input', upd); upd();
+  }
   const CID_RE = /\.apps\.googleusercontent\.com$/;
   const cidField = (id, v) => `<div class="enc-cid"><label class="small">Google OAuth Client ID <button type="button" class="sm ghost" data-act="gcalHelp" data-arg="drive">? Kā iegūt</button></label>
     <input id="${id}" value="${esc(v)}" placeholder="xxxxxxxx-xxxx.apps.googleusercontent.com" spellcheck="false" autocomplete="off"></div>`;
@@ -356,12 +389,12 @@
             <label class="choice"><input type="radio" name="where" value="local"><div class="grow"><b>📁 Mape datorā / zibatmiņā</b><div class="small muted">Mape, ko sinhronizē Google Drive programma, ārējs disks vai zibatmiņa (ne pati datu mape).</div>
               <div class="inline-form" style="margin:6px 0 0"><button type="button" data-act="encPickDir">📁 Izvēlēties mapi</button><span id="encDirName" class="muted small"></span></div></div></label>
           </div></div>
-        <div class="fieldgrid"><div class="field"><label>2. Parole (vismaz 8 zīmes)</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div>
+        <div class="fieldgrid"><div class="field"><label>2. Parole</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required>${pwMeter()}</div>
           <div class="field"><label>Parole vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
           <div class="field wide"><label>Paroles mājiens (nav obligāts, redzams visiem, kam ir kopijas fails)</label><input name="hint" placeholder="piem., pirmā suņa vārds + gads" autocomplete="off"></div></div>
         <p class="small muted">Nākamajā solī rīks parādīs <b>atkopšanas kodu</b> — ar to kopiju var atvērt arī tad, ja aizmirsti paroli.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
-    const f = d.querySelector('form');
+    const f = d.querySelector('form'); bindMeter(f);
     d.querySelector('.dlg-body').addEventListener('focusin', e => { if (e.target.id === 'encCid') f.where.value = 'drive'; });
     // viena iestatīšana vienlaikus: atkārtots “Tālāk” klikšķis, kamēr gaida Google, neizveido otru kodu
     f.onsubmit = async e => {
@@ -371,10 +404,10 @@
     };
     const setupGo = async () => {
       const drv = f.where.value === 'drive', cid = (U.$('encCid')?.value || '').trim();
+      const bad = pwOk(f.pw.value, f.hint.value.trim()); if (bad) { f.pw.focus(); return ui.toast(bad, 'warn', 10000); }
+      if (f.pw.value !== f.pw2.value) return ui.toast('Paroles nesakrīt', 'warn');
       if (!drv && !setupDir) return ui.toast('Izvēlies mapi kopijai', 'warn');
       if (drv && !CID_RE.test(cid)) return ui.toast('Ielīmē Google Client ID (beidzas ar .apps.googleusercontent.com). Kā to iegūt — spied “? Kā iegūt”.', 'warn', 9000);
-      if (f.pw.value !== f.pw2.value) return ui.toast('Paroles nesakrīt', 'warn');
-      const bad = pwOk(f.pw.value, f.hint.value.trim()); if (bad) return ui.toast(bad, 'warn');
       let existing = null;
       if (drv) {
         const gcs = S.db.settings.gcal = S.db.settings.gcal || { clientId: '', calendarId: '', lastSync: '' };
@@ -463,12 +496,13 @@
   A.encPw = () => {
     const d = dlg('encPwDialog', `<form><header class="dlg-head"><h2>Mainīt paroli</h2><button type="button" class="ghost" data-close="encPwDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><p class="small muted" style="margin-top:0">Šajā datorā vecā parole nav vajadzīga. Atkopšanas kods paliek tas pats.</p><div class="fieldgrid">
-        <div class="field"><label>Jaunā parole</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div><div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
+        <div class="field"><label>Jaunā parole</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required>${pwMeter()}</div><div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
         <div class="field wide"><label>Paroles mājiens (nav obligāts)</label><input name="hint" value="${esc(CFG?.hint || '')}" autocomplete="off"></div></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encPwDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`);
+    bindMeter(d.querySelector('form'));
     d.querySelector('form').onsubmit = async e => {
       e.preventDefault(); const f = e.target; if (f.pw.value !== f.pw2.value) return ui.toast('Paroles nesakrīt', 'warn');
-      const bad = pwOk(f.pw.value, f.hint.value.trim()); if (bad) return ui.toast(bad, 'warn');
+      const bad = pwOk(f.pw.value, f.hint.value.trim()); if (bad) { f.pw.focus(); return ui.toast(bad, 'warn', 10000); }
       try { await editHead(async h => { h.wraps.pw = await wrap(CFG.master, f.pw.value); h.hint = f.hint.value.trim(); CFG.hint = h.hint; }); d.close(); ui.toast('Parole nomainīta', 'ok'); } catch (x) { ui.toast('Neizdevās: ' + x.message, 'err'); }
     };
   };
@@ -592,6 +626,7 @@
     return { ok, bad };
   }
   CP.encBackup.restoreInto = restoreInto;
+  CP.encBackup.pwCheck = pwCheck;
   CP.encBackup._stores = { localStore, driveStore };
 
 

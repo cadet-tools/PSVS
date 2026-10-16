@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.6 — 2026-10-17
+- `pwCheck` šifrētās kopijas parolei (iestatīšana un maiņa): ≥12 zīmes, ≥3 no 4 zīmju klasēm (vai frāze ≥20 zīmes, ≥4 vārdi), ≥6 dažādas zīmes, bez 4 vienādām pēc kārtas, bez secībām (cipari, alfabēts, tastatūra, abos virzienos), bez bieži lietotiem vārdiem, bez instruktora vārda/uzvārda/e-pasta un datu mapes nosaukuma; mājiens nedrīkst saturēt paroli. Dzīvais rādītājs zem lauka. Pārbaude notiek pirms Client ID pārbaudes. Esošās paroles netiek prasītas mainīt.
+
 ## 1.38.5 — 2026-10-17
 - Parādoties atkopšanas kodam, iestatīšanas logs tiek aizvērts (agrāk, piem., drukāšanas brīdī, zem tā varēja vēlreiz spiest “Tālāk”).
 
