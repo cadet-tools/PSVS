@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.37.0 — 2026-10-16
+- `settings.js`: cilnes (`S.setTab`, `A.setTab`, `[data-stab]`), `ui.goSettingsCard(id)` (lockGoSet, encGoSet, retSettings, gadu izvēlne). Kartītēm id: dataCard, yearsCard, docsCard, commsCard, instCard.
+- Jauns `js/setup.js` (`CP.setup`): instruktora datu kartīte (`settings.instructor`, kopīga ar līgumiem), sākuma saraksts Pārskatā (`settings.setupHidden`, `settings.setupDone.docs`), brīdinājums `age21` (60 d. / sasniegts), lapa `quality` + brīdinājums `quality` (`settings.qualityIgnore`).
+- `encbackup.js`: ierīces ID (`localStorage cp.deviceId`), `KOPIJA.json.writer = { dev, name, at }`, `CFG.syncHead`, `CFG.multi`. `run()` neraksta, ja Drive kopiju pēdējo rakstījis cits dators un šis to nav ielādējis (`status 'newer'`); `force` — “Paturēt šī datora datus”. `checkRemote()`, `pull()` (datu fails → `_rezerves/PIRMS_IELADES_NO_DRIVE_*`, Drive jaunāki dokumenti aizstāj vietējos — vecie `_rezerves/aizvietoti_*`, `changelog.rebase`). Atjaunojot no Drive kopijas, CFG uzstādās uz to pašu kopiju. Josla `#remoteBar`, sānjoslā stāvoklis.
+- `U.daysTo` — `Math.round` (laika maiņa vairs nedod +1 d.).
+- `watch.js`: prombūtne netiek atskaitīta no laika pirms sesijas sākuma; sākums nākotnē tiek izlabots.
+
 ## 1.36.3 — 2026-10-16
 - Sānjoslā zem datu mapes `#syncLine` (`CP.encBackup.paintSync`, izsauc `ui.updateSaveState`, `paint`, Google `onToken`, ik minūti): nav kopijas → ⚠ + `encGoSet`; Drive + nenosūtītas izmaiņas bez savienojuma → ⚠ + `gConnect`; kļūda → `encRun`; aktuāla → sinhronizēts HH:MM; gaida → info + ⟳. Lokālas mapes kopijai — tikai informācija.
 

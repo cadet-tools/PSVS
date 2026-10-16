@@ -10,6 +10,14 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.0', date: '2026-10-16', title: 'Iestatījumu cilnes, sākuma saraksts, datu kvalitāte, divi datori', items: [
+      '**Iestatījumi ir sadalīti cilnēs**: Pamata, Drošība un kopijas, Dokumenti, Saziņa. Pamata cilnē ir jauna kartīte **“Instruktora dati”** — tie paši dati, ko izmanto līgumi un veidlapas.',
+      'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, šifrētā kopija Google Drive, grupas, obligātie dokumenti, pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu. Kad viss izdarīts, saraksts pazūd; to var arī paslēpt.',
+      '**21 gads**: 60 dienas iepriekš brīdinājums “21 gads pēc N d., līgums beigsies”; ja jau 21 — sarkans brīdinājums “līgums beidzies”.',
+      'Jauna lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā): iespējami dublikāti, nederīgs personas kods, dzimšanas datums nesakrīt ar kodu, nav dzimuma (ar ieteikumu pēc vārda — var ielikt visiem uzreiz), nepilngadīgam nav pārstāvja, nav tālruņa, nederīgs tālrunis vai e-pasts, nav grupas, dokumenta fails nav atrasts. Pie katra — **Labot**; ja viss kārtībā — **Nerādīt**.',
+      '**Darbs uz diviem datoriem** ar Google Drive kopiju: otrā datorā izvēlies “Atjaunot no kopijas…” — tas turpmāk izmanto to pašu Drive kopiju. Atverot rīku, tas pārbauda, vai otrā datorā nav jaunāku datu. Ja ir — augšā josla **“⬇ Ielādēt”** vai **“Paturēt šī datora datus”**, un šī datora automātiskā kopija tos nepārraksta. Ielādējot nekas netiek zaudēts: iepriekšējais datu fails un aizstātie dokumenti paliek mapē _rezerves.',
+      'Izlabots: lielais pulkstenis pēc ilgākas prombūtnes rādīja **“Darbā 00:00”** un laiks neskaitījās.'
+    ] },
     { v: '1.36.3', from: '1.36.2', date: '2026-10-16', title: 'Google Drive sinhronizācijas stāvoklis', items: [
       'Kreisajā joslā zem datu mapes nosaukuma redzams, vai dati sinhronizēti ar **Google Drive**. Ja šifrētā kopija nav iestatīta, ir **⚠ “Nav sinhronizēts ar Google Drive”** un poga **“Iestatīt”**, kas atver Iestatījumus pie kopijas kartītes.',
       'Ja Google savienojums beidzies un ir nenosūtītas izmaiņas — **⚠** ar pogu **“Pieslēgties”**. Ja kopija neizdevās — **“Mēģināt vēlreiz”**. Kad viss kārtībā — **“☁ Google Drive · sinhronizēts”** ar laiku; ja ir jaunas izmaiņas, kas tiks nosūtītas automātiski, — “izmaiņas gaida nosūtīšanu” un poga **⟳** nosūtīt uzreiz.'

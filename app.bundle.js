@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 39 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 40 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.3';
+  CP.VERSION = '1.37.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -48,7 +48,7 @@ window.CP = window.CP || {};
     if (!s) return null; const d = new Date(s + 'T12:00:00'), t = new Date(); if (isNaN(d)) return null;
     return t.getFullYear() - d.getFullYear() - ((t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate())) ? 1 : 0);
   };
-  U.daysTo = s => Math.ceil((new Date(s + 'T12:00:00') - new Date(U.iso() + 'T12:00:00')) / 86400000);
+  U.daysTo = s => Math.round((new Date(s + 'T12:00:00') - new Date(U.iso() + 'T12:00:00')) / 86400000);   // round: vasaras/ziemas laika maiņa nedod ±1 d.
   U.daysUntilBirthday = s => {
     if (!s) return null; const d = new Date(s + 'T12:00:00'); if (isNaN(d)) return null;
     const now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1919,7 +1919,7 @@ window.CP = window.CP || {};
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { retention: 'Glabāšanas termiņi', feedback: 'Ziņot', changes: 'Darbību žurnāls', vfs: 'VFS testi', dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
+  const PAGE_NAMES = { quality: 'Datu kvalitāte', retention: 'Glabāšanas termiņi', feedback: 'Ziņot', changes: 'Darbību žurnāls', vfs: 'VFS testi', dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -2371,7 +2371,7 @@ window.CP = window.CP || {};
     return `<section class="card" id="lockCard"><h3>${CP.ic('lock', '🔒')}Ekrāna bloķēšana</h3>
       <p class="small" style="margin-top:0">Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka lielais pulkstenis, un jaunsargu dati nav redzami. Ar PIN kodu rīku var atbloķēt tikai tu: to prasa, izejot no pulksteņa un atverot rīku.</p>
       ${ui.dl([['PIN kods', hasPin() ? '<span class="okc">✓ iestatīts</span>' : '<span class="warn">nav iestatīts</span>', 1],
-        ['Liels pulkstenis', (() => { const w = CP.watchPrefs?.() || {}; return w.idle === false ? '<span class="warn">izslēgts</span> — PIN prasīs tikai, atverot rīku vai spiežot “Bloķēt tagad”' : `pēc ${w.idleMin || 5} min bez darbības <span class="small muted">(maina sadaļā “Pulkstenis un pauzes”)</span>`; })(), 1],
+        ['Liels pulkstenis', (() => { const w = CP.watchPrefs?.() || {}; return w.idle === false ? '<span class="warn">izslēgts</span> — PIN prasīs tikai, atverot rīku vai spiežot “Bloķēt tagad”' : `pēc ${w.idleMin || 5} min bez darbības <span class="small muted">(maina <a href="#" data-act="goSetCard" data-arg="watchCard">Pamata → Pulkstenis un pauzes</a>)</span>`; })(), 1],
         ['Atkopšanas e-pasts', C.email ? esc(C.email) + ' <span class="okc small">✓ apstiprināts</span>' : '<span class="muted">nav — aizmirstot PIN, datu mape būs jāizvēlas no jauna</span>', 1]])}
       <div class="actions" style="margin-top:10px">${hasPin()
         ? `<button data-act="lockPinSet">Mainīt PIN</button><button data-act="lockMail">${C.email ? 'Mainīt e-pastu' : 'Pievienot atkopšanas e-pastu'}</button><button class="ghost danger" data-act="lockPinOff">Noņemt PIN</button>`
@@ -2454,10 +2454,7 @@ window.CP = window.CP || {};
     ui.topHost().appendChild(b);
   }
   A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };
-  A.lockGoSet = () => {
-    CP.ui.go('settings');
-    setTimeout(() => { const c = U.$('lockCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.lockGoSet = () => CP.ui.goSettingsCard('lockCard');
   CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintPinBar);
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintPinBar, 300));
   CP.lock = { card, lock, unlock, adopt, guard, isLocked: () => locked, hasPin };
@@ -4322,7 +4319,7 @@ window.CP = window.CP || {};
   const attr = (root, k, a, v) => root.querySelectorAll(`[data-w="${k}"]`).forEach(el => el.setAttribute(a, v));
   function paint(full) {
     const roots = [...document.querySelectorAll('.watch-card, #watchBig')]; if (!roots.length) return;
-    const d = new Date(), t = d.getTime(), work = t - ses.start, onBreak = !!ses.breakEnd;
+    const d = new Date(), t = d.getTime(), work = Math.max(0, t - ses.start), onBreak = !!ses.breakEnd;
     const workTxt = onBreak ? mmss(ses.breakEnd - t) : hmmss(work), workLbl = onBreak ? 'Pauze' : 'Darbā';
     const workPct = onBreak ? 100 - (ses.breakEnd - t) / (P.breakMin * 600) : Math.min(100, work / (P.workMin * 600));
     const over = !onBreak && work >= P.workMin * 60000;
@@ -4370,6 +4367,7 @@ window.CP = window.CP || {};
   let lastIdleCheck = 0;
   function tick() {
     const t = Date.now();
+    if (ses.start > t) { ses.remindAt -= ses.start - t; ses.start = t; saveSes(); }   // sabojāts sākums nākotnē (vecā kļūda) → no šī brīža
     if (document.visibilityState === 'visible') { if (t - ses.last > 5 * 60000) restart(t); ses.last = t; }
     if (ses.breakEnd && t >= ses.breakEnd) { restart(t); beep(2); CP.ui.toast('Pauze beigusies. Labu darbu turpinot!', 'ok', 8000); }
     if (P.remind && !ses.breakEnd && t >= ses.remindAt && document.visibilityState === 'visible') {
@@ -4399,7 +4397,7 @@ window.CP = window.CP || {};
   function showBig(manual) {
     if (document.getElementById('watchBig')) return;
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
-    if (!manual && !ses.breakEnd) awayFrom = Math.min(lastAct, Date.now());   // prom no datora — šis laiks nav darbs
+    if (!manual && !ses.breakEnd) awayFrom = Math.min(Math.max(lastAct, ses.start), Date.now());   // ne agrāk par sesijas sākumu — citādi prombūtne tiktu atskaitīta divreiz   // prom no datora — šis laiks nav darbs
     ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p><span class="cadet-logo wb-brand" role="img" aria-label="CADET.LV"></span>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
     // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
@@ -4409,7 +4407,7 @@ window.CP = window.CP || {};
   function hideBig(force) {
     if (force !== true && CP.lock?.guard?.()) return;
     document.getElementById('watchBig')?.remove();
-    if (awayFrom) { const d = Date.now() - awayFrom; awayFrom = 0; ses.start += d; ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
+    if (awayFrom) { const now = Date.now(), d = Math.max(0, now - Math.max(awayFrom, ses.start)); awayFrom = 0; ses.start = Math.min(now, ses.start + d); ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
   }
   CP.watchShowBig = showBig; CP.watchHideBig = hideBig;
 
@@ -4432,7 +4430,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐') };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
@@ -4464,6 +4462,7 @@ window.CP = window.CP || {};
       if (!S.root) return `<div class="page">${head}${start}</div>`;   // bez mapes — tikai mapes pievienošana (statistika un darbības nav pieejamas)
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`)}
         ${start}
+        ${CP.setup?.card() || ''}
         ${CP.years?.banner() || ''}
         <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
         <div class="stats">
@@ -5146,21 +5145,42 @@ window.CP = window.CP || {};
   'use strict';
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
+  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
+  A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
+  /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
+  ui.goSettingsCard = id => {
+    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
+    if (tabOf[id]) S.setTab = tabOf[id];
+    ui.go('settings');
+    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  A.goSetCard = id => ui.goSettingsCard(id);
   CP.pages.settings = {
     render() {
       const s = S.db.settings, o = s.ocr;
+      const tab = STABS.some(t => t[0] === S.setTab) ? S.setTab : 'base', T = k => `<div class="set-tab" data-stab="${k}" ${tab === k ? '' : 'hidden'}>`;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION}`, ui.saveBtn())}
+      <nav class="tabs set-tabs" role="tablist">${STABS.map(([k, l, i]) => `<button role="tab" type="button" data-act="setTab" data-arg="${k}" class="${tab === k ? 'active' : ''}" aria-selected="${tab === k}">${CP.ic(i)}${l}</button>`).join('')}</nav>
+      ${T('base')}
       ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
       </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
-      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
+      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card" id="watchCard"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
         <span>Ciparnīca</span><div class="actions"><span class="themepick" role="group" aria-label="Ciparnīca">${CP.WATCH_FACES.map(([k, l]) => `<button type="button" data-act="watchFace" data-arg="${k}" class="${w.face === k ? 'on' : ''}" aria-pressed="${w.face === k}">${l}</button>`).join('')}</span></div>
         <span>Atgādināt par pauzi</span><div class="actions"><label class="check"><input type="checkbox" data-watch="remind" ${w.remind ? 'checked' : ''}> pēc</label><input type="number" class="w-num-in" min="10" max="180" step="5" data-watch="workMin" value="${w.workMin}" aria-label="Minūtes līdz pauzei"> <span class="small muted">min darba, pauze</span><input type="number" class="w-num-in" min="1" max="30" data-watch="breakMin" value="${w.breakMin}" aria-label="Pauzes minūtes"> <span class="small muted">min, atkārtot pēc</span><input type="number" class="w-num-in" min="1" max="60" data-watch="snoozeMin" value="${w.snoozeMin}" aria-label="Atkārtot pēc minūtēm"> <span class="small muted">min</span></div>
         <span>Liels pulkstenis</span><div class="actions"><label class="check"><input type="checkbox" data-watch="idle" ${w.idle ? 'checked' : ''}> parādīt virs rīka, ja nav darbības</label><input type="number" class="w-num-in" min="1" max="60" data-watch="idleMin" value="${w.idleMin}" aria-label="Minūtes bez darbības"> <span class="small muted">min</span><button type="button" class="sm" data-act="watchBig">Parādīt tagad</button></div>
         <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
       </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
-      <section class="card"><h3>Datu glabāšana</h3>
+      ${CP.setup ? CP.setup.instCard() : ''}
+      ${S.db.settings.setupHidden ? `<section class="card"><h3>${CP.ic('check')}Sākuma iestatīšanas saraksts</h3><p class="small" style="margin-top:0">Saraksts “Sagatavo rīku darbam” Pārskatā ir paslēpts.</p><button class="sm" data-act="setupShow">Rādīt atkal Pārskatā</button></section>` : ''}
+      <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
+        <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
+        ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}
+        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">Pārcelt personas</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
+        <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
+      </div>${T('sec')}
+      <section class="card" id="dataCard"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
         ${ui.rootDrop()}
@@ -5179,18 +5199,14 @@ window.CP = window.CP || {};
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
-      <section class="card"><h3>Mācību gadi</h3>
-        <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
-        ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}
-        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">Pārcelt personas</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
-        <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>
         <p class="muted small">Cik ilgi dati tiek glabāti — kartītē <a href="#" data-act="retSettings">Datu glabāšanas termiņi</a>.</p></section>
       ${CP.retention ? CP.retention.settingsCard() : ''}
 
-      <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
+      </div>${T('docs')}
+      <section class="card" id="docsCard"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
         <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
         <div class="field wide"><label>Dokumenti, kuru oriģināli jānodod Centra arhīvam (ar komatu)</label><input data-set="archiveDocs" value="${esc((s.archiveDocs || ['Pieteikuma anketa', 'Līgums']).join(', '))}"></div>
@@ -5213,7 +5229,8 @@ window.CP = window.CP || {};
         ${s.formTemplates.length ? s.formTemplates.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b> <small class="muted">${t.zones.length} zonas</small>${s.activeTemplate === t.id ? ' <span class="tag">pēdējā lietotā</span>' : ''}</div><button class="sm" data-act="tplEdit" data-arg="${t.id}">Rediģēt</button><button class="sm" data-act="tplDup" data-arg="${t.id}">Dublēt</button><button class="sm ghost" data-act="tplDelete" data-arg="${t.id}">Dzēst</button></div>`).join('') : '<p class="muted small">Nav veidņu. Izveido pirmo: augšupielādē skenētas anketas paraugu un iezīmē zonas.</p>'}
         <p class="muted small">Bez veidnes lauki tiek atrasti automātiski pēc anketas etiķetēm (Word, eDoc un PDF ar tekstu — precīzi; skenējumi — ar izvēlēto dzinēju). Veidne glabā tikai zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus.</p></section>
 
-      <section class="card"><h3>Saziņa</h3><div class="fieldgrid">
+      </div>${T('comms')}
+      <section class="card" id="commsCard"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>
         <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div></div>
         <div class="fieldgrid" style="margin-top:10px"><div class="field"><label>Organizācija telefona kontaktos</label><input data-set="contactOrg" value="${esc(s.contactOrg || 'Jaunsardze')}"><div class="hint muted">Kontaktiem tiek pievienots “Uzņēmums” un grupa, lai tos telefonā var atrast.</div></div>
@@ -5228,7 +5245,8 @@ window.CP = window.CP || {};
         <p class="muted small">Saites, kas parādās personas kartiņā. Saitē var izmantot {vārds} {uzvārds} {pilns} {tālrunis} {epasts} {grupa} {klase} {skola}. Personas kods un adrese netiek nodoti.</p>
         ${s.tools.map((t, i) => `<div class="inline-form"><input data-tool="${i}:name" value="${esc(t.name)}" placeholder="Nosaukums" style="max-width:180px"><input data-tool="${i}:url" value="${esc(t.url)}" placeholder="https://…"><button class="sm ghost" data-act="delTool" data-arg="${i}">✕</button></div>`).join('')}
         <button class="sm" data-act="addTool">＋ Pievienot rīku</button>
-        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section></div>`;
+        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section>
+      </div></div>`;
     }
   };
 
@@ -5436,6 +5454,14 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.0', date: '2026-10-16', title: 'Iestatījumu cilnes, sākuma saraksts, datu kvalitāte, divi datori', items: [
+      '**Iestatījumi ir sadalīti cilnēs**: Pamata, Drošība un kopijas, Dokumenti, Saziņa. Pamata cilnē ir jauna kartīte **“Instruktora dati”** — tie paši dati, ko izmanto līgumi un veidlapas.',
+      'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, šifrētā kopija Google Drive, grupas, obligātie dokumenti, pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu. Kad viss izdarīts, saraksts pazūd; to var arī paslēpt.',
+      '**21 gads**: 60 dienas iepriekš brīdinājums “21 gads pēc N d., līgums beigsies”; ja jau 21 — sarkans brīdinājums “līgums beidzies”.',
+      'Jauna lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā): iespējami dublikāti, nederīgs personas kods, dzimšanas datums nesakrīt ar kodu, nav dzimuma (ar ieteikumu pēc vārda — var ielikt visiem uzreiz), nepilngadīgam nav pārstāvja, nav tālruņa, nederīgs tālrunis vai e-pasts, nav grupas, dokumenta fails nav atrasts. Pie katra — **Labot**; ja viss kārtībā — **Nerādīt**.',
+      '**Darbs uz diviem datoriem** ar Google Drive kopiju: otrā datorā izvēlies “Atjaunot no kopijas…” — tas turpmāk izmanto to pašu Drive kopiju. Atverot rīku, tas pārbauda, vai otrā datorā nav jaunāku datu. Ja ir — augšā josla **“⬇ Ielādēt”** vai **“Paturēt šī datora datus”**, un šī datora automātiskā kopija tos nepārraksta. Ielādējot nekas netiek zaudēts: iepriekšējais datu fails un aizstātie dokumenti paliek mapē _rezerves.',
+      'Izlabots: lielais pulkstenis pēc ilgākas prombūtnes rādīja **“Darbā 00:00”** un laiks neskaitījās.'
+    ] },
     { v: '1.36.3', from: '1.36.2', date: '2026-10-16', title: 'Google Drive sinhronizācijas stāvoklis', items: [
       'Kreisajā joslā zem datu mapes nosaukuma redzams, vai dati sinhronizēti ar **Google Drive**. Ja šifrētā kopija nav iestatīta, ir **⚠ “Nav sinhronizēts ar Google Drive”** un poga **“Iestatīt”**, kas atver Iestatījumus pie kopijas kartītes.',
       'Ja Google savienojums beidzies un ir nenosūtītas izmaiņas — **⚠** ar pogu **“Pieslēgties”**. Ja kopija neizdevās — **“Mēģināt vēlreiz”**. Kad viss kārtībā — **“☁ Google Drive · sinhronizēts”** ar laiku; ja ir jaunas izmaiņas, kas tiks nosūtītas automātiski, — “izmaiņas gaida nosūtīšanu” un poga **⟳** nosūtīt uzreiz.'
@@ -5717,7 +5743,7 @@ window.CP = window.CP || {};
     const years = [...(S.db.years || [])].sort((a, b) => b.start - a.start);
     menu.innerHTML = years.map(y => `<button type="button" data-act="setYear" data-arg="${esc(y.id)}" class="${y.id === id ? 'on' : ''}">${esc(U.yearSlash(y.id))}${y.id === id ? ' · izvēlēts' : ''}${y.id === U.schoolYear() ? ' · pašreizējais' : ''}</button>`).join('')
       + `<button type="button" data-act="openAddYear">＋ Pievienot mācību gadu</button>`
-      + `<button type="button" data-page="settings">Pārvaldīt mācību gadus</button>`;
+      + `<button type="button" data-act="goSetCard" data-arg="yearsCard">Pārvaldīt mācību gadus</button>`;
   }
   CP.years = { paint };
 
@@ -8445,6 +8471,16 @@ window.CP = window.CP || {};
   const isDrive = c => c?.kind === 'drive';
   const enabled = c => !!(c?.master && (c.dir || c.folderId));
   let CFG = null, running = false, status = '';
+  /* --- Darbs uz vairākiem datoriem: katram pārlūkam savs ID; KOPIJA.json.writer = kurš pēdējais rakstīja --- */
+  const DEV = (() => { try { let d = localStorage.getItem('cp.deviceId'); if (!d) { d = hex(rnd(8)); localStorage.setItem('cp.deviceId', d); } return d; } catch (e) { return 'nezinams'; } })();
+  const devName = () => { const p = navigator.userAgentData?.platform || navigator.platform || ''; return /win/i.test(p) ? 'Windows dators' : /mac/i.test(p) ? 'Mac dators' : /linux|cros/i.test(p) ? 'Linux dators' : 'cits dators'; };
+  let REMOTE = null, checked = false, remoteHidden = false;   // REMOTE: { at, name, root } — Drive ir jaunāka versija no cita datora
+  /** Vai Drive kopiju pēdējo reizi rakstīja cits dators, un šis vēl nav to ielādējis */
+  function newerElsewhere(head) {
+    const w = head?.writer; if (!w || w.dev === DEV || !head.updated) return null;
+    if (CFG?.syncHead && CFG.syncHead === head.updated) return null;
+    return { at: head.updated, name: w.name || 'cits dators', root: head.root || '' };
+  }
   (async () => { CFG = await cfgGet(); paint(); G()?.paintBanner(); CP.encBackup?.paintSync?.(); })();
 
   /* --- Failu sistēma --- */
@@ -8524,7 +8560,7 @@ window.CP = window.CP || {};
   }
 
   /* --- Kopijas izveide / papildināšana --- */
-  async function run({ ask = false, quiet = false } = {}) {
+  async function run({ ask = false, quiet = false, force = false } = {}) {
     if (running) return; if (!S.root) return;
     CFG = CFG || await cfgGet(); if (!enabled(CFG)) return;
     running = true; status = 'run'; paint();
@@ -8536,6 +8572,14 @@ window.CP = window.CP || {};
       if (S.dirty && !S.conflict) await store.save(true);
       const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null');
       if (!head || head.set !== CFG.set) throw Error('kopijas vietā ir citas kopijas fails — iestati kopiju no jauna');
+      checked = true;
+      const nw = isDrive(CFG) && !force && newerElsewhere(head);
+      if (nw) {   // citā datorā jaunāki dati — nepārraksta tos, jautā instruktoram
+        REMOTE = nw; CFG.multi = true; await cfgSet(CFG); status = 'newer';
+        if (!quiet) ui.toast(`Google Drive ir jaunāki dati no cita datora (${nw.name}, ${U.fmtDateTime(nw.at)}). Kopija netika nosūtīta, lai tos nepārrakstītu — izvēlies joslā augšā.`, 'warn', 12000);
+        return;
+      }
+      if (head.writer && head.writer.dev !== DEV) CFG.multi = true;
       const idx = head.index ? await decJson(CFG.master, head.index) : { files: {} };
       const before = await bs.blobIds();
       // 1) visa datu mape, 2) dokumenti no ārējām (papildu) mapēm — ja tās pieslēgtas
@@ -8568,7 +8612,9 @@ window.CP = window.CP || {};
       head.index = await encJson(CFG.master, idx); head.updated = U.now(); head.version = CP.VERSION;
       head.stats = { files: Object.keys(idx.files).length, bytes: Object.values(idx.files).reduce((a, f) => a + f.size, 0) };
       head.root = S.rootName; head.store = isDrive(CFG) ? 'drive' : 'local';
+      head.writer = { dev: DEV, name: devName(), at: head.updated };
       await bs.writeTop('KOPIJA.json', JSON.stringify(head, null, 1));
+      CFG.syncHead = head.updated; REMOTE = null;
       const rh = await sha(te.encode(RESTORE_HTML));
       if (CFG.rh !== rh || !(await bs.hasTop('ATJAUNOT.html'))) { await bs.writeTop('ATJAUNOT.html', RESTORE_HTML); CFG.rh = rh; }
       // 4) vecās versijas un pārtraukto kopiju atliekas
@@ -8582,16 +8628,89 @@ window.CP = window.CP || {};
       if (e.auth) { status = 'auth'; G().paintBanner(); if (!quiet) ui.toast(e.message, 'warn', 9000); }
       else { status = 'err'; CFG.lastErr = { at: U.now(), msg: e.message }; await cfgSet(CFG); ui.toast('Rezerves kopiju neizdevās izveidot: ' + e.message, 'err', 12000); }
     }
-    finally { running = false; paint(); G()?.paintBanner(); }
+    finally { running = false; paint(); G()?.paintBanner(); paintRemote(); }
   }
+  /** Tikai nolasa KOPIJA.json un pārbauda, vai citā datorā nav jaunāku datu (bez sūtīšanas) */
+  async function checkRemote(ask = false) {
+    if (!isDrive(CFG) || !S.root || running) return null;
+    try {
+      const bs = await access(ask); if (!bs) return null;
+      const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null'); if (!head || head.set !== CFG.set) return null;
+      checked = true; REMOTE = newerElsewhere(head); if (REMOTE) { CFG.multi = true; await cfgSet(CFG); status = 'newer'; } else if (status === 'newer') status = '';
+    } catch (e) { console.error(e); }
+    paint(); paintRemote(); return REMOTE;
+  }
+  /** Ielādē datus no Google Drive kopijas šajā datu mapē. Nekas netiek zaudēts: pašreizējais datu fails → _rezerves,
+      dokumenti, kas Drive ir jaunāki, aizstāj vietējos (vecie → _rezerves/aizvietoti_…); vietēji jaunākie un tikai šeit esošie paliek. */
+  async function pull() {
+    if (running || !S.root) return;
+    running = true; status = 'pull'; paint(); paintRemote();
+    const n = { added: 0, replaced: 0, same: 0, kept: 0, bad: 0 };
+    try {
+      const bs = await access(true); if (!bs) throw Error('nav Google savienojuma');
+      const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null');
+      if (!head || head.set !== CFG.set || !head.index) throw Error('Google Drive kopija nav nolasāma');
+      const idx = await decJson(CFG.master, head.index), stamp = U.stamp();
+      if (S.dirty && !S.conflict) await store.save(true);
+      const rz = await sub(S.root, '_rezerves', true);
+      const curText = await readText(S.root, CP.DATAFILE);
+      if (curText) await writeBytes(rz, `PIRMS_IELADES_NO_DRIVE_${stamp}.json`, curText);
+      const dirOf = async (root, parts, create) => { let d = root; for (const x of parts) d = await d.getDirectoryHandle(x, { create }); return d; };
+      for (const d of idx.dirs || []) { try { await dirOf(S.root, d.split('/'), true); } catch (e) { } }
+      let dataBytes = null;
+      await pool(Object.entries(idx.files).filter(([k]) => k.startsWith('main/')), 4, async ([key, v]) => {
+        const rel = key.slice(5), parts = rel.split('/');
+        if (parts.some(x => x === '..' || x === '.')) return;
+        try {
+          const get = async () => { const b = await decBytes(CFG.master, await bs.get(v.id)); if (await sha(b) !== v.sha) throw Error('kontrolsumma nesakrīt'); return b; };
+          if (rel === CP.DATAFILE) { dataBytes = await get(); return; }
+          const dir = await dirOf(S.root, parts.slice(0, -1), true); let local = null;
+          try { local = await (await dir.getFileHandle(parts.at(-1))).getFile(); } catch (e) { if (e.name !== 'NotFoundError') throw e; }
+          if (local) {
+            if (local.size === v.size && await sha(new Uint8Array(await local.arrayBuffer())) === v.sha) { n.same++; return; }
+            if (!(v.lm > local.lastModified)) { n.kept++; return; }   // šeit jaunāks — paliek
+            const keep = await dirOf(rz, [`aizvietoti_${stamp}`, ...parts.slice(0, -1)], true);
+            await writeBytes(keep, parts.at(-1), await local.arrayBuffer());
+            await writeBytes(dir, parts.at(-1), await get()); n.replaced++;
+          } else { await writeBytes(dir, parts.at(-1), await get()); n.added++; }
+        } catch (e) { if (e.auth) throw e; console.error(key, e); n.bad++; }
+      });
+      if (!dataBytes) throw Error('kopijā nav datu faila');
+      const parsed = JSON.parse(td.decode(dataBytes)); CP.validateDb(parsed);
+      const db = CP.migrate(parsed); CP.validateDb(db);
+      S.db = db; S.conflict = false; S.conflictNotified = false; S.dirty = true; S.rev = (S.rev || 0) + 1;
+      CP.changelog?.rebase();
+      if (!await store.save(false)) throw Error('datus neizdevās saglabāt datu mapē (iepriekšējā versija ir mapē _rezerves)');
+      CFG.syncHead = head.updated; CFG.multi = true; CFG.last = { ...(CFG.last || {}), at: U.now(), rev: S.db.revision, pulled: true };
+      await cfgSet(CFG); REMOTE = null; status = 'ok';
+      S.selected = S.db.people.find(D.isCurrent)?.id || '';
+      try { await store.scanAll(); } catch (e) { }
+      CP.render();
+      ui.toast(`⬇ Ielādēti dati no ${head.writer?.name || 'cita datora'} (${U.fmtDateTime(head.updated)}). Dokumenti: ${n.added} jauni, ${n.replaced} atjaunoti${n.kept ? `, ${n.kept} šeit jaunāki — paturēti` : ''}${n.bad ? `, ${n.bad} neizdevās` : ''}. Iepriekšējā versija — mapē _rezerves.`, n.bad ? 'warn' : 'ok', 14000);
+    } catch (e) { console.error(e); status = e.auth ? 'auth' : 'err'; ui.toast('Ielāde no Google Drive neizdevās: ' + e.message, 'err', 12000); }
+    finally { running = false; paint(); paintRemote(); }
+  }
+  /* --- Josla augšā: citā datorā jaunāki dati --- */
+  function paintRemote() {
+    let b = U.$('remoteBar');
+    if (!REMOTE || remoteHidden || !S.root) { b?.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'remoteBar'; b.className = 'gbanner'; b.setAttribute('role', 'alert'); ui.topHost?.().appendChild(b); }
+    const pend = pending();
+    b.innerHTML = `<span>☁ Google Drive ir jaunāki dati no cita datora (${esc(REMOTE.name)}, ${esc(U.fmtDateTime(REMOTE.at))}).${pend ? ' Arī šajā datorā ir izmaiņas, kas nav Drive — ielādējot tās saglabāsies mapē _rezerves.' : ''}</span>
+      <button type="button" data-act="encPull" ${running ? 'disabled' : ''}>⬇ Ielādēt</button><button type="button" class="ghost" data-act="encKeepLocal" ${running ? 'disabled' : ''}>Paturēt šī datora datus</button><button type="button" class="gb-x" data-act="encRemoteHide" title="Paslēpt līdz nākamajai atvēršanai" aria-label="Paslēpt">✕</button>`;
+  }
+  A.encPull = () => { if (confirm(`Ielādēt datus no Google Drive (${REMOTE?.name || 'cits dators'})?\n\nŠī datora pašreizējais datu fails tiks saglabāts mapē _rezerves. Dokumenti netiek dzēsti: jaunāki no Drive aizstāj vecākos (vecie paliek _rezerves), pārējie paliek.`)) pull(); };
+  A.encKeepLocal = () => { if (confirm('Paturēt šī datora datus un nosūtīt tos uz Google Drive?\n\nOtrā datora jaunākās izmaiņas Drive kopijā tiks aizstātas (tās paliks tikai tajā datorā).')) { REMOTE = null; paintRemote(); run({ ask: true, force: true }); } };
+  A.encRemoteHide = () => { remoteHidden = true; paintRemote(); };
+  A.encCheck = () => checkRemote(true).then(r => { if (!r && checked) ui.toast('✓ Google Drive nav jaunāku datu no cita datora', 'ok'); });
   const pending = () => !!(S.db && enabled(CFG) && (!CFG.last || S.db.revision !== CFG.last.rev));
   // automātiski: ik 10 min pārbauda; ja datos ir izmaiņas un kopija vecāka par 30 min
-  setInterval(() => { if (CFG?.last && S.root && !running && pending() && Date.now() - new Date(CFG.last.at) > 30 * 60000) run({ quiet: true }); }, 10 * 60000);
-  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); G()?.paintBanner(); paintSync(); if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
+  setInterval(() => { if (CFG?.last && S.root && !running && pending() && Date.now() - new Date(CFG.last.at) > 30 * 60000) run({ quiet: true }); else if (isDrive(CFG) && G()?.has('drive') && !running) checkRemote(); }, 10 * 60000);
+  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); checked = false; REMOTE = null; remoteHidden = false; G()?.paintBanner(); paintSync(); if (isDrive(CFG) && G()?.has('drive') && await checkRemote()) return; if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
   // Google josla: kopija Google Drive, ir nenosūtītas izmaiņas, savienojums beidzies
   G()?.needs.push(() => isDrive(CFG) && S.root && pending() ? { what: 'rezerves kopija', scope: 'drive' } : null);
   // tikko pieslēdzās Google (josla “Pieslēgties”) → nosūta uzreiz
-  G()?.onToken(() => { if (isDrive(CFG) && S.root && G().has('drive') && !running && (pending() || status === 'auth')) run({ quiet: false }); });
+  G()?.onToken(async () => { if (!(isDrive(CFG) && S.root && G().has('drive') && !running)) return; if (await checkRemote()) return; if (pending() || status === 'auth') run({ quiet: false }); });
 
   /* --- Iestatījumu kartīte --- */
   const faili = n => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'fails' : 'faili'}`;
@@ -8619,7 +8738,9 @@ window.CP = window.CP || {};
     const warn = (msg, btn) => `<span class="sl-warn" title="Šifrētā rezerves kopija Google Drive">⚠ ${msg}</span>${btn}`;
     if (!enabled(c)) return warn('Nav sinhronizēts ar Google Drive', `<button class="sl-btn" data-act="encGoSet">Iestatīt</button>`);
     if (!drv) return `<span class="sl-ok" title="Šifrētā rezerves kopija mapē ${esc(c.dir?.name || '')}">🔐 Kopija mapē${c.last ? ' · ' + hhmmDay(c.last.at) : ''}</span>`;
-    if (running) return `<span class="sl-run"><span class="spin"></span> Sūta uz Google Drive…</span>`;
+    if (running) return `<span class="sl-run"><span class="spin"></span> ${status === 'pull' ? 'Ielādē no Google Drive…' : 'Sūta uz Google Drive…'}</span>`;
+    if (REMOTE) return warn(`Citā datorā jaunāki dati (${esc(U.fmtDateTime(REMOTE.at))})`, `<button class="sl-btn" data-act="encPull">Ielādēt</button>`);
+    if (c.multi && !checked && !G()?.has('drive')) return warn('Nav pārbaudīts, vai otrā datorā nav jaunāku datu', `<button class="sl-btn" data-act="gConnect">Pieslēgties</button>`);
     if (status === 'perm' || status === 'err') return warn('Google Drive: kopija neizdevās', `<button class="sl-btn" data-act="encRun">Mēģināt vēlreiz</button>`);
     if (!c.last) return warn('Google Drive: kopija vēl nav izveidota', `<button class="sl-btn" data-act="encRun">Sinhronizēt</button>`);
     if ((pending() || status === 'auth') && !G()?.has('drive')) return warn('Nav sinhronizēts ar Google Drive — savienojums beidzies', `<button class="sl-btn" data-act="gConnect">Pieslēgties</button>`);
@@ -8630,12 +8751,9 @@ window.CP = window.CP || {};
   const paintSync = () => { const el = U.$('syncLine'); if (!el) return; const h = syncHtml(); if (el.innerHTML !== h) el.innerHTML = h; el.hidden = !h; };
   setInterval(paintSync, 60000);
   G()?.onToken(() => setTimeout(paintSync, 50));
-  A.encGoSet = () => {
-    ui.go('settings');
-    setTimeout(() => { const c = U.$('encCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.encGoSet = () => CP.ui.goSettingsCard('encCard');
   const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); paintSync(); };
-  CP.encBackup = { card, run, paint, paintSync };
+  CP.encBackup = { card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
   // brīdinājums pārskatā: kopija sen nav atjaunota vai gaida atļauju
   { const orig = D.alerts; D.alerts = () => { const out = orig(); if (enabled(CFG) && S.root) { const age = CFG.last ? (Date.now() - new Date(CFG.last.at)) / 864e5 : 99; if (status === 'perm' || age > 7) out.push({ kind: 'backup', sev: 1, when: CFG.last?.at?.slice(0, 10) || '', msg: status === 'perm' ? 'Šifrētajai rezerves kopijai vajag atļauju — Iestatījumos spied “Izveidot kopiju tagad”' : `Šifrētā rezerves kopija nav atjaunota ${CFG.last ? Math.floor(age) + ' dienas' : 'ne reizi'} — Iestatījumos spied “Izveidot kopiju tagad”` }); } return out; }; }
 
@@ -8681,7 +8799,7 @@ window.CP = window.CP || {};
         try {
           for (const fo of await G().drive.findFolders(DIRNAME, 'root')) { const k = await G().drive.children(fo.id, " and name='KOPIJA.json'"); if (k.length) { existing = fo.id; break; } }
         } catch (x) { return ui.toast(x.message, 'err', 12000); }
-        if (existing && !confirm(`Tavā Google Drive jau ir CADET rezerves kopija (mape ${DIRNAME}). Izveidot jaunu? Vecā kopija tiks aizstāta.`)) return;
+        if (existing && !confirm(`Tavā Google Drive jau ir CADET rezerves kopija (mape ${DIRNAME}).\n\nJa tā ir no cita tava datora un gribi strādāt ar tiem pašiem datiem — spied “Atcelt” un izvēlies “Atjaunot no kopijas…”.\n\nIzveidot jaunu kopiju? Vecā tiks aizstāta.`)) return;
       } else {
         existing = await backupDirOf(setupDir);
         if (existing && !confirm('Šajā mapē jau ir CADET rezerves kopija. Izveidot jaunu? Vecā kopija šajā mapē tiks aizstāta.')) return;
@@ -8805,15 +8923,15 @@ window.CP = window.CP || {};
     if (el) { el.disabled = false; el.textContent = '☁ Pieslēgties Google un atrast kopiju'; }
     if (!found.length) return ui.toast(`Šajā Google kontā nav atrasta CADET rezerves kopija, ko izveidojis rīks ar šo Client ID. Pārbaudi kontu un Client ID; ja kopiju lejupielādēji, izvēlies “Mape datorā”.`, 'warn', 12000);
     found.sort((a, b) => String(b.head.updated || b.head.created).localeCompare(String(a.head.updated || a.head.created)));
-    if (found.length === 1) return pwDialog(() => driveStore(found[0].id).open(), found[0].head);
+    if (found.length === 1) return pwDialog(() => driveStore(found[0].id).open(), found[0].head, found[0].id);
     // vairākas kopijas → izvēle
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Kuru kopiju atjaunot?</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="choice-list">${found.map((x, i) => `<label class="choice"><input type="radio" name="k" value="${i}" ${i ? '' : 'checked'}><div class="grow"><b>${esc(x.head.root || 'Datu mape')}</b><div class="small muted">Pēdējā kopija: ${esc(U.fmtDateTime(x.head.updated || x.head.created))} · ${x.head.stats ? faili(x.head.stats.files) + ' · ' + fmtB(x.head.stats.bytes) : ''}</div></div></label>`).join('')}</div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encResDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
-    d.querySelector('form').onsubmit = e => { e.preventDefault(); const x = found[+e.target.k.value]; pwDialog(() => driveStore(x.id).open(), x.head); };
+    d.querySelector('form').onsubmit = e => { e.preventDefault(); const x = found[+e.target.k.value]; pwDialog(() => driveStore(x.id).open(), x.head, x.id); };
   };
-  function pwDialog(open, head) {
-    R = { open, head, master: null };
+  function pwDialog(open, head, folderId = '') {
+    R = { open, head, master: null, folderId };
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Atjaunot no šifrētās kopijas</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body">${ui.dl([['Kopija', head.store === 'drive' ? '☁ Google Drive' : '📁 Mape', 1], ['Datu mape kopijā', esc(head.root || '—'), 1], ['Pēdējā kopija', esc(U.fmtDateTime(head.updated || head.created)), 1], ['Faili', `${head.stats?.files ?? '—'}${head.stats ? ' · ' + fmtB(head.stats.bytes) : ''}`, 1]])}
         <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="password" name="pw" autocomplete="current-password" style="margin-top:8px"></div></label>
@@ -8839,9 +8957,13 @@ window.CP = window.CP || {};
     foot.innerHTML = ''; body.innerHTML = `<p><span class="spin"></span> Atjauno${R.head.store === 'drive' ? ' no Google Drive' : ''}… <b id="encResN">0</b> faili</p>`;
     try {
       const n = await restoreInto(await R.open(), R.head, R.master, t, k => { const el = U.$('encResN'); if (el) el.textContent = k; });
-      body.innerHTML = `<p class="okc"><b>✓ Atjaunoti ${n.ok} faili</b>${n.bad ? ` · <span class="red">${n.bad} ar kļūdu</span>` : ''}. Visi pārbaudīti ar kontrolsummu.</p><p>Mape “${esc(t.name)}” tagad tiks pieslēgta kā datu mape.</p>${R.head.store === 'drive' ? '<p class="small muted">Lai kopija arī turpmāk ietu uz Google Drive, Iestatījumos → “Šifrētā rezerves kopija” iestati to no jauna (vecā kopija tiks aizstāta).</p>' : ''}`;
+      body.innerHTML = `<p class="okc"><b>✓ Atjaunoti ${n.ok} faili</b>${n.bad ? ` · <span class="red">${n.bad} ar kļūdu</span>` : ''}. Visi pārbaudīti ar kontrolsummu.</p><p>Mape “${esc(t.name)}” tagad tiks pieslēgta kā datu mape.</p>${R.head.store === 'drive' && R.folderId ? '<p class="small muted">Šis dators turpmāk izmantos to pašu Google Drive kopiju. Ja strādā uz diviem datoriem, rīks atverot pārbaudīs, vai otrā nav jaunāku datu, un piedāvās tos ielādēt.</p>' : ''}`;
       foot.innerHTML = '<span class="grow"></span><button class="mainbtn" data-close="encResDialog">Gatavs</button>';
       await store.connectRoot(t, 'atjaunots no šifrētās kopijas');
+      if (R.folderId && R.head.store === 'drive') {   // otrs dators: turpina to pašu Google Drive kopiju (bez jaunas iestatīšanas)
+        CFG = { kind: 'drive', folderId: R.folderId, master: R.master, set: R.head.set, hint: R.head.hint, created: R.head.created, syncHead: R.head.updated, multi: true, last: { at: U.now(), rev: S.db.revision, files: R.head.stats?.files || 0, bytes: R.head.stats?.bytes || 0, pulled: true } };
+        await cfgSet(CFG); checked = true; REMOTE = null; status = 'ok'; paint();
+      }
     } catch (x) { console.error(x); body.innerHTML = `<p class="red">Atjaunošana neizdevās: ${esc(x.message)}</p>`; foot.innerHTML = '<span class="grow"></span><button data-close="encResDialog">Aizvērt</button>'; }
   };
   /** Kopijas atšifrēšana mapē. src: glabātuve (localStore/driveStore) vai kopijas mapes rokturis.
@@ -8909,6 +9031,150 @@ if(Object.keys(moved).length){try{var dfh=await out.getFileHandle('CADET_PERSONA
 s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span class=err>('+bad+' ar kļūdu)':'')+'</span>. Atver rīku un izvēlies šo mapi kā datu mapi.'}catch(e){s.innerHTML='<span class=err>'+e.message+'</span>'}};})();
 </script></body></html>`;
   CP.encBackup.RESTORE_HTML = RESTORE_HTML;
+})(window.CP);
+
+
+/* ==== js/setup.js ==== */
+/* =====================================================================
+   Sākuma iestatīšana, datu kvalitāte un 21 gada brīdinājums.
+   • Pārskatā kartīte “Sagatavo rīku darbam”: ķeksīši par galvenajiem iestatījumiem. Pazūd, kad viss izdarīts
+     vai kad instruktors to paslēpj (settings.setupHidden). settings.setupDone = { docs: true, … } — soļi, ko
+     nevar pārbaudīt automātiski (apskatīts).
+   • Lapa “Datu kvalitāte” (quality): trūkstoši / nederīgi dati, iespējami dublikāti, faili, kas nav atrasti.
+   • Brīdinājums: jaunsargam tuvojas 21 gads (60 dienas) vai jau ir 21 — līgums beidzas.
+   • Instruktora dati (settings.instructor) — tie paši, ko izmanto līgumi un veidlapas; kartīte Iestatījumos.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const plural = (n, one, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
+
+  /* ---------------- Instruktora dati ---------------- */
+  const inst = () => (S.db.settings.instructor = S.db.settings.instructor || { parvalde: '', nodala: '', name: '', nameGen: '', position: 'Jaunsargu instruktors', phone: '', email: '', place: '' });
+  function instCard() {
+    const I = inst(), f = (k, l, ph = '', t = 'text') => `<div class="field"><label>${l}</label><input type="${t}" data-inst="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
+    return `<section class="card" id="instCard"><h3>${ic('user')}Instruktora dati</h3>
+      <p class="small" style="margin-top:0">Izmanto līgumos un veidlapās. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
+      <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs')}${f('position', 'Amats', 'Jaunsargu instruktors')}
+        ${f('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${f('nodala', 'Nodaļas nr.', 'piem. 1')}
+        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', '', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
+        ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski')}</div></section>`;
+  }
+  CP.changeHandlers.push(e => {
+    const k = e.target.dataset?.inst; if (!k) return false;
+    inst()[k] = e.target.value.trim(); CP.store.changed(); return true;
+  });
+
+  /* ---------------- Sākuma iestatīšanas saraksts ---------------- */
+  const done = () => (S.db.settings.setupDone = S.db.settings.setupDone || {});
+  function steps() {
+    const st = CP.encBackup?.state?.() || {}, I = S.db.settings.instructor || {};
+    return [
+      { k: 'root', l: 'Datu mape izvēlēta', ok: !!S.root, hint: 'Visi dati glabājas tavā datorā šajā mapē.' },
+      { k: 'inst', l: 'Instruktora dati', ok: !!(I.name && I.parvalde && I.nodala), hint: 'Vārds, pārvalde un nodaļa — līgumiem un veidlapām.', act: 'goSetCard', arg: 'instCard', btn: 'Aizpildīt' },
+      { k: 'pin', l: 'PIN kods rīka bloķēšanai', ok: !!CP.lock?.hasPin?.(), hint: 'Aizsargā datus, kad dators paliek bez uzraudzības.', act: 'lockGoSet', btn: 'Iestatīt' },
+      { k: 'backup', l: 'Šifrētā rezerves kopija Google Drive', ok: !!st.enabled, hint: 'Pazaudējot datoru, datus var atjaunot.', act: 'encGoSet', btn: 'Iestatīt' },
+      { k: 'groups', l: 'Grupas šajā mācību gadā', ok: D.groups().length > 0, hint: 'Piemēram, J1, J2 — pēc tām filtrē sarakstus un apmeklējumu.', act: 'groupNew', btn: 'Pievienot' },
+      { k: 'docs', l: 'Obligātie dokumenti pārbaudīti', ok: !!done().docs, hint: `Tagad: ${esc((S.db.settings.requiredDocs || []).join(', ') || '—')}.`, act: 'setupDocs', btn: 'Pārbaudīt' },
+      { k: 'people', l: 'Pirmais jaunsargs pievienots', ok: S.db.people.length > 0, hint: 'No anketas, Excel vai e-klases — vai ievadot pašam.', act: 'scan', btn: 'Ievadīt anketu' }
+    ];
+  }
+  function setupCard() {
+    if (!S.root || S.db.settings.setupHidden) return '';
+    const list = steps(), n = list.filter(s => s.ok).length;
+    if (n === list.length) return '';
+    return `<section class="card setup-card" id="setupCard"><h3>${ic('check')}Sagatavo rīku darbam <span class="pill ${n >= list.length - 1 ? 'ok' : 'warn'}">${n}/${list.length}</span>
+        <button class="ghost sm right" data-act="setupHide" title="Paslēpt šo sarakstu (atkal var parādīt Iestatījumos → Pamata)">Paslēpt</button></h3>
+      <div class="setup-bar"><span style="width:${Math.round(n / list.length * 100)}%"></span></div>
+      <div class="setup-list">${list.map(s => `<div class="setup-row ${s.ok ? 'ok' : ''}"><span class="setup-ic">${s.ok ? '✓' : ''}</span><div class="grow"><b>${esc(s.l)}</b><div class="small muted">${s.hint}</div></div>${!s.ok && s.act ? `<button class="sm ${s.k === list.find(x => !x.ok)?.k ? 'mainbtn' : ''}" data-act="${s.act}" ${s.arg ? `data-arg="${esc(s.arg)}"` : ''}>${esc(s.btn)}</button>` : ''}</div>`).join('')}</div></section>`;
+  }
+  A.setupHide = () => { S.db.settings.setupHidden = true; CP.store.changed(); ui.toast('Saraksts paslēpts. To var atkal parādīt Iestatījumos → Pamata.', 'ok', 7000); };
+  A.setupShow = () => { S.db.settings.setupHidden = false; CP.store.changed(); ui.go('dashboard'); };
+  A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
+
+  /* ---------------- 21 gads ---------------- */
+  const at21 = birth => { const b = new Date(birth + 'T12:00:00'); if (isNaN(b)) return ''; b.setFullYear(b.getFullYear() + 21); return U.iso(b); };
+  { const orig = D.alerts; D.alerts = () => {
+    const out = orig(), yearId = D.activeYear(), live = yearId === U.schoolYear(), [from, to] = U.yearSpan(yearId);
+    for (const p of S.db.people) {
+      if (p.status === 'archived' || p.anon || !p.birth || !D.inYear(p)) continue;
+      const d21 = at21(p.birth); if (!d21) continue;
+      if (live) {
+        const diff = U.daysTo(d21);
+        if (diff < 0) out.push({ kind: 'age21', personId: p.id, sev: 2, msg: `${U.full(p)} — jau 21 gads (no ${U.fmtDate(d21)}), līgums beidzies`, when: d21, year: yearId });
+        else if (diff <= 60) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'}, līgums beigsies`, when: d21, year: yearId });
+      } else if (d21 >= from && d21 <= to) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads šajā mācību gadā (${U.fmtDate(d21)}), līgums beidzas`, when: d21, year: yearId });
+    }
+    if (live && S.root) { const q = issues().length; if (q) out.push({ kind: 'quality', page: 'quality', sev: 0, msg: `Datu kvalitāte: ${plural(q, 'lieta', 'lietas')} jāsakārto (trūkstoši vai nederīgi dati)`, when: '', year: yearId }); }
+    return out.sort((x, y) => (y.top || 0) - (x.top || 0) || y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
+  }; }
+
+  /* ---------------- Datu kvalitāte ---------------- */
+  const CHECKS = [
+    ['dup', 'Iespējami dublikāti'], ['code', 'Nederīgs personas kods'], ['birthCode', 'Dzimšanas datums nesakrīt ar personas kodu'],
+    ['nobirth', 'Nav dzimšanas datuma'], ['gender', 'Nav norādīts dzimums'], ['parent', 'Nepilngadīgam nav likumiskā pārstāvja'],
+    ['contact', 'Nav neviena tālruņa'], ['badPhone', 'Nederīgs tālrunis'], ['badEmail', 'Nederīgs e-pasts'], ['nogroup', 'Nav grupas šajā gadā'],
+    ['phoneShared', 'Viens tālrunis dažādām personām'], ['file', 'Dokumenta fails nav atrasts']
+  ];
+  const CL = Object.fromEntries(CHECKS);
+  function issues() {
+    const out = [], ppl = S.db.people.filter(p => p.status !== 'archived' && !p.anon && D.inYear(p)), ign = S.db.settings.qualityIgnore || {};
+    const add = (k, p, detail, act = 'edit', extra = {}) => { const key = `${k}:${p.id}${extra.sub ? ':' + extra.sub : ''}`; if (!ign[key]) out.push({ k, key, p, detail, act, ...extra }); };
+    const seenDup = new Set();
+    for (const p of ppl) {
+      const dups = D.duplicates(p, p.id).filter(o => o.status !== 'archived' && !o.anon);
+      if (dups.length && !seenDup.has(p.id)) { dups.forEach(o => seenDup.add(o.id)); seenDup.add(p.id); add('dup', p, `līdzīgs: ${dups.map(U.full).join(', ')}`, 'open', { others: dups.map(o => o.id) }); }
+      const code = U.codeDigits(p.personalCode);
+      if (p.personalCode && !U.checkCode(code)) add('code', p, 'kontrolcipars vai garums neatbilst');
+      else if (code.length === 11 && p.birth && U.birthFromCode(code) && U.birthFromCode(code) !== p.birth) add('birthCode', p, `kodā ${U.fmtDate(U.birthFromCode(code))}, kartītē ${U.fmtDate(p.birth)}`);
+      if (!p.birth && !U.birthFromCode(code)) add('nobirth', p, 'vajag vecumam, VFS pakāpei un 21 gada brīdinājumam');
+      if (!p.gender) add('gender', p, `vajag VFS normatīviem${CP.vfs?.guessG?.(p.first) ? ` · ieteikums pēc vārda: ${CP.vfs.guessG(p.first) === 'f' ? 'meitene' : 'zēns'}` : ''}`, 'qGender', { guess: CP.vfs?.guessG?.(p.first) || '' });
+      const age = U.age(p.birth || U.birthFromCode(code));
+      if (age != null && age < 18 && !p.parentName && !p.parent2Name) add('parent', p, `${age} g. — nav vecāka vai aizbildņa vārda`);
+      if (!p.phone && !p.parentPhone && !p.parent2Phone) add('contact', p, 'ne jaunietim, ne vecākiem');
+      for (const f of ['phone', 'parentPhone', 'parent2Phone', 'emergencyPhone']) if (p[f] && !U.validate('phone', p[f]).ok) add('badPhone', p, `${D.PHONE_FIELDS[f]}: ${p[f]}`, 'edit', { sub: f });
+      for (const f of ['email', 'parentEmail', 'parent2Email']) if (p[f] && !U.validate('email', p[f]).ok) add('badEmail', p, `${f === 'email' ? 'jaunieša' : f === 'parentEmail' ? 'vecāka' : 'otra vecāka'} e-pasts: ${p[f]}`, 'edit', { sub: f });
+      if (!D.groupOf(p)) add('nogroup', p, `mācību gadā ${U.yearLabel(D.activeYear())}`);
+      for (const d of D.docsOf(p)) { const st = d._live?.state || d.fileState; if (d.path && (st === 'missing' || st === 'noaccess')) add('file', p, `${d.kind}: ${d.path}${st === 'noaccess' ? ' (nav piekļuves mapei)' : ''}`, 'openDocs', { sub: d.id }); }
+    }
+    for (const g of D.phoneConflicts()) if (g.suspicious) {
+      const who = [...new Map(g.entries.filter(e => ppl.includes(e.p)).map(e => [e.p.id, e.p])).values()]; if (!who.length) continue;
+      add('phoneShared', who[0], `${U.prettyPhone(g.num)}: ${g.entries.map(e => e.f === 'phone' ? `${U.full(e.p)} (jaunietis)` : `${e.p[e.f.replace('Phone', 'Name')] || '?'} (${e.role}, ${U.full(e.p)})`).join('; ')}`, 'edit', { sub: g.num });
+    }
+    return out;
+  }
+  const Q = () => S.quality || (S.quality = { k: '' });
+  CP.pages.quality = {
+    render() {
+      const all = issues(), q = Q(), counts = {}; all.forEach(x => { counts[x.k] = (counts[x.k] || 0) + 1; });
+      if (q.k && !counts[q.k]) q.k = '';
+      const list = q.k ? all.filter(x => x.k === q.k) : all;
+      const chip = (k, l, n) => `<button class="chipbtn ${q.k === k ? 'on' : ''}" data-act="qFilter" data-arg="${k}">${esc(l)}${n != null ? ` <b>${n}</b>` : ''}</button>`;
+      const guessN = all.filter(x => x.k === 'gender' && x.guess).length;
+      const nIgn = Object.keys(S.db.settings.qualityIgnore || {}).length;
+      const row = x => `<div class="row q-row"><div class="grow"><a href="#" data-person="${x.p.id}">${esc(U.full(x.p))}</a> <span class="small muted">· ${esc(D.groupOf(x.p) || 'bez grupas')}</span><div class="small"><span class="q-k">${esc(CL[x.k])}</span> — ${esc(x.detail)}</div></div>
+        ${x.k === 'gender' && x.guess ? `<button class="sm" data-act="qGender" data-arg="${x.p.id}|${x.guess}">Ielikt: ${x.guess === 'f' ? 'meitene' : 'zēns'}</button>` : ''}
+        ${x.act === 'openDocs' ? `<button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt dokumentus</button>` : x.act === 'open' ? `<button class="sm" data-person="${x.p.id}">Atvērt</button>${(x.others || []).map(id => `<button class="sm ghost" data-person="${id}" title="Atvērt otru ierakstu">Otrs: ${esc(U.full(D.person(id)))}</button>`).join('')}` : `<button class="sm" data-act="edit" data-arg="${x.p.id}">✎ Labot</button>`}
+        <button class="sm ghost" data-act="qIgnore" data-arg="${esc(x.key)}" title="Viss kārtībā — vairs nerādīt">Nerādīt</button></div>`;
+      return `<div class="page">${ui.pageHead('Datu kvalitāte', `Aktuālie jaunsargi un kandidāti mācību gadā ${esc(U.yearLabel(D.activeYear()))}: ko vajadzētu papildināt vai labot.`, guessN ? `<button class="sm" data-act="qGenderAll">Ielikt ieteikto dzimumu visiem (${guessN})</button>` : '')}
+        <section class="card">${all.length ? `<div class="chips q-chips">${chip('', 'Viss', all.length)}${CHECKS.filter(([k]) => counts[k]).map(([k, l]) => chip(k, l, counts[k])).join('')}</div>
+          <div class="q-list">${list.map(row).join('')}</div>` : '<p class="okc"><b>✓ Dati ir kārtībā.</b> Nav atrasts nekas, ko vajadzētu labot.</p>'}
+          ${nIgn ? `<p class="small muted" style="margin-top:12px">Paslēpti ${plural(nIgn, 'ieraksts', 'ieraksti')} (“Nerādīt”). <a href="#" data-act="qUnignore">Rādīt atkal</a></p>` : ''}
+          <p class="small muted" style="margin-top:12px">Dzimuma ieteikums ir pēc vārda galotnes — pārbaudi. Dokumentu faili tiek pārbaudīti, atverot sadaļu Dokumenti.</p></section></div>`;
+    }
+  };
+  A.qFilter = k => { Q().k = k; CP.render(); };
+  A.qIgnore = key => { const s = S.db.settings; s.qualityIgnore = { ...(s.qualityIgnore || {}), [key]: U.iso() }; CP.store.changed(); };
+  A.qUnignore = () => { S.db.settings.qualityIgnore = {}; CP.store.changed(); };
+  const setGender = (p, g) => { if (!p || !['m', 'f'].includes(g)) return; p.gender = g; p.updatedAt = U.now(); };
+  A.qGender = arg => { const [pid, g] = String(arg).split('|'); setGender(D.person(pid), g); CP.store.changed(); };
+  A.qGenderAll = () => {
+    const xs = issues().filter(x => x.k === 'gender' && x.guess); if (!xs.length || !confirm(`Ielikt dzimumu pēc vārda ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}? Pārbaudi sarakstu pēc tam.`)) return;
+    xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
+  };
+
+  CP.setup = { card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);
 
 
@@ -11329,10 +11595,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     }
     return false;
   });
-  A.retSettings = () => {
-    ui.go('settings');
-    setTimeout(() => { const c = U.$('retCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.retSettings = () => CP.ui.goSettingsCard('retCard');
   A.retDefaults = () => {
     if (!confirm('Atjaunot visus glabāšanas termiņus uz noklusējumiem? Personām individuāli iestatītie termiņi paliek.')) return;
     S.db.settings.retention = DEF(); S.db.settings.retentionDefault = DEF().left.m; CP.store.changed(); ui.toast('Atjaunoti noklusētie termiņi', 'ok');

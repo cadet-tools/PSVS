@@ -5,21 +5,42 @@
   'use strict';
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
+  const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
+  A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
+  /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
+  ui.goSettingsCard = id => {
+    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
+    if (tabOf[id]) S.setTab = tabOf[id];
+    ui.go('settings');
+    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  A.goSetCard = id => ui.goSettingsCard(id);
   CP.pages.settings = {
     render() {
       const s = S.db.settings, o = s.ocr;
+      const tab = STABS.some(t => t[0] === S.setTab) ? S.setTab : 'base', T = k => `<div class="set-tab" data-stab="${k}" ${tab === k ? '' : 'hidden'}>`;
       return `<div class="page narrow">${ui.pageHead('Iestatījumi', `CADET PERSONĀLS ${CP.VERSION}`, ui.saveBtn())}
+      <nav class="tabs set-tabs" role="tablist">${STABS.map(([k, l, i]) => `<button role="tab" type="button" data-act="setTab" data-arg="${k}" class="${tab === k ? 'active' : ''}" aria-selected="${tab === k}">${CP.ic(i)}${l}</button>`).join('')}</nav>
+      ${T('base')}
       ${CP.D2 ? `<section class="card"><h3>${CP.ic('layout')}Izskats</h3><div class="lookrow">
         <span>Tēma</span><div class="actions"><span class="themepick" role="group" aria-label="Tēma">${[['dark', 'Tumšā'], ['light', 'Gaišā'], ['auto', 'Kā datorā']].map(([v, l]) => `<button type="button" data-act="setTheme" data-arg="${v}" class="${CP.theme.get() === v ? 'on' : ''}" aria-pressed="${CP.theme.get() === v}">${l}</button>`).join('')}</span></div>
         <span>Akcenta krāsa</span><div class="swatches" role="group" aria-label="Akcenta krāsa">${(() => { const cur = CP.theme.accent(), known = CP.ACCENTS.some(([c]) => c === cur); return CP.ACCENTS.map(([c, n]) => `<button type="button" class="swatch ${c === cur ? 'on' : ''}" style="--sw:${c}" data-act="setAccent" data-arg="${c}" title="${n}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('') + `<label class="btn swatch custom ${known ? '' : 'on'}" title="Sava krāsa" ${known ? '' : `style="--sw:${cur};background:${cur}"`}><input type="color" id="accentPick" value="${cur}" aria-label="Sava krāsa"></label>`; })()}</div>
       </div><p class="small muted" style="margin:12px 0 0">Akcents nosaka pogas, izcēlumus, saites un vieglu fona toni. Izskats tiek saglabāts šajā pārlūkā un datu failā.</p></section>` : ''}
-      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
+      ${CP.watchPrefs ? (() => { const w = CP.watchPrefs(); return `<section class="card" id="watchCard"><h3>${CP.ic('clock')}Pulkstenis un pauzes</h3><div class="lookrow">
         <span>Ciparnīca</span><div class="actions"><span class="themepick" role="group" aria-label="Ciparnīca">${CP.WATCH_FACES.map(([k, l]) => `<button type="button" data-act="watchFace" data-arg="${k}" class="${w.face === k ? 'on' : ''}" aria-pressed="${w.face === k}">${l}</button>`).join('')}</span></div>
         <span>Atgādināt par pauzi</span><div class="actions"><label class="check"><input type="checkbox" data-watch="remind" ${w.remind ? 'checked' : ''}> pēc</label><input type="number" class="w-num-in" min="10" max="180" step="5" data-watch="workMin" value="${w.workMin}" aria-label="Minūtes līdz pauzei"> <span class="small muted">min darba, pauze</span><input type="number" class="w-num-in" min="1" max="30" data-watch="breakMin" value="${w.breakMin}" aria-label="Pauzes minūtes"> <span class="small muted">min, atkārtot pēc</span><input type="number" class="w-num-in" min="1" max="60" data-watch="snoozeMin" value="${w.snoozeMin}" aria-label="Atkārtot pēc minūtēm"> <span class="small muted">min</span></div>
         <span>Liels pulkstenis</span><div class="actions"><label class="check"><input type="checkbox" data-watch="idle" ${w.idle ? 'checked' : ''}> parādīt virs rīka, ja nav darbības</label><input type="number" class="w-num-in" min="1" max="60" data-watch="idleMin" value="${w.idleMin}" aria-label="Minūtes bez darbības"> <span class="small muted">min</span><button type="button" class="sm" data-act="watchBig">Parādīt tagad</button></div>
         <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
       </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
-      <section class="card"><h3>Datu glabāšana</h3>
+      ${CP.setup ? CP.setup.instCard() : ''}
+      ${S.db.settings.setupHidden ? `<section class="card"><h3>${CP.ic('check')}Sākuma iestatīšanas saraksts</h3><p class="small" style="margin-top:0">Saraksts “Sagatavo rīku darbam” Pārskatā ir paslēpts.</p><button class="sm" data-act="setupShow">Rādīt atkal Pārskatā</button></section>` : ''}
+      <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
+        <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
+        ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}
+        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">Pārcelt personas</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
+        <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
+      </div>${T('sec')}
+      <section class="card" id="dataCard"><h3>Datu glabāšana</h3>
         ${ui.dl([['Datu mape', S.rootName || 'nav izvēlēta'], ['Datu fails', CP.DATAFILE], ['JSON kopijas', 'mape _rezerves, ar datumu un laiku (netiek dzēstas)'], ['Pēdējā saglabāšana', U.fmtDateTime(S.db.updatedAt) || '—']])}
         <div class="actions" style="margin-top:12px"><button data-act="pickRoot">📁 Mainīt datu mapi</button><button data-act="backupNow">Izveidot JSON kopiju</button><button data-act="backup">⬇ Lejupielādēt JSON</button><button data-act="exportCsv">⬇ Personas CSV</button><button data-act="createYear">Izveidot ${U.schoolYear()} mapes</button></div>
         ${ui.rootDrop()}
@@ -38,18 +59,14 @@
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
-      <section class="card"><h3>Mācību gadi</h3>
-        <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
-        ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}
-        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">Pārcelt personas</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
-        <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>
         <p class="muted small">Cik ilgi dati tiek glabāti — kartītē <a href="#" data-act="retSettings">Datu glabāšanas termiņi</a>.</p></section>
       ${CP.retention ? CP.retention.settingsCard() : ''}
 
-      <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
+      </div>${T('docs')}
+      <section class="card" id="docsCard"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
         <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
         <div class="field wide"><label>Dokumenti, kuru oriģināli jānodod Centra arhīvam (ar komatu)</label><input data-set="archiveDocs" value="${esc((s.archiveDocs || ['Pieteikuma anketa', 'Līgums']).join(', '))}"></div>
@@ -72,7 +89,8 @@
         ${s.formTemplates.length ? s.formTemplates.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b> <small class="muted">${t.zones.length} zonas</small>${s.activeTemplate === t.id ? ' <span class="tag">pēdējā lietotā</span>' : ''}</div><button class="sm" data-act="tplEdit" data-arg="${t.id}">Rediģēt</button><button class="sm" data-act="tplDup" data-arg="${t.id}">Dublēt</button><button class="sm ghost" data-act="tplDelete" data-arg="${t.id}">Dzēst</button></div>`).join('') : '<p class="muted small">Nav veidņu. Izveido pirmo: augšupielādē skenētas anketas paraugu un iezīmē zonas.</p>'}
         <p class="muted small">Bez veidnes lauki tiek atrasti automātiski pēc anketas etiķetēm (Word, eDoc un PDF ar tekstu — precīzi; skenējumi — ar izvēlēto dzinēju). Veidne glabā tikai zonu vietas lapas daļās, nevis dokumenta attēlu vai personas datus.</p></section>
 
-      <section class="card"><h3>Saziņa</h3><div class="fieldgrid">
+      </div>${T('comms')}
+      <section class="card" id="commsCard"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>
         <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div></div>
         <div class="fieldgrid" style="margin-top:10px"><div class="field"><label>Organizācija telefona kontaktos</label><input data-set="contactOrg" value="${esc(s.contactOrg || 'Jaunsardze')}"><div class="hint muted">Kontaktiem tiek pievienots “Uzņēmums” un grupa, lai tos telefonā var atrast.</div></div>
@@ -87,7 +105,8 @@
         <p class="muted small">Saites, kas parādās personas kartiņā. Saitē var izmantot {vārds} {uzvārds} {pilns} {tālrunis} {epasts} {grupa} {klase} {skola}. Personas kods un adrese netiek nodoti.</p>
         ${s.tools.map((t, i) => `<div class="inline-form"><input data-tool="${i}:name" value="${esc(t.name)}" placeholder="Nosaukums" style="max-width:180px"><input data-tool="${i}:url" value="${esc(t.url)}" placeholder="https://…"><button class="sm ghost" data-act="delTool" data-arg="${i}">✕</button></div>`).join('')}
         <button class="sm" data-act="addTool">＋ Pievienot rīku</button>
-        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section></div>`;
+        <p class="muted small" style="margin-top:10px"><b>E-klase:</b> skolēnu personas datus var pārņemt ar e-klases eksporta palīgu: <b>⬆ Imports → No e-klases</b>. Tur ir soli pa solim instrukcija.</p></section>
+      </div></div>`;
     }
   };
 

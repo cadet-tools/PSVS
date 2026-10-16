@@ -731,3 +731,14 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 .syncline .sl-ok{color:var(--muted,#98a6a0)}
 .syncline .sl-run{color:var(--muted,#98a6a0);display:inline-flex;align-items:center;gap:6px}
 .syncline .sl-btn{font-size:11.5px;padding:2px 9px;border-radius:12px;min-height:0;line-height:1.4}
+#remoteBar span{white-space:normal;max-width:720px}#remoteBar{flex-wrap:wrap;justify-content:center}
+/* Sākuma iestatīšanas saraksts */
+.setup-card h3{display:flex;align-items:center;gap:8px}.setup-card h3 .right{margin-left:auto}
+.setup-bar{height:6px;border-radius:4px;background:var(--line,#26302d);overflow:hidden;margin:2px 0 10px}.setup-bar span{display:block;height:100%;background:var(--acc,var(--teal));border-radius:4px}
+.setup-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 18px}
+.setup-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line,#26302d)}
+.setup-ic{width:22px;height:22px;flex:0 0 22px;border-radius:50%;border:2px solid var(--edge2,#3a4743);display:grid;place-items:center;font-size:12px;font-weight:800}
+.setup-row.ok .setup-ic{background:var(--ok-bg,#173a29);border-color:var(--ok-tx,#9fe8c0);color:var(--ok-tx,#9fe8c0)}.setup-row.ok b{color:var(--muted)}
+/* Datu kvalitāte */
+.q-chips{margin-bottom:10px}.q-row .q-k{color:var(--warn-tx,#f6d6a0);font-weight:600}
+.set-tabs{position:sticky;top:0;z-index:3;background:var(--bg,#0f1418)}

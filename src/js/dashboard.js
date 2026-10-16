@@ -4,7 +4,7 @@
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐') };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
@@ -36,6 +36,7 @@
       if (!S.root) return `<div class="page">${head}${start}</div>`;   // bez mapes — tikai mapes pievienošana (statistika un darbības nav pieejamas)
       return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`)}
         ${start}
+        ${CP.setup?.card() || ''}
         ${CP.years?.banner() || ''}
         <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
         <div class="stats">

@@ -50,6 +50,16 @@
   const isDrive = c => c?.kind === 'drive';
   const enabled = c => !!(c?.master && (c.dir || c.folderId));
   let CFG = null, running = false, status = '';
+  /* --- Darbs uz vairākiem datoriem: katram pārlūkam savs ID; KOPIJA.json.writer = kurš pēdējais rakstīja --- */
+  const DEV = (() => { try { let d = localStorage.getItem('cp.deviceId'); if (!d) { d = hex(rnd(8)); localStorage.setItem('cp.deviceId', d); } return d; } catch (e) { return 'nezinams'; } })();
+  const devName = () => { const p = navigator.userAgentData?.platform || navigator.platform || ''; return /win/i.test(p) ? 'Windows dators' : /mac/i.test(p) ? 'Mac dators' : /linux|cros/i.test(p) ? 'Linux dators' : 'cits dators'; };
+  let REMOTE = null, checked = false, remoteHidden = false;   // REMOTE: { at, name, root } — Drive ir jaunāka versija no cita datora
+  /** Vai Drive kopiju pēdējo reizi rakstīja cits dators, un šis vēl nav to ielādējis */
+  function newerElsewhere(head) {
+    const w = head?.writer; if (!w || w.dev === DEV || !head.updated) return null;
+    if (CFG?.syncHead && CFG.syncHead === head.updated) return null;
+    return { at: head.updated, name: w.name || 'cits dators', root: head.root || '' };
+  }
   (async () => { CFG = await cfgGet(); paint(); G()?.paintBanner(); CP.encBackup?.paintSync?.(); })();
 
   /* --- Failu sistēma --- */
@@ -129,7 +139,7 @@
   }
 
   /* --- Kopijas izveide / papildināšana --- */
-  async function run({ ask = false, quiet = false } = {}) {
+  async function run({ ask = false, quiet = false, force = false } = {}) {
     if (running) return; if (!S.root) return;
     CFG = CFG || await cfgGet(); if (!enabled(CFG)) return;
     running = true; status = 'run'; paint();
@@ -141,6 +151,14 @@
       if (S.dirty && !S.conflict) await store.save(true);
       const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null');
       if (!head || head.set !== CFG.set) throw Error('kopijas vietā ir citas kopijas fails — iestati kopiju no jauna');
+      checked = true;
+      const nw = isDrive(CFG) && !force && newerElsewhere(head);
+      if (nw) {   // citā datorā jaunāki dati — nepārraksta tos, jautā instruktoram
+        REMOTE = nw; CFG.multi = true; await cfgSet(CFG); status = 'newer';
+        if (!quiet) ui.toast(`Google Drive ir jaunāki dati no cita datora (${nw.name}, ${U.fmtDateTime(nw.at)}). Kopija netika nosūtīta, lai tos nepārrakstītu — izvēlies joslā augšā.`, 'warn', 12000);
+        return;
+      }
+      if (head.writer && head.writer.dev !== DEV) CFG.multi = true;
       const idx = head.index ? await decJson(CFG.master, head.index) : { files: {} };
       const before = await bs.blobIds();
       // 1) visa datu mape, 2) dokumenti no ārējām (papildu) mapēm — ja tās pieslēgtas
@@ -173,7 +191,9 @@
       head.index = await encJson(CFG.master, idx); head.updated = U.now(); head.version = CP.VERSION;
       head.stats = { files: Object.keys(idx.files).length, bytes: Object.values(idx.files).reduce((a, f) => a + f.size, 0) };
       head.root = S.rootName; head.store = isDrive(CFG) ? 'drive' : 'local';
+      head.writer = { dev: DEV, name: devName(), at: head.updated };
       await bs.writeTop('KOPIJA.json', JSON.stringify(head, null, 1));
+      CFG.syncHead = head.updated; REMOTE = null;
       const rh = await sha(te.encode(RESTORE_HTML));
       if (CFG.rh !== rh || !(await bs.hasTop('ATJAUNOT.html'))) { await bs.writeTop('ATJAUNOT.html', RESTORE_HTML); CFG.rh = rh; }
       // 4) vecās versijas un pārtraukto kopiju atliekas
@@ -187,16 +207,89 @@
       if (e.auth) { status = 'auth'; G().paintBanner(); if (!quiet) ui.toast(e.message, 'warn', 9000); }
       else { status = 'err'; CFG.lastErr = { at: U.now(), msg: e.message }; await cfgSet(CFG); ui.toast('Rezerves kopiju neizdevās izveidot: ' + e.message, 'err', 12000); }
     }
-    finally { running = false; paint(); G()?.paintBanner(); }
+    finally { running = false; paint(); G()?.paintBanner(); paintRemote(); }
   }
+  /** Tikai nolasa KOPIJA.json un pārbauda, vai citā datorā nav jaunāku datu (bez sūtīšanas) */
+  async function checkRemote(ask = false) {
+    if (!isDrive(CFG) || !S.root || running) return null;
+    try {
+      const bs = await access(ask); if (!bs) return null;
+      const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null'); if (!head || head.set !== CFG.set) return null;
+      checked = true; REMOTE = newerElsewhere(head); if (REMOTE) { CFG.multi = true; await cfgSet(CFG); status = 'newer'; } else if (status === 'newer') status = '';
+    } catch (e) { console.error(e); }
+    paint(); paintRemote(); return REMOTE;
+  }
+  /** Ielādē datus no Google Drive kopijas šajā datu mapē. Nekas netiek zaudēts: pašreizējais datu fails → _rezerves,
+      dokumenti, kas Drive ir jaunāki, aizstāj vietējos (vecie → _rezerves/aizvietoti_…); vietēji jaunākie un tikai šeit esošie paliek. */
+  async function pull() {
+    if (running || !S.root) return;
+    running = true; status = 'pull'; paint(); paintRemote();
+    const n = { added: 0, replaced: 0, same: 0, kept: 0, bad: 0 };
+    try {
+      const bs = await access(true); if (!bs) throw Error('nav Google savienojuma');
+      const head = JSON.parse(await bs.readTop('KOPIJA.json') || 'null');
+      if (!head || head.set !== CFG.set || !head.index) throw Error('Google Drive kopija nav nolasāma');
+      const idx = await decJson(CFG.master, head.index), stamp = U.stamp();
+      if (S.dirty && !S.conflict) await store.save(true);
+      const rz = await sub(S.root, '_rezerves', true);
+      const curText = await readText(S.root, CP.DATAFILE);
+      if (curText) await writeBytes(rz, `PIRMS_IELADES_NO_DRIVE_${stamp}.json`, curText);
+      const dirOf = async (root, parts, create) => { let d = root; for (const x of parts) d = await d.getDirectoryHandle(x, { create }); return d; };
+      for (const d of idx.dirs || []) { try { await dirOf(S.root, d.split('/'), true); } catch (e) { } }
+      let dataBytes = null;
+      await pool(Object.entries(idx.files).filter(([k]) => k.startsWith('main/')), 4, async ([key, v]) => {
+        const rel = key.slice(5), parts = rel.split('/');
+        if (parts.some(x => x === '..' || x === '.')) return;
+        try {
+          const get = async () => { const b = await decBytes(CFG.master, await bs.get(v.id)); if (await sha(b) !== v.sha) throw Error('kontrolsumma nesakrīt'); return b; };
+          if (rel === CP.DATAFILE) { dataBytes = await get(); return; }
+          const dir = await dirOf(S.root, parts.slice(0, -1), true); let local = null;
+          try { local = await (await dir.getFileHandle(parts.at(-1))).getFile(); } catch (e) { if (e.name !== 'NotFoundError') throw e; }
+          if (local) {
+            if (local.size === v.size && await sha(new Uint8Array(await local.arrayBuffer())) === v.sha) { n.same++; return; }
+            if (!(v.lm > local.lastModified)) { n.kept++; return; }   // šeit jaunāks — paliek
+            const keep = await dirOf(rz, [`aizvietoti_${stamp}`, ...parts.slice(0, -1)], true);
+            await writeBytes(keep, parts.at(-1), await local.arrayBuffer());
+            await writeBytes(dir, parts.at(-1), await get()); n.replaced++;
+          } else { await writeBytes(dir, parts.at(-1), await get()); n.added++; }
+        } catch (e) { if (e.auth) throw e; console.error(key, e); n.bad++; }
+      });
+      if (!dataBytes) throw Error('kopijā nav datu faila');
+      const parsed = JSON.parse(td.decode(dataBytes)); CP.validateDb(parsed);
+      const db = CP.migrate(parsed); CP.validateDb(db);
+      S.db = db; S.conflict = false; S.conflictNotified = false; S.dirty = true; S.rev = (S.rev || 0) + 1;
+      CP.changelog?.rebase();
+      if (!await store.save(false)) throw Error('datus neizdevās saglabāt datu mapē (iepriekšējā versija ir mapē _rezerves)');
+      CFG.syncHead = head.updated; CFG.multi = true; CFG.last = { ...(CFG.last || {}), at: U.now(), rev: S.db.revision, pulled: true };
+      await cfgSet(CFG); REMOTE = null; status = 'ok';
+      S.selected = S.db.people.find(D.isCurrent)?.id || '';
+      try { await store.scanAll(); } catch (e) { }
+      CP.render();
+      ui.toast(`⬇ Ielādēti dati no ${head.writer?.name || 'cita datora'} (${U.fmtDateTime(head.updated)}). Dokumenti: ${n.added} jauni, ${n.replaced} atjaunoti${n.kept ? `, ${n.kept} šeit jaunāki — paturēti` : ''}${n.bad ? `, ${n.bad} neizdevās` : ''}. Iepriekšējā versija — mapē _rezerves.`, n.bad ? 'warn' : 'ok', 14000);
+    } catch (e) { console.error(e); status = e.auth ? 'auth' : 'err'; ui.toast('Ielāde no Google Drive neizdevās: ' + e.message, 'err', 12000); }
+    finally { running = false; paint(); paintRemote(); }
+  }
+  /* --- Josla augšā: citā datorā jaunāki dati --- */
+  function paintRemote() {
+    let b = U.$('remoteBar');
+    if (!REMOTE || remoteHidden || !S.root) { b?.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'remoteBar'; b.className = 'gbanner'; b.setAttribute('role', 'alert'); ui.topHost?.().appendChild(b); }
+    const pend = pending();
+    b.innerHTML = `<span>☁ Google Drive ir jaunāki dati no cita datora (${esc(REMOTE.name)}, ${esc(U.fmtDateTime(REMOTE.at))}).${pend ? ' Arī šajā datorā ir izmaiņas, kas nav Drive — ielādējot tās saglabāsies mapē _rezerves.' : ''}</span>
+      <button type="button" data-act="encPull" ${running ? 'disabled' : ''}>⬇ Ielādēt</button><button type="button" class="ghost" data-act="encKeepLocal" ${running ? 'disabled' : ''}>Paturēt šī datora datus</button><button type="button" class="gb-x" data-act="encRemoteHide" title="Paslēpt līdz nākamajai atvēršanai" aria-label="Paslēpt">✕</button>`;
+  }
+  A.encPull = () => { if (confirm(`Ielādēt datus no Google Drive (${REMOTE?.name || 'cits dators'})?\n\nŠī datora pašreizējais datu fails tiks saglabāts mapē _rezerves. Dokumenti netiek dzēsti: jaunāki no Drive aizstāj vecākos (vecie paliek _rezerves), pārējie paliek.`)) pull(); };
+  A.encKeepLocal = () => { if (confirm('Paturēt šī datora datus un nosūtīt tos uz Google Drive?\n\nOtrā datora jaunākās izmaiņas Drive kopijā tiks aizstātas (tās paliks tikai tajā datorā).')) { REMOTE = null; paintRemote(); run({ ask: true, force: true }); } };
+  A.encRemoteHide = () => { remoteHidden = true; paintRemote(); };
+  A.encCheck = () => checkRemote(true).then(r => { if (!r && checked) ui.toast('✓ Google Drive nav jaunāku datu no cita datora', 'ok'); });
   const pending = () => !!(S.db && enabled(CFG) && (!CFG.last || S.db.revision !== CFG.last.rev));
   // automātiski: ik 10 min pārbauda; ja datos ir izmaiņas un kopija vecāka par 30 min
-  setInterval(() => { if (CFG?.last && S.root && !running && pending() && Date.now() - new Date(CFG.last.at) > 30 * 60000) run({ quiet: true }); }, 10 * 60000);
-  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); G()?.paintBanner(); paintSync(); if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
+  setInterval(() => { if (CFG?.last && S.root && !running && pending() && Date.now() - new Date(CFG.last.at) > 30 * 60000) run({ quiet: true }); else if (isDrive(CFG) && G()?.has('drive') && !running) checkRemote(); }, 10 * 60000);
+  CP.afterRootLoad = (CP.afterRootLoad || []); CP.afterRootLoad.push(() => setTimeout(async () => { CFG = await cfgGet(); checked = false; REMOTE = null; remoteHidden = false; G()?.paintBanner(); paintSync(); if (isDrive(CFG) && G()?.has('drive') && await checkRemote()) return; if (CFG?.last && pending() && Date.now() - new Date(CFG.last.at) > 6 * 3600000) run({ quiet: true }); }, 8000));
   // Google josla: kopija Google Drive, ir nenosūtītas izmaiņas, savienojums beidzies
   G()?.needs.push(() => isDrive(CFG) && S.root && pending() ? { what: 'rezerves kopija', scope: 'drive' } : null);
   // tikko pieslēdzās Google (josla “Pieslēgties”) → nosūta uzreiz
-  G()?.onToken(() => { if (isDrive(CFG) && S.root && G().has('drive') && !running && (pending() || status === 'auth')) run({ quiet: false }); });
+  G()?.onToken(async () => { if (!(isDrive(CFG) && S.root && G().has('drive') && !running)) return; if (await checkRemote()) return; if (pending() || status === 'auth') run({ quiet: false }); });
 
   /* --- Iestatījumu kartīte --- */
   const faili = n => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'fails' : 'faili'}`;
@@ -224,7 +317,9 @@
     const warn = (msg, btn) => `<span class="sl-warn" title="Šifrētā rezerves kopija Google Drive">⚠ ${msg}</span>${btn}`;
     if (!enabled(c)) return warn('Nav sinhronizēts ar Google Drive', `<button class="sl-btn" data-act="encGoSet">Iestatīt</button>`);
     if (!drv) return `<span class="sl-ok" title="Šifrētā rezerves kopija mapē ${esc(c.dir?.name || '')}">🔐 Kopija mapē${c.last ? ' · ' + hhmmDay(c.last.at) : ''}</span>`;
-    if (running) return `<span class="sl-run"><span class="spin"></span> Sūta uz Google Drive…</span>`;
+    if (running) return `<span class="sl-run"><span class="spin"></span> ${status === 'pull' ? 'Ielādē no Google Drive…' : 'Sūta uz Google Drive…'}</span>`;
+    if (REMOTE) return warn(`Citā datorā jaunāki dati (${esc(U.fmtDateTime(REMOTE.at))})`, `<button class="sl-btn" data-act="encPull">Ielādēt</button>`);
+    if (c.multi && !checked && !G()?.has('drive')) return warn('Nav pārbaudīts, vai otrā datorā nav jaunāku datu', `<button class="sl-btn" data-act="gConnect">Pieslēgties</button>`);
     if (status === 'perm' || status === 'err') return warn('Google Drive: kopija neizdevās', `<button class="sl-btn" data-act="encRun">Mēģināt vēlreiz</button>`);
     if (!c.last) return warn('Google Drive: kopija vēl nav izveidota', `<button class="sl-btn" data-act="encRun">Sinhronizēt</button>`);
     if ((pending() || status === 'auth') && !G()?.has('drive')) return warn('Nav sinhronizēts ar Google Drive — savienojums beidzies', `<button class="sl-btn" data-act="gConnect">Pieslēgties</button>`);
@@ -235,12 +330,9 @@
   const paintSync = () => { const el = U.$('syncLine'); if (!el) return; const h = syncHtml(); if (el.innerHTML !== h) el.innerHTML = h; el.hidden = !h; };
   setInterval(paintSync, 60000);
   G()?.onToken(() => setTimeout(paintSync, 50));
-  A.encGoSet = () => {
-    ui.go('settings');
-    setTimeout(() => { const c = U.$('encCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.encGoSet = () => CP.ui.goSettingsCard('encCard');
   const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); paintSync(); };
-  CP.encBackup = { card, run, paint, paintSync };
+  CP.encBackup = { card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
   // brīdinājums pārskatā: kopija sen nav atjaunota vai gaida atļauju
   { const orig = D.alerts; D.alerts = () => { const out = orig(); if (enabled(CFG) && S.root) { const age = CFG.last ? (Date.now() - new Date(CFG.last.at)) / 864e5 : 99; if (status === 'perm' || age > 7) out.push({ kind: 'backup', sev: 1, when: CFG.last?.at?.slice(0, 10) || '', msg: status === 'perm' ? 'Šifrētajai rezerves kopijai vajag atļauju — Iestatījumos spied “Izveidot kopiju tagad”' : `Šifrētā rezerves kopija nav atjaunota ${CFG.last ? Math.floor(age) + ' dienas' : 'ne reizi'} — Iestatījumos spied “Izveidot kopiju tagad”` }); } return out; }; }
 
@@ -286,7 +378,7 @@
         try {
           for (const fo of await G().drive.findFolders(DIRNAME, 'root')) { const k = await G().drive.children(fo.id, " and name='KOPIJA.json'"); if (k.length) { existing = fo.id; break; } }
         } catch (x) { return ui.toast(x.message, 'err', 12000); }
-        if (existing && !confirm(`Tavā Google Drive jau ir CADET rezerves kopija (mape ${DIRNAME}). Izveidot jaunu? Vecā kopija tiks aizstāta.`)) return;
+        if (existing && !confirm(`Tavā Google Drive jau ir CADET rezerves kopija (mape ${DIRNAME}).\n\nJa tā ir no cita tava datora un gribi strādāt ar tiem pašiem datiem — spied “Atcelt” un izvēlies “Atjaunot no kopijas…”.\n\nIzveidot jaunu kopiju? Vecā tiks aizstāta.`)) return;
       } else {
         existing = await backupDirOf(setupDir);
         if (existing && !confirm('Šajā mapē jau ir CADET rezerves kopija. Izveidot jaunu? Vecā kopija šajā mapē tiks aizstāta.')) return;
@@ -410,15 +502,15 @@
     if (el) { el.disabled = false; el.textContent = '☁ Pieslēgties Google un atrast kopiju'; }
     if (!found.length) return ui.toast(`Šajā Google kontā nav atrasta CADET rezerves kopija, ko izveidojis rīks ar šo Client ID. Pārbaudi kontu un Client ID; ja kopiju lejupielādēji, izvēlies “Mape datorā”.`, 'warn', 12000);
     found.sort((a, b) => String(b.head.updated || b.head.created).localeCompare(String(a.head.updated || a.head.created)));
-    if (found.length === 1) return pwDialog(() => driveStore(found[0].id).open(), found[0].head);
+    if (found.length === 1) return pwDialog(() => driveStore(found[0].id).open(), found[0].head, found[0].id);
     // vairākas kopijas → izvēle
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Kuru kopiju atjaunot?</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="choice-list">${found.map((x, i) => `<label class="choice"><input type="radio" name="k" value="${i}" ${i ? '' : 'checked'}><div class="grow"><b>${esc(x.head.root || 'Datu mape')}</b><div class="small muted">Pēdējā kopija: ${esc(U.fmtDateTime(x.head.updated || x.head.created))} · ${x.head.stats ? faili(x.head.stats.files) + ' · ' + fmtB(x.head.stats.bytes) : ''}</div></div></label>`).join('')}</div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encResDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
-    d.querySelector('form').onsubmit = e => { e.preventDefault(); const x = found[+e.target.k.value]; pwDialog(() => driveStore(x.id).open(), x.head); };
+    d.querySelector('form').onsubmit = e => { e.preventDefault(); const x = found[+e.target.k.value]; pwDialog(() => driveStore(x.id).open(), x.head, x.id); };
   };
-  function pwDialog(open, head) {
-    R = { open, head, master: null };
+  function pwDialog(open, head, folderId = '') {
+    R = { open, head, master: null, folderId };
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Atjaunot no šifrētās kopijas</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body">${ui.dl([['Kopija', head.store === 'drive' ? '☁ Google Drive' : '📁 Mape', 1], ['Datu mape kopijā', esc(head.root || '—'), 1], ['Pēdējā kopija', esc(U.fmtDateTime(head.updated || head.created)), 1], ['Faili', `${head.stats?.files ?? '—'}${head.stats ? ' · ' + fmtB(head.stats.bytes) : ''}`, 1]])}
         <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="password" name="pw" autocomplete="current-password" style="margin-top:8px"></div></label>
@@ -444,9 +536,13 @@
     foot.innerHTML = ''; body.innerHTML = `<p><span class="spin"></span> Atjauno${R.head.store === 'drive' ? ' no Google Drive' : ''}… <b id="encResN">0</b> faili</p>`;
     try {
       const n = await restoreInto(await R.open(), R.head, R.master, t, k => { const el = U.$('encResN'); if (el) el.textContent = k; });
-      body.innerHTML = `<p class="okc"><b>✓ Atjaunoti ${n.ok} faili</b>${n.bad ? ` · <span class="red">${n.bad} ar kļūdu</span>` : ''}. Visi pārbaudīti ar kontrolsummu.</p><p>Mape “${esc(t.name)}” tagad tiks pieslēgta kā datu mape.</p>${R.head.store === 'drive' ? '<p class="small muted">Lai kopija arī turpmāk ietu uz Google Drive, Iestatījumos → “Šifrētā rezerves kopija” iestati to no jauna (vecā kopija tiks aizstāta).</p>' : ''}`;
+      body.innerHTML = `<p class="okc"><b>✓ Atjaunoti ${n.ok} faili</b>${n.bad ? ` · <span class="red">${n.bad} ar kļūdu</span>` : ''}. Visi pārbaudīti ar kontrolsummu.</p><p>Mape “${esc(t.name)}” tagad tiks pieslēgta kā datu mape.</p>${R.head.store === 'drive' && R.folderId ? '<p class="small muted">Šis dators turpmāk izmantos to pašu Google Drive kopiju. Ja strādā uz diviem datoriem, rīks atverot pārbaudīs, vai otrā nav jaunāku datu, un piedāvās tos ielādēt.</p>' : ''}`;
       foot.innerHTML = '<span class="grow"></span><button class="mainbtn" data-close="encResDialog">Gatavs</button>';
       await store.connectRoot(t, 'atjaunots no šifrētās kopijas');
+      if (R.folderId && R.head.store === 'drive') {   // otrs dators: turpina to pašu Google Drive kopiju (bez jaunas iestatīšanas)
+        CFG = { kind: 'drive', folderId: R.folderId, master: R.master, set: R.head.set, hint: R.head.hint, created: R.head.created, syncHead: R.head.updated, multi: true, last: { at: U.now(), rev: S.db.revision, files: R.head.stats?.files || 0, bytes: R.head.stats?.bytes || 0, pulled: true } };
+        await cfgSet(CFG); checked = true; REMOTE = null; status = 'ok'; paint();
+      }
     } catch (x) { console.error(x); body.innerHTML = `<p class="red">Atjaunošana neizdevās: ${esc(x.message)}</p>`; foot.innerHTML = '<span class="grow"></span><button data-close="encResDialog">Aizvērt</button>'; }
   };
   /** Kopijas atšifrēšana mapē. src: glabātuve (localStore/driveStore) vai kopijas mapes rokturis.

@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.3';
+  CP.VERSION = '1.37.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -45,7 +45,7 @@ window.CP = window.CP || {};
     if (!s) return null; const d = new Date(s + 'T12:00:00'), t = new Date(); if (isNaN(d)) return null;
     return t.getFullYear() - d.getFullYear() - ((t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate())) ? 1 : 0);
   };
-  U.daysTo = s => Math.ceil((new Date(s + 'T12:00:00') - new Date(U.iso() + 'T12:00:00')) / 86400000);
+  U.daysTo = s => Math.round((new Date(s + 'T12:00:00') - new Date(U.iso() + 'T12:00:00')) / 86400000);   // round: vasaras/ziemas laika maiņa nedod ±1 d.
   U.daysUntilBirthday = s => {
     if (!s) return null; const d = new Date(s + 'T12:00:00'); if (isNaN(d)) return null;
     const now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());

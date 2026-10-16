@@ -177,7 +177,7 @@
     return `<section class="card" id="lockCard"><h3>${CP.ic('lock', '🔒')}Ekrāna bloķēšana</h3>
       <p class="small" style="margin-top:0">Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka lielais pulkstenis, un jaunsargu dati nav redzami. Ar PIN kodu rīku var atbloķēt tikai tu: to prasa, izejot no pulksteņa un atverot rīku.</p>
       ${ui.dl([['PIN kods', hasPin() ? '<span class="okc">✓ iestatīts</span>' : '<span class="warn">nav iestatīts</span>', 1],
-        ['Liels pulkstenis', (() => { const w = CP.watchPrefs?.() || {}; return w.idle === false ? '<span class="warn">izslēgts</span> — PIN prasīs tikai, atverot rīku vai spiežot “Bloķēt tagad”' : `pēc ${w.idleMin || 5} min bez darbības <span class="small muted">(maina sadaļā “Pulkstenis un pauzes”)</span>`; })(), 1],
+        ['Liels pulkstenis', (() => { const w = CP.watchPrefs?.() || {}; return w.idle === false ? '<span class="warn">izslēgts</span> — PIN prasīs tikai, atverot rīku vai spiežot “Bloķēt tagad”' : `pēc ${w.idleMin || 5} min bez darbības <span class="small muted">(maina <a href="#" data-act="goSetCard" data-arg="watchCard">Pamata → Pulkstenis un pauzes</a>)</span>`; })(), 1],
         ['Atkopšanas e-pasts', C.email ? esc(C.email) + ' <span class="okc small">✓ apstiprināts</span>' : '<span class="muted">nav — aizmirstot PIN, datu mape būs jāizvēlas no jauna</span>', 1]])}
       <div class="actions" style="margin-top:10px">${hasPin()
         ? `<button data-act="lockPinSet">Mainīt PIN</button><button data-act="lockMail">${C.email ? 'Mainīt e-pastu' : 'Pievienot atkopšanas e-pastu'}</button><button class="ghost danger" data-act="lockPinOff">Noņemt PIN</button>`
@@ -260,10 +260,7 @@
     ui.topHost().appendChild(b);
   }
   A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };
-  A.lockGoSet = () => {
-    CP.ui.go('settings');
-    setTimeout(() => { const c = U.$('lockCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.lockGoSet = () => CP.ui.goSettingsCard('lockCard');
   CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintPinBar);
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(paintPinBar, 300));
   CP.lock = { card, lock, unlock, adopt, guard, isLocked: () => locked, hasPin };

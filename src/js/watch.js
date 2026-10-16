@@ -177,7 +177,7 @@
   const attr = (root, k, a, v) => root.querySelectorAll(`[data-w="${k}"]`).forEach(el => el.setAttribute(a, v));
   function paint(full) {
     const roots = [...document.querySelectorAll('.watch-card, #watchBig')]; if (!roots.length) return;
-    const d = new Date(), t = d.getTime(), work = t - ses.start, onBreak = !!ses.breakEnd;
+    const d = new Date(), t = d.getTime(), work = Math.max(0, t - ses.start), onBreak = !!ses.breakEnd;
     const workTxt = onBreak ? mmss(ses.breakEnd - t) : hmmss(work), workLbl = onBreak ? 'Pauze' : 'Darbā';
     const workPct = onBreak ? 100 - (ses.breakEnd - t) / (P.breakMin * 600) : Math.min(100, work / (P.workMin * 600));
     const over = !onBreak && work >= P.workMin * 60000;
@@ -225,6 +225,7 @@
   let lastIdleCheck = 0;
   function tick() {
     const t = Date.now();
+    if (ses.start > t) { ses.remindAt -= ses.start - t; ses.start = t; saveSes(); }   // sabojāts sākums nākotnē (vecā kļūda) → no šī brīža
     if (document.visibilityState === 'visible') { if (t - ses.last > 5 * 60000) restart(t); ses.last = t; }
     if (ses.breakEnd && t >= ses.breakEnd) { restart(t); beep(2); CP.ui.toast('Pauze beigusies. Labu darbu turpinot!', 'ok', 8000); }
     if (P.remind && !ses.breakEnd && t >= ses.remindAt && document.visibilityState === 'visible') {
@@ -254,7 +255,7 @@
   function showBig(manual) {
     if (document.getElementById('watchBig')) return;
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
-    if (!manual && !ses.breakEnd) awayFrom = Math.min(lastAct, Date.now());   // prom no datora — šis laiks nav darbs
+    if (!manual && !ses.breakEnd) awayFrom = Math.min(Math.max(lastAct, ses.start), Date.now());   // ne agrāk par sesijas sākumu — citādi prombūtne tiktu atskaitīta divreiz   // prom no datora — šis laiks nav darbs
     ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p><span class="cadet-logo wb-brand" role="img" aria-label="CADET.LV"></span>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
     // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
@@ -264,7 +265,7 @@
   function hideBig(force) {
     if (force !== true && CP.lock?.guard?.()) return;
     document.getElementById('watchBig')?.remove();
-    if (awayFrom) { const d = Date.now() - awayFrom; awayFrom = 0; ses.start += d; ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
+    if (awayFrom) { const now = Date.now(), d = Math.max(0, now - Math.max(awayFrom, ses.start)); awayFrom = 0; ses.start = Math.min(now, ses.start + d); ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
   }
   CP.watchShowBig = showBig; CP.watchHideBig = hideBig;
 

@@ -201,10 +201,7 @@
     }
     return false;
   });
-  A.retSettings = () => {
-    ui.go('settings');
-    setTimeout(() => { const c = U.$('retCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
-  };
+  A.retSettings = () => CP.ui.goSettingsCard('retCard');
   A.retDefaults = () => {
     if (!confirm('Atjaunot visus glabāšanas termiņus uz noklusējumiem? Personām individuāli iestatītie termiņi paliek.')) return;
     S.db.settings.retention = DEF(); S.db.settings.retentionDefault = DEF().left.m; CP.store.changed(); ui.toast('Atjaunoti noklusētie termiņi', 'ok');
