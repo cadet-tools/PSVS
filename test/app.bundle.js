@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 38 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 39 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.35.0';
+  CP.VERSION = '1.36.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -310,6 +310,8 @@ window.CP = window.CP || {};
     waMode: 'web',
     autosave: true,
     retentionDefault: 12,
+    // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
+    retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
@@ -372,6 +374,7 @@ window.CP = window.CP || {};
     if (!raw.settings?.arhivsAdded) { if (!d.settings.registries.includes('arhivs')) d.settings.registries.splice(1, 0, 'arhivs'); d.settings.arhivsAdded = true; }
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
+    d.settings.retention = Object.fromEntries(Object.entries(def.retention).map(([k, v]) => [k, { ...v, ...((raw.settings?.retention || {})[k] || {}) }]));
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));
@@ -605,12 +608,7 @@ window.CP = window.CP || {};
       const p = D.person(t.personId); push({ kind: 'task', personId: t.personId, taskId: t.id, sev: U.daysTo(t.due) < 0 ? 2 : 1, msg: `${p ? U.full(p) + ': ' : ''}${t.text}`, when: t.due });
     }
     for (const p of roster) {
-      if (p.status === 'archived') {
-        if (!live) continue;
-        const due = U.addMonths(p.left, p.retentionMonths ?? d.settings.retentionDefault);
-        if (due && due <= today) push({ kind: 'retention', personId: p.id, sev: 1, msg: `Beidzies glabāšanas termiņš — pārskatīt datus (netiek dzēsti automātiski): ${U.full(p)}`, when: due });
-        continue;
-      }
+      if (p.status === 'archived') continue;   // glabāšanas termiņi — viens kopsavilkums zemāk (retention.js)
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });
@@ -662,7 +660,8 @@ window.CP = window.CP || {};
         push({ kind: 'phone', personId: who[0].id, sev: 1, msg: `Tālrunis ${U.prettyPhone(g.num)} norādīts dažādām personām: ${g.entries.map(e => e.f === 'phone' ? `${U.full(e.p)} (jaunietis)` : `${e.p[e.f.replace('Phone', 'Name')] || '?'} (${e.role}, ${U.full(e.p)})`).join('; ')}`, when: '' });
       }
     }
-    return a.sort((x, y) => y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
+    if (live && CP.retention) { const n = CP.retention.dueCount(); if (n) push({ kind: 'retention', page: 'retention', top: 1, sev: 1, msg: `Beidzies datu glabāšanas termiņš: ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'ieraksts' : 'ieraksti'} — pārskatīt (anonimizēt vai dzēst)`, when: '' }); }
+    return a.sort((x, y) => (y.top || 0) - (x.top || 0) || y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
   };
   CP.data = D;
 })(window.CP);
@@ -1919,7 +1918,7 @@ window.CP = window.CP || {};
   /* --- Maršrutēšana --- */
   /* Atpakaļ: iekšējā vēsture + pārlūka/peles “atpakaļ” poga (history API, bez adreses maiņas) */
   const navStack = [];
-  const PAGE_NAMES = { feedback: 'Ziņot', changes: 'Darbību žurnāls', vfs: 'VFS testi', dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
+  const PAGE_NAMES = { retention: 'Glabāšanas termiņi', feedback: 'Ziņot', changes: 'Darbību žurnāls', vfs: 'VFS testi', dashboard: 'Pārskats', people: 'Personas', comms: 'Saziņa', documents: 'Dokumenti', equipment: 'Ekipējums', alerts: 'Uzdevumi', settings: 'Iestatījumi', archive: 'Arhīvs', about: 'Par rīku', forms: 'Veidlapas', formEdit: 'Veidlapa', attendance: 'Apmeklējums', schedule: 'Grafiks' };
   const placeName = st => st.page === 'person' ? (U.full(D.person(st.person)) || 'Persona') : st.page === 'people' && st.archived ? 'Arhīvs' : (PAGE_NAMES[st.page] || 'Iepriekšējā lapa');
   ui.go = (page, opts = {}) => {
     const view = U.$('view');
@@ -2584,12 +2583,12 @@ window.CP = window.CP || {};
           <button data-act="msg" data-arg="${p.id}">✉ Ziņa</button>
           <button data-act="edit" data-arg="${p.id}">✎ Rediģēt</button>
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
-            ${p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
+            ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
-          ${ui.saveBtn()}</div></header>`;
+          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}`;
       const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' , vfs: CP.vfs?.countFor(p.id) || ''};
       const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';
@@ -2888,7 +2887,21 @@ window.CP = window.CP || {};
     e.preventDefault(); const f = e.currentTarget, p = D.person(f.dataset.pid); if (!p) return;
     archive(p, Object.fromEntries(new FormData(f))); U.$('archiveDialog').close(); CP.store.changed(); ui.toast('Persona pārvietota uz arhīvu', 'ok');
   });
-  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  A.restore = pid => { const p = D.person(pid); if (!p || p.anon || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  /** Izdzēš personas ierakstu un visu, kas uz to attiecas (izņemot failus mapēs). Lieto arī glabāšanas termiņi. */
+  function eraseRecord(pid) {
+    const db = S.db, nDocs = db.documents.filter(d => d.personId === pid).length, nFiles = db.documents.filter(d => d.personId === pid && d.path).length;
+    db.people = db.people.filter(x => x.id !== pid); db.documents = db.documents.filter(d => d.personId !== pid);
+    db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
+    db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
+    db.audit = db.audit.filter(x => x.personId !== pid);
+    for (const ev of db.events || []) if (Array.isArray(ev.participants)) ev.participants = ev.participants.filter(x => (x?.pid ?? x) !== pid);
+    for (const s of db.sessions || []) if (s.att && pid in s.att) delete s.att[pid];
+    for (const t of db.vfsTests || []) if (t.res && pid in t.res) delete t.res[pid];
+    CP.changelog?.forget(pid);
+    return { nDocs, nFiles };
+  }
+  CP.people.eraseRecord = eraseRecord;
   A.erase = pid => {
     const p = D.person(pid); if (!p) return;
     const db = S.db;
@@ -2913,13 +2926,8 @@ window.CP = window.CP || {};
     e.preventDefault();
     const pid = e.currentTarget.dataset.pid, p = D.person(pid); if (!p) return;
     if (U.norm(U.$('eraseLast').value) !== U.norm(p.last)) return ui.toast('Uzvārds nesakrīt — nekas netika dzēsts', 'warn');
-    const db = S.db, nDocs = db.documents.filter(d => d.personId === pid).length, nFiles = db.documents.filter(d => d.personId === pid && d.path).length;
-    db.people = db.people.filter(x => x.id !== pid); db.documents = db.documents.filter(d => d.personId !== pid);
-    db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
-    db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
-    db.audit = db.audit.filter(x => x.personId !== pid);
-    CP.changelog?.forget(pid);
-    db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'erase', fields: [`dzēsts reģistra ieraksts un ${nDocs} dokumentu ieraksti; ${nFiles} faili un rezerves kopijas palika`] });
+    const { nDocs, nFiles } = eraseRecord(pid);
+    S.db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'erase', fields: [`dzēsts reģistra ieraksts un ${nDocs} dokumentu ieraksti; ${nFiles} faili un rezerves kopijas palika`] });
     U.$('eraseDialog').close();
     S.page = 'people'; CP.store.changed();
     ui.toast('Dzēsts tikai reģistra ieraksts. Faili un rezerves kopijas palika.', 'ok', 9000);
@@ -4418,7 +4426,7 @@ window.CP = window.CP || {};
   const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
-    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}</div>`;
+    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
 
   CP.pages.dashboard = {
     after() { CP.watch?.paint(); },
@@ -4463,7 +4471,7 @@ window.CP = window.CP || {};
           <section class="card" data-fill="5" data-mcol="1"><h3>Uzdevumi un brīdinājumi <button class="ghost sm right" data-page="alerts">Visi →</button></h3>${al.slice(0, 40).map(alertRow).join('') || '<p class="muted">Nekas nav jādara. ✓</p>'}${al.length ? `<div class="fill-more" data-total="${al.length}"><button class="sm ghost" data-page="alerts"></button></div>` : ''}</section>
           <section class="card" data-fill="5" data-mcol="2"><h3>Trūkstošie dokumenti <button class="ghost sm right" data-act="openList" data-arg="missing">Visi →</button></h3>${miss.slice(0, 40).map(x => `<div class="row"><div class="who">${ui.avatar(x.p, 'sm')}<span><b>${esc(U.sortName(x.p))}</b><small class="muted">${esc(D.groupOf(x.p) || '')}</small></span></div><div class="grow small warn">${esc(x.m.join(', '))}</div><button class="sm" data-person="${x.p.id}" data-goto="docs">Atvērt</button></div>`).join('') || '<p class="muted">Visiem ir obligātie dokumenti. ✓</p>'}${miss.length ? `<div class="fill-more" data-total="${miss.length}"><button class="sm ghost" data-act="openList" data-arg="missing"></button></div>` : ''}</section>
           <section class="card" data-mcol="0"><h3>Grupas <button class="ghost sm right" data-act="groupNew" title="Pievienot jaunu grupu">＋ Jauna grupa</button></h3>${D.groups().map(g => `<div class="row grp-row"><div class="grow"><b>${esc(g)}</b></div><span class="muted">${cur.filter(p => D.groupOf(p) === g).length}</span><span class="grp-btns"><button class="sm ghost" data-act="groupEdit" data-arg="${esc(g)}" title="Pārdēvēt vai apvienot ar citu grupu" aria-label="Pārdēvēt grupu ${esc(g)}">✎</button><button class="sm ghost danger" data-act="groupDel" data-arg="${esc(g)}" title="Dzēst grupu" aria-label="Dzēst grupu ${esc(g)}">✕</button></span></div>`).join('') || '<p class="muted">Šajā gadā grupas vēl nav.</p>'}</section>
-          <section class="card wide"><h3>Pēdējās izmaiņas <button class="ghost sm right" data-page="changes">Viss žurnāls →</button></h3><div class="recent-grid">${CP.changelog?.recentHtml(10) || recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</div></section>
+          <section class="card wide"><h3>Pēdējās izmaiņas <button class="ghost sm right" data-page="changes">Viss žurnāls →</button></h3><div class="recent-grid">${CP.changelog?.recentHtml(10) || recent.map(a => { const p = D.person(a.personId); return `<div class="row"><span class="muted small nowrap">${U.fmtDateTime(a.at)}</span><div class="grow">${p ? `<a href="#" data-person="${p.id}">${esc(U.full(p))}</a> — ` : ''}${esc({ create: 'izveidota kartīte', update: 'mainīti dati', scan: 'ievadīta no anketas', archive: 'arhivēta', restore: 'atjaunota', status: 'mainīts statuss', 'doc-add': 'pievienots dokuments', 'doc-remove': 'noņemts dokuments', 'doc-relink': 'atjaunota dokumenta sasaiste', 'eq-issue': 'izsniegts ekipējums', 'eq-return': 'atdots ekipējums', 'eq-edit': 'labots ekipējums', 'eq-delete': 'dzēsts ekipējuma ieraksts', idcard: 'apliecība', event: 'pievienots pasākumam', erase: 'dzēsts reģistra ieraksts', retention: 'izpildīti glabāšanas termiņi' }[a.action] || a.action)}${a.fields?.length ? ': ' + esc(a.fields.join(', ')) : ''}</div></div>`; }).join('') || '<p class="muted">Vēl nav izmaiņu.</p>'}</div></section>
         </div></div>`;
     }
   };
@@ -4484,7 +4492,7 @@ window.CP = window.CP || {};
     const al = D.alerts(), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
     try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
-    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}</div>`;
+    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =
       (ages.length ? `<h4 style="margin-top:0">🎂 Vecuma izmaiņas kopš ${U.fmtDate(last)}</h4>${ages.map(x => `<div class="row"><div class="grow"><b>${esc(U.full(x.p))}</b> — tagad <b>${x.age} g.</b>${x.age === 18 ? ' <span class="pill warn">pilngadīgs — pārstāvja piekrišana vairs nav vajadzīga, pārbaudi kontaktus un līgumu</span>' : ''}</div><button class="sm" data-person="${x.p.id}" data-close="noticeDialog">Atvērt</button></div>`).join('')}` : '')
       + (urgent.length ? `<h4>⚠ Jāpievērš uzmanība (${urgent.length})</h4>${urgent.slice(0, 25).map(row).join('')}${urgent.length > 25 ? `<p class="muted small">… un vēl ${urgent.length - 25}</p>` : ''}` : '')
@@ -5170,8 +5178,8 @@ window.CP = window.CP || {};
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>
-        <div class="fieldgrid"><div class="field"><label>Noklusētais glabāšanas termiņš pēc izstāšanās (mēn.)</label><input type="number" min="0" max="1200" data-set="retentionDefault" value="${esc(s.retentionDefault)}"></div></div>
-        <p class="muted small">Pēc termiņa beigām sistēma atgādina pārskatīt datus. Dzēšana notiek tikai manuāli (kartiņā → ⋯ → Dzēst neatgriezeniski).</p></section>
+        <p class="muted small">Cik ilgi dati tiek glabāti — kartītē <a href="#" data-act="retSettings">Datu glabāšanas termiņi</a>.</p></section>
+      ${CP.retention ? CP.retention.settingsCard() : ''}
 
       <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
@@ -5419,6 +5427,12 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.36.0', date: '2026-10-16', title: 'Datu glabāšanas termiņi', items: [
+      '**Iestatījumi → Datu glabāšanas termiņi**: katrai datu grupai ir savs termiņš mēnešos, un to var mainīt. Noklusējumi: izstājušies jaunsargi — **12 mēn.** pēc izstāšanās (anonimizēt vai dzēst pilnībā), kandidāti, kas neiestājās — **6 mēn.**, ārsta izziņas — **3 mēn.** pēc derīguma beigām, saziņas vēsture — **24 mēn.**, citu vienību dalībnieki pasākumos — **12 mēn.**, JSON rezerves kopijas — **6 mēn.** (10 jaunākās paliek vienmēr), darbību žurnāls — **12 mēn.**',
+      'Pie katras grupas ir paskaidrojums, **kas tiek dzēsts un kāpēc** (pamatojums pēc VDAR un Latvijas likumiem). Ja Jaunsardzes centrs vai novads nosaka citus termiņus, ievadi tos.',
+      'Kad termiņš beidzies, **Pārskatā** parādās atgādinājums, kas ved uz jauno lapu **“Glabāšanas termiņi”**. Tajā atlasi ierakstus un spied **“Izpildīt”** — rīks pats neko nedzēš. Ja datus vēl vajag, **“+6 mēn.”** atliek termiņu.',
+      '**Anonimizēšana** dzēš vārdu, personas kodu, kontaktus, adreses, vecāku datus, piezīmes, dokumentu un līgumu ierakstus un saziņas vēsturi. Paliek tikai statistika: dalība mācību gados, apmeklējums, VFS rezultāti un ekipējuma uzskaite bez vārda. Pēc izvēles tiek dzēsti arī saistītie faili datu mapē (anketas, līgumi, izziņas).'
+    ] },
     { v: '1.35.0', date: '2026-10-16', title: 'Dokumentu nodošana Centra arhīvam', items: [
       'Jaunsarga kartītē sadaļā **“Reģistrācija un arhīvs”** ir jauna daļa **“Centra arhīvs”**. Tāpat kā DVS, katram dokumentam (noklusēti **pieteikuma anketa** un **līgums**) var atzīmēt, ka oriģināls nodots Jaunsardzes centra arhīvam, un nodošanas datumu var mainīt.',
       'Ja dokuments ir saņemts (pievienots rīkā vai reģistrēts DVS), bet vēl nav nodots arhīvam, tas parādās **brīdinājumos** un sadaļā **Uzdevumi**. Par dokumentu, kas vēl nav saņemts, brīdinājuma nav.',
@@ -10809,7 +10823,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const MAX = 8000, KEEP_MS = 365 * 864e5, BIG = 6000;
+  const MAX = 8000, BIG = 6000;
+  const keepMonths = () => { const m = Number(S.db?.settings?.retention?.changelog?.m); return m > 0 ? m : 12; };
   const pName = id => { const p = D.person(id); return p ? U.full(p) : ''; };
   const dd = d => d ? U.fmtDate(String(d).slice(0, 10)) : '';
   /* Ko seko un kā to nosauc */
@@ -10837,7 +10852,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
-    groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
+    groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
     templates: 'Ziņu veidnes', tools: 'Rīki', gcal: 'Google kalendārs', notify: 'Paziņojumi', ocr: 'Teksta atpazīšana', quals_s: 'Kvalifikāciju saraksts', absenceStreak: 'Kavējumu brīdinājums', docValidity: 'Dokumentu derīgums',
     formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
   };
@@ -10895,22 +10910,30 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     if (!out.length) return;
     const log = db.changelog = Array.isArray(db.changelog) ? db.changelog : [];
     log.push(...out);
-    const cut = new Date(Date.now() - KEEP_MS).toISOString();
+    const cut = new Date(Date.now() - keepMonths() * 30.44 * 864e5).toISOString();
     let i = 0; while (i < log.length && (log.length - i > MAX || String(log[i].at) < cut)) i++;
     if (i) log.splice(0, i);
   }
   /** Neatgriezeniska personas dzēšana: izdzēš arī viņas ierakstus žurnālā un neieraksta dzēsto saturu */
-  function forget(pid) {
+  function forget(pid, o = {}) {
     if (!S.db) return;
+    if (o.keep) {   // anonimizēšana: prom tikai šīs personas ieraksti; dalība gados un atzīmes paliek (tajās nav vārda)
+      S.db.changelog = (S.db.changelog || []).filter(e => e.pid !== pid && e.eid !== pid && !(e.c === 'relations' && JSON.stringify(e).includes(pid)));
+      return rebaseOf(pid);
+    }
     // citu ierakstu vērtībās (apmeklējuma atzīmes, dalībnieku saraksti) izņem šīs personas id
     const scrub = v => Array.isArray(v) ? v.filter(x => x !== pid && !(x && typeof x === 'object' && (x.id === pid || x.personId === pid))).map(scrub)
       : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([k, x]) => k !== pid && x !== pid).map(([k, x]) => [k, scrub(x)])) : v;
     S.db.changelog = (S.db.changelog || []).filter(e => e.pid !== pid && e.eid !== pid && !(e.c === 'relations' && JSON.stringify(e).includes(pid)))
       .map(e => JSON.stringify(e).includes(pid) ? { ...e, ch: e.ch && scrub(e.ch), obj: e.obj && scrub(e.obj) } : e);
     S.db.enrollments = (S.db.enrollments || []).filter(x => x.personId !== pid);   // dalība mācību gados — arī prom
+    rebaseOf(pid);
+  }
+  /** Bāzes momentuzņēmumā šīs personas ierakstus pielīdzina pašreizējiem — izmaiņa netiek ierakstīta žurnālā */
+  function rebaseOf(pid) {
     if (base) for (const c of Object.keys(T)) for (const [id, js] of [...base.colls[c]]) {
       try {
-        const o = JSON.parse(js); if (!(id === pid || T[c].pid?.(o) === pid || o.b === pid)) continue;
+        const o = JSON.parse(js); if (!(id === pid || T[c].pid?.(o) === pid || o.b === pid || js.includes(pid))) continue;   // arī apmeklējuma atzīmes, dalībnieku saraksti
         const cur = (S.db[c] || []).find(x => x.id === id);
         if (cur) base.colls[c].set(id, JSON.stringify(clean(c, cur))); else base.colls[c].delete(id);
       } catch (e) { }
@@ -11020,7 +11043,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
             <select id="clDays" aria-label="Periods">${per.map(([v, l]) => `<option value="${v}" ${F.days === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
           ${F.pid ? `<div class="chips"><span class="chipbtn on">Persona: ${esc(pName(F.pid) || '?')}</span><button class="sm ghost" data-act="clPerson" data-arg="">✕ visas personas</button></div>` : ''}</div>
           <div id="clList" class="cl-list">${rows()}</div>
-          <p class="small muted" style="margin-top:14px">Žurnāls glabājas datu failā un rezerves kopijās, ne ilgāk par 12 mēnešiem. Personas kodi žurnālā netiek rādīti. Dzēšot personu neatgriezeniski, tiek dzēsti arī viņas ieraksti žurnālā.</p></section></div>`;
+          <p class="small muted" style="margin-top:14px">Žurnāls glabājas datu failā un rezerves kopijās, ne ilgāk par ${keepMonths()} mēnešiem (maināms Iestatījumos → Datu glabāšanas termiņi). Personas kodi žurnālā netiek rādīti. Dzēšot personu neatgriezeniski, tiek dzēsti arī viņas ieraksti žurnālā.</p></section></div>`;
     }
   };
   /** Pārskatam: pēdējie ieraksti */
@@ -11037,6 +11060,306 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
 
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.unshift(rebase);
   CP.changelog = { capture, forget, rebase, recentHtml, list, T, label };
+})(window.CP);
+
+
+/* ==== js/retention.js ==== */
+/* =====================================================================
+   Datu glabāšanas termiņi.
+   • Katrai datu grupai ir termiņš (mēneši) un darbība. Noklusējumi izriet no VDAR principiem un Latvijas
+     likumiem; instruktors tos var mainīt Iestatījumos (settings.retention, izstājušos — settings.retentionDefault).
+   • Rīks NEKO nedzēš pats: lapā “Glabāšanas termiņi” parāda, kam termiņš beidzies, un izpilda tikai
+     instruktora atlasīto un apstiprināto (anonimizēt / dzēst ierakstu / dzēst failus mapē).
+   • Izņēmums: darbību žurnāla vecie ieraksti tiek dzēsti automātiski katrā saglabāšanā (changelog.js).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const COMMS = new Set(['whatsapp', 'sms', 'email', 'call']);
+  const isMed = kind => /ārsta|izziņ|medic|veselīb/i.test(kind || '');
+  const KEEP_BACKUPS = 10;
+
+  const CATS = [
+    { k: 'left', l: 'Izstājušies jaunsargi', from: 'pēc izstāšanās', acts: [['anon', 'Anonimizēt'], ['erase', 'Dzēst pilnībā']],
+      what: 'Kartīte: vārds, personas kods, kontakti, adreses, vecāku un ārkārtas kontakti, piezīmes, dokumentu un līgumu ieraksti, saziņas vēsture, uzdevumi.',
+      basis: 'Latvijas normatīvie akti jaunsargu datu glabāšanai konkrētu termiņu nenosaka, tāpēc darbojas VDAR 5. panta 1. punkta e) apakšpunkts — datus glabā tikai tik ilgi, cik vajag mērķim. Anketas un līguma oriģināli glabājas Centra arhīvā, tāpēc instruktora kopijai pietiek ar laiku ekipējuma atdošanai, jautājumiem un iespējamai atgriešanās nākamajā mācību gadā. Anonimizējot paliek tikai statistika: dalība mācību gados, apmeklējums, VFS rezultāti, kvalifikācijas un ekipējuma uzskaite bez vārda (valsts mantas uzskaites attaisnojuma dokumentus Grāmatvedības likums liek glabāt ne mazāk kā 5 gadus).' },
+    { k: 'cand', l: 'Kandidāti, kas neiestājās', from: 'pēc pēdējām izmaiņām', acts: [['erase', 'Dzēst']],
+      what: 'Kandidāta kartīte ar visiem datiem.',
+      basis: 'VDAR 5. panta 1. punkta c) un e) apakšpunkts — datu minimizēšana un glabāšanas ierobežojums. Ja līgums par dalību Jaunsardzē netika noslēgts, datu vākšanas mērķis ir beidzies.' },
+    { k: 'med', l: 'Ārsta izziņas', from: 'pēc derīguma beigām', acts: [['erase', 'Dzēst']],
+      what: 'Izziņas ieraksts un fails mapē. Dokumenta veids ar “ārsta” vai “izziņa” nosaukumā.',
+      basis: 'Veselības dati ir īpašas kategorijas personas dati (VDAR 9. pants). Izziņa vajadzīga tikai tās derīguma laikā; pēc tam to glabāt nav pamata. Neliela rezerve — iespējamiem jautājumiem par notikušo.' },
+    { k: 'comms', l: 'Saziņas vēsture', from: 'pēc nosūtīšanas', acts: [['erase', 'Dzēst']],
+      what: 'WhatsApp, SMS, e-pasta un zvanu ieraksti personas vēsturē (ar ziņas tekstu). Piezīmes netiek skartas.',
+      basis: 'VDAR 5. panta 1. punkta e) apakšpunkts. Saziņas ieraksti palīdz atcerēties, kas un kad paziņots; pēc diviem mācību gadiem tie parasti vairs nav vajadzīgi.' },
+    { k: 'ext', l: 'Citu vienību dalībnieki pasākumos', from: 'pēc pasākuma', acts: [['erase', 'Dzēst']],
+      what: 'Pasākumā ievilkto citu vienību jaunsargu un darbinieku dati (arī personas kodi). Pats pasākums un tavi dalībnieki paliek.',
+      basis: 'Citu vienību dati saņemti tikai konkrētam pasākumam (instruktāžai, nometnes žurnālam). VDAR 5. panta 1. punkta b) un e) apakšpunkts — tos neizmanto citam mērķim un neglabā ilgāk par vajadzīgo.' },
+    { k: 'backups', l: 'JSON rezerves kopijas', from: 'pēc izveides', acts: [['erase', 'Dzēst']],
+      what: `Faili mapē _rezerves. Vienmēr paliek ${KEEP_BACKUPS} jaunākās kopijas.`,
+      basis: 'Rezerves kopijās ir visi dati — arī jau dzēsto un anonimizēto personu dati. Lai termiņi darbotos, kopijas jāglabā ne ilgāk kā izstājušos jaunsargu datus. Šifrētā rezerves kopija (dators / Google Drive) satur tikai pašreizējos datus un atjaunojas pati.' },
+    { k: 'changelog', l: 'Darbību žurnāls', from: 'pēc ieraksta', acts: [['auto', 'Dzēst automātiski']], auto: true,
+      what: 'Žurnāla ieraksti ar vecajām vērtībām (vārdi, kontakti).',
+      basis: 'VDAR 5. panta 1. punkta e) apakšpunkts. Vecāki ieraksti tiek dzēsti automātiski katrā saglabāšanā — tos nevajag apstiprināt.' }
+  ];
+  const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
+  const DEF = () => CP.defaultSettings().retention;
+
+  /** Kategorijas iestatījums: { m, on, act } */
+  function cfg(k) {
+    const s = S.db.settings, d = DEF()[k] || {}, r = { ...d, ...((s.retention || {})[k] || {}) };
+    if (k === 'left') r.m = Number(s.retentionDefault ?? d.m);
+    r.m = Math.max(0, Number(r.m) || 0);
+    return r;
+  }
+  const later = (a, b) => (a && b ? (a > b ? a : b) : a || b || '');
+  const day = s => String(s || '').slice(0, 10);
+  const plural = (n, one, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
+
+  /* ---------------- Kas ir jāpārskata ---------------- */
+  function personFiles(p) {
+    const out = D.docsOf(p).filter(d => d.path).map(d => ({ path: d.path, sourceId: d.sourceId || 'main' }));
+    for (const c of p.contracts || []) for (const v of [c, ...(c.versions || [])]) if (v.path) out.push({ path: v.path, sourceId: 'main' });
+    return out;
+  }
+  function isCandidate(p) {
+    if (p.status === 'archived' || p.anon) return false;
+    const en = D.enrollmentsOf(p.id);
+    return en.length ? en.every(e => e.status === 'candidate') : p.status === 'candidate';
+  }
+  /** Visi ieraksti ar termiņu (arī vēl nebeigušos). Rezerves kopijas — tikai, ja tās jau nolasītas (loadBackups). */
+  function items() {
+    const db = S.db, out = [];
+    let c = cfg('left');
+    if (c.on) for (const p of db.people) if (p.status === 'archived' && !p.anon) {
+      const base = day(p.left || p.archiveSnapshot?.at || p.updatedAt);
+      if (!base) continue;
+      const m = Number(p.retentionMonths ?? c.m), eq = D.openEquipment(p).length;
+      out.push({ cat: 'left', key: 'left:' + p.id, id: p.id, pid: p.id, act: c.act, due: later(U.addMonths(base, m), p.keepUntil),
+        label: U.full(p), sub: [`izstājies ${U.fmtDate(base)}`, `${m} mēn.`, p.retentionMonths != null && Number(p.retentionMonths) !== c.m ? 'personai savs termiņš' : '', eq ? `⚠ nav atdots ekipējums (${eq})` : ''].filter(Boolean).join(' · '),
+        files: personFiles(p) });
+    }
+    c = cfg('cand');
+    if (c.on) for (const p of db.people) if (isCandidate(p)) {
+      const base = day(p.updatedAt || p.createdAt); if (!base) continue;
+      out.push({ cat: 'cand', key: 'cand:' + p.id, id: p.id, pid: p.id, act: 'erase', due: later(U.addMonths(base, c.m), p.keepUntil), label: U.full(p), sub: `pēdējās izmaiņas ${U.fmtDate(base)}`, files: personFiles(p) });
+    }
+    c = cfg('med');
+    if (c.on) for (const d of db.documents) if (isMed(d.kind)) {
+      const p = D.person(d.personId); if (!p || p.anon) continue;
+      const exp = D.docExpiry(d); if (!exp) continue;
+      out.push({ cat: 'med', key: 'med:' + d.id, id: d.id, pid: p.id, act: 'erase', due: later(U.addMonths(exp, c.m), d.keepUntil), label: `${U.full(p)} — ${d.kind}`, sub: `derīga līdz ${U.fmtDate(exp)}`, files: d.path ? [{ path: d.path, sourceId: d.sourceId || 'main' }] : [] });
+    }
+    c = cfg('comms');
+    if (c.on) {
+      const by = new Map();
+      for (const l of db.log) if (COMMS.has(l.type) && l.at) {
+        const due = U.addMonths(day(l.at), c.m); if (!by.has(l.personId)) by.set(l.personId, []); by.get(l.personId).push({ l, due });
+      }
+      for (const [pid, rows] of by) {
+        const p = D.person(pid), first = rows.reduce((a, b) => (a.due < b.due ? a : b));
+        const hold = p?.commsKeepUntil || '';
+        const ready = rows.filter(r => later(r.due, hold) <= U.iso());
+        out.push({ cat: 'comms', key: 'comms:' + pid, id: pid, pid: p ? pid : '', act: 'erase', due: later(first.due, hold), label: p ? U.full(p) : '(persona dzēsta)',
+          sub: ready.length ? `${plural(ready.length, 'ieraksts', 'ieraksti')} vecāki par ${c.m} mēn.` : `vecākais ${U.fmtDate(day(first.l.at))}`, n: ready.length, files: [] });
+      }
+    }
+    c = cfg('ext');
+    if (c.on) for (const ev of db.events || []) if ((ev.external || []).length || (ev.extStaff || []).length) {
+      const base = day(ev.dateTo || ev.dateFrom || ev.instrDate || ev.createdAt); if (!base) continue;
+      out.push({ cat: 'ext', key: 'ext:' + ev.id, id: ev.id, act: 'erase', due: later(U.addMonths(base, c.m), ev.extKeepUntil), label: ev.title || '(pasākums bez nosaukuma)',
+        sub: `${U.fmtDate(base)} · ${plural((ev.external || []).length, 'dalībnieks', 'dalībnieki')}${(ev.extStaff || []).length ? `, ${plural(ev.extStaff.length, 'darbinieks', 'darbinieki')}` : ''}`, files: [] });
+    }
+    c = cfg('backups');
+    if (c.on && S.retBk?.list) S.retBk.list.slice(KEEP_BACKUPS).forEach(b => {
+      out.push({ cat: 'backups', key: 'backups:' + b.name, id: b.name, act: 'erase', due: U.addMonths(U.iso(new Date(b.modified)), c.m), label: b.name, sub: `${U.fmtDateTime(new Date(b.modified).toISOString())} · ${Math.max(1, Math.round(b.size / 1024))} KB`, files: [] });
+    });
+    return out;
+  }
+  const dueItems = () => { const t = U.iso(); return items().filter(x => x.due && x.due <= t && (x.cat !== 'comms' || x.n)); };
+  async function loadBackups(force) {
+    if (!S.root) return;
+    if (!force && S.retBk && Date.now() - S.retBk.at < 60000) return;
+    try { S.retBk = { at: Date.now(), list: await CP.store.listBackups() }; } catch (e) { S.retBk = { at: Date.now(), list: [], err: e.message }; }
+  }
+
+  /* ---------------- Darbības ---------------- */
+  /** Anonimizē: paliek tikai statistikai vajadzīgais. Vārds → “Anonimizēts ieraksts P012”. */
+  function anonymize(p) {
+    const pid = p.id, db = S.db;
+    db.documents = db.documents.filter(d => d.personId !== pid);
+    db.log = db.log.filter(x => x.personId !== pid);
+    db.tasks = db.tasks.filter(x => x.personId !== pid);
+    db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
+    db.audit = db.audit.filter(x => x.personId !== pid);
+    const keep = { id: pid, status: 'archived', anon: U.iso(), first: 'Anonimizēts', last: 'ieraksts ' + (p.folderId || pid.slice(0, 6)), folderId: p.folderId,
+      gender: p.gender, birthYear: p.birth ? p.birth.slice(0, 4) : p.birthYear, joined: p.joined, left: p.left, quals: p.quals, createdAt: p.createdAt, updatedAt: U.now() };
+    for (const k of Object.keys(p)) delete p[k];
+    for (const [k, v] of Object.entries(keep)) if (v !== undefined && v !== '' && v !== null) p[k] = v;
+    for (const e of db.enrollments || []) if (e.personId === pid) { delete e.noteLog; delete e.note; }
+    CP.changelog?.forget(pid, { keep: true });
+  }
+  function clearExt(ev) {
+    const ids = new Set((ev.extStaff || []).map(s => s.id));
+    ev.staff = (ev.staff || []).filter(x => !ids.has(x)); ev.external = []; ev.extStaff = []; ev.extRemovedAt = U.iso();
+  }
+  async function rootFor(sid) {
+    const src = (S.roots || []).find(r => r.id === sid);
+    return src?.handle || (sid === 'main' ? S.root : null);
+  }
+  async function writable(h) {
+    if (!h?.queryPermission) return !!h;
+    if (await h.queryPermission({ mode: 'readwrite' }) === 'granted') return true;
+    try { return await h.requestPermission({ mode: 'readwrite' }) === 'granted'; } catch (e) { return false; }
+  }
+  async function delFile(f) {
+    const sid = f.sourceId || 'main';
+    if (String(sid).startsWith('fails:')) {
+      const h = await CP.store.idbGet('doc:' + sid.slice(6)).catch(() => null);
+      if (h?.remove && await writable(h)) { await h.remove(); return true; }
+      return false;
+    }
+    const root = await rootFor(sid); if (!root) return false;
+    const parts = String(f.path).split('/').filter(Boolean); if (!parts.length || parts.some(x => x === '..' || x === '.')) return false;
+    let dir = root; for (const x of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(x);
+    await dir.removeEntry(parts.at(-1)); return true;
+  }
+
+  /* ---------------- Lapa ---------------- */
+  const R = S.ret = S.ret || { sel: new Set(), open: '' };
+  CP.pages.retention = {
+    render() {
+      if (S.root && (!S.retBk || Date.now() - S.retBk.at > 60000)) loadBackups().then(() => { if (S.page === 'retention') CP.render(); });
+      const all = items(), today = U.iso(), soonTo = U.addMonths(today, 1);
+      const due = all.filter(x => x.due <= today && (x.cat !== 'comms' || x.n)), soon = all.filter(x => x.due > today && x.due <= soonTo);
+      const dueKeys = new Set(due.map(x => x.key)); for (const k of [...R.sel]) if (!dueKeys.has(k)) R.sel.delete(k);
+      const nSel = R.sel.size;
+      const sec = c => {
+        const list = due.filter(x => x.cat === c.k), sl = soon.filter(x => x.cat === c.k), cf = cfg(c.k);
+        const rule = !cf.on ? 'atgādinājums izslēgts' : `${cf.m} mēn. ${c.from} → ${(c.acts.find(a => a[0] === (cf.act || c.acts[0][0])) || c.acts[0])[1].toLowerCase()}`;
+        if (c.auto) return `<section class="card ret-card"><h3>${esc(c.l)} <span class="pill ok">automātiski</span></h3><p class="small muted" style="margin:0">${esc(rule)}. ${esc(c.basis)}</p></section>`;
+        const allOn = list.length && list.every(x => R.sel.has(x.key));
+        return `<section class="card ret-card"><h3>${list.length ? `<label class="check" style="display:inline-flex"><input type="checkbox" data-retall="${c.k}" ${allOn ? 'checked' : ''} aria-label="Atlasīt visus"></label>` : ''}${esc(c.l)} ${list.length ? `<span class="pill warn">${list.length}</span>` : '<span class="pill ok">✓</span>'}<small class="muted right">${esc(rule)}</small></h3>
+          ${list.map(x => `<div class="row ret-row"><label class="check grow"><input type="checkbox" data-retsel="${esc(x.key)}" ${R.sel.has(x.key) ? 'checked' : ''}><span><b>${esc(x.label)}</b><br><small class="muted">${esc(x.sub)} · termiņš ${esc(U.fmtDate(x.due))}${x.files.length ? ` · ${plural(x.files.length, 'fails', 'faili')}` : ''}</small></span></label>
+            ${x.pid ? `<button class="sm ghost" data-person="${x.pid}">Atvērt</button>` : ''}${c.k !== 'backups' ? `<button class="sm ghost" data-act="retHold" data-arg="${esc(x.key)}" title="Glabāt vēl 6 mēnešus (piemēram, ja ir neatrisināts jautājums)">+6 mēn.</button>` : ''}</div>`).join('') || `<p class="small muted" style="margin:0">Nav ierakstu ar beigušos termiņu.${sl.length ? ` Mēneša laikā termiņš beigsies: ${sl.length}.` : ''}</p>`}
+          ${list.length && sl.length ? `<p class="small muted">Mēneša laikā beigsies vēl: ${sl.length}.</p>` : ''}
+          ${c.k === 'backups' && S.retBk?.err ? `<p class="small warn">Rezerves kopijas neizdevās nolasīt: ${esc(S.retBk.err)}</p>` : ''}</section>`;
+      };
+      return `<div class="page">${ui.pageHead('Glabāšanas termiņi', 'Dati, kuru glabāšanas termiņš beidzies. Nekas netiek dzēsts bez tava apstiprinājuma.', `<button class="sm" data-act="retSettings">${ic('sliders')}Mainīt termiņus</button>`)}
+        <section class="card ret-top"><div class="grow">${due.length ? `<b>${plural(due.length, 'ieraksts', 'ieraksti')}</b> ar beigušos termiņu.` : '<b>✓ Visu datu glabāšanas termiņi ir kārtībā.</b>'} <span class="small muted">Atlasi ierakstus un spied “Izpildīt”. Anonimizēšana un dzēšana nav atsaucama.</span></div>
+          <button class="mainbtn" data-act="retRun" ${nSel ? '' : 'disabled'}>Izpildīt atlasītos${nSel ? ` (${nSel})` : ''}</button></section>
+        ${CATS.map(sec).join('')}
+        <p class="small muted">Termiņi ir noklusējumi pēc VDAR un Latvijas likumiem; ja Jaunsardzes centrs vai novads nosaka citus, nomaini tos Iestatījumos. Datu mapes arhīvus (_arhivi) rīks nedzēš — pārskati tos pats.</p></div>`;
+    }
+  };
+  CP.changeHandlers.push(e => {
+    const d = e.target.dataset;
+    if (d.retsel) { e.target.checked ? R.sel.add(d.retsel) : R.sel.delete(d.retsel); CP.render(); return true; }
+    if (d.retall) { const keys = dueItems().filter(x => x.cat === d.retall).map(x => x.key); keys.forEach(k => e.target.checked ? R.sel.add(k) : R.sel.delete(k)); CP.render(); return true; }
+    if (d.ret) {
+      const [k, f] = d.ret.split(':'), s = S.db.settings; s.retention = { ...DEF(), ...(s.retention || {}) };
+      const cur = { ...DEF()[k], ...(s.retention[k] || {}) };
+      if (f === 'm') { const v = Math.max(0, Math.min(1200, Math.round(Number(e.target.value) || 0))); if (k === 'left') s.retentionDefault = v || 12; else cur.m = v || DEF()[k].m; }
+      else if (f === 'on') cur.on = e.target.checked;
+      else if (f === 'act') cur.act = e.target.value;
+      s.retention[k] = cur; CP.store.changed(); return true;
+    }
+    return false;
+  });
+  A.retSettings = () => {
+    ui.go('settings');
+    setTimeout(() => { const c = U.$('retCard'); if (!c) return; c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+  };
+  A.retDefaults = () => {
+    if (!confirm('Atjaunot visus glabāšanas termiņus uz noklusējumiem? Personām individuāli iestatītie termiņi paliek.')) return;
+    S.db.settings.retention = DEF(); S.db.settings.retentionDefault = DEF().left.m; CP.store.changed(); ui.toast('Atjaunoti noklusētie termiņi', 'ok');
+  };
+  A.retHold = key => {
+    const x = items().find(i => i.key === key); if (!x) return;
+    const until = U.addMonths(U.iso(), 6), db = S.db;
+    if (x.cat === 'left' || x.cat === 'cand') { const p = D.person(x.id); if (p) p.keepUntil = until; }
+    else if (x.cat === 'med') { const d = db.documents.find(y => y.id === x.id); if (d) d.keepUntil = until; }
+    else if (x.cat === 'comms') { const p = D.person(x.id); if (p) p.commsKeepUntil = until; else return ui.toast('Persona dzēsta — šos ierakstus var tikai dzēst', 'warn'); }
+    else if (x.cat === 'ext') { const ev = (db.events || []).find(y => y.id === x.id); if (ev) ev.extKeepUntil = until; }
+    R.sel.delete(key); CP.store.changed(); ui.toast(`Glabāsies līdz ${U.fmtDate(until)}`, 'ok');
+  };
+
+  /* --- Izpilde ar apstiprinājumu --- */
+  function dlg(html) {
+    let d = U.$('retDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'retDialog'; d.className = 'wide'; document.body.appendChild(d); }
+    d.innerHTML = html; if (!d.open) d.showModal(); return d;
+  }
+  A.retRun = () => {
+    const sel = dueItems().filter(x => R.sel.has(x.key)); if (!sel.length) return;
+    const by = k => sel.filter(x => x.cat === k), files = sel.flatMap(x => x.files);
+    const lines = [];
+    const left = by('left'), anon = left.filter(x => x.act !== 'erase'), er = left.filter(x => x.act === 'erase');
+    if (anon.length) lines.push(`<li><b>Anonimizēt ${plural(anon.length, 'izstājušos jaunsargu', 'izstājušos jaunsargus')}</b> — dzēsīs vārdu, personas kodu, kontaktus, adreses, vecāku datus, piezīmes, dokumentu un līgumu ierakstus, saziņas vēsturi. Paliks dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite (bez vārda).</li>`);
+    if (er.length) lines.push(`<li><b>Dzēst pilnībā ${plural(er.length, 'izstājušos jaunsargu', 'izstājušos jaunsargus')}</b> — ar visu vēsturi, apmeklējumu un ekipējuma ierakstiem.</li>`);
+    if (by('cand').length) lines.push(`<li><b>Dzēst ${plural(by('cand').length, 'kandidātu', 'kandidātus')}</b>, kas neiestājās.</li>`);
+    if (by('med').length) lines.push(`<li><b>Dzēst ${plural(by('med').length, 'ārsta izziņu', 'ārsta izziņas')}</b> (ierakstu).</li>`);
+    if (by('comms').length) lines.push(`<li><b>Dzēst ${plural(by('comms').reduce((a, x) => a + x.n, 0), 'saziņas ierakstu', 'saziņas ierakstus')}</b> (${plural(by('comms').length, 'personai', 'personām')}).</li>`);
+    if (by('ext').length) lines.push(`<li><b>Dzēst citu vienību dalībniekus</b> ${plural(by('ext').length, 'pasākumā', 'pasākumos')}.</li>`);
+    if (by('backups').length) lines.push(`<li><b>Dzēst ${plural(by('backups').length, 'rezerves kopiju', 'rezerves kopijas')}</b> mapē _rezerves.</li>`);
+    const eqOpen = left.filter(x => D.openEquipment(D.person(x.id) || {}).length);
+    dlg(`<form id="retForm" method="dialog"><header class="dlg-head"><h2>Izpildīt glabāšanas termiņus</h2><button type="button" class="ghost" data-close="retDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><ul>${lines.join('')}</ul>
+        ${eqOpen.length ? `<p class="warn small">⚠ ${plural(eqOpen.length, 'personai', 'personām')} nav atdots ekipējums. Ekipējuma ieraksti paliks${er.length ? ' (dzēšot pilnībā — tiks dzēsti)' : ''}, bet vārda vairs nebūs.</p>` : ''}
+        ${files.length ? `<label class="check"><input type="checkbox" id="retFiles" checked> Dzēst arī ${plural(files.length, 'saistīto failu', 'saistītos failus')} datu mapē (anketas, līgumi, izziņas)</label>
+          <details class="small muted"><summary>Faili</summary>${files.slice(0, 40).map(f => esc(f.path)).join('<br>')}${files.length > 40 ? '<br>…' : ''}</details>
+          <p class="small muted">Oriģināli (anketa, līgums) glabājas Centra arhīvā. Ja failu neieķeksē, tas paliek mapē — tad to izdzēs pats.</p>` : ''}
+        <p class="small muted">Vecākās JSON rezerves kopijas vēl var saturēt šos datus — tās tiek dzēstas pēc sava termiņa. Šifrētā rezerves kopija atjaunosies nākamajā kopēšanā.</p>
+        <label class="check"><input type="checkbox" id="retSure"> Saprotu, ka to nevar atsaukt</label></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="retDialog">Atcelt</button><button type="button" class="mainbtn danger" data-act="retDo">Izpildīt</button></footer></form>`);
+  };
+  A.retDo = async () => {
+    if (!U.$('retSure')?.checked) return ui.toast('Atzīmē “Saprotu, ka to nevar atsaukt”', 'warn');
+    const sel = dueItems().filter(x => R.sel.has(x.key)), wantFiles = !!U.$('retFiles')?.checked;
+    const files = wantFiles ? sel.flatMap(x => x.files) : [], needBk = sel.some(x => x.cat === 'backups');
+    // atļaujas — uzreiz, kamēr klikšķis vēl ir “svaigs”
+    const roots = new Set(files.map(f => f.sourceId || 'main').filter(s => !String(s).startsWith('fails:'))); if (needBk) roots.add('main');
+    for (const sid of roots) { const h = await rootFor(sid); if (h && !(await writable(h))) { ui.toast('Nav rakstīšanas atļaujas mapei — faili netiks dzēsti', 'warn', 9000); if (sid === 'main' && needBk) return; } }
+    U.$('retDialog')?.close();
+    const db = S.db, n = { anon: 0, erase: 0, cand: 0, med: 0, comms: 0, ext: 0, backups: 0, files: 0, filesFail: 0 };
+    for (const x of sel) {
+      if (x.cat === 'left') { const p = D.person(x.id); if (!p) continue; if (x.act === 'erase') { CP.people.eraseRecord(p.id); n.erase++; } else { anonymize(p); n.anon++; } }
+      else if (x.cat === 'cand') { if (D.person(x.id)) { CP.people.eraseRecord(x.id); n.cand++; } }
+      else if (x.cat === 'med') { const before = db.documents.length; db.documents = db.documents.filter(d => d.id !== x.id); n.med += before - db.documents.length; }
+      else if (x.cat === 'comms') {
+        const m = cfg('comms').m, hold = D.person(x.id)?.commsKeepUntil || '', t = U.iso(), before = db.log.length;
+        db.log = db.log.filter(l => !(l.personId === x.id && COMMS.has(l.type) && later(U.addMonths(day(l.at), m), hold) <= t)); n.comms += before - db.log.length;
+      }
+      else if (x.cat === 'ext') { const ev = (db.events || []).find(y => y.id === x.id); if (ev) { clearExt(ev); n.ext++; } }
+    }
+    for (const f of files) { try { (await delFile(f)) ? n.files++ : n.filesFail++; } catch (e) { if (e.name === 'NotFoundError') n.files++; else n.filesFail++; } }
+    if (needBk) {
+      try { const dir = await S.root.getDirectoryHandle('_rezerves'); for (const x of sel.filter(y => y.cat === 'backups')) { try { await dir.removeEntry(x.id); n.backups++; } catch (e) { if (e.name !== 'NotFoundError') n.filesFail++; } } }
+      catch (e) { ui.toast('Rezerves kopiju mapi neizdevās atvērt: ' + e.message, 'warn'); }
+      S.retBk = null;
+    }
+    const sum = [n.anon && `anonimizēti ${n.anon}`, n.erase && `dzēsti ${n.erase} izstājušies`, n.cand && `dzēsti ${n.cand} kandidāti`, n.med && `dzēstas ${n.med} izziņas`, n.comms && `dzēsti ${n.comms} saziņas ieraksti`, n.ext && `citu vienību dalībnieki dzēsti ${n.ext} pasākumos`, n.backups && `dzēstas ${n.backups} rezerves kopijas`, n.files && `dzēsti ${n.files} faili`].filter(Boolean);
+    db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'retention', fields: sum });
+    R.sel.clear(); CP.store.changed();
+    if (files.length) CP.store.scanAll?.().catch(() => {});
+    ui.toast('Glabāšanas termiņi izpildīti: ' + (sum.join(', ') || 'nekas nemainījās') + (n.filesFail ? `. ${n.filesFail} failus neizdevās dzēst — izdzēs tos pats.` : ''), n.filesFail ? 'warn' : 'ok', 12000);
+  };
+
+  /* --- Iestatījumu kartīte --- */
+  function settingsCard() {
+    return `<section class="card" id="retCard"><h3>${ic('archive')}Datu glabāšanas termiņi</h3>
+      <p class="small">Cik ilgi glabāt datus un kas notiek pēc tam. Rīks pats neko nedzēš — beidzoties termiņam, Pārskatā parādās atgādinājums, un tu apstiprini lapā <a href="#" data-page="retention">Glabāšanas termiņi</a>.</p>
+      <div class="ret-set">${CATS.map(c => { const cf = cfg(c.k); return `<div class="ret-line">
+        <label class="check ret-on"><input type="checkbox" data-ret="${c.k}:on" ${cf.on ? 'checked' : ''} ${c.auto ? 'disabled' : ''}> <b>${esc(c.l)}</b></label>
+        <span class="ret-m"><input type="number" min="1" max="1200" data-ret="${c.k}:m" value="${cf.m}" aria-label="${esc(c.l)} — mēneši"> <small class="muted">mēn. ${esc(c.from)}</small></span>
+        <span class="ret-act">${c.acts.length > 1 ? `<select data-ret="${c.k}:act" aria-label="Darbība">${c.acts.map(([v, l]) => `<option value="${v}" ${cf.act === v ? 'selected' : ''}>${l}</option>`).join('')}</select>` : `<small class="muted">${c.acts[0][1]}</small>`}</span>
+        <details class="ret-why small"><summary>Kas tiek dzēsts un kāpēc</summary><p>${esc(c.what)}</p><p class="muted">${esc(c.basis)}</p></details></div>`; }).join('')}</div>
+      <p class="muted small">Personai var iestatīt savu termiņu: kartiņā → Rediģēt → “Glabāšana pēc izstāšanās”. Noklusējumi izriet no VDAR principiem; Latvijas likumi jaunsargu datiem konkrētus termiņus nenosaka. Ja Jaunsardzes centrs vai novads tos nosaka, ievadi šeit.</p>
+      <div class="actions"><button class="sm" data-page="retention">Atvērt pārskatu →</button><button class="sm ghost" data-act="retDefaults">Atjaunot noklusējumus</button></div></section>`;
+  }
+
+  CP.retention = { CATS, cfg, items, dueItems, dueCount: () => dueItems().length, anonymize, settingsCard, loadBackups };
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => { S.retBk = null; setTimeout(() => loadBackups(true).then(() => CP.render()).catch(() => {}), 1200); });
 })(window.CP);
 
 

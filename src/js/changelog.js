@@ -10,7 +10,8 @@
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const MAX = 8000, KEEP_MS = 365 * 864e5, BIG = 6000;
+  const MAX = 8000, BIG = 6000;
+  const keepMonths = () => { const m = Number(S.db?.settings?.retention?.changelog?.m); return m > 0 ? m : 12; };
   const pName = id => { const p = D.person(id); return p ? U.full(p) : ''; };
   const dd = d => d ? U.fmtDate(String(d).slice(0, 10)) : '';
   /* Ko seko un kā to nosauc */
@@ -38,7 +39,7 @@
     att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
-    groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
+    groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
     templates: 'Ziņu veidnes', tools: 'Rīki', gcal: 'Google kalendārs', notify: 'Paziņojumi', ocr: 'Teksta atpazīšana', quals_s: 'Kvalifikāciju saraksts', absenceStreak: 'Kavējumu brīdinājums', docValidity: 'Dokumentu derīgums',
     formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
   };
@@ -96,22 +97,30 @@
     if (!out.length) return;
     const log = db.changelog = Array.isArray(db.changelog) ? db.changelog : [];
     log.push(...out);
-    const cut = new Date(Date.now() - KEEP_MS).toISOString();
+    const cut = new Date(Date.now() - keepMonths() * 30.44 * 864e5).toISOString();
     let i = 0; while (i < log.length && (log.length - i > MAX || String(log[i].at) < cut)) i++;
     if (i) log.splice(0, i);
   }
   /** Neatgriezeniska personas dzēšana: izdzēš arī viņas ierakstus žurnālā un neieraksta dzēsto saturu */
-  function forget(pid) {
+  function forget(pid, o = {}) {
     if (!S.db) return;
+    if (o.keep) {   // anonimizēšana: prom tikai šīs personas ieraksti; dalība gados un atzīmes paliek (tajās nav vārda)
+      S.db.changelog = (S.db.changelog || []).filter(e => e.pid !== pid && e.eid !== pid && !(e.c === 'relations' && JSON.stringify(e).includes(pid)));
+      return rebaseOf(pid);
+    }
     // citu ierakstu vērtībās (apmeklējuma atzīmes, dalībnieku saraksti) izņem šīs personas id
     const scrub = v => Array.isArray(v) ? v.filter(x => x !== pid && !(x && typeof x === 'object' && (x.id === pid || x.personId === pid))).map(scrub)
       : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([k, x]) => k !== pid && x !== pid).map(([k, x]) => [k, scrub(x)])) : v;
     S.db.changelog = (S.db.changelog || []).filter(e => e.pid !== pid && e.eid !== pid && !(e.c === 'relations' && JSON.stringify(e).includes(pid)))
       .map(e => JSON.stringify(e).includes(pid) ? { ...e, ch: e.ch && scrub(e.ch), obj: e.obj && scrub(e.obj) } : e);
     S.db.enrollments = (S.db.enrollments || []).filter(x => x.personId !== pid);   // dalība mācību gados — arī prom
+    rebaseOf(pid);
+  }
+  /** Bāzes momentuzņēmumā šīs personas ierakstus pielīdzina pašreizējiem — izmaiņa netiek ierakstīta žurnālā */
+  function rebaseOf(pid) {
     if (base) for (const c of Object.keys(T)) for (const [id, js] of [...base.colls[c]]) {
       try {
-        const o = JSON.parse(js); if (!(id === pid || T[c].pid?.(o) === pid || o.b === pid)) continue;
+        const o = JSON.parse(js); if (!(id === pid || T[c].pid?.(o) === pid || o.b === pid || js.includes(pid))) continue;   // arī apmeklējuma atzīmes, dalībnieku saraksti
         const cur = (S.db[c] || []).find(x => x.id === id);
         if (cur) base.colls[c].set(id, JSON.stringify(clean(c, cur))); else base.colls[c].delete(id);
       } catch (e) { }
@@ -221,7 +230,7 @@
             <select id="clDays" aria-label="Periods">${per.map(([v, l]) => `<option value="${v}" ${F.days === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
           ${F.pid ? `<div class="chips"><span class="chipbtn on">Persona: ${esc(pName(F.pid) || '?')}</span><button class="sm ghost" data-act="clPerson" data-arg="">✕ visas personas</button></div>` : ''}</div>
           <div id="clList" class="cl-list">${rows()}</div>
-          <p class="small muted" style="margin-top:14px">Žurnāls glabājas datu failā un rezerves kopijās, ne ilgāk par 12 mēnešiem. Personas kodi žurnālā netiek rādīti. Dzēšot personu neatgriezeniski, tiek dzēsti arī viņas ieraksti žurnālā.</p></section></div>`;
+          <p class="small muted" style="margin-top:14px">Žurnāls glabājas datu failā un rezerves kopijās, ne ilgāk par ${keepMonths()} mēnešiem (maināms Iestatījumos → Datu glabāšanas termiņi). Personas kodi žurnālā netiek rādīti. Dzēšot personu neatgriezeniski, tiek dzēsti arī viņas ieraksti žurnālā.</p></section></div>`;
     }
   };
   /** Pārskatam: pēdējie ieraksti */

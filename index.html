@@ -729,6 +729,16 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 /* navigācija: kompaktāka, ja ekrāns nav augsts (15 sadaļas) */
 @media (min-width:821px) and (max-height:1000px){html.d2 .nav{gap:1px!important;padding-top:10px!important;padding-bottom:6px!important}html.d2 .nav button{padding:5px 0 3px!important;gap:1px!important}html.d2 .nav button span .ic,html.d2 .nav button .ic{width:19px!important;height:19px!important}html.d2 .nav .logo{width:36px!important;height:36px!important;margin-bottom:2px!important}}
 @media (min-width:821px) and (max-height:780px){html.d2 .nav button small{display:none!important}html.d2 .nav button{padding:8px 0!important}}
+/* Glabāšanas termiņi */
+.ret-set{display:flex;flex-direction:column;gap:2px;margin:8px 0}
+.ret-line{display:grid;grid-template-columns:minmax(200px,1fr) 240px 150px;gap:4px 14px;align-items:center;padding:8px 0;border-top:1px solid var(--line,#26302d)}
+.ret-line:first-child{border-top:0}
+.ret-m{display:flex;align-items:center;gap:6px;white-space:nowrap}.ret-m input{width:76px}
+.ret-why{grid-column:1/-1;margin:0}.ret-why summary{cursor:pointer;color:var(--muted,#98a6a0)}.ret-why p{margin:4px 0 0}
+.ret-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ret-card h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ret-card h3 .right{margin-left:auto;font-weight:400}
+.ret-row .check{align-items:flex-start}.ret-row .check input{margin-top:3px}
+@media (max-width:640px){.ret-line{grid-template-columns:1fr}}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1316,5 +1326,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.35.0"></script></body>
+<script src="app.bundle.js?v=1.36.0"></script></body>
 </html>

@@ -10,6 +10,12 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.36.0', date: '2026-10-16', title: 'Datu glabāšanas termiņi', items: [
+      '**Iestatījumi → Datu glabāšanas termiņi**: katrai datu grupai ir savs termiņš mēnešos, un to var mainīt. Noklusējumi: izstājušies jaunsargi — **12 mēn.** pēc izstāšanās (anonimizēt vai dzēst pilnībā), kandidāti, kas neiestājās — **6 mēn.**, ārsta izziņas — **3 mēn.** pēc derīguma beigām, saziņas vēsture — **24 mēn.**, citu vienību dalībnieki pasākumos — **12 mēn.**, JSON rezerves kopijas — **6 mēn.** (10 jaunākās paliek vienmēr), darbību žurnāls — **12 mēn.**',
+      'Pie katras grupas ir paskaidrojums, **kas tiek dzēsts un kāpēc** (pamatojums pēc VDAR un Latvijas likumiem). Ja Jaunsardzes centrs vai novads nosaka citus termiņus, ievadi tos.',
+      'Kad termiņš beidzies, **Pārskatā** parādās atgādinājums, kas ved uz jauno lapu **“Glabāšanas termiņi”**. Tajā atlasi ierakstus un spied **“Izpildīt”** — rīks pats neko nedzēš. Ja datus vēl vajag, **“+6 mēn.”** atliek termiņu.',
+      '**Anonimizēšana** dzēš vārdu, personas kodu, kontaktus, adreses, vecāku datus, piezīmes, dokumentu un līgumu ierakstus un saziņas vēsturi. Paliek tikai statistika: dalība mācību gados, apmeklējums, VFS rezultāti un ekipējuma uzskaite bez vārda. Pēc izvēles tiek dzēsti arī saistītie faili datu mapē (anketas, līgumi, izziņas).'
+    ] },
     { v: '1.35.0', date: '2026-10-16', title: 'Dokumentu nodošana Centra arhīvam', items: [
       'Jaunsarga kartītē sadaļā **“Reģistrācija un arhīvs”** ir jauna daļa **“Centra arhīvs”**. Tāpat kā DVS, katram dokumentam (noklusēti **pieteikuma anketa** un **līgums**) var atzīmēt, ka oriģināls nodots Jaunsardzes centra arhīvam, un nodošanas datumu var mainīt.',
       'Ja dokuments ir saņemts (pievienots rīkā vai reģistrēts DVS), bet vēl nav nodots arhīvam, tas parādās **brīdinājumos** un sadaļā **Uzdevumi**. Par dokumentu, kas vēl nav saņemts, brīdinājuma nav.',

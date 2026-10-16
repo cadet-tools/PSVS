@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.35.0';
+  CP.VERSION = '1.36.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -307,6 +307,8 @@ window.CP = window.CP || {};
     waMode: 'web',
     autosave: true,
     retentionDefault: 12,
+    // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
+    retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
@@ -369,6 +371,7 @@ window.CP = window.CP || {};
     if (!raw.settings?.arhivsAdded) { if (!d.settings.registries.includes('arhivs')) d.settings.registries.splice(1, 0, 'arhivs'); d.settings.arhivsAdded = true; }
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
+    d.settings.retention = Object.fromEntries(Object.entries(def.retention).map(([k, v]) => [k, { ...v, ...((raw.settings?.retention || {})[k] || {}) }]));
     if ((raw.version || 2) < 4) {
       // Kartes saite personālvadībā nav vajadzīga
       d.settings.tools = d.settings.tools.filter(t => !/google\.[a-z.]+\/maps/i.test(t.url || ''));
@@ -602,12 +605,7 @@ window.CP = window.CP || {};
       const p = D.person(t.personId); push({ kind: 'task', personId: t.personId, taskId: t.id, sev: U.daysTo(t.due) < 0 ? 2 : 1, msg: `${p ? U.full(p) + ': ' : ''}${t.text}`, when: t.due });
     }
     for (const p of roster) {
-      if (p.status === 'archived') {
-        if (!live) continue;
-        const due = U.addMonths(p.left, p.retentionMonths ?? d.settings.retentionDefault);
-        if (due && due <= today) push({ kind: 'retention', personId: p.id, sev: 1, msg: `Beidzies glabāšanas termiņš — pārskatīt datus (netiek dzēsti automātiski): ${U.full(p)}`, when: due });
-        continue;
-      }
+      if (p.status === 'archived') continue;   // glabāšanas termiņi — viens kopsavilkums zemāk (retention.js)
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });
@@ -659,7 +657,8 @@ window.CP = window.CP || {};
         push({ kind: 'phone', personId: who[0].id, sev: 1, msg: `Tālrunis ${U.prettyPhone(g.num)} norādīts dažādām personām: ${g.entries.map(e => e.f === 'phone' ? `${U.full(e.p)} (jaunietis)` : `${e.p[e.f.replace('Phone', 'Name')] || '?'} (${e.role}, ${U.full(e.p)})`).join('; ')}`, when: '' });
       }
     }
-    return a.sort((x, y) => y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
+    if (live && CP.retention) { const n = CP.retention.dueCount(); if (n) push({ kind: 'retention', page: 'retention', top: 1, sev: 1, msg: `Beidzies datu glabāšanas termiņš: ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'ieraksts' : 'ieraksti'} — pārskatīt (anonimizēt vai dzēst)`, when: '' }); }
+    return a.sort((x, y) => (y.top || 0) - (x.top || 0) || y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
   };
   CP.data = D;
 })(window.CP);

@@ -46,8 +46,8 @@
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>
-        <div class="fieldgrid"><div class="field"><label>Noklusētais glabāšanas termiņš pēc izstāšanās (mēn.)</label><input type="number" min="0" max="1200" data-set="retentionDefault" value="${esc(s.retentionDefault)}"></div></div>
-        <p class="muted small">Pēc termiņa beigām sistēma atgādina pārskatīt datus. Dzēšana notiek tikai manuāli (kartiņā → ⋯ → Dzēst neatgriezeniski).</p></section>
+        <p class="muted small">Cik ilgi dati tiek glabāti — kartītē <a href="#" data-act="retSettings">Datu glabāšanas termiņi</a>.</p></section>
+      ${CP.retention ? CP.retention.settingsCard() : ''}
 
       <section class="card"><h3>Dokumenti</h3><div class="fieldgrid">
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>

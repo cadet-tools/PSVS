@@ -117,12 +117,12 @@
           <button data-act="msg" data-arg="${p.id}">✉ Ziņa</button>
           <button data-act="edit" data-arg="${p.id}">✎ Rediģēt</button>
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
-            ${p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
+            ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
-          ${ui.saveBtn()}</div></header>`;
+          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}`;
       const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' , vfs: CP.vfs?.countFor(p.id) || ''};
       const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';
@@ -421,7 +421,21 @@
     e.preventDefault(); const f = e.currentTarget, p = D.person(f.dataset.pid); if (!p) return;
     archive(p, Object.fromEntries(new FormData(f))); U.$('archiveDialog').close(); CP.store.changed(); ui.toast('Persona pārvietota uz arhīvu', 'ok');
   });
-  A.restore = pid => { const p = D.person(pid); if (!p || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  A.restore = pid => { const p = D.person(pid); if (!p || p.anon || !confirm('Atjaunot personu no arhīva (statuss: Jaunsargs)?')) return; p.status = 'active'; p.updatedAt = U.now(); D.audit(pid, 'restore'); CP.store.changed(); };
+  /** Izdzēš personas ierakstu un visu, kas uz to attiecas (izņemot failus mapēs). Lieto arī glabāšanas termiņi. */
+  function eraseRecord(pid) {
+    const db = S.db, nDocs = db.documents.filter(d => d.personId === pid).length, nFiles = db.documents.filter(d => d.personId === pid && d.path).length;
+    db.people = db.people.filter(x => x.id !== pid); db.documents = db.documents.filter(d => d.personId !== pid);
+    db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
+    db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
+    db.audit = db.audit.filter(x => x.personId !== pid);
+    for (const ev of db.events || []) if (Array.isArray(ev.participants)) ev.participants = ev.participants.filter(x => (x?.pid ?? x) !== pid);
+    for (const s of db.sessions || []) if (s.att && pid in s.att) delete s.att[pid];
+    for (const t of db.vfsTests || []) if (t.res && pid in t.res) delete t.res[pid];
+    CP.changelog?.forget(pid);
+    return { nDocs, nFiles };
+  }
+  CP.people.eraseRecord = eraseRecord;
   A.erase = pid => {
     const p = D.person(pid); if (!p) return;
     const db = S.db;
@@ -446,13 +460,8 @@
     e.preventDefault();
     const pid = e.currentTarget.dataset.pid, p = D.person(pid); if (!p) return;
     if (U.norm(U.$('eraseLast').value) !== U.norm(p.last)) return ui.toast('Uzvārds nesakrīt — nekas netika dzēsts', 'warn');
-    const db = S.db, nDocs = db.documents.filter(d => d.personId === pid).length, nFiles = db.documents.filter(d => d.personId === pid && d.path).length;
-    db.people = db.people.filter(x => x.id !== pid); db.documents = db.documents.filter(d => d.personId !== pid);
-    db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
-    db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
-    db.audit = db.audit.filter(x => x.personId !== pid);
-    CP.changelog?.forget(pid);
-    db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'erase', fields: [`dzēsts reģistra ieraksts un ${nDocs} dokumentu ieraksti; ${nFiles} faili un rezerves kopijas palika`] });
+    const { nDocs, nFiles } = eraseRecord(pid);
+    S.db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'erase', fields: [`dzēsts reģistra ieraksts un ${nDocs} dokumentu ieraksti; ${nFiles} faili un rezerves kopijas palika`] });
     U.$('eraseDialog').close();
     S.page = 'people'; CP.store.changed();
     ui.toast('Dzēsts tikai reģistra ieraksts. Faili un rezerves kopijas palika.', 'ok', 9000);

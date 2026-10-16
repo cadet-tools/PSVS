@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.36.0 — 2026-10-16 — Datu glabāšanas termiņi
+- Jauns modulis `js/retention.js` (`CP.retention`), lapa `retention`. `settings.retention = { left: { act: anon|erase, on }, cand, med, comms, ext, backups, changelog: { m, on } }`; izstājušos termiņš joprojām `settings.retentionDefault` un `p.retentionMonths`. Atlikšana: `p.keepUntil`, `d.keepUntil`, `p.commsKeepUntil`, `ev.extKeepUntil`.
+- Anonimizēšana (`p.anon`): paliek id, statuss, dzimums, `birthYear`, iestāšanās/izstāšanās datumi, kvalifikācijas, mapes Nr.; dzēsti dokumentu, saziņas, uzdevumu, saistību, audita ieraksti; `changelog.forget(pid, { keep: true })` — dalība gados un atzīmes paliek, izmaiņa žurnālā neparādās.
+- `people.js`: `CP.people.eraseRecord(pid)` (kopīgs dzēšanai un termiņiem); dzēšot izņem arī no pasākumu dalībniekiem, apmeklējuma atzīmēm, VFS rezultātiem.
+- Brīdinājums `retention` — viens kopsavilkums ar pogu uz lapu (agrāk — tikai arhivētajiem aktīvā gada sarakstā). Darbību žurnāla termiņš no `retention.changelog.m`.
+- Failu dzēšana — tikai pēc apstiprinājuma (`removeEntry`, atsevišķiem failiem `FileSystemHandle.remove`); JSON rezerves kopijas `_rezerves` — vecākas par termiņu, izņemot 10 jaunākās. `_arhivi` netiek dzēsts.
+
 ## 1.35.0 — 2026-10-16 — Centra arhīvs
 - `registry.js`: jauna atzīme `arhivs` (`p.reg.arhivs.docs[kind] = { done, date }`), `settings.archiveDocs` (noklusēti anketa, līgums), `D.arcMissing(p)` — tikai saņemtie (pievienoti rīkā vai reģistrēti DVS), brīdinājums `registry`. Kartītē sadaļa “Centra arhīvs”, masveida `bulkReg('arhivs')`, iestatījumos dokumentu saraksts. Esošajām datu mapēm `registries` papildināts ar `arhivs` vienu reizi (`arhivsAdded`).
 
