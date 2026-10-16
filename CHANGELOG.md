@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.38.4 — 2026-10-17
+- PIN un šifrētās kopijas paroļu lauki: `type="text"` + `.pw-mask` (`-webkit-text-security: disc`), `autocomplete="off"` — Chrome vairs nepiedāvā saglabāt PIN / kopijas paroli Google paroļu pārvaldniekā. ATJAUNOT.html netiek mainīts.
+
 ## 1.38.3 — 2026-10-17
 - Šifrētās kopijas iestatīšana: atkārtots “Tālāk” (kamēr gaida Google / mapi) vairs nesāk otru iestatīšanu — agrāk radās vairāki atkopšanas kodi un Drive varēja rasties otra CADET_rezerve mape; spēkā bija pēdējais parādītais kods. “Pabeigt” — tikai vienreiz.
 - Atkopšanas koda logā “💾 Saglabāt failā” (.txt ar kodu, datu mapi, Client ID).

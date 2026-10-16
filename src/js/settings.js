@@ -86,7 +86,7 @@
           <option value="tesseract" ${o.engine === 'tesseract' ? 'selected' : ''}>Lokāli datorā (drukāts teksts)</option>
           <option value="google" ${o.engine === 'google' ? 'selected' : ''}>Google Cloud Vision (arī rokraksts)</option></select></div>
         <div class="field"><label>Atpazīšanas ticamības atzīme (%)</label><input type="number" min="30" max="95" data-ocr="minConf" value="${esc(o.minConf)}"><div class="hint muted">Zonas teksts nonāk pārbaudes logā un kartītē tikai pēc apstiprinājuma.</div></div>
-        ${o.engine === 'google' ? `<div class="field wide"><label>Google Cloud Vision API atslēga</label><input type="password" data-ocr="googleKey" value="${esc(o.googleKey)}" autocomplete="off">
+        ${o.engine === 'google' ? `<div class="field wide"><label>Google Cloud Vision API atslēga</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" data-ocr="googleKey" value="${esc(o.googleKey)}" autocomplete="off">
           <div class="hint warn">Izvēloties šo dzinēju, anketas attēls (ar personas datiem) tiek nosūtīts Google serverim. Pirms lietošanas pārliecinies, ka organizācijai ir tiesisks pamats un līgums ar Google par datu apstrādi.</div></div>` : ''}
         <label class="check wide"><input type="checkbox" data-ocr="enhance" ${o.enhance ? 'checked' : ''}> Uzlabot attēlu pirms atpazīšanas (kontrasts, ēnu izlīdzināšana)</label></div>
         <h4>Dokumentu nolasīšanas veidnes</h4>

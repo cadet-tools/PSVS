@@ -356,8 +356,8 @@
             <label class="choice"><input type="radio" name="where" value="local"><div class="grow"><b>📁 Mape datorā / zibatmiņā</b><div class="small muted">Mape, ko sinhronizē Google Drive programma, ārējs disks vai zibatmiņa (ne pati datu mape).</div>
               <div class="inline-form" style="margin:6px 0 0"><button type="button" data-act="encPickDir">📁 Izvēlēties mapi</button><span id="encDirName" class="muted small"></span></div></div></label>
           </div></div>
-        <div class="fieldgrid"><div class="field"><label>2. Parole (vismaz 8 zīmes)</label><input type="password" name="pw" autocomplete="new-password" required></div>
-          <div class="field"><label>Parole vēlreiz</label><input type="password" name="pw2" autocomplete="new-password" required></div>
+        <div class="fieldgrid"><div class="field"><label>2. Parole (vismaz 8 zīmes)</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div>
+          <div class="field"><label>Parole vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
           <div class="field wide"><label>Paroles mājiens (nav obligāts, redzams visiem, kam ir kopijas fails)</label><input name="hint" placeholder="piem., pirmā suņa vārds + gads" autocomplete="off"></div></div>
         <p class="small muted">Nākamajā solī rīks parādīs <b>atkopšanas kodu</b> — ar to kopiju var atvērt arī tad, ja aizmirsti paroli.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
@@ -462,7 +462,7 @@
   A.encPw = () => {
     const d = dlg('encPwDialog', `<form><header class="dlg-head"><h2>Mainīt paroli</h2><button type="button" class="ghost" data-close="encPwDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><p class="small muted" style="margin-top:0">Šajā datorā vecā parole nav vajadzīga. Atkopšanas kods paliek tas pats.</p><div class="fieldgrid">
-        <div class="field"><label>Jaunā parole</label><input type="password" name="pw" autocomplete="new-password" required></div><div class="field"><label>Vēlreiz</label><input type="password" name="pw2" autocomplete="new-password" required></div>
+        <div class="field"><label>Jaunā parole</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div><div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
         <div class="field wide"><label>Paroles mājiens (nav obligāts)</label><input name="hint" value="${esc(CFG?.hint || '')}" autocomplete="off"></div></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encPwDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => {
@@ -527,7 +527,7 @@
     R = { open, head, master: null, folderId };
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Atjaunot no šifrētās kopijas</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body">${ui.dl([['Kopija', head.store === 'drive' ? '☁ Google Drive' : '📁 Mape', 1], ['Datu mape kopijā', esc(head.root || '—'), 1], ['Pēdējā kopija', esc(U.fmtDateTime(head.updated || head.created)), 1], ['Faili', `${head.stats?.files ?? '—'}${head.stats ? ' · ' + fmtB(head.stats.bytes) : ''}`, 1]])}
-        <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="password" name="pw" autocomplete="current-password" style="margin-top:8px"></div></label>
+        <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" style="margin-top:8px"></div></label>
           <label class="choice"><input type="radio" name="how" value="rc"><div class="grow"><b>Aizmirsi paroli? Atkopšanas kods</b><input name="rc" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" spellcheck="false" style="margin-top:8px;font-family:monospace"></div></label></div>
         <p class="small muted">Nākamajā solī izvēlies <b>tukšu mapi</b>, kur atjaunot. Esošie faili netiek pārrakstīti.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encResDialog">Atcelt</button><button class="mainbtn" type="submit">Pārbaudīt un izvēlēties mapi →</button></footer></form>`);

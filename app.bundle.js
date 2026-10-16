@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.38.3';
+  CP.VERSION = '1.38.4';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2277,7 +2277,7 @@ window.CP = window.CP || {};
   function pinView(msg = '') {
     const w = waitLeft();
     box(`<form class="cpl-form" id="cplForm" autocomplete="off"><label for="cplPin">PIN kods</label>
-      <input id="cplPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" ${w ? 'disabled' : ''} aria-describedby="cplMsg">
+      <input id="cplPin" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" ${w ? 'disabled' : ''} aria-describedby="cplMsg">
       <button type="submit" class="mainbtn" ${w ? 'disabled' : ''}>Atbloķēt</button>
       <p class="cpl-msg" id="cplMsg" role="alert">${w ? `Pārāk daudz nepareizu mēģinājumu. Mēģini pēc ${Math.ceil(w / 1000)} s.` : esc(msg)}</p>
       <button type="button" class="ghost sm" id="cplForgot">Aizmirsi PIN?</button></form>`);
@@ -2351,8 +2351,8 @@ window.CP = window.CP || {};
   }
   function newPinView() {
     box(`<form class="cpl-form" id="cplForm3"><p><b>Izvēlies jaunu PIN</b> (4–8 cipari)</p>
-      <input id="cplN1" type="password" inputmode="numeric" maxlength="8" placeholder="Jaunais PIN" autocomplete="off">
-      <input id="cplN2" type="password" inputmode="numeric" maxlength="8" placeholder="Vēlreiz" autocomplete="off">
+      <input id="cplN1" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" maxlength="8" placeholder="Jaunais PIN" autocomplete="off">
+      <input id="cplN2" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" maxlength="8" placeholder="Vēlreiz" autocomplete="off">
       <button type="submit" class="mainbtn">Saglabāt un atbloķēt</button><p class="cpl-msg" id="cplMsg" role="alert"></p></form>`);
     U.$('cplN1').focus();
     U.$('cplForm3').onsubmit = async e => {
@@ -2395,9 +2395,9 @@ window.CP = window.CP || {};
     C = get(); const had = hasPin();
     const d = modal('lockDlg', `<form><header class="dlg-head"><h2>${had ? 'Mainīt PIN' : 'Iestatīt PIN kodu'}</h2><button type="button" class="ghost" data-close="lockDlg" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="fieldgrid">
-        ${had ? '<div class="field wide"><label>Pašreizējais PIN</label><input type="password" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>' : ''}
-        <div class="field"><label>Jaunais PIN (4–8 cipari)</label><input type="password" name="p1" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
-        <div class="field"><label>Vēlreiz</label><input type="password" name="p2" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+        ${had ? '<div class="field wide"><label>Pašreizējais PIN</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>' : ''}
+        <div class="field"><label>Jaunais PIN (4–8 cipari)</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="p1" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+        <div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="p2" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
         ${had ? '' : `<div class="field wide"><label>Atkopšanas e-pasts <span class="muted small">(ieteicams)</span></label><input type="email" name="mail" autocomplete="email" placeholder="tavs@epasts.lv"><small class="muted">Ja aizmirsīsi PIN, uz šo adresi tiks sūtīts kods. Adrese tiks apstiprināta ar kodu.</small></div>`}
       </div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="lockDlg">Atcelt</button><button class="mainbtn" type="submit">${had ? 'Saglabāt' : 'Tālāk →'}</button></footer></form>`);
@@ -2439,7 +2439,7 @@ window.CP = window.CP || {};
   };
   A.lockPinOff = () => {
     const d = modal('lockDlg', `<form><header class="dlg-head"><h2>Noņemt PIN</h2><button type="button" class="ghost" data-close="lockDlg" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body"><div class="field"><label>Pašreizējais PIN</label><input type="password" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+      <div class="dlg-body"><div class="field"><label>Pašreizējais PIN</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
         <p class="small muted">Pulkstenis turpinās aizsegt ekrānu, bet atvērsies ar klikšķi.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="lockDlg">Atcelt</button><button class="mainbtn danger" type="submit">Noņemt PIN</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!(await verifyCurrent(e.target))) return; C = get(); delete C.hash; delete C.salt; delete C.iter; put(C); d.close(); paint(); ui.toast('PIN noņemts', 'ok'); };
@@ -5255,7 +5255,7 @@ window.CP = window.CP || {};
           <option value="tesseract" ${o.engine === 'tesseract' ? 'selected' : ''}>Lokāli datorā (drukāts teksts)</option>
           <option value="google" ${o.engine === 'google' ? 'selected' : ''}>Google Cloud Vision (arī rokraksts)</option></select></div>
         <div class="field"><label>Atpazīšanas ticamības atzīme (%)</label><input type="number" min="30" max="95" data-ocr="minConf" value="${esc(o.minConf)}"><div class="hint muted">Zonas teksts nonāk pārbaudes logā un kartītē tikai pēc apstiprinājuma.</div></div>
-        ${o.engine === 'google' ? `<div class="field wide"><label>Google Cloud Vision API atslēga</label><input type="password" data-ocr="googleKey" value="${esc(o.googleKey)}" autocomplete="off">
+        ${o.engine === 'google' ? `<div class="field wide"><label>Google Cloud Vision API atslēga</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" data-ocr="googleKey" value="${esc(o.googleKey)}" autocomplete="off">
           <div class="hint warn">Izvēloties šo dzinēju, anketas attēls (ar personas datiem) tiek nosūtīts Google serverim. Pirms lietošanas pārliecinies, ka organizācijai ir tiesisks pamats un līgums ar Google par datu apstrādi.</div></div>` : ''}
         <label class="check wide"><input type="checkbox" data-ocr="enhance" ${o.enhance ? 'checked' : ''}> Uzlabot attēlu pirms atpazīšanas (kontrasts, ēnu izlīdzināšana)</label></div>
         <h4>Dokumentu nolasīšanas veidnes</h4>
@@ -8074,7 +8074,7 @@ window.CP = window.CP || {};
   };
   const askPw = (msg = '') => new Promise(res => {
     const d = dlg('extPwDialog', `<form><header class="dlg-head"><h2>🔒 Fails ir aizsargāts ar paroli</h2></header>
-      <div class="dlg-body"><p style="margin-top:0">Ievadi paroli, ko tev pateica instruktors, kurš atsūtīja failu.</p>${msg ? `<p class="red small">${esc(msg)}</p>` : ''}<input type="password" name="pw" autocomplete="off" required autofocus></div>
+      <div class="dlg-body"><p style="margin-top:0">Ievadi paroli, ko tev pateica instruktors, kurš atsūtīja failu.</p>${msg ? `<p class="red small">${esc(msg)}</p>` : ''}<input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required autofocus></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-v="cancel">Atcelt</button><button class="mainbtn" type="submit">Atvērt</button></footer></form>`);
     const f = d.querySelector('form'); let done = false;
     const fin = v => { if (done) return; done = true; d.close(); res(v); };
@@ -8677,8 +8677,8 @@ window.CP = window.CP || {};
             <label class="choice"><input type="radio" name="where" value="local"><div class="grow"><b>📁 Mape datorā / zibatmiņā</b><div class="small muted">Mape, ko sinhronizē Google Drive programma, ārējs disks vai zibatmiņa (ne pati datu mape).</div>
               <div class="inline-form" style="margin:6px 0 0"><button type="button" data-act="encPickDir">📁 Izvēlēties mapi</button><span id="encDirName" class="muted small"></span></div></div></label>
           </div></div>
-        <div class="fieldgrid"><div class="field"><label>2. Parole (vismaz 8 zīmes)</label><input type="password" name="pw" autocomplete="new-password" required></div>
-          <div class="field"><label>Parole vēlreiz</label><input type="password" name="pw2" autocomplete="new-password" required></div>
+        <div class="fieldgrid"><div class="field"><label>2. Parole (vismaz 8 zīmes)</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div>
+          <div class="field"><label>Parole vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
           <div class="field wide"><label>Paroles mājiens (nav obligāts, redzams visiem, kam ir kopijas fails)</label><input name="hint" placeholder="piem., pirmā suņa vārds + gads" autocomplete="off"></div></div>
         <p class="small muted">Nākamajā solī rīks parādīs <b>atkopšanas kodu</b> — ar to kopiju var atvērt arī tad, ja aizmirsti paroli.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encDialog">Atcelt</button><button class="mainbtn" type="submit">Tālāk →</button></footer></form>`);
@@ -8783,7 +8783,7 @@ window.CP = window.CP || {};
   A.encPw = () => {
     const d = dlg('encPwDialog', `<form><header class="dlg-head"><h2>Mainīt paroli</h2><button type="button" class="ghost" data-close="encPwDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><p class="small muted" style="margin-top:0">Šajā datorā vecā parole nav vajadzīga. Atkopšanas kods paliek tas pats.</p><div class="fieldgrid">
-        <div class="field"><label>Jaunā parole</label><input type="password" name="pw" autocomplete="new-password" required></div><div class="field"><label>Vēlreiz</label><input type="password" name="pw2" autocomplete="new-password" required></div>
+        <div class="field"><label>Jaunā parole</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required></div><div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw2" autocomplete="off" required></div>
         <div class="field wide"><label>Paroles mājiens (nav obligāts)</label><input name="hint" value="${esc(CFG?.hint || '')}" autocomplete="off"></div></div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encPwDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => {
@@ -8848,7 +8848,7 @@ window.CP = window.CP || {};
     R = { open, head, master: null, folderId };
     const d = dlg('encResDialog', `<form><header class="dlg-head"><h2>Atjaunot no šifrētās kopijas</h2><button type="button" class="ghost" data-close="encResDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body">${ui.dl([['Kopija', head.store === 'drive' ? '☁ Google Drive' : '📁 Mape', 1], ['Datu mape kopijā', esc(head.root || '—'), 1], ['Pēdējā kopija', esc(U.fmtDateTime(head.updated || head.created)), 1], ['Faili', `${head.stats?.files ?? '—'}${head.stats ? ' · ' + fmtB(head.stats.bytes) : ''}`, 1]])}
-        <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="password" name="pw" autocomplete="current-password" style="margin-top:8px"></div></label>
+        <div class="choice-list"><label class="choice"><input type="radio" name="how" value="pw" checked><div class="grow"><b>Parole</b>${head.hint ? `<div class="small muted">Mājiens: ${esc(head.hint)}</div>` : ''}<input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" style="margin-top:8px"></div></label>
           <label class="choice"><input type="radio" name="how" value="rc"><div class="grow"><b>Aizmirsi paroli? Atkopšanas kods</b><input name="rc" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" spellcheck="false" style="margin-top:8px;font-family:monospace"></div></label></div>
         <p class="small muted">Nākamajā solī izvēlies <b>tukšu mapi</b>, kur atjaunot. Esošie faili netiek pārrakstīti.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="encResDialog">Atcelt</button><button class="mainbtn" type="submit">Pārbaudīt un izvēlēties mapi →</button></footer></form>`);

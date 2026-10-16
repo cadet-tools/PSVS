@@ -101,7 +101,7 @@
   };
   const askPw = (msg = '') => new Promise(res => {
     const d = dlg('extPwDialog', `<form><header class="dlg-head"><h2>🔒 Fails ir aizsargāts ar paroli</h2></header>
-      <div class="dlg-body"><p style="margin-top:0">Ievadi paroli, ko tev pateica instruktors, kurš atsūtīja failu.</p>${msg ? `<p class="red small">${esc(msg)}</p>` : ''}<input type="password" name="pw" autocomplete="off" required autofocus></div>
+      <div class="dlg-body"><p style="margin-top:0">Ievadi paroli, ko tev pateica instruktors, kurš atsūtīja failu.</p>${msg ? `<p class="red small">${esc(msg)}</p>` : ''}<input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="pw" autocomplete="off" required autofocus></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-v="cancel">Atcelt</button><button class="mainbtn" type="submit">Atvērt</button></footer></form>`);
     const f = d.querySelector('form'); let done = false;
     const fin = v => { if (done) return; done = true; d.close(); res(v); };

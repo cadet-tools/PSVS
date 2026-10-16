@@ -79,7 +79,7 @@
   function pinView(msg = '') {
     const w = waitLeft();
     box(`<form class="cpl-form" id="cplForm" autocomplete="off"><label for="cplPin">PIN kods</label>
-      <input id="cplPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" ${w ? 'disabled' : ''} aria-describedby="cplMsg">
+      <input id="cplPin" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" ${w ? 'disabled' : ''} aria-describedby="cplMsg">
       <button type="submit" class="mainbtn" ${w ? 'disabled' : ''}>Atbloķēt</button>
       <p class="cpl-msg" id="cplMsg" role="alert">${w ? `Pārāk daudz nepareizu mēģinājumu. Mēģini pēc ${Math.ceil(w / 1000)} s.` : esc(msg)}</p>
       <button type="button" class="ghost sm" id="cplForgot">Aizmirsi PIN?</button></form>`);
@@ -153,8 +153,8 @@
   }
   function newPinView() {
     box(`<form class="cpl-form" id="cplForm3"><p><b>Izvēlies jaunu PIN</b> (4–8 cipari)</p>
-      <input id="cplN1" type="password" inputmode="numeric" maxlength="8" placeholder="Jaunais PIN" autocomplete="off">
-      <input id="cplN2" type="password" inputmode="numeric" maxlength="8" placeholder="Vēlreiz" autocomplete="off">
+      <input id="cplN1" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" maxlength="8" placeholder="Jaunais PIN" autocomplete="off">
+      <input id="cplN2" type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" inputmode="numeric" maxlength="8" placeholder="Vēlreiz" autocomplete="off">
       <button type="submit" class="mainbtn">Saglabāt un atbloķēt</button><p class="cpl-msg" id="cplMsg" role="alert"></p></form>`);
     U.$('cplN1').focus();
     U.$('cplForm3').onsubmit = async e => {
@@ -197,9 +197,9 @@
     C = get(); const had = hasPin();
     const d = modal('lockDlg', `<form><header class="dlg-head"><h2>${had ? 'Mainīt PIN' : 'Iestatīt PIN kodu'}</h2><button type="button" class="ghost" data-close="lockDlg" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body"><div class="fieldgrid">
-        ${had ? '<div class="field wide"><label>Pašreizējais PIN</label><input type="password" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>' : ''}
-        <div class="field"><label>Jaunais PIN (4–8 cipari)</label><input type="password" name="p1" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
-        <div class="field"><label>Vēlreiz</label><input type="password" name="p2" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+        ${had ? '<div class="field wide"><label>Pašreizējais PIN</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>' : ''}
+        <div class="field"><label>Jaunais PIN (4–8 cipari)</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="p1" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+        <div class="field"><label>Vēlreiz</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="p2" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
         ${had ? '' : `<div class="field wide"><label>Atkopšanas e-pasts <span class="muted small">(ieteicams)</span></label><input type="email" name="mail" autocomplete="email" placeholder="tavs@epasts.lv"><small class="muted">Ja aizmirsīsi PIN, uz šo adresi tiks sūtīts kods. Adrese tiks apstiprināta ar kodu.</small></div>`}
       </div></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="lockDlg">Atcelt</button><button class="mainbtn" type="submit">${had ? 'Saglabāt' : 'Tālāk →'}</button></footer></form>`);
@@ -241,7 +241,7 @@
   };
   A.lockPinOff = () => {
     const d = modal('lockDlg', `<form><header class="dlg-head"><h2>Noņemt PIN</h2><button type="button" class="ghost" data-close="lockDlg" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body"><div class="field"><label>Pašreizējais PIN</label><input type="password" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
+      <div class="dlg-body"><div class="field"><label>Pašreizējais PIN</label><input type="text" class="pw-mask" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="cur" inputmode="numeric" maxlength="8" autocomplete="off" required></div>
         <p class="small muted">Pulkstenis turpinās aizsegt ekrānu, bet atvērsies ar klikšķi.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="lockDlg">Atcelt</button><button class="mainbtn danger" type="submit">Noņemt PIN</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!(await verifyCurrent(e.target))) return; C = get(); delete C.hash; delete C.salt; delete C.iter; put(C); d.close(); paint(); ui.toast('PIN noņemts', 'ok'); };

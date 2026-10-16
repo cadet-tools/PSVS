@@ -752,3 +752,5 @@ html.d2:not([data-theme="light"]) .vfs-badge.b-z{color:#f0c75e}html.d2:not([data
 .ct-arch{opacity:.6}
 .age-notice{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.age-notice .actions{gap:6px}
 .notice.bad{border-color:var(--bad-edge,#8a4848);background:var(--bad-bg,#3d1f22);color:var(--bad-tx,#ffb4b4)}
+/* Paroļu / PIN lauki bez pārlūka paroļu pārvaldnieka (tas nepiedāvā saglabāt teksta laukus) */
+input.pw-mask{-webkit-text-security:disc;text-security:disc;font-family:inherit;letter-spacing:.12em}
