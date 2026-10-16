@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.36.1 — 2026-10-16
+- Ekipējumam lauks `keep` (paliek jaunsargam): nav `due`/`returned`, neskaitās `D.openEquipment`, `D.mtlStatus`, brīdinājumos un “izsniegts” skaitā; lapā atsevišķa sadaļa. Izsniegšanas logā atzīme.
+- `vfs.js` `syncEq(t)`: `r.issued` + nozīmīte → `equipment { keep: true, src: 'vfs:<testa id>' }`; izsaucas no `syncQuals`, atzīmes maiņas, `vfsRemove`, dzēšot testu (`dropEq`), un `afterRootLoad` (esošajiem datiem). Ekipējuma ieraksta dzēšana/labošana → `CP.vfs.eqChanged` atjauno `r.issued`.
+
 ## 1.36.0 — 2026-10-16 — Datu glabāšanas termiņi
 - Jauns modulis `js/retention.js` (`CP.retention`), lapa `retention`. `settings.retention = { left: { act: anon|erase, on }, cand, med, comms, ext, backups, changelog: { m, on } }`; izstājušos termiņš joprojām `settings.retentionDefault` un `p.retentionMonths`. Atlikšana: `p.keepUntil`, `d.keepUntil`, `p.commsKeepUntil`, `ev.extKeepUntil`.
 - Anonimizēšana (`p.anon`): paliek id, statuss, dzimums, `birthYear`, iestāšanās/izstāšanās datumi, kvalifikācijas, mapes Nr.; dzēsti dokumentu, saziņas, uzdevumu, saistību, audita ieraksti; `changelog.forget(pid, { keep: true })` — dalība gados un atzīmes paliek, izmaiņa žurnālā neparādās.

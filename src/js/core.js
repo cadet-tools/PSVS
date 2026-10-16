@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.0';
+  CP.VERSION = '1.36.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -527,7 +527,7 @@ window.CP = window.CP || {};
   };
   D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
   D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && D.docValid(d)));
-  D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned);
+  D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned && !e.keep);
   D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
     const m = {};
@@ -558,7 +558,7 @@ window.CP = window.CP || {};
   D.MTL = 'MTL aprites lapa';
   const docStamp = d => d.addedAt || (d.received ? d.received + 'T23:59:59' : '');
   D.mtlStatus = p => {
-    const eqs = db().equipment.filter(e => e.personId === p.id), open = eqs.filter(e => !e.returned);
+    const eqs = db().equipment.filter(e => e.personId === p.id && !e.keep), open = eqs.filter(e => !e.returned);   // nozīmītes (keep) MTL lapā neskaitās
     const all = db().documents.filter(d => d.personId === p.id && d.kind === D.MTL).sort((a, b) => docStamp(b).localeCompare(docStamp(a)));
     const latest = all[0];
     const lastChange = eqs.map(e => [e.changedAt || '', e.issued ? e.issued + 'T00:00:00' : '', e.returned ? e.returned + 'T00:00:00' : ''].sort().at(-1)).sort().at(-1) || '';
@@ -621,7 +621,7 @@ window.CP = window.CP || {};
         if (inSpan(U.iso(adult))) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība šajā mācību gadā`, when: U.iso(adult) });
       }
     }
-    for (const e of d.equipment) if (!e.returned && D.inYear(D.person(e.personId))) {
+    for (const e of d.equipment) if (!e.returned && !e.keep && D.inYear(D.person(e.personId))) {
       const p = D.person(e.personId), diff = e.due ? U.daysTo(e.due) : null;
       if (!live && !(e.due && inSpan(e.due))) continue;
       if (p?.status === 'archived') push({ kind: 'equipment', personId: e.personId, sev: 2, msg: `${U.full(p)} ir arhīvā, bet nav atdots: ${e.item}`, when: e.due });

@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.36.0';
+  CP.VERSION = '1.36.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -530,7 +530,7 @@ window.CP = window.CP || {};
   };
   D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
   D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && D.docValid(d)));
-  D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned);
+  D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned && !e.keep);
   D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
     const m = {};
@@ -561,7 +561,7 @@ window.CP = window.CP || {};
   D.MTL = 'MTL aprites lapa';
   const docStamp = d => d.addedAt || (d.received ? d.received + 'T23:59:59' : '');
   D.mtlStatus = p => {
-    const eqs = db().equipment.filter(e => e.personId === p.id), open = eqs.filter(e => !e.returned);
+    const eqs = db().equipment.filter(e => e.personId === p.id && !e.keep), open = eqs.filter(e => !e.returned);   // nozīmītes (keep) MTL lapā neskaitās
     const all = db().documents.filter(d => d.personId === p.id && d.kind === D.MTL).sort((a, b) => docStamp(b).localeCompare(docStamp(a)));
     const latest = all[0];
     const lastChange = eqs.map(e => [e.changedAt || '', e.issued ? e.issued + 'T00:00:00' : '', e.returned ? e.returned + 'T00:00:00' : ''].sort().at(-1)).sort().at(-1) || '';
@@ -624,7 +624,7 @@ window.CP = window.CP || {};
         if (inSpan(U.iso(adult))) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība šajā mācību gadā`, when: U.iso(adult) });
       }
     }
-    for (const e of d.equipment) if (!e.returned && D.inYear(D.person(e.personId))) {
+    for (const e of d.equipment) if (!e.returned && !e.keep && D.inYear(D.person(e.personId))) {
       const p = D.person(e.personId), diff = e.due ? U.daysTo(e.due) : null;
       if (!live && !(e.due && inSpan(e.due))) continue;
       if (p?.status === 'archived') push({ kind: 'equipment', personId: e.personId, sev: 2, msg: `${U.full(p)} ir arhīvā, bet nav atdots: ${e.item}`, when: e.due });
@@ -3689,10 +3689,10 @@ window.CP = window.CP || {};
         const p = D.person(e.personId), late = !e.returned && e.due && U.daysTo(e.due) < 0;
         return `<tr class="${e.returned ? 'done' : ''}">${showPerson ? `<td><a href="#" data-person="${e.personId}" data-goto="equipment">${esc(U.sortName(p))}</a>${mtlBadge(p)}</td>` : ''}
           <td><b>${esc(e.item)}</b></td><td>${esc(e.inventory || '—')}</td><td>${esc(e.size || '—')}</td><td>${esc(e.qty || 1)}</td>
-          <td>${U.fmtDate(e.issued)}${e.yearId ? `<div class="muted small">${esc(U.yearLabel(e.yearId))}</div>` : ''}</td><td class="${late ? 'red' : ''}">${U.fmtDate(e.due) || '—'}</td>
-          <td>${e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
+          <td>${U.fmtDate(e.issued)}${e.yearId ? `<div class="muted small">${esc(U.yearLabel(e.yearId))}</div>` : ''}</td><td class="${late ? 'red' : ''}">${e.keep ? '—' : U.fmtDate(e.due) || '—'}</td>
+          <td>${e.keep ? `<span class="pill ok" title="Apbalvojums / nozīmīte — nav jāatdod">Pasniegts${e.src?.startsWith('vfs:') ? ' (VFS)' : ''}</span>` : e.returned ? `<span class="pill ok">Atdots ${U.fmtDate(e.returned)}</span>` : `<span class="pill ${late ? 'bad' : 'warn'}">${late ? 'Kavēts' : 'Izsniegts'}</span>`}</td>
           <td class="small">${esc(e.notes || '')}${e.returnNote ? `<div class="muted">Atdodot: ${esc(e.returnNote)}</div>` : ''}</td>
-          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button>`}</td></tr>`;
+          <td class="right nowrap"><button class="sm ghost" data-act="editEq" data-arg="${e.id}" title="Labot">✎</button>${e.returned || e.keep ? '' : `<button class="sm" data-act="returnEq" data-arg="${e.id}">Atdots</button>`}</td></tr>`;
       }).join('')}</tbody></table></div>`;
   }
   const mtlBadge = p => { const m = D.mtlStatus(p); return m.state === 'missing' ? ' <span class="pill bad" title="Nav MTL aprites lapas">MTL ✗</span>' : m.state === 'outdated' ? ' <span class="pill warn" title="MTL lapa nav atjaunota pēc izmaiņām">MTL ⟳</span>' : ''; };
@@ -3718,12 +3718,14 @@ window.CP = window.CP || {};
   CP.pages.equipment = {
     render() {
       const mine = e => D.inYear(D.person(e.personId));
-      const out = S.db.equipment.filter(e => !e.returned && mine(e)), back = S.db.equipment.filter(e => e.returned && (e.yearId === D.activeYear() || (!e.yearId && mine(e))));
-      const people = [...new Set(S.db.equipment.map(e => e.personId))].map(D.person).filter(p => p && p.status !== 'archived');
+      const awards = S.db.equipment.filter(e => e.keep && mine(e));
+      const out = S.db.equipment.filter(e => !e.returned && !e.keep && mine(e)), back = S.db.equipment.filter(e => e.returned && !e.keep && (e.yearId === D.activeYear() || (!e.yearId && mine(e))));
+      const people = [...new Set(S.db.equipment.filter(e => !e.keep).map(e => e.personId))].map(D.person).filter(p => p && p.status !== 'archived');
       const mtlIssues = people.map(p => ({ p, m: D.mtlStatus(p) })).filter(x => x.m.state === 'missing' || x.m.state === 'outdated');
       return `<div class="page">${ui.pageHead('Ekipējums', `${out.reduce((n, e) => n + Number(e.qty || 1), 0)} vienības izsniegtas ${new Set(out.map(e => e.personId)).size} personām`, `<button class="mainbtn" data-act="addEq">＋ Izsniegt</button>`)}
         ${mtlIssues.length ? `<section class="card dupcard"><h3>⚠ MTL aprites lapas (${mtlIssues.length})</h3>${mtlIssues.map(x => `<div class="row"><div class="grow"><a href="#" data-person="${x.p.id}" data-goto="equipment">${esc(U.full(x.p))}</a> — <span class="warn">${x.m.state === 'missing' ? 'nav MTL lapas' : 'MTL lapa nav atjaunota pēc izmaiņām'}</span></div><button class="sm" data-act="attach" data-arg="${x.p.id}|${esc(D.MTL)}">📎 Pievienot</button></div>`).join('')}</section>` : ''}
         <section class="card"><h3>Izsniegts</h3>${table(out.sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9'))))}</section>
+        ${awards.length ? `<details class="card"><summary><b>Pasniegtās nozīmītes un apbalvojumi (${awards.length})</b> <span class="small muted">— paliek jaunsargam, nav jāatdod</span></summary>${table(awards.sort((a, b) => String(b.issued).localeCompare(String(a.issued))))}</details>` : ''}
         <details class="card"><summary><b>Atdotais (${back.length})</b></summary>${table(back.sort((a, b) => String(b.returned).localeCompare(String(a.returned))))}</details></div>`;
     }
   };
@@ -3740,19 +3742,20 @@ window.CP = window.CP || {};
     f.reset(); f.dataset.edit = id; U.$('eqTitle').textContent = 'Labot ekipējumu'; U.$('eqDel').classList.remove('hidden'); U.$('eqReturnedWrap').classList.remove('hidden'); U.$('eqRetNoteWrap').classList.remove('hidden');
     ui.personOptions('eqPerson', e.personId, true);
     for (const k of ['item', 'inventory', 'size', 'qty', 'issued', 'due', 'notes', 'returned', 'returnNote']) fld(k).value = e[k] ?? (k === 'qty' ? 1 : '');
+    fld('keep').checked = !!e.keep;
     U.$('equipmentDialog').showModal();
   };
   f.addEventListener('submit', ev => {
-    ev.preventDefault(); const o = Object.fromEntries(new FormData(f)); o.qty = Number(o.qty || 1);
+    ev.preventDefault(); const o = Object.fromEntries(new FormData(f)); o.qty = Number(o.qty || 1); o.keep = fld('keep').checked || undefined; if (o.keep) { o.due = ''; o.returned = ''; }
     if (f.dataset.edit) {
       const e = S.db.equipment.find(x => x.id === f.dataset.edit), changed = Object.keys(o).filter(k => String(e[k] ?? '') !== String(o[k] ?? ''));
-      if (changed.length) { Object.assign(e, o); e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); }
-    } else { S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
+      if (changed.length) { Object.assign(e, o); if (!e.keep) delete e.keep; e.changedAt = U.now(); D.audit(e.personId, 'eq-edit', [e.item]); CP.vfs?.eqChanged(e); }
+    } else { if (!o.keep) delete o.keep; S.db.equipment.push({ ...o, id: U.uid(), returned: '', changedAt: U.now(), yearId: D.activeYear() }); D.audit(o.personId, 'eq-issue', [`${o.item}${o.qty > 1 ? ' × ' + o.qty : ''}`]); }
     U.$('equipmentDialog').close(); CP.store.changed(); mtlReminder(o.personId);
   });
   A.delEq = () => {
     const e = S.db.equipment.find(x => x.id === f.dataset.edit); if (!e || !confirm(`Dzēst ierakstu “${e.item}”? (Ja ekipējums atdots — labāk atzīmē “Atdots”.)`)) return;
-    S.db.equipment = S.db.equipment.filter(x => x !== e); D.audit(e.personId, 'eq-delete', [e.item]); U.$('equipmentDialog').close(); CP.store.changed();
+    S.db.equipment = S.db.equipment.filter(x => x !== e); CP.vfs?.eqChanged(e, true); D.audit(e.personId, 'eq-delete', [e.item]); U.$('equipmentDialog').close(); CP.store.changed();
   };
   A.returnEq = id => {
     const x = S.db.equipment.find(z => z.id === id); if (!x) return;
@@ -4462,7 +4465,7 @@ window.CP = window.CP || {};
           <button class="stat" data-tone="blue" data-act="openList" data-arg="candidate">${CP.ic('userClock')}<span>Kandidāti</span><strong>${cnt('candidate')}</strong></button>
           <button class="stat" data-tone="amber" data-act="openList" data-arg="missing">${CP.ic('fileAlert')}<span>Trūkst dokumentu</span><strong class="${miss.length ? 'warn' : ''}">${miss.length}</strong></button>
           <button class="stat" data-tone="violet" data-page="documents">${CP.ic('files')}<span>Dokumenti šajā gadā</span><strong>${S.db.documents.filter(d => d.yearId === D.activeYear() || (!d.yearId && D.inYear(D.person(d.personId)))).length}</strong></button>
-          <button class="stat" data-tone="olive" data-page="equipment">${CP.ic('backpack')}<span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && D.inYear(D.person(x.personId))).length}</strong></button>
+          <button class="stat" data-tone="olive" data-page="equipment">${CP.ic('backpack')}<span>Izsniegts ekipējums</span><strong>${S.db.equipment.filter(x => !x.returned && !x.keep && D.inYear(D.person(x.personId))).length}</strong></button>
           <button class="stat" data-tone="red" data-page="alerts">${CP.ic('bell')}<span>Uzdevumi un brīdinājumi</span><strong class="${al.some(a => a.sev > 1) ? 'red' : al.length ? 'warn' : ''}">${al.length}</strong></button>
         </div></div>
         <section class="card quick"><button class="mainbtn" data-act="scan">${CP.ic('scan', '📷')} Ievadīt no anketas</button><button data-act="addPerson">${CP.ic('userPlus', '＋')} Jauna persona</button><button data-page="comms">${CP.ic('megaphone', '✉')} Ziņa grupai</button><button data-act="import">${CP.ic('upload', '⬆')} Imports no Excel</button><button data-act="import" data-arg="eklase">${CP.ic('upload', '⬆')} No e-klases</button>${(S.db.settings.tools || []).filter(t => t.name && /^https?:/.test(t.url || '') && !/\{/.test(t.url)).map(t => `<a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">${CP.ic('external', '↗')} ${esc(t.name)}</a>`).join('')}</section>
@@ -5427,6 +5430,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.36.1', from: '1.36.0', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
+      'Atzīmējot VFS tabulā, ka sporta nozīmīte **izsniegta**, tā uzreiz parādās jaunsarga **ekipējumā** (“VFS sporta nozīmīte — zelts/sudrabs/bronza”, ar testa datumu un punktiem). Noņemot atzīmi vai dzēšot testu, ieraksts pazūd. Jau iepriekš izsniegtās nozīmītes tiek pievienotas automātiski.',
+      'Nozīmīte **paliek jaunsargam**: tai nav “Atdot līdz”, nav pogas “Atdots”, tā neprasa MTL aprites lapu un nerada brīdinājumu “nav atdots”. Sadaļā Ekipējums tās redzamas atsevišķi — **“Pasniegtās nozīmītes un apbalvojumi”**.',
+      'Arī citus apbalvojumus var ierakstīt tāpat: izsniegšanas logā atzīme **“Paliek jaunsargam”**.'
+    ] },
     { v: '1.36.0', date: '2026-10-16', title: 'Datu glabāšanas termiņi', items: [
       '**Iestatījumi → Datu glabāšanas termiņi**: katrai datu grupai ir savs termiņš mēnešos, un to var mainīt. Noklusējumi: izstājušies jaunsargi — **12 mēn.** pēc izstāšanās (anonimizēt vai dzēst pilnībā), kandidāti, kas neiestājās — **6 mēn.**, ārsta izziņas — **3 mēn.** pēc derīguma beigām, saziņas vēsture — **24 mēn.**, citu vienību dalībnieki pasākumos — **12 mēn.**, JSON rezerves kopijas — **6 mēn.** (10 jaunākās paliek vienmēr), darbību žurnāls — **12 mēn.**',
       'Pie katras grupas ir paskaidrojums, **kas tiek dzēsts un kāpēc** (pamatojums pēc VDAR un Latvijas likumiem). Ja Jaunsardzes centrs vai novads nosaka citus termiņus, ievadi tos.',
@@ -9711,7 +9719,22 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       p.quals = (p.quals || []).filter(x => x.src !== src);
       if (want) p.quals.push({ qid: want, date: t.date, src, note: `${s.total} punkti` });
     }
+    syncEq(t);
   }
+  /** Izsniegtā nozīmīte → ekipējuma ieraksts (paliek jaunsargam, nav jāatdod). src 'vfs:<testa id>'. Atgriež, vai kaut kas mainījās. */
+  function syncEq(t) {
+    const src = 'vfs:' + t.id, db = S.db; let ch = false;
+    for (const [pid, r] of Object.entries(t.res)) {
+      const s = score(r), cur = db.equipment.find(e => e.src === src && e.personId === pid);
+      if (!(r.issued && s.badge && D.person(pid))) { if (cur) { db.equipment = db.equipment.filter(e => e !== cur); ch = true; } continue; }
+      const want = { item: `VFS sporta nozīmīte — ${s.badgeName.toLowerCase()}`, issued: r.issued, notes: `VFS tests ${U.fmtDate(t.date)}, ${s.total} punkti` };
+      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', keep: true, src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
+      else if (Object.keys(want).some(k => cur[k] !== want[k]) || !cur.keep) { Object.assign(cur, want, { keep: true }); cur.changedAt = U.now(); ch = true; }
+    }
+    for (const e of [...db.equipment]) if (e.src === src && !t.res[e.personId]) { db.equipment = db.equipment.filter(x => x !== e); ch = true; }
+    return ch;
+  }
+  const dropEq = t => { S.db.equipment = S.db.equipment.filter(e => e.src !== 'vfs:' + t.id); };
   // dzēšot testu — kvalifikācijas arī prom
   const dropQuals = t => { for (const p of S.db.people) if (p.quals?.some(x => x.src === 'vfs:' + t.id)) p.quals = p.quals.filter(x => x.src !== 'vfs:' + t.id); };
 
@@ -9796,7 +9819,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       r.lvl = el.value; syncQuals(t); CP.store.changed({ silent: true }); CP.render();
     } else if (el.dataset.vfsiss) {
       const r = t.res[el.dataset.vfsiss]; if (!r) return;
-      r.issued = el.checked ? U.iso() : ''; CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
+      r.issued = el.checked ? U.iso() : ''; syncEq(t); CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
+      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā (paliek jaunsargam, nav jāatdod)', 'ok');
     } else if (el.id === 'vfsPerson') { V().person = el.value; CP.render(); }
     else if (el.id === 'vfsDynGroup') { V().group = el.value; CP.render(); }
   });
@@ -9842,8 +9866,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       d.close(); CP.store.changed();
     };
   };
-  A.vfsDel = () => { const t = testOf(V().test); if (!t || !confirm(`Dzēst VFS testu ${U.fmtDate(t.date)} ar ${Object.keys(t.res).length} rezultātiem? Arī ar to piešķirtās nozīmītes kvalifikācijās tiks noņemtas.`)) return; dropQuals(t); S.db.vfsTests = tests().filter(x => x !== t); V().test = ''; CP.store.changed(); };
-  A.vfsRemove = id => { const t = testOf(V().test); if (!t) return; const p = D.person(id); if (Object.keys(t.res[id]?.v || {}).length && !confirm(`Noņemt ${U.full(p)} no testa? Ievadītie rezultāti tiks dzēsti.`)) return; delete t.res[id]; if (p) p.quals = (p.quals || []).filter(x => x.src !== 'vfs:' + t.id); CP.store.changed(); };
+  A.vfsDel = () => { const t = testOf(V().test); if (!t || !confirm(`Dzēst VFS testu ${U.fmtDate(t.date)} ar ${Object.keys(t.res).length} rezultātiem? Arī ar to piešķirtās nozīmītes kvalifikācijās tiks noņemtas.`)) return; dropQuals(t); dropEq(t); S.db.vfsTests = tests().filter(x => x !== t); V().test = ''; CP.store.changed(); };
+  A.vfsRemove = id => { const t = testOf(V().test); if (!t) return; const p = D.person(id); if (Object.keys(t.res[id]?.v || {}).length && !confirm(`Noņemt ${U.full(p)} no testa? Ievadītie rezultāti tiks dzēsti.`)) return; delete t.res[id]; if (p) p.quals = (p.quals || []).filter(x => x.src !== 'vfs:' + t.id); syncEq(t); CP.store.changed(); };
   A.vfsAddPeople = () => {
     const t = testOf(V().test); if (!t) return;
     const cand = D.peopleInYear().filter(p => p.status !== 'archived' && !t.res[p.id]).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
@@ -10082,7 +10106,14 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     return `<div class="vfs-mini small">${h.slice(-4).map(x => `<span>${esc(U.fmtDate(x.t.date))}: <b>${x.s.total ?? '—'}</b> p. ${x.s.badge ? badgeTag(x.s.badge, x.s.badgeName) : ''}</span>`).join(' · ')} <a href="#" data-act="vfsPersonDyn" data-arg="${p.id}">Dinamika →</a></div>`;
   }
 
-  CP.vfs = { page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
+  /** Ekipējuma ieraksts dzēsts / labots → testā atzīme “izsniegta” atbilstoši */
+  function eqChanged(e, deleted) {
+    const t = e?.src && testOf(String(e.src).slice(4)), r = t?.res[e.personId]; if (!r) return;
+    r.issued = deleted ? '' : (e.issued || r.issued);
+  }
+  // esošajām datu mapēm: jau izsniegtās nozīmītes parādās ekipējumā
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => { let ch = false; for (const t of tests()) if (syncEq(t)) ch = true; if (ch) CP.store.changed({ silent: true }); });
+  CP.vfs = { eqChanged, syncEq, page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
 })(window.CP);
 
 
@@ -10849,7 +10880,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const KL = {
     noteLog: 'Piezīmes', contracts: 'Līgumi', quals: 'Kvalifikācijas', incidents: 'Uzvedības ieraksti', reg: 'Reģistri', dvs: 'DVS', idcard: 'Apliecība', left: 'Izstāšanās datums', reason: 'Iemesls',
     folder: 'Mape', date: 'Datums', endDate: 'Beigu datums', from: 'No', to: 'Līdz', title: 'Nosaukums', type: 'Veids', place: 'Vieta', start: 'Sākums', end: 'Beigas', notes: 'Piezīmes', topic: 'Tēma',
-    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', group: 'Grupa', status: 'Statuss',
+    att: 'Apmeklējums', kind: 'Veids', path: 'Fails', sourceId: 'Mape', item: 'Priekšmets', size: 'Izmērs', qty: 'Skaits', issued: 'Izsniegts', returned: 'Atdots', returnNote: 'Atdošanas piezīme', keep: 'Paliek jaunsargam', group: 'Grupa', status: 'Statuss',
     participants: 'Dalībnieki', staff: 'Darbinieki', external: 'Citu vienību dalībnieki', extStaff: 'Citu vienību darbinieki', remind: 'Atgādinājumi', allDay: 'Visu dienu', seriesId: 'Sērija', issuedAt: 'Izdots', validTo: 'Derīgs līdz',
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',

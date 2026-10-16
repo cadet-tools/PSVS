@@ -108,7 +108,22 @@
       p.quals = (p.quals || []).filter(x => x.src !== src);
       if (want) p.quals.push({ qid: want, date: t.date, src, note: `${s.total} punkti` });
     }
+    syncEq(t);
   }
+  /** Izsniegtā nozīmīte → ekipējuma ieraksts (paliek jaunsargam, nav jāatdod). src 'vfs:<testa id>'. Atgriež, vai kaut kas mainījās. */
+  function syncEq(t) {
+    const src = 'vfs:' + t.id, db = S.db; let ch = false;
+    for (const [pid, r] of Object.entries(t.res)) {
+      const s = score(r), cur = db.equipment.find(e => e.src === src && e.personId === pid);
+      if (!(r.issued && s.badge && D.person(pid))) { if (cur) { db.equipment = db.equipment.filter(e => e !== cur); ch = true; } continue; }
+      const want = { item: `VFS sporta nozīmīte — ${s.badgeName.toLowerCase()}`, issued: r.issued, notes: `VFS tests ${U.fmtDate(t.date)}, ${s.total} punkti` };
+      if (!cur) { db.equipment.push({ id: U.uid(), personId: pid, ...want, qty: 1, inventory: '', size: '', due: '', returned: '', keep: true, src, changedAt: U.now(), yearId: t.yearId || U.yearOfDate(t.date) || D.activeYear() }); ch = true; }
+      else if (Object.keys(want).some(k => cur[k] !== want[k]) || !cur.keep) { Object.assign(cur, want, { keep: true }); cur.changedAt = U.now(); ch = true; }
+    }
+    for (const e of [...db.equipment]) if (e.src === src && !t.res[e.personId]) { db.equipment = db.equipment.filter(x => x !== e); ch = true; }
+    return ch;
+  }
+  const dropEq = t => { S.db.equipment = S.db.equipment.filter(e => e.src !== 'vfs:' + t.id); };
   // dzēšot testu — kvalifikācijas arī prom
   const dropQuals = t => { for (const p of S.db.people) if (p.quals?.some(x => x.src === 'vfs:' + t.id)) p.quals = p.quals.filter(x => x.src !== 'vfs:' + t.id); };
 
@@ -193,7 +208,8 @@
       r.lvl = el.value; syncQuals(t); CP.store.changed({ silent: true }); CP.render();
     } else if (el.dataset.vfsiss) {
       const r = t.res[el.dataset.vfsiss]; if (!r) return;
-      r.issued = el.checked ? U.iso() : ''; CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
+      r.issued = el.checked ? U.iso() : ''; syncEq(t); CP.store.changed({ silent: true }); refreshRow(t, el.dataset.vfsiss);
+      if (el.checked) ui.toast('Nozīmīte ierakstīta jaunsarga ekipējumā (paliek jaunsargam, nav jāatdod)', 'ok');
     } else if (el.id === 'vfsPerson') { V().person = el.value; CP.render(); }
     else if (el.id === 'vfsDynGroup') { V().group = el.value; CP.render(); }
   });
@@ -239,8 +255,8 @@
       d.close(); CP.store.changed();
     };
   };
-  A.vfsDel = () => { const t = testOf(V().test); if (!t || !confirm(`Dzēst VFS testu ${U.fmtDate(t.date)} ar ${Object.keys(t.res).length} rezultātiem? Arī ar to piešķirtās nozīmītes kvalifikācijās tiks noņemtas.`)) return; dropQuals(t); S.db.vfsTests = tests().filter(x => x !== t); V().test = ''; CP.store.changed(); };
-  A.vfsRemove = id => { const t = testOf(V().test); if (!t) return; const p = D.person(id); if (Object.keys(t.res[id]?.v || {}).length && !confirm(`Noņemt ${U.full(p)} no testa? Ievadītie rezultāti tiks dzēsti.`)) return; delete t.res[id]; if (p) p.quals = (p.quals || []).filter(x => x.src !== 'vfs:' + t.id); CP.store.changed(); };
+  A.vfsDel = () => { const t = testOf(V().test); if (!t || !confirm(`Dzēst VFS testu ${U.fmtDate(t.date)} ar ${Object.keys(t.res).length} rezultātiem? Arī ar to piešķirtās nozīmītes kvalifikācijās tiks noņemtas.`)) return; dropQuals(t); dropEq(t); S.db.vfsTests = tests().filter(x => x !== t); V().test = ''; CP.store.changed(); };
+  A.vfsRemove = id => { const t = testOf(V().test); if (!t) return; const p = D.person(id); if (Object.keys(t.res[id]?.v || {}).length && !confirm(`Noņemt ${U.full(p)} no testa? Ievadītie rezultāti tiks dzēsti.`)) return; delete t.res[id]; if (p) p.quals = (p.quals || []).filter(x => x.src !== 'vfs:' + t.id); syncEq(t); CP.store.changed(); };
   A.vfsAddPeople = () => {
     const t = testOf(V().test); if (!t) return;
     const cand = D.peopleInYear().filter(p => p.status !== 'archived' && !t.res[p.id]).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
@@ -479,5 +495,12 @@
     return `<div class="vfs-mini small">${h.slice(-4).map(x => `<span>${esc(U.fmtDate(x.t.date))}: <b>${x.s.total ?? '—'}</b> p. ${x.s.badge ? badgeTag(x.s.badge, x.s.badgeName) : ''}</span>`).join(' · ')} <a href="#" data-act="vfsPersonDyn" data-arg="${p.id}">Dinamika →</a></div>`;
   }
 
-  CP.vfs = { page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
+  /** Ekipējuma ieraksts dzēsts / labots → testā atzīme “izsniegta” atbilstoši */
+  function eqChanged(e, deleted) {
+    const t = e?.src && testOf(String(e.src).slice(4)), r = t?.res[e.personId]; if (!r) return;
+    r.issued = deleted ? '' : (e.issued || r.issued);
+  }
+  // esošajām datu mapēm: jau izsniegtās nozīmītes parādās ekipējumā
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => { let ch = false; for (const t of tests()) if (syncEq(t)) ch = true; if (ch) CP.store.changed({ silent: true }); });
+  CP.vfs = { eqChanged, syncEq, page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
 })(window.CP);
