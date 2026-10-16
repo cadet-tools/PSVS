@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.0';
+  CP.VERSION = '1.37.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2538,6 +2538,27 @@ window.CP = window.CP || {};
         </div><div id="listBody">${listTable()}</div></div>`;
     }
   };
+  /* --- Arhīvs: visi arhivētie (visos mācību gados) --- */
+  CP.pages.archive = {
+    render() {
+      const q = U.norm(S.arcQ || '').replace(/ /g, ''), def = S.db.settings.retentionDefault ?? 12;
+      const all = S.db.people.filter(p => p.status === 'archived');
+      const rows = all.filter(p => !q || U.norm([U.full(p), U.sortName(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
+        .sort((a, b) => String(b.left || '').localeCompare(String(a.left || '')) || U.cmp(U.sortName(a), U.sortName(b)));
+      const years = p => D.enrollmentsOf(p.id).map(e => U.yearLabel(e.yearId)).join(', ');
+      const due = p => p.anon ? '' : U.addMonths(p.left || String(p.updatedAt || '').slice(0, 10), p.retentionMonths ?? def);
+      const body = !all.length ? ui.empty('Arhīvā vēl nav neviena.', '<p class="muted small">Kad jaunsargs izstājas, viņa kartītē spied <b>⋯ → Arhivēt (izstājies)</b>. Arhīvā dati glabājas līdz glabāšanas termiņa beigām.</p>')
+        : `<div class="tablewrap"><table class="table"><thead><tr><th>Persona</th><th>Mācību gadi</th><th>Izstājies</th><th>Iemesls</th><th>Glabāt līdz</th></tr></thead><tbody>
+          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
+            <td class="small">${esc(years(p) || '—')}</td><td>${U.fmtDate(p.left) || '—'}</td><td class="small">${esc(p.reason || '')}</td>
+            <td>${p.anon ? '<span class="muted">—</span>' : `<span class="${over ? 'pill warn' : ''}">${U.fmtDate(d)}${over ? ' · beidzies' : ''}</span>`}</td></tr>`; }).join('') || `<tr><td colspan="5" class="muted">Pēc meklējuma neviens netika atrasts.</td></tr>`}</tbody></table></div>
+          <p class="muted small">${all.length} ${all.length % 10 === 1 && all.length % 100 !== 11 ? 'persona' : 'personas'} arhīvā (visos mācību gados).</p>`;
+      return `<div class="page">${ui.pageHead('Arhīvs', 'Izstājušies jaunsargi un kandidāti no visiem mācību gadiem. Atver kartīti, lai atjaunotu vai dzēstu.', `<button data-page="retention">Glabāšanas termiņi →</button>`)}
+        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
+        <section class="card">${body}</section></div>`;
+    }
+  };
+  CP.inputHandlers.push(e => { if (e.target.id !== 'arcQ') return false; S.arcQ = e.target.value; const pos = e.target.selectionStart; CP.render(); const i = U.$('arcQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } return true; });
   CP.inputHandlers.push(e => { if (e.target.id !== 'listQ') return false; S.list.q = e.target.value; U.$('listBody').innerHTML = listTable(); return true; });
   CP.changeHandlers.push(e => {
     const k = e.target.dataset.list; if (k) { S.list[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; CP.render(); return true; }
@@ -5147,12 +5168,22 @@ window.CP = window.CP || {};
 
   const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
   A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
+  /** Ritina tā, lai kartīte būtu ekrāna vidū; ja tā ir augstāka par ekrānu — tās augša redzama zem cilnēm */
+  ui.scrollToCard = c => {
+    let sc = c.parentElement; while (sc && sc !== document.body && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    const box = sc && sc !== document.body ? sc.getBoundingClientRect() : { top: 0, height: innerHeight };
+    const top0 = Math.max(box.top, 0), tabs = document.querySelector('.set-tabs'), stick = tabs && getComputedStyle(tabs).position === 'sticky' ? tabs.getBoundingClientRect().height + 8 : 8;
+    const visH = Math.min(box.height, innerHeight - top0) - stick, r = c.getBoundingClientRect();
+    const want = r.height < visH ? top0 + stick + (visH - r.height) / 2 : top0 + stick;
+    const dy = r.top - want;
+    if (sc && sc !== document.body) sc.scrollBy({ top: dy, behavior: 'smooth' }); else window.scrollBy({ top: dy, behavior: 'smooth' });
+  };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
     const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
-    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
   };
   A.goSetCard = id => ui.goSettingsCard(id);
   CP.pages.settings = {
@@ -5173,7 +5204,6 @@ window.CP = window.CP || {};
         <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
       </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
       ${CP.setup ? CP.setup.instCard() : ''}
-      ${S.db.settings.setupHidden ? `<section class="card"><h3>${CP.ic('check')}Sākuma iestatīšanas saraksts</h3><p class="small" style="margin-top:0">Saraksts “Sagatavo rīku darbam” Pārskatā ir paslēpts.</p><button class="sm" data-act="setupShow">Rādīt atkal Pārskatā</button></section>` : ''}
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}
@@ -5454,6 +5484,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.1', from: '1.37.0', date: '2026-10-16', title: 'Arhīvs, sākuma saraksts, pāreja uz iestatījumiem', items: [
+      'Izvēlnē **“Arhīvs”** tagad atver atsevišķu lapu ar visiem arhivētajiem no **visiem mācību gadiem** (agrāk — personu sarakstu tikai izvēlētajā gadā, tāpēc tas bieži bija tukšs): izstāšanās datums, iemesls, līdz kuram glabāt, meklēšana.',
+      'Saraksts **“Sagatavo rīku darbam”** parādās katru reizi, atverot rīku, kamēr kaut kas nav izdarīts. “Paslēpt” to paslēpj tikai līdz nākamajai atvēršanai.',
+      'Pārejot uz kādu iestatījumu (piem., “Iestatīt PIN”), vajadzīgā kartīte tagad ir **ekrāna vidū** un iezīmēta, nevis aizslīd līdz augšai.'
+    ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Iestatījumu cilnes, sākuma saraksts, datu kvalitāte, divi datori', items: [
       '**Iestatījumi ir sadalīti cilnēs**: Pamata, Drošība un kopijas, Dokumenti, Saziņa. Pamata cilnē ir jauna kartīte **“Instruktora dati”** — tie paši dati, ko izmanto līgumi un veidlapas.',
       'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, šifrētā kopija Google Drive, grupas, obligātie dokumenti, pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu. Kad viss izdarīts, saraksts pazūd; to var arī paslēpt.',
@@ -9081,16 +9116,16 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     ];
   }
   function setupCard() {
-    if (!S.root || S.db.settings.setupHidden) return '';
+    if (!S.root || S.setupHidden) return '';   // paslēpts tikai līdz nākamajai rīka atvēršanai
     const list = steps(), n = list.filter(s => s.ok).length;
     if (n === list.length) return '';
     return `<section class="card setup-card" id="setupCard"><h3>${ic('check')}Sagatavo rīku darbam <span class="pill ${n >= list.length - 1 ? 'ok' : 'warn'}">${n}/${list.length}</span>
-        <button class="ghost sm right" data-act="setupHide" title="Paslēpt šo sarakstu (atkal var parādīt Iestatījumos → Pamata)">Paslēpt</button></h3>
+        <button class="ghost sm right" data-act="setupHide" title="Paslēpt līdz nākamajai rīka atvēršanai">Paslēpt</button></h3>
       <div class="setup-bar"><span style="width:${Math.round(n / list.length * 100)}%"></span></div>
       <div class="setup-list">${list.map(s => `<div class="setup-row ${s.ok ? 'ok' : ''}"><span class="setup-ic">${s.ok ? '✓' : ''}</span><div class="grow"><b>${esc(s.l)}</b><div class="small muted">${s.hint}</div></div>${!s.ok && s.act ? `<button class="sm ${s.k === list.find(x => !x.ok)?.k ? 'mainbtn' : ''}" data-act="${s.act}" ${s.arg ? `data-arg="${esc(s.arg)}"` : ''}>${esc(s.btn)}</button>` : ''}</div>`).join('')}</div></section>`;
   }
-  A.setupHide = () => { S.db.settings.setupHidden = true; CP.store.changed(); ui.toast('Saraksts paslēpts. To var atkal parādīt Iestatījumos → Pamata.', 'ok', 7000); };
-  A.setupShow = () => { S.db.settings.setupHidden = false; CP.store.changed(); ui.go('dashboard'); };
+  A.setupHide = () => { S.setupHidden = true; CP.render(); ui.toast('Saraksts paslēpts līdz nākamajai rīka atvēršanai — tad tas parādīsies atkal, ja kas vēl nav izdarīts.', 'ok', 8000); };
+  A.setupShow = () => { S.setupHidden = false; ui.go('dashboard'); };
   A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
 
   /* ---------------- 21 gads ---------------- */
@@ -11969,7 +12004,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       return;
     }
     if (d.page) {
-      if (d.page === 'archive') { S.list.status = 'archived'; S.list.missing = false; S.list.sel.clear(); ui.go('people'); return; }
+      
       if (d.page === 'people' && S.list.status === 'archived') S.list.status = 'current';
       ui.go(d.page); return;
     }

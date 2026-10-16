@@ -10,6 +10,11 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.37.1', from: '1.37.0', date: '2026-10-16', title: 'Arhīvs, sākuma saraksts, pāreja uz iestatījumiem', items: [
+      'Izvēlnē **“Arhīvs”** tagad atver atsevišķu lapu ar visiem arhivētajiem no **visiem mācību gadiem** (agrāk — personu sarakstu tikai izvēlētajā gadā, tāpēc tas bieži bija tukšs): izstāšanās datums, iemesls, līdz kuram glabāt, meklēšana.',
+      'Saraksts **“Sagatavo rīku darbam”** parādās katru reizi, atverot rīku, kamēr kaut kas nav izdarīts. “Paslēpt” to paslēpj tikai līdz nākamajai atvēršanai.',
+      'Pārejot uz kādu iestatījumu (piem., “Iestatīt PIN”), vajadzīgā kartīte tagad ir **ekrāna vidū** un iezīmēta, nevis aizslīd līdz augšai.'
+    ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Iestatījumu cilnes, sākuma saraksts, datu kvalitāte, divi datori', items: [
       '**Iestatījumi ir sadalīti cilnēs**: Pamata, Drošība un kopijas, Dokumenti, Saziņa. Pamata cilnē ir jauna kartīte **“Instruktora dati”** — tie paši dati, ko izmanto līgumi un veidlapas.',
       'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, šifrētā kopija Google Drive, grupas, obligātie dokumenti, pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu. Kad viss izdarīts, saraksts pazūd; to var arī paslēpt.',

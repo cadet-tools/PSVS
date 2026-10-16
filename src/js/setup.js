@@ -44,16 +44,16 @@
     ];
   }
   function setupCard() {
-    if (!S.root || S.db.settings.setupHidden) return '';
+    if (!S.root || S.setupHidden) return '';   // paslēpts tikai līdz nākamajai rīka atvēršanai
     const list = steps(), n = list.filter(s => s.ok).length;
     if (n === list.length) return '';
     return `<section class="card setup-card" id="setupCard"><h3>${ic('check')}Sagatavo rīku darbam <span class="pill ${n >= list.length - 1 ? 'ok' : 'warn'}">${n}/${list.length}</span>
-        <button class="ghost sm right" data-act="setupHide" title="Paslēpt šo sarakstu (atkal var parādīt Iestatījumos → Pamata)">Paslēpt</button></h3>
+        <button class="ghost sm right" data-act="setupHide" title="Paslēpt līdz nākamajai rīka atvēršanai">Paslēpt</button></h3>
       <div class="setup-bar"><span style="width:${Math.round(n / list.length * 100)}%"></span></div>
       <div class="setup-list">${list.map(s => `<div class="setup-row ${s.ok ? 'ok' : ''}"><span class="setup-ic">${s.ok ? '✓' : ''}</span><div class="grow"><b>${esc(s.l)}</b><div class="small muted">${s.hint}</div></div>${!s.ok && s.act ? `<button class="sm ${s.k === list.find(x => !x.ok)?.k ? 'mainbtn' : ''}" data-act="${s.act}" ${s.arg ? `data-arg="${esc(s.arg)}"` : ''}>${esc(s.btn)}</button>` : ''}</div>`).join('')}</div></section>`;
   }
-  A.setupHide = () => { S.db.settings.setupHidden = true; CP.store.changed(); ui.toast('Saraksts paslēpts. To var atkal parādīt Iestatījumos → Pamata.', 'ok', 7000); };
-  A.setupShow = () => { S.db.settings.setupHidden = false; CP.store.changed(); ui.go('dashboard'); };
+  A.setupHide = () => { S.setupHidden = true; CP.render(); ui.toast('Saraksts paslēpts līdz nākamajai rīka atvēršanai — tad tas parādīsies atkal, ja kas vēl nav izdarīts.', 'ok', 8000); };
+  A.setupShow = () => { S.setupHidden = false; ui.go('dashboard'); };
   A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
 
   /* ---------------- 21 gads ---------------- */

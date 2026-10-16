@@ -74,6 +74,27 @@
         </div><div id="listBody">${listTable()}</div></div>`;
     }
   };
+  /* --- Arhīvs: visi arhivētie (visos mācību gados) --- */
+  CP.pages.archive = {
+    render() {
+      const q = U.norm(S.arcQ || '').replace(/ /g, ''), def = S.db.settings.retentionDefault ?? 12;
+      const all = S.db.people.filter(p => p.status === 'archived');
+      const rows = all.filter(p => !q || U.norm([U.full(p), U.sortName(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
+        .sort((a, b) => String(b.left || '').localeCompare(String(a.left || '')) || U.cmp(U.sortName(a), U.sortName(b)));
+      const years = p => D.enrollmentsOf(p.id).map(e => U.yearLabel(e.yearId)).join(', ');
+      const due = p => p.anon ? '' : U.addMonths(p.left || String(p.updatedAt || '').slice(0, 10), p.retentionMonths ?? def);
+      const body = !all.length ? ui.empty('Arhīvā vēl nav neviena.', '<p class="muted small">Kad jaunsargs izstājas, viņa kartītē spied <b>⋯ → Arhivēt (izstājies)</b>. Arhīvā dati glabājas līdz glabāšanas termiņa beigām.</p>')
+        : `<div class="tablewrap"><table class="table"><thead><tr><th>Persona</th><th>Mācību gadi</th><th>Izstājies</th><th>Iemesls</th><th>Glabāt līdz</th></tr></thead><tbody>
+          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
+            <td class="small">${esc(years(p) || '—')}</td><td>${U.fmtDate(p.left) || '—'}</td><td class="small">${esc(p.reason || '')}</td>
+            <td>${p.anon ? '<span class="muted">—</span>' : `<span class="${over ? 'pill warn' : ''}">${U.fmtDate(d)}${over ? ' · beidzies' : ''}</span>`}</td></tr>`; }).join('') || `<tr><td colspan="5" class="muted">Pēc meklējuma neviens netika atrasts.</td></tr>`}</tbody></table></div>
+          <p class="muted small">${all.length} ${all.length % 10 === 1 && all.length % 100 !== 11 ? 'persona' : 'personas'} arhīvā (visos mācību gados).</p>`;
+      return `<div class="page">${ui.pageHead('Arhīvs', 'Izstājušies jaunsargi un kandidāti no visiem mācību gadiem. Atver kartīti, lai atjaunotu vai dzēstu.', `<button data-page="retention">Glabāšanas termiņi →</button>`)}
+        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
+        <section class="card">${body}</section></div>`;
+    }
+  };
+  CP.inputHandlers.push(e => { if (e.target.id !== 'arcQ') return false; S.arcQ = e.target.value; const pos = e.target.selectionStart; CP.render(); const i = U.$('arcQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } return true; });
   CP.inputHandlers.push(e => { if (e.target.id !== 'listQ') return false; S.list.q = e.target.value; U.$('listBody').innerHTML = listTable(); return true; });
   CP.changeHandlers.push(e => {
     const k = e.target.dataset.list; if (k) { S.list[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; CP.render(); return true; }

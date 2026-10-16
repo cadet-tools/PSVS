@@ -7,12 +7,22 @@
 
   const STABS = [['base', 'Pamata', 'sliders'], ['sec', 'Drošība un kopijas', 'shield'], ['docs', 'Dokumenti', 'file'], ['comms', 'Saziņa', 'chat']];
   A.setTab = k => { S.setTab = k; U.qsa('[data-stab]').forEach(el => { el.hidden = el.dataset.stab !== k; }); U.qsa('.set-tabs [data-act=setTab]').forEach(b => { const on = b.dataset.arg === k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); }); };
+  /** Ritina tā, lai kartīte būtu ekrāna vidū; ja tā ir augstāka par ekrānu — tās augša redzama zem cilnēm */
+  ui.scrollToCard = c => {
+    let sc = c.parentElement; while (sc && sc !== document.body && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    const box = sc && sc !== document.body ? sc.getBoundingClientRect() : { top: 0, height: innerHeight };
+    const top0 = Math.max(box.top, 0), tabs = document.querySelector('.set-tabs'), stick = tabs && getComputedStyle(tabs).position === 'sticky' ? tabs.getBoundingClientRect().height + 8 : 8;
+    const visH = Math.min(box.height, innerHeight - top0) - stick, r = c.getBoundingClientRect();
+    const want = r.height < visH ? top0 + stick + (visH - r.height) / 2 : top0 + stick;
+    const dy = r.top - want;
+    if (sc && sc !== document.body) sc.scrollBy({ top: dy, behavior: 'smooth' }); else window.scrollBy({ top: dy, behavior: 'smooth' });
+  };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
     const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
-    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
+    setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
   };
   A.goSetCard = id => ui.goSettingsCard(id);
   CP.pages.settings = {
@@ -33,7 +43,6 @@
         <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
       </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
       ${CP.setup ? CP.setup.instCard() : ''}
-      ${S.db.settings.setupHidden ? `<section class="card"><h3>${CP.ic('check')}Sākuma iestatīšanas saraksts</h3><p class="small" style="margin-top:0">Saraksts “Sagatavo rīku darbam” Pārskatā ir paslēpts.</p><button class="sm" data-act="setupShow">Rādīt atkal Pārskatā</button></section>` : ''}
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button></div>`).join('')}

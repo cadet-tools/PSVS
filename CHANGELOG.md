@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.37.1 — 2026-10-16
+- Lapa `archive` (`CP.pages.archive`, people.js): visi `status === 'archived'` neatkarīgi no mācību gada; nav vairs pāradresācijas uz `people`.
+- Sākuma saraksts: paslēpšana tikai sesijai (`S.setupHidden`); `settings.setupHidden` vairs netiek ņemts vērā.
+- `ui.scrollToCard(c)`: kartīte ritināšanas konteinera vidū (garām — augša zem cilnēm).
+
 ## 1.37.0 — 2026-10-16
 - `settings.js`: cilnes (`S.setTab`, `A.setTab`, `[data-stab]`), `ui.goSettingsCard(id)` (lockGoSet, encGoSet, retSettings, gadu izvēlne). Kartītēm id: dataCard, yearsCard, docsCard, commsCard, instCard.
 - Jauns `js/setup.js` (`CP.setup`): instruktora datu kartīte (`settings.instructor`, kopīga ar līgumiem), sākuma saraksts Pārskatā (`settings.setupHidden`, `settings.setupDone.docs`), brīdinājums `age21` (60 d. / sasniegts), lapa `quality` + brīdinājums `quality` (`settings.qualityIgnore`).

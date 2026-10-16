@@ -20,7 +20,7 @@
       return;
     }
     if (d.page) {
-      if (d.page === 'archive') { S.list.status = 'archived'; S.list.missing = false; S.list.sel.clear(); ui.go('people'); return; }
+      
       if (d.page === 'people' && S.list.status === 'archived') S.list.status = 'current';
       ui.go(d.page); return;
     }
