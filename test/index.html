@@ -577,6 +577,18 @@ input[type=radio]{width:auto;flex:none;accent-color:var(--teal)}
 .ext-prev{max-height:46vh;overflow:auto;border:1px solid var(--edge);border-radius:10px;padding:4px 10px;margin:8px 0}.ext-prow{align-items:flex-start;padding:6px 0;border-top:1px solid var(--line, var(--edge))}.ext-prow:first-child{border-top:0}.ext-prow input{margin-top:3px}
 .enc-code{font:700 22px/1.4 ui-monospace,Consolas,monospace;letter-spacing:2px;text-align:center;padding:14px;margin:10px 0;border:2px dashed var(--teal);border-radius:12px;background:var(--panel2);user-select:all;word-break:break-all}
 
+/* Google savienojuma josla (tāpat kā testa vides josla augšā) */
+.gbanner{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:1001;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:var(--orange);color:#1b1206;font-weight:700;font-size:12.5px;padding:4px 6px 4px 14px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.gbanner.below-test{top:28px;border-radius:10px}
+.gbanner span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gbanner button{font:inherit;font-size:12px;padding:3px 12px;border-radius:7px;border:0;background:#1b1206;color:#fff;cursor:pointer;min-height:0}
+.gbanner button:hover{background:#3a2a10}
+.gbanner button.gb-x{background:transparent;color:#1b1206;padding:3px 6px}
+.gbanner button.gb-x:hover{background:rgba(0,0,0,.12)}
+.enc-cid{margin-top:8px}
+.enc-cid input{font-family:monospace;font-size:12.5px}
+.enc-cid label{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -1160,5 +1172,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.28.0"></script></body>
+<script src="app.bundle.js?v=1.29.0"></script></body>
 </html>
