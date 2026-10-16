@@ -65,7 +65,7 @@
   CP.actions.goBack = () => { if (!navStack.length) return; try { history.back(); } catch (e) { doBack(); } };
   window.addEventListener('popstate', () => { if (!doBack()) { /* ārpus rīka vēstures — paliek, kur ir */ } });
   /* --- Bez datu mapes nevar strādāt: skaidrs paziņojums un aizliegtas darbības --- */
-  const NOROOT_OK = /^(pickRoot|restoreRoot|retryRestore|bootNew|reloadApp|installApp|newsAll|setTheme|setAccent|watch\w*|break\w*|goBack|jCancel|needRootPick)$/;
+  const NOROOT_OK = /^(pickRoot|restoreRoot|retryRestore|bootNew|reloadApp|installApp|newsAll|setTheme|setAccent|watch\w*|break\w*|goBack|jCancel|needRootPick|encRestore\w*|copy)$/;
   CP.noRootOk = act => NOROOT_OK.test(act);
   const NOROOT_PAGES = new Set(['dashboard', 'about']);
   ui.rootSteps = () => `<ol class="root-steps">

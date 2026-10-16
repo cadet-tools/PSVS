@@ -551,6 +551,7 @@
     S.page = 'dashboard'; CP.render();
     await store.scanAll();
     S.boot = null; CP.render();
+    for (const f of CP.afterRootLoad || []) { try { f(); } catch (e) { console.error(e); } }
     await CP.notices?.();
   };
   /* --- Starts: atcerētās mapes pārbaude ar progresu (S.boot) --- */

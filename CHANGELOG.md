@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.28.0 — 2026-10-16 — Šifrētā rezerves kopija
+- Jauns modulis `js/encbackup.js`. Kopijas mapē `CADET_rezerve/`: `KOPIJA.json` (galva: formāts, kopas id, laiki, mājiens, ietītās atslēgas, šifrēts indekss, statistika), `dati/<nejaušs id>.bin` (IV + AES-GCM šifrteksts katram failam), `ATJAUNOT.html` (atšifrēšana bez rīka).
+- Galvenā atslēga: nejauša AES-GCM 256, ietīta ar paroli un ar atkopšanas kodu (25 zīmju Crockford base32, ~125 biti) — PBKDF2-SHA-256, 600 000 iterācijas, nejaušs salt. Šifrētais indekss: ceļš → { id, izmērs, lastModified, SHA-256 } un mapju saraksts. Atklāti ir tikai laiki, mājiens un skaits.
+- Kopijā: visa datu mape (izņemot `_rezerves`, `_arhivi`, pagaidu failus) + papildu (ārējo) mapju dokumenti. Papildu kopija pārraksta tikai mainītos (izmērs / lastModified), noņem dzēstos. Automātiski ik 10 min, ja dati mainījušies un kopija vecāka par 30 min; pēc mapes ielādes — ja vecāka par 6 h. Mapes rokturis un galvenā atslēga glabājas pārlūka IndexedDB (paroles maiņa bez vecās paroles; jauns atkopšanas kods).
+- Atjaunošana (arī bez datu mapes, no sākuma lapas): parole vai atkopšanas kods → tukša mape → katrs fails pārbaudīts ar SHA-256; papildu mapju dokumenti → `_atjaunoti_no_arejam_mapem/<mape>/…` un datu failā pārsaistīti uz pamatmapi; mape tiek pieslēgta kā datu mape.
+- Brīdinājums `backup`, ja kopija > 7 dienas veca vai gaida atļauju. `CP.afterRootLoad` āķi pēc datu mapes ielādes.
+
 ## 1.27.1 — 2026-10-16
 - “Dalībnieki no citām vienībām” pārcelts uz pasākuma loga kreiso kolonnu (zem pasākuma datiem / audzinātājiem). Bezsaistes kešs: arī `templates/*.xlsx` tiek ielādēti vispirms no tīkla.
 

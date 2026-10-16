@@ -10,6 +10,14 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.28.0', date: '2026-10-16', title: 'Šifrētā rezerves kopija (piem., Google Drive)', items: [
+      '**Iestatījumos** ir jauna sadaļa **“Šifrētā rezerves kopija”**. Viss datu mapes saturs (personas, dokumenti, veidlapas, veidnes, arī papildu mapju dokumenti) tiek saglabāts **šifrētā veidā** citā mapē, piem., **Google Drive** mapē datorā. Darba mapes faili netiek mainīti.',
+      'Kopija tiek **papildināta automātiski**, kamēr rīks ir atvērts: tikai jaunie un mainītie faili. Pogu **“Izveidot kopiju tagad”** var spiest jebkurā brīdī. Ja kopija ilgi nav atjaunota, parādās brīdinājums.',
+      'Ja aizmirsi paroli: **paroles mājiens**, **atkopšanas kods** (izdrukā un glabā drošā vietā) un iespēja **savā datorā nomainīt paroli bez vecās**.',
+      '**Pazaudēts vai jauns dators:** sākuma lapā spied **“🔐 Atjaunot no šifrētās kopijas”**, ievadi paroli vai atkopšanas kodu un izvēlies tukšu mapi. Viss tiek atjaunots tieši tāds pats, katrs fails pārbaudīts ar kontrolsummu.',
+      'Kopijas mapē ir arī **ATJAUNOT.html**: ar to var atšifrēt kopiju pat bez rīka.',
+      'Google un citi neredz neko: ne vārdus, ne failu nosaukumus. Šifrēšana: AES-256.'
+    ] },
     { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
       'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**. Pasākuma logā ir jauna sadaļa **“Dalībnieki no citām vienībām”**: ievelc tajā otra instruktora atsūtīto failu, un viņa jaunsargi (un nometnei arī darbinieki) nonāk tavā dokumentā kopā ar taviem.',
       '**Ja otrs instruktors lieto CADET PERSONĀLS:** viņš savā pasākumā izvēlas savus dalībniekus un spiež **“⇪ Nosūtīt savus dalībniekus citam instruktoram”**. Failu var **aizsargāt ar paroli** (paroli pasaka atsevišķi, piem., piezvanot).',
