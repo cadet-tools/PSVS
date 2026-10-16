@@ -530,12 +530,26 @@ kbd{display:inline-block;min-width:18px;padding:0 5px;border:1px solid var(--edg
 .fill-more{margin-top:8px}.fill-more[hidden],.card .row[hidden]{display:none!important}
 .cards2.masonry>.card.mas-stretch{align-self:stretch}
 .grp-row .grp-btns{display:inline-flex;gap:2px;opacity:.35;transition:opacity .12s}.grp-row:hover .grp-btns,.grp-row:focus-within .grp-btns{opacity:1}@media (hover:none){.grp-row .grp-btns{opacity:1}}
-.grp-field{display:flex;gap:4px}.grp-field input{flex:1;min-width:0}.grp-pick{width:46px;flex:none;padding-left:6px;padding-right:2px;cursor:pointer}
-.grp-field input::-webkit-calendar-picker-indicator{display:none!important}
-.page .grp-pick,dialog .grp-pick,.grp-field .grp-pick{appearance:none;-webkit-appearance:none;background-image:none!important;text-align:center;text-align-last:center;padding:0 4px;font-size:15px;color:var(--teal)}
 
 /* --- Notikuma kartīte --- */
 dialog.sch-view{width:min(520px,94vw);padding:0;overflow:hidden}.sv-band{height:6px;background:var(--c)}
 .sv-line{display:flex;gap:12px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line, var(--edge))}.sv-line:first-child{border-top:0}.sv-ic{width:22px;flex:none;text-align:center}
 .sv-notes{white-space:pre-wrap}.sv-meta{margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--panel2)}.sch-open{color:inherit;text-decoration:none}.sch-open:hover{text-decoration:underline}
 dialog.sch-view .dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}dialog.sch-view .dlg-head>div{min-width:0;flex:1}
+
+input[type=radio]{width:auto;flex:none;accent-color:var(--teal)}
+/* --- Grupas lauks ar sarakstu --- */
+.grp-field{position:relative;display:flex}.grp-field input{flex:1;min-width:0;border-top-right-radius:0;border-bottom-right-radius:0}
+.grp-field .grp-btn{flex:none;width:42px;justify-content:center;padding:0;border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px;color:var(--teal);font-size:13px;box-shadow:none}
+.grp-field.open .grp-btn{background:var(--sel, var(--panel2))}
+.grp-pop{position:absolute;z-index:50;top:calc(100% + 4px);left:0;right:0;max-height:300px;overflow:auto;padding:6px;border:1px solid var(--edge2);border-radius:12px;background:var(--dlg, var(--panel));box-shadow:var(--shadow)}
+.grp-pop .grp-opt{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:0;border-radius:8px;background:transparent;box-shadow:none;color:var(--txt);font-weight:500;text-align:left;white-space:normal}
+.grp-pop .grp-opt span{min-width:0;overflow-wrap:anywhere}.grp-pop .grp-opt small{flex:none;min-width:24px;text-align:center;border-radius:10px;padding:0 7px;background:var(--panel2);color:var(--muted);font-size:11px}
+.grp-pop .grp-opt:hover,.grp-pop .grp-opt.act{background:var(--hover, #ffffff10)}.grp-pop .grp-opt.cur{color:var(--teal);font-weight:700}.grp-pop .grp-opt.muted{color:var(--muted)}.grp-pop .grp-add{color:var(--teal)}
+.grp-sep{height:1px;margin:4px 2px;background:var(--edge)}.grp-empty{padding:8px 10px;color:var(--muted);font-size:13px}
+.grp-newrow{display:flex;gap:6px;padding:4px 2px 2px}.grp-newrow input{flex:1;padding:6px 9px;font-size:13px}
+/* izvēles kartītes (radio) */
+.choice-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.choice{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--edge);border-radius:12px;cursor:pointer;background:var(--panel2)}
+.choice input[type=radio]{margin-top:3px}.choice:has(input:checked){border-color:var(--teal);background:var(--sel, var(--panel2))}.choice b{display:block}.choice select{margin-top:8px}
+.choice-list[hidden]{display:none}

@@ -217,11 +217,14 @@
   A.groupDel = g => {
     const others = D.groups().filter(x => x !== g), n = members(g).length;
     const d = dlg(`<form><header class="dlg-head"><h2>Dzēst grupu “${esc(g)}”</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body">${!n ? `<p style="margin-top:0">Grupā nav personu.</p>` : ''}<p style="margin-top:0;${n ? '' : 'display:none'}">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>
-        ${others.length ? `<label class="check"><input type="radio" name="how" value="move" checked> Pārcelt uz grupu <select name="to">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></label>` : ''}
-        <label class="check" style="margin-top:6px"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}> Atstāt bez grupas</label>
+      <div class="dlg-body">${!n ? `<p style="margin-top:0">Grupā nav personu. To var droši dzēst.</p>` : `<p style="margin-top:0">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>`}
+        <div class="choice-list" ${n ? '' : 'hidden'}>
+          ${others.length ? `<label class="choice"><input type="radio" name="how" value="move" checked><div class="grow"><b>Pārcelt uz citu grupu</b><select name="to" aria-label="Grupa, uz kuru pārcelt">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></div></label>` : ''}
+          <label class="choice"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}><div class="grow"><b>Atstāt bez grupas</b><div class="small muted">Personas paliek sarakstā, tikai bez grupas</div></div></label>
+        </div>
         <p class="small muted">Iepriekšējo mācību gadu dalība netiek mainīta.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="groupDialog">Atcelt</button><button class="mainbtn danger" type="submit">Dzēst grupu</button></footer></form>`);
+    d.querySelector('[name=to]')?.addEventListener('focus', () => { d.querySelector('[name=how][value=move]').checked = true; });
     d.querySelector('form').onsubmit = e => {
       e.preventDefault(); const f = e.target, to = f.how.value === 'move' ? f.to.value : '';
       const k = moveGroup(g, to); d.close(); CP.store.changed();

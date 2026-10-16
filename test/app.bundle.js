@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.26.1';
+  CP.VERSION = '1.26.2';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -2031,7 +2031,7 @@ window.CP = window.CP || {};
         else if (t === 'textarea') input = `<textarea id="${id}" name="${f.k}" rows="2"></textarea>`;
         else input = `<input id="${id}" name="${f.k}" type="${t}" autocomplete="off" ${t === 'number' ? 'min="0" max="1200"' : ''} ${f.ph ? `placeholder="${U.esc(f.ph)}"` : ''} ${f.list ? `list="${f.list}"` : ''}>`;
         const pin = f.k === 'group' ? `<button type="button" class="pinbtn" data-act="pinGroup" title="Atcerēties grupu nākamajām personām" tabindex="-1">📌</button>` : '';
-        if (f.k === 'group') input = `<div class="grp-field">${input}<select class="grp-pick" data-grppick="${id}" title="Izvēlēties grupu no saraksta" aria-label="Izvēlēties grupu"><option value="">▾</option></select></div>`;
+        if (f.k === 'group') input = `<div class="grp-field">${input.replace(/ list="[^"]*"/, '').replace('<input ', '<input data-grpinput aria-autocomplete="list" ')}<button type="button" class="grp-btn" data-grpbtn="${id}" title="Izvēlēties grupu no saraksta" aria-label="Izvēlēties grupu" aria-haspopup="listbox" tabindex="-1">▾</button></div>`;
         h += `<div class="field ${f.wide ? 'wide' : ''}" data-f="${f.k}"><label for="${id}">${f.l}${f.req ? ' <span class="reqmark">*</span>' : ''}${pin}<span class="fx"></span></label>${input}${f.k === 'group' ? '<div class="pinnote hidden"></div>' : ''}<div class="hint"></div></div>`;
       }
       h += `</div></fieldset>`;
@@ -2059,13 +2059,57 @@ window.CP = window.CP || {};
     else { const v = input?.value.trim(); if (!v) { ui.toast('Vispirms ieraksti grupu, ko atcerēties', 'warn'); input?.focus(); return; } s.stickyGroup = v; ui.toast(`Grupa “${v}” tiks ielikta katrai jaunai personai`, 'ok'); }
     CP.store.changed({ silent: true }); ui.syncPins();
   };
-  // Grupas izvēlne pie lauka: ieliek izvēlēto grupu laukā (vai izveido jaunu)
-  document.addEventListener('change', e => {
-    const sel = e.target.closest?.('select[data-grppick]'); if (!sel) return;
-    const input = U.$(sel.dataset.grppick); let v = sel.value; sel.value = ''; if (!input || !v) return;
-    if (v === '__new') { v = (prompt('Jaunās grupas nosaukums:') || '').trim(); if (!v) return; if (D.addGroup(v)) CP.store.changed({ silent: true }); ui.datalists(); }
-    input.value = v === '__none' ? '' : v; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true }));
+  /* Grupas izvēlne pie lauka (rīka stilā, zem lauka visā platumā): grupas ar personu skaitu, “bez grupas”, “jauna grupa”.
+     Rakstot laukā, saraksts filtrējas; ↑↓ Enter izvēlas, Esc aizver. */
+  const grpPop = {
+    close() { U.qsa('.grp-pop').forEach(p => p.remove()); U.qsa('.grp-field.open').forEach(f => f.classList.remove('open')); },
+    open(input, filter = '') {
+      const field = input.closest('.grp-field'); if (!field) return;
+      let pop = field.querySelector('.grp-pop');
+      if (!pop) { grpPop.close(); pop = document.createElement('div'); pop.className = 'grp-pop'; pop.setAttribute('role', 'listbox'); field.appendChild(pop); field.classList.add('open'); }
+      const q = U.norm(filter), cnt = g => D.peopleInYear().filter(D.isCurrent).filter(p => D.groupOf(p) === g).length;
+      const gs = D.groups().filter(g => !q || U.norm(g).includes(q)), cur = input.value.trim();
+      pop.innerHTML = `${gs.map(g => `<button type="button" class="grp-opt ${g === cur ? 'cur' : ''}" data-grpval="${U.esc(g)}" role="option"><span>${U.esc(g)}</span><small>${cnt(g)}</small></button>`).join('') || (q ? `<div class="grp-empty">Nav grupas “${U.esc(filter)}”</div>` : '<div class="grp-empty">Grupu vēl nav</div>')}
+        <div class="grp-sep"></div>
+        ${q && !D.groups().includes(filter.trim()) ? `<button type="button" class="grp-opt grp-add" data-grpnew="${U.esc(filter.trim())}"><span>＋ Izveidot grupu “${U.esc(filter.trim())}”</span></button>` : ''}
+        <button type="button" class="grp-opt muted" data-grpval=""><span>— bez grupas —</span></button>
+        <div class="grp-newrow"><input type="text" class="grp-newin" placeholder="＋ Jauna grupa…" aria-label="Jaunās grupas nosaukums"><button type="button" class="sm mainbtn" data-grpadd>Pievienot</button></div>`;
+      pop._input = input; pop._i = -1;
+    },
+    pick(pop, v, isNew) {
+      const input = pop._input; if (!input) return;
+      v = String(v || '').trim();
+      if (isNew && v) { if (D.addGroup(v)) CP.store.changed({ silent: true }); ui.datalists(); }
+      input.value = v; grpPop.close(); input.focus();
+      input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true }));
+    },
+    move(pop, d) { const opts = [...pop.querySelectorAll('.grp-opt')]; if (!opts.length) return; pop._i = (pop._i + d + opts.length) % opts.length; opts.forEach((o, i) => o.classList.toggle('act', i === pop._i)); opts[pop._i].scrollIntoView({ block: 'nearest' }); }
+  };
+  ui.grpPop = grpPop;
+  document.addEventListener('click', e => {
+    const btn = e.target.closest?.('[data-grpbtn]');
+    if (btn) { const input = U.$(btn.dataset.grpbtn), open = btn.closest('.grp-field').classList.contains('open'); if (open) grpPop.close(); else { grpPop.open(input); input.focus(); } return; }
+    const pop = e.target.closest?.('.grp-pop');
+    if (pop) {
+      const o = e.target.closest('[data-grpval],[data-grpnew],[data-grpadd]'); if (!o) return;
+      if (o.dataset.grpadd != null) { const v = pop.querySelector('.grp-newin').value.trim(); if (!v) { pop.querySelector('.grp-newin').focus(); return; } grpPop.pick(pop, v, true); }
+      else if (o.dataset.grpnew != null) grpPop.pick(pop, o.dataset.grpnew, true);
+      else grpPop.pick(pop, o.dataset.grpval);
+      return;
+    }
+    if (!e.target.closest?.('.grp-field')) grpPop.close();
   });
+  document.addEventListener('input', e => { if (e.target.matches?.('[data-grpinput]') && e.isTrusted) grpPop.open(e.target, e.target.value); });
+  document.addEventListener('keydown', e => {
+    const t = e.target, field = t.closest?.('.grp-field'), pop = field?.querySelector('.grp-pop');
+    if (t.matches?.('.grp-newin')) { if (e.key === 'Enter') { e.preventDefault(); const v = t.value.trim(); if (v) grpPop.pick(pop, v, true); } if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); grpPop.close(); field.querySelector('[data-grpinput]').focus(); } return; }
+    if (!t.matches?.('[data-grpinput]')) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!pop) grpPop.open(t); grpPop.move(field.querySelector('.grp-pop'), e.key === 'ArrowDown' ? 1 : -1); }
+    else if (e.key === 'Enter' && pop && pop._i >= 0) { e.preventDefault(); pop.querySelectorAll('.grp-opt')[pop._i]?.click(); }
+    else if (e.key === 'Escape' && pop) { e.preventDefault(); e.stopPropagation(); grpPop.close(); }
+    else if (e.key === 'Tab') grpPop.close();
+  }, true);
+  document.addEventListener('close', () => grpPop.close(), true);
   // Ja grupa ir piesprausta un lietotājs to nomaina — atceras jauno vērtību
   document.addEventListener('change', e => {
     if (e.target.name === 'group' && S.db.settings.stickyGroup && e.target.value.trim() && e.target.closest('#personForm,#scanForm')) { S.db.settings.stickyGroup = e.target.value.trim(); CP.store.changed({ silent: true }); ui.syncPins(); }
@@ -2118,8 +2162,6 @@ window.CP = window.CP || {};
   };
   ui.datalists = () => {
     U.$('dl_groups').innerHTML = D.groups().map(g => `<option value="${U.esc(g)}">`).join('');
-    const opts = `<option value="">▾</option>${D.groups().map(g => `<option value="${U.esc(g)}">${U.esc(g)}</option>`).join('')}<option value="__none">— bez grupas —</option><option value="__new">＋ Jauna grupa…</option>`;
-    U.qsa('select[data-grppick]').forEach(s => { s.innerHTML = opts; s.value = ''; });
   };
   ui.personOptions = (sel, chosen, all = false) => {
     U.$(sel).innerHTML = S.db.people.filter(p => (all || D.isCurrent(p) || p.id === chosen) && (D.inYear(p) || p.id === chosen)).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)))
@@ -4247,11 +4289,14 @@ window.CP = window.CP || {};
   A.groupDel = g => {
     const others = D.groups().filter(x => x !== g), n = members(g).length;
     const d = dlg(`<form><header class="dlg-head"><h2>Dzēst grupu “${esc(g)}”</h2><button type="button" class="ghost" data-close="groupDialog" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body">${!n ? `<p style="margin-top:0">Grupā nav personu.</p>` : ''}<p style="margin-top:0;${n ? '' : 'display:none'}">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>
-        ${others.length ? `<label class="check"><input type="radio" name="how" value="move" checked> Pārcelt uz grupu <select name="to">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></label>` : ''}
-        <label class="check" style="margin-top:6px"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}> Atstāt bez grupas</label>
+      <div class="dlg-body">${!n ? `<p style="margin-top:0">Grupā nav personu. To var droši dzēst.</p>` : `<p style="margin-top:0">Grupā šajā mācību gadā ir <b>${n}</b> ${n === 1 ? 'persona' : 'personas'}. <b>Personas netiek dzēstas</b> — izvēlies, kur tās likt:</p>`}
+        <div class="choice-list" ${n ? '' : 'hidden'}>
+          ${others.length ? `<label class="choice"><input type="radio" name="how" value="move" checked><div class="grow"><b>Pārcelt uz citu grupu</b><select name="to" aria-label="Grupa, uz kuru pārcelt">${others.map(x => `<option>${esc(x)}</option>`).join('')}</select></div></label>` : ''}
+          <label class="choice"><input type="radio" name="how" value="none" ${others.length ? '' : 'checked'}><div class="grow"><b>Atstāt bez grupas</b><div class="small muted">Personas paliek sarakstā, tikai bez grupas</div></div></label>
+        </div>
         <p class="small muted">Iepriekšējo mācību gadu dalība netiek mainīta.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="groupDialog">Atcelt</button><button class="mainbtn danger" type="submit">Dzēst grupu</button></footer></form>`);
+    d.querySelector('[name=to]')?.addEventListener('focus', () => { d.querySelector('[name=how][value=move]').checked = true; });
     d.querySelector('form').onsubmit = e => {
       e.preventDefault(); const f = e.target, to = f.how.value === 'move' ? f.to.value : '';
       const k = moveGroup(g, to); d.close(); CP.store.changed();
@@ -5015,6 +5060,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.26.2', from: '1.26.0', date: '2026-10-16', title: 'Sakārtota grupas izvēle un dzēšanas logs', items: [
+      'Personas formā pie lauka **Grupa** poga **▾** atver rīka stila sarakstu tieši zem lauka. Tajā redzamas grupas ar personu skaitu, **“— bez grupas —”** un lauks **jaunai grupai** turpat sarakstā.',
+      'Rakstot grupas laukā, saraksts **filtrējas**. Ja tādas grupas vēl nav, var spiest **“＋ Izveidot grupu …”**. Darbojas arī ar tastatūru: ↑↓ un Enter izvēlas, Esc aizver.',
+      '**Grupas dzēšanas logā** ir divas skaidras izvēles: **“Pārcelt uz citu grupu”** ar grupas sarakstu un **“Atstāt bez grupas”**.'
+    ] },
     { v: '1.26.1', from: '1.26.0', date: '2026-10-16', title: 'Notikuma kartīte kalendārā', items: [
       'Klikšķis uz notikuma kalendārā tagad atver **kartīti tikai skatīšanai**: datums, laiks un ilgums, vieta, piezīmes, atgādinājumi, atkārtošanās un vai notikums ir importēts vai Google kalendārā. Nejauši neko izmainīt vairs nevar.',
       'Labot var ar pogu **✎ Labot** kartītē vai ar **✎** sarakstā. Kartītē ir arī **⧉ Kopēt** uz nākamo nedēļu.',
