@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.27.0';
+  CP.VERSION = '1.27.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -5077,11 +5077,12 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
+    { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
       'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**. Pasākuma logā ir jauna sadaļa **“Dalībnieki no citām vienībām”**: ievelc tajā otra instruktora atsūtīto failu, un viņa jaunsargi (un nometnei arī darbinieki) nonāk tavā dokumentā kopā ar taviem.',
       '**Ja otrs instruktors lieto CADET PERSONĀLS:** viņš savā pasākumā izvēlas savus dalībniekus un spiež **“⇪ Nosūtīt savus dalībniekus citam instruktoram”**. Failu var **aizsargāt ar paroli** (paroli pasaka atsevišķi, piem., piezvanot).',
       '**Ja rīka nav:** nosūti viņam **“⇩ Excel veidni”**. Viņš to aizpilda un atsūta atpakaļ, bet tu to ievelc tāpat. Der arī cits Excel vai CSV saraksts ar kolonnām Vārds, Uzvārds, Personas kods…',
       'Citu vienību jaunsargi **glabājas tikai šajā pasākumā**. Tie neparādās tavā personu sarakstā, pārskatā vai brīdinājumos. Ja kāds jau ir tavā sarakstā (tas pats personas kods), rīks izvēlas tavu ierakstu, bet atkārtots fails datus atjauno, nevis dublē.',
+      'Sadaļa atrodas pasākuma loga **kreisajā pusē** zem pasākuma datiem, nevis zem garā jaunsargu saraksta.',
       'Rīks neko nesūta internetā. Failu instruktori nodod paši.',
       'Personu importā tagad atpazīst arī kolonnas **“Otrs vecāks”** un **“Otra vecāka tālrunis”**.'
     ] },
@@ -7406,7 +7407,7 @@ window.CP = window.CP || {};
       const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
         ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
       return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
-        <div class="ev-layout"><div>${left}</div><div>${right}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div></div></div>`;
+        <div class="ev-layout"><div>${left}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
     }
   };
 

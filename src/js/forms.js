@@ -248,7 +248,7 @@
       const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
         ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
       return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
-        <div class="ev-layout"><div>${left}</div><div>${right}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div></div></div>`;
+        <div class="ev-layout"><div>${left}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
     }
   };
 

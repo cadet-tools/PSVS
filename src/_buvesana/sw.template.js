@@ -10,7 +10,7 @@ self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   if (/\/version\.json$/.test(url.pathname)) return;   // versijas pārbaude vienmēr no tīkla
-  const isCode = req.mode === 'navigate' || /\/(index\.html|app\.bundle\.js|manifest\.webmanifest)$/.test(url.pathname) || /\/templates\/[^/]+\.docx$/.test(url.pathname) || url.pathname.endsWith('/');
+  const isCode = req.mode === 'navigate' || /\/(index\.html|app\.bundle\.js|manifest\.webmanifest)$/.test(url.pathname) || /\/templates\/[^/]+\.(docx|xlsx)$/.test(url.pathname) || url.pathname.endsWith('/');
   if (isCode) {
     // tīkls vispirms — atjauninājumi pienāk uzreiz; bez interneta — no keša
     e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })

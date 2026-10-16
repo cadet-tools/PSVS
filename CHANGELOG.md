@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.27.1 — 2026-10-16
+- “Dalībnieki no citām vienībām” pārcelts uz pasākuma loga kreiso kolonnu (zem pasākuma datiem / audzinātājiem). Bezsaistes kešs: arī `templates/*.xlsx` tiek ielādēti vispirms no tīkla.
+
 ## 1.27.0 — 2026-10-16 — Dalībnieki no citām vienībām
 - Jauns modulis `js/extpeople.js`. Pasākumā: `ev.external = [{ id: 'x…', first, last, personalCode, birth, group, adreses, tālruņi, vecāki, unit, counselorId }]` un `ev.extStaff` (nometnes darbinieki; to id tiek ielikti `ev.staff`). Tie netiek pievienoti `db.people` un nav brīdinājumos / auditā.
 - `forms.js`: `evPeople(ev)` = savējie + ārējie (`_ext`), `evStaff(ev)` = darbinieki + ārējie; `D.groupOf` ārējiem atgriež viņu grupu; `D.eventDocIssues` ārējiem — tukšs. PDF (instruktāža, nometne) un Word veidnes iekļauj ārējos.
