@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.30.1 — 2026-10-16
+- Ieslēgta “Ziņot” sūtīšana: `CP.FEEDBACK_URL` = izstrādātāja Apps Script tīmekļa lietotne.
+
 ## 1.30.0 — 2026-10-16 — Ziņot
 - Jauns modulis `js/feedback.js`, lapa `feedback` (pieejama arī bez datu mapes), navigācijas poga “Ziņot”. Tēmas: kļūda / ieteikums / atsauksme / jautājums; virsraksts, apraksts, vārds, kontakts; melnraksts `localStorage` (`cp.fbDraft`, `cp.fbContact`), vēsture `cp.fbSent`.
 - Ekrānuzņēmumi (līdz 5, samazināti līdz 1600 px): ievilkšana, Ctrl+V, faila izvēle, `getDisplayMedia` (šī cilne) ar peldošu joslu “Uzņemt / Pēc 5 s / Atcelt”. Aizklāšana uz kanvas (taisnstūri, atsaukt, notīrīt); sūtīšanā aizklātais iededzināts JPEG; neaizklātam attēlam — apstiprinājums.

@@ -10,13 +10,13 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.30.0', date: '2026-10-16', title: 'Jauna sadaļa “Ziņot”', items: [
+    { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Jauna sadaļa “Ziņot”', items: [
       'Kreisajā izvēlnē ir jauna sadaļa **“⚑ Ziņot”**. Tur var nosūtīt rīka izstrādātājam **kļūdu, ieteikumu, atsauksmi vai jautājumu**.',
       'Izvēlies tēmu, īsi uzraksti, par ko ir ziņojums, un apraksti situāciju. Teksts saglabājas, arī ja lapu aizver.',
       '**Ekrānuzņēmumi:** ievelc attēlu, ielīmē ar **Ctrl+V** (Windows: **Win+Shift+S** izgriež ekrāna daļu) vai spied **“📷 Uzņemt rīka ekrānu”**. Ar pēdējo atver vajadzīgo vietu rīkā un spied “Uzņemt” vai “Pēc 5 s”.',
       '🔒 **Personu datus attēlā var aizklāt:** spied **“✎ Aizklāt”** un ar peli pārvelc pāri vārdiem un personas kodiem. Nosūtīts tiek tikai aizklātais attēls. Ja attēlā nekas nav aizklāts, rīks pirms sūtīšanas pajautā.',
       'Pēc izvēles: tavs vārds un kontakts atbildei, kā arī tehniskā informācija (versija, pārlūks, lapa, pēdējās kļūdas), kas palīdz kļūdu atrast ātrāk.',
-      'Ja nav interneta, ziņojumu var **saglabāt failā** un nosūtīt citādi.'
+      'Ziņojums ar vienu klikšķi **“➤ Nosūtīt”** aiziet tieši izstrādātājam. Ja nav interneta, to var **saglabāt failā** un nosūtīt citādi.'
     ] },
     { v: '1.29.0', date: '2026-10-16', title: 'Rezerves kopija tieši Google Drive', items: [
       'Šifrēto rezerves kopiju tagad var glabāt **tieši Google Drive**: rīks pieslēdzas tavam Google kontam. **Nekas nav jāinstalē**, un datorā nav vajadzīga Google Drive programma vai papildu mape.',
