@@ -10,6 +10,9 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
+      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**.'
+    ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       '**Pārskatā** blakus pogai “Saglabāt” ir poga **“🔒 Bloķēt rīku”**.',
       'Kamēr rīks bloķēts vai pulkstenis aizsedz ekrānu, **darba laiks netiek skaitīts** un uz pulksteņa netiek rādīts.',

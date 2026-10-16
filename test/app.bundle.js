@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.31.3';
+  CP.VERSION = '1.32.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2223,7 +2223,7 @@ window.CP = window.CP || {};
   function build() {
     dlg = document.createElement('dialog'); dlg.id = 'cpLock'; dlg.className = 'cplock'; dlg.setAttribute('aria-label', 'Ekrāns bloķēts');
     dlg.innerHTML = `<div class="cpl-in"><div class="cpl-slot" id="cplSlot"></div><div class="cpl-time" id="cplTime"></div><div class="cpl-date" id="cplDate"></div>
-      <div class="cpl-box" id="cplBox"></div><div class="cpl-brand">CADET PERSONĀLS · ekrāns bloķēts</div></div>`;
+      <div class="cpl-box" id="cplBox"></div><div class="cpl-brand"><span class="cadet-logo" role="img" aria-label="CADET.LV"></span><span>CADET PERSONĀLS · ekrāns bloķēts</span></div></div>`;
     dlg.addEventListener('cancel', e => e.preventDefault());
     dlg.addEventListener('keydown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
     dlg.addEventListener('pointerdown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
@@ -4338,7 +4338,7 @@ window.CP = window.CP || {};
     if (document.getElementById('watchBig')) return;
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
     if (!manual && !ses.breakEnd) awayFrom = Math.min(lastAct, Date.now());   // prom no datora — šis laiks nav darbs
-    ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p>`;
+    ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p><span class="cadet-logo wb-brand" role="img" aria-label="CADET.LV"></span>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
     // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
     if (manual || !CP.lock?.adopt?.(ov)) document.body.appendChild(ov);
@@ -5352,7 +5352,7 @@ window.CP = window.CP || {};
 
         <section class="card"><h3>${ic('bell')}Atjauninājumu žurnāls</h3><div class="news">${CP.news ? CP.news.list.slice(0, 3).map(n => `<section class="news-item"><h4>${CP.util.esc(n.title)} <small class="muted">${CP.util.esc(n.from ? n.from + '–' + n.v : n.v)} · ${CP.util.esc(CP.util.fmtDate(n.date))}</small></h4><ul>${n.items.map(i => `<li>${CP.util.esc(i).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('')}</ul></section>`).join('') : ''}</div>
           <div class="actions"><button class="sm" data-act="newsAll">Visi atjauninājumi</button></div></section>
-        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><p><b>Jānis Eglis</b></p></section>
+        <section class="card about-dev"><h3>${ic('userCheck')}Izstrādātājs</h3><div class="about-brand"><span class="cadet-logo" role="img" aria-label="CADET.LV"></span><p><b>CADET.LV</b><br><span class="small muted">CADET PERSONĀLS ir daļa no CADET.LV rīku saimes.</span></p></div></section>
       </div>`;
     }
   };
@@ -5372,6 +5372,9 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
+      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes: logo redzams rīka augšā, uz lielā pulksteņa un bloķēšanas ekrāna, kā arī sadaļā **Par rīku → Izstrādātājs**.'
+    ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       '**Pārskatā** blakus pogai “Saglabāt” ir poga **“🔒 Bloķēt rīku”**.',
       'Kamēr rīks bloķēts vai pulkstenis aizsedz ekrānu, **darba laiks netiek skaitīts** un uz pulksteņa netiek rādīts.',

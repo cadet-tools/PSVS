@@ -34,7 +34,7 @@
   function build() {
     dlg = document.createElement('dialog'); dlg.id = 'cpLock'; dlg.className = 'cplock'; dlg.setAttribute('aria-label', 'Ekrāns bloķēts');
     dlg.innerHTML = `<div class="cpl-in"><div class="cpl-slot" id="cplSlot"></div><div class="cpl-time" id="cplTime"></div><div class="cpl-date" id="cplDate"></div>
-      <div class="cpl-box" id="cplBox"></div><div class="cpl-brand">CADET PERSONĀLS · ekrāns bloķēts</div></div>`;
+      <div class="cpl-box" id="cplBox"></div><div class="cpl-brand"><span class="cadet-logo" role="img" aria-label="CADET.LV"></span><span>CADET PERSONĀLS · ekrāns bloķēts</span></div></div>`;
     dlg.addEventListener('cancel', e => e.preventDefault());
     dlg.addEventListener('keydown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
     dlg.addEventListener('pointerdown', e => { if (mode === 'clock') { e.preventDefault(); wake(); } });
