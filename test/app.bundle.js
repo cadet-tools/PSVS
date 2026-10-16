@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.2';
+  CP.VERSION = '1.37.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5484,9 +5484,10 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.37.2', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
+    { v: '1.37.3', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
       'Pārskatā pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams, vai rīks ir iestatīts: **✕ Iestatīšana 4/7** ar progresa joslu, kamēr kaut kas nav izdarīts, vai **✓ Rīks iestatīts**, kad viss kārtībā. Ja kāds solis atkal nav izpildīts (piem., noņemts PIN), statuss atkal rāda ✕.',
-      'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).'
+      'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).',
+      'Instruktora datos e-pasta laukā redzams paraugs: vards.uzvards@jc.gov.lv.'
     ] },
     { v: '1.37.1', from: '1.37.0', date: '2026-10-16', title: 'Arhīvs, sākuma saraksts, pāreja uz iestatījumiem', items: [
       'Izvēlnē **“Arhīvs”** tagad atver atsevišķu lapu ar visiem arhivētajiem no **visiem mācību gadiem** (agrāk — personu sarakstu tikai izvēlētajā gadā, tāpēc tas bieži bija tukšs): izstāšanās datums, iemesls, līdz kuram glabāt, meklēšana.',
@@ -9097,7 +9098,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       <p class="small" style="margin-top:0">Izmanto līgumos un veidlapās. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
       <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs')}${f('position', 'Amats', 'Jaunsargu instruktors')}
         ${f('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${f('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', '', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
+        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
         ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski')}</div></section>`;
   }
   CP.changeHandlers.push(e => {
@@ -9383,7 +9384,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       <details class="ct-box" ${!I.name ? 'open' : ''}><summary><b>Instruktora dati</b> <small class="muted">— saglabājas nākamajiem līgumiem</small></summary><div class="fieldgrid">
         ${iinp('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${iinp('nodala', 'Nodaļas nr.', 'piem. 1')}
         ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" value="${esc(I.nameGen || genitive(I.name))}"></div>
-        ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts')}
+        ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts', 'vards.uzvards@jc.gov.lv')}
       </div></details>`;
   }
   const ctDlg = () => U.$('contractDialog');

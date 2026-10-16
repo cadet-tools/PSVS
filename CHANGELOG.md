@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.37.3 — 2026-10-16
+- Instruktora e-pasta laukam (Iestatījumi un līguma logs) paraugs `vards.uzvards@jc.gov.lv`.
+
 ## 1.37.2 — 2026-10-16
 - `CP.setup.chip()` Pārskata galvenē (`.setup-chip.ok|.todo`): ✓ / ✕ n/m + josla; klikšķis `setupShow` atver/aizver sarakstu (`S.setupOpen` — arī pabeigtu).
 

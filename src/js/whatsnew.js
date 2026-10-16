@@ -10,9 +10,10 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.37.2', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
+    { v: '1.37.3', from: '1.37.1', date: '2026-10-16', title: 'Iestatīšanas statuss pie pogām', items: [
       'Pārskatā pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams, vai rīks ir iestatīts: **✕ Iestatīšana 4/7** ar progresa joslu, kamēr kaut kas nav izdarīts, vai **✓ Rīks iestatīts**, kad viss kārtībā. Ja kāds solis atkal nav izpildīts (piem., noņemts PIN), statuss atkal rāda ✕.',
-      'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).'
+      'Kartīti “Sagatavo rīku darbam” var paslēpt — statuss pie pogām paliek. Uzspiežot uz statusa, saraksts atveras (arī tad, ja viss jau izdarīts).',
+      'Instruktora datos e-pasta laukā redzams paraugs: vards.uzvards@jc.gov.lv.'
     ] },
     { v: '1.37.1', from: '1.37.0', date: '2026-10-16', title: 'Arhīvs, sākuma saraksts, pāreja uz iestatījumiem', items: [
       'Izvēlnē **“Arhīvs”** tagad atver atsevišķu lapu ar visiem arhivētajiem no **visiem mācību gadiem** (agrāk — personu sarakstu tikai izvēlētajā gadā, tāpēc tas bieži bija tukšs): izstāšanās datums, iemesls, līdz kuram glabāt, meklēšana.',

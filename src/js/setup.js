@@ -21,7 +21,7 @@
       <p class="small" style="margin-top:0">Izmanto līgumos un veidlapās. Tos pašus datus var labot arī līguma sagatavošanas logā.</p>
       <div class="fieldgrid">${f('name', 'Vārds, uzvārds', 'Jānis Paraugs')}${f('position', 'Amats', 'Jaunsargu instruktors')}
         ${f('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${f('nodala', 'Nodaļas nr.', 'piem. 1')}
-        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', '', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
+        ${f('phone', 'Tālrunis', '', 'tel')}${f('email', 'E-pasts', 'vards.uzvards@jc.gov.lv', 'email')}${f('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}
         ${f('nameGen', 'Vārds ģenitīvā (līgumam)', 'tiek izveidots automātiski')}</div></section>`;
   }
   CP.changeHandlers.push(e => {

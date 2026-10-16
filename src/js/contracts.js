@@ -152,7 +152,7 @@
       <details class="ct-box" ${!I.name ? 'open' : ''}><summary><b>Instruktora dati</b> <small class="muted">— saglabājas nākamajiem līgumiem</small></summary><div class="fieldgrid">
         ${iinp('parvalde', 'Novada pārvaldes nr.', 'piem. 3')}${iinp('nodala', 'Nodaļas nr.', 'piem. 1')}
         ${iinp('name', 'Vārds, uzvārds', 'Jānis Paraugs')}<div class="field"><label>Vārds ģenitīvā <small class="muted">(“…instruktora <i>Jāņa Parauga</i> personā”)</small></label><input data-ci="nameGen" value="${esc(I.nameGen || genitive(I.name))}"></div>
-        ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts')}
+        ${iinp('position', 'Amats', 'Jaunsargu instruktors')}${iinp('place', 'Vieta pēc noklusējuma', 'piem. Rīga')}${iinp('phone', 'Tālrunis')}${iinp('email', 'E-pasts', 'vards.uzvards@jc.gov.lv')}
       </div></details>`;
   }
   const ctDlg = () => U.$('contractDialog');
