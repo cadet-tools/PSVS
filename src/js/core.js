@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.5';
+  CP.VERSION = '1.38.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -619,16 +619,10 @@ window.CP = window.CP || {};
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });
-        if (U.age(p.birth) < 18) {
-          const b = new Date(p.birth + 'T12:00:00'); b.setFullYear(b.getFullYear() + 18); const diff = U.daysTo(U.iso(b));
-          if (diff >= 0 && diff <= 60) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība pēc ${diff} d. (pārskatīt pārstāvja tiesības)`, when: U.iso(b) });
-        }
       } else if (p.birth && !live) {
         const md = p.birth.slice(5), y = md >= '09-01' ? Number(yearId.slice(0, 4)) : Number(yearId.slice(5));
         const when = `${y}-${md}`;
         if (inSpan(when)) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena šajā mācību gadā`, when });
-        const adult = new Date(p.birth + 'T12:00:00'); adult.setFullYear(adult.getFullYear() + 18);
-        if (inSpan(U.iso(adult))) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība šajā mācību gadā`, when: U.iso(adult) });
       }
     }
     for (const e of d.equipment) if (!e.returned && !e.keep && D.inYear(D.person(e.personId))) {

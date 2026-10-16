@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.37.5';
+  CP.VERSION = '1.38.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -622,16 +622,10 @@ window.CP = window.CP || {};
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });
-        if (U.age(p.birth) < 18) {
-          const b = new Date(p.birth + 'T12:00:00'); b.setFullYear(b.getFullYear() + 18); const diff = U.daysTo(U.iso(b));
-          if (diff >= 0 && diff <= 60) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība pēc ${diff} d. (pārskatīt pārstāvja tiesības)`, when: U.iso(b) });
-        }
       } else if (p.birth && !live) {
         const md = p.birth.slice(5), y = md >= '09-01' ? Number(yearId.slice(0, 4)) : Number(yearId.slice(5));
         const when = `${y}-${md}`;
         if (inSpan(when)) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena šajā mācību gadā`, when });
-        const adult = new Date(p.birth + 'T12:00:00'); adult.setFullYear(adult.getFullYear() + 18);
-        if (inSpan(U.iso(adult))) push({ kind: 'adult', personId: p.id, sev: 0, msg: `${U.full(p)} — pilngadība šajā mācību gadā`, when: U.iso(adult) });
       }
     }
     for (const e of d.equipment) if (!e.returned && !e.keep && D.inYear(D.person(e.personId))) {
@@ -2617,7 +2611,7 @@ window.CP = window.CP || {};
             <button data-act="print">Drukāt kartiņu</button>
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
-          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}`;
+          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}${CP.setup?.personNotices(p) || ''}`;
       const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' , vfs: CP.vfs?.countFor(p.id) || ''};
       const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';
@@ -4461,7 +4455,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🎓'), adult18: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
@@ -4528,15 +4522,19 @@ window.CP = window.CP || {};
       const ageThen = lastD.getFullYear() - b.getFullYear() - ((lastD.getMonth() < b.getMonth() || (lastD.getMonth() === b.getMonth() && lastD.getDate() < b.getDate())) ? 1 : 0);
       if (ageNow > ageThen) ages.push({ p, age: ageNow });
     }
-    const al = D.alerts(), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
+    // 18 / 21 gadu brīdinājumi uznirstošajā logā — ne vairāk kā 3 reizes katram (kartītē un Uzdevumos paliek, līdz atrisināts)
+    let seenN = {}; try { seenN = JSON.parse(localStorage.getItem('cp-notice-count') || '{}') || {}; } catch (e) { seenN = {}; }
+    const al = D.alerts().filter(a => !a.nkey || (seenN[a.nkey] || 0) < 3), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
+    const shownKeys = al.filter(a => a.nkey).map(a => a.nkey);
     try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
     const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =
-      (ages.length ? `<h4 style="margin-top:0">🎂 Vecuma izmaiņas kopš ${U.fmtDate(last)}</h4>${ages.map(x => `<div class="row"><div class="grow"><b>${esc(U.full(x.p))}</b> — tagad <b>${x.age} g.</b>${x.age === 18 ? ' <span class="pill warn">pilngadīgs — pārstāvja piekrišana vairs nav vajadzīga, pārbaudi kontaktus un līgumu</span>' : ''}</div><button class="sm" data-person="${x.p.id}" data-close="noticeDialog">Atvērt</button></div>`).join('')}` : '')
+      (ages.length ? `<h4 style="margin-top:0">🎂 Vecuma izmaiņas kopš ${U.fmtDate(last)}</h4>${ages.map(x => `<div class="row"><div class="grow"><b>${esc(U.full(x.p))}</b> — tagad <b>${x.age} g.</b>${x.age === 18 ? ' <span class="pill warn">pilngadīgs — jānoslēdz jauns līgums ar jaunsargu (vecāku dati kartītē paliek)</span>' : ''}</div><button class="sm" data-person="${x.p.id}" data-close="noticeDialog">Atvērt</button></div>`).join('')}` : '')
       + (urgent.length ? `<h4>⚠ Jāpievērš uzmanība (${urgent.length})</h4>${urgent.slice(0, 25).map(row).join('')}${urgent.length > 25 ? `<p class="muted small">… un vēl ${urgent.length - 25}</p>` : ''}` : '')
       + (soon.length ? `<h4>📅 Drīzumā</h4>${soon.slice(0, 15).map(row).join('')}` : '');
     U.$('noticeDialog').showModal();
+    if (shownKeys.length) { for (const k of shownKeys) seenN[k] = (seenN[k] || 0) + 1; try { localStorage.setItem('cp-notice-count', JSON.stringify(seenN)); } catch (e) { } }
   };
   A.noticeAlerts = () => { U.$('noticeDialog').close(); ui.go('alerts'); };
 
@@ -5497,6 +5495,12 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
+      '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
+      'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
+      'Tāpat **60 dienas pirms 21 gada** — brīdinājums, ka līgums beigsies, ar pogu **“Arhivēt”**.',
+      'Atverot rīku, uznirstošajā paziņojumā par katru jaunsargu tas parādās ne vairāk kā **3 reizes**; kartītē un Uzdevumos — līdz atrisināts.'
+    ] },
     { v: '1.37.4', from: '1.37.0', date: '2026-10-16', title: 'Rīka sagatavošana darbam', items: [
       'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, rezerves kopija Google Drive, grupas, obligātie dokumenti un pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu.',
       'Pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams stāvoklis: **✓ Rīks iestatīts** vai **✕** ar progresu. Uzspiežot uz tā, saraksts atveras.',
@@ -5507,7 +5511,6 @@ window.CP = window.CP || {};
     ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Datu kvalitāte, 21 gads un darbs uz diviem datoriem', items: [
       'Lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā) parāda, kas jāsakārto: iespējami dublikāti, nederīgs personas kods, trūkst dzimuma, pārstāvja vai tālruņa, nederīgs e-pasts, nav grupas, nav atrasts dokumenta fails.',
-      'Brīdinājums, kad jaunsargam **tuvojas 21 gads** (līgums beigsies) un kad tas jau sasniegts.',
       '**Divi datori:** otrā datorā izvēlies “Atjaunot no kopijas…”, un tas izmantos to pašu Google Drive kopiju. Ja otrā datorā ir jaunāki dati, augšā parādās josla **“Ielādēt”** — nekas netiek pārrakstīts bez tavas izvēles.',
       'Lielais pulkstenis pēc prombūtnes atkal pareizi skaita **darba laiku**.'
     ] },
@@ -9018,18 +9021,50 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   }
   A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
 
-  /* ---------------- 21 gads ---------------- */
-  const at21 = birth => { const b = new Date(birth + 'T12:00:00'); if (isNaN(b)) return ''; b.setFullYear(b.getFullYear() + 21); return U.iso(b); };
+  /* ---------------- 18 un 21 gads ---------------- */
+  const atAge = (birth, n) => { const b = new Date(birth + 'T12:00:00'); if (isNaN(b)) return ''; b.setFullYear(b.getFullYear() + n); return U.iso(b); };
+  const at21 = birth => atAge(birth, 21);
+  const WARN_DAYS = 60;
+  /** Vai ar jaunsargu (pēc 18) jau ir līgums: rīkā sagatavots līgums “ar jaunieti” vai instruktora atzīme */
+  const adultContract = p => !!p.adultContractAt || (p.contracts || []).some(c => c.kind === 'jaunietis' && !c.archived);
+  /** Vecuma brīdinājumi personai: [{ k: 'adult18'|'age21', sev, msg, when, diff }] — no 60 d. pirms līdz atrisināšanai */
+  function ageNotices(p) {
+    if (!p?.birth || p.status === 'archived' || p.anon) return [];
+    const out = [], d18 = atAge(p.birth, 18), d21 = at21(p.birth);
+    // ja persona pievienota jau pilngadīga — līgums jau slēgts ar viņu pašu, brīdinājums nav vajadzīgs
+    const since = String(p.joined || p.createdAt || '').slice(0, 10);
+    if (d18 && !adultContract(p) && !(since && d18 < since)) {
+      const diff = U.daysTo(d18);
+      if (diff <= WARN_DAYS) out.push({ k: 'adult18', when: d18, diff, sev: diff < 0 ? 2 : 1, msg: diff < 0 ? `${U.full(p)} — pilngadīgs kopš ${U.fmtDate(d18)}: jānoslēdz jauns līgums ar jaunsargu` : `${U.full(p)} — 18 gadi ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'} (${U.fmtDate(d18)}): jānoslēdz jauns līgums ar jaunsargu` });
+    }
+    if (d21) {
+      const diff = U.daysTo(d21);
+      if (diff <= WARN_DAYS) out.push({ k: 'age21', when: d21, diff, sev: diff < 0 ? 2 : 1, msg: diff < 0 ? `${U.full(p)} — jau 21 gads (no ${U.fmtDate(d21)}), līgums beidzies — jaunsardzes gaitas beigušās` : `${U.full(p)} — 21 gads ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'} (${U.fmtDate(d21)}), līgums beigsies` });
+    }
+    return out;
+  }
+  /** Kartītē: brīdinājumi visu laiku, kamēr nav atrisināts */
+  function personNotices(p) {
+    return ageNotices(p).map(n => `<div class="notice age-notice ${n.sev > 1 ? 'bad' : ''}" style="margin-top:10px"><span>${n.k === 'adult18' ? '🔞' : '🎓'} ${esc(n.msg.replace(U.full(p) + ' — ', ''))}</span>
+      <span class="actions">${n.k === 'adult18' ? `<button class="sm mainbtn" data-act="contractNew" data-arg="${p.id}|jaunietis">📄 Sagatavot līgumu ar jaunsargu</button><button class="sm" data-act="adultContractDone" data-arg="${p.id}" title="Ja līgums noslēgts ārpus rīka">✓ Līgums noslēgts</button>`
+        : `<button class="sm mainbtn" data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}</span></div>`).join('');
+  }
+  A.adultContractDone = pid => {
+    const p = D.person(pid); if (!p) return;
+    const d = prompt(`Līgums ar ${U.full(p)} (pilngadīgu jaunsargu) noslēgts. Datums:`, U.fmtDate(U.iso())); if (d === null) return;
+    p.adultContractAt = U.parseDate(d) || U.iso(); p.updatedAt = U.now(); D.audit(pid, 'update', ['Atzīmēts: līgums ar pilngadīgu jaunsargu noslēgts']);
+    const old = (p.contracts || []).filter(c => c.kind === 'parstavis' && !c.archived);
+    if (old.length && confirm(`Arhivēt iepriekšējo līgumu ar pārstāvi (${old.length})?`)) old.forEach(c => { c.archived = p.adultContractAt; });
+    CP.store.changed(); ui.toast('Atzīmēts — brīdinājums par pilngadību vairs netiek rādīts', 'ok');
+  };
   { const orig = D.alerts; D.alerts = () => {
     const out = orig(), yearId = D.activeYear(), live = yearId === U.schoolYear(), [from, to] = U.yearSpan(yearId);
     for (const p of S.db.people) {
       if (p.status === 'archived' || p.anon || !p.birth || !D.inYear(p)) continue;
-      const d21 = at21(p.birth); if (!d21) continue;
-      if (live) {
-        const diff = U.daysTo(d21);
-        if (diff < 0) out.push({ kind: 'age21', personId: p.id, sev: 2, msg: `${U.full(p)} — jau 21 gads (no ${U.fmtDate(d21)}), līgums beidzies`, when: d21, year: yearId });
-        else if (diff <= 60) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'}, līgums beigsies`, when: d21, year: yearId });
-      } else if (d21 >= from && d21 <= to) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads šajā mācību gadā (${U.fmtDate(d21)}), līgums beidzas`, when: d21, year: yearId });
+      if (live) { for (const n of ageNotices(p)) out.push({ kind: n.k, nkey: `${n.k}:${p.id}:${n.when}`, personId: p.id, sev: n.sev, msg: n.msg, when: n.when, year: yearId }); continue; }
+      const d18 = atAge(p.birth, 18), d21 = at21(p.birth);
+      if (d18 >= from && d18 <= to && !adultContract(p)) out.push({ kind: 'adult18', personId: p.id, sev: 1, msg: `${U.full(p)} — 18 gadi šajā mācību gadā (${U.fmtDate(d18)}): jauns līgums ar jaunsargu`, when: d18, year: yearId });
+      if (d21 >= from && d21 <= to) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads šajā mācību gadā (${U.fmtDate(d21)}), līgums beidzas`, when: d21, year: yearId });
     }
     if (live && S.root) { const q = issues().length; if (q) out.push({ kind: 'quality', page: 'quality', sev: 0, msg: `Datu kvalitāte: ${plural(q, 'lieta', 'lietas')} jāsakārto (trūkstoši vai nederīgi dati)`, when: '', year: yearId }); }
     return out.sort((x, y) => (y.top || 0) - (x.top || 0) || y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
@@ -9099,7 +9134,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
   };
 
-  CP.setup = { instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
+  CP.setup = { ageNotices, personNotices, adultContract, instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);
 
 
@@ -9175,10 +9210,10 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       p_talrunis: phone(two ? p.parent2Phone : p.parentPhone), p_epasts: (two ? p.parent2Email : p.parentEmail) || ''
     };
   }
-  A.contractNew = pid => {
-    const p = pid && D.person(pid);
+  A.contractNew = arg => {
+    const [pid, want] = String(arg || '').split('|'), p = pid && D.person(pid);
     const age = p ? U.age(p.birth) : null;
-    cur = { pid: p ? p.id : '', kind: age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
+    cur = { pid: p ? p.id : '', kind: want === 'jaunietis' ? 'jaunietis' : age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
       parent: 1, no: p?.contractNo || '', date: U.iso(), place: inst().place || '', signMode: inst().signMode || 'same', signDate: '', fields: p ? personData(p, 1) : {} };
     openDlg();
   };
@@ -9363,6 +9398,9 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
           (p.contracts = p.contracts || []).push({ id: U.uid(), no: cur.no || '', date: cur.date, kind: cur.kind, form: cur.form, path, at: U.now(), params: snapshot() });
           D.audit(p.id, 'update', ['Sagatavots līgums' + (cur.no ? ' Nr. ' + cur.no : '')]);
           ui.toast('Līgums sagatavots. Kopija saglabāta personas mapē — to var atvērt un labot Word programmā.', 'ok', 8000);
+          // pilngadīgs: jauns līgums ar jaunsargu → piedāvā arhivēt veco līgumu ar pārstāvi (vecāku dati kartītē paliek)
+          const old = cur.kind === 'jaunietis' ? (p.contracts || []).filter(x => x.kind === 'parstavis' && !x.archived) : [];
+          if (old.length && confirm(`Jauns līgums ar jaunsargu sagatavots. Arhivēt iepriekšējo līgumu ar likumisko pārstāvi (${old.length})?\n\nLīgums paliek sarakstā un personas mapē; vecāku dati kartītē netiek mainīti.`)) { old.forEach(x => { x.archived = U.iso(); }); D.audit(p.id, 'update', ['Arhivēts līgums ar pārstāvi']); }
         }
       }
       CP.store.changed();
@@ -9393,10 +9431,10 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   /* --- Kartītē: sagatavotie līgumi --- */
   CP.contracts = {
     personCard(p) {
-      const list = [...(p.contracts || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      const list = [...(p.contracts || [])].sort((a, b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0) || String(b.at).localeCompare(String(a.at)));
       return `<section class="card"><h3>${CP.ic('file', '📄')}Līgums</h3>
         ${p.contractNo ? `<p class="small" style="margin:0 0 6px">Līguma Nr.: <b>${esc(p.contractNo)}</b></p>` : ''}
-        ${list.slice(0, 4).map(c => `<div class="row"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div><button class="sm ghost" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Labot">✎</button>${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}</div>`).join('')}
+        ${list.slice(0, 6).map(c => `<div class="row ${c.archived ? 'ct-arch' : ''}"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}${c.archived ? ` <span class="pill">arhivēts ${esc(U.fmtDate(c.archived))}</span>` : ''}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div>${c.archived ? '' : `<button class="sm ghost" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Labot">✎</button>`}${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}<button class="sm ghost" data-act="contractArchive" data-arg="${p.id}|${c.id}" title="${c.archived ? 'Atjaunot kā spēkā esošu' : 'Arhivēt (līgums vairs nav spēkā, piem., pēc pilngadības)'}">${c.archived ? '↶' : '🗄'}</button></div>`).join('')}
         <div class="actions" style="margin-top:8px"><button class="sm mainbtn" data-act="contractNew" data-arg="${p.id}">${CP.ic('file', '📄')} Sagatavot līgumu</button></div></section>`;
     },
     FIELDS_HELP
@@ -9405,6 +9443,12 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const { c } = findC(arg); if (!c?.path) return;
     try { const h = await CP.store.handleFor(c.path, 'main'); if (!h) return ui.toast('Fails personas mapē nav atrasts: ' + c.path, 'warn', 8000); await CP.printDocx(await h.getFile(), c.path.split('/').pop()); }
     catch (e) { ui.toast('Neizdevās atvērt: ' + e.message, 'err', 9000); }
+  };
+  A.contractArchive = arg => {
+    const { p, c } = findC(arg); if (!c) return;
+    if (c.archived) { delete c.archived; D.audit(p.id, 'update', ['Līgums atjaunots kā spēkā esošs']); }
+    else { if (!confirm(`Arhivēt “Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}”? Tas paliek sarakstā un personas mapē, bet vairs netiek uzskatīts par spēkā esošu.`)) return; c.archived = U.iso(); D.audit(p.id, 'update', ['Arhivēts līgums']); }
+    CP.store.changed();
   };
   A.contractDel = arg => {
     const { p, c } = findC(arg); if (!c || !confirm(`Noņemt “Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}” no saraksta?\n\nWord fails personas mapē paliek.`)) return;

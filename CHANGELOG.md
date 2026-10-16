@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.38.0 — 2026-10-16
+- `setup.js` `ageNotices(p)`: `adult18` (no 60 d. pirms līdz `adultContract(p)` — līgums `kind 'jaunietis'` neaktīvs/nearhivēts vai `p.adultContractAt`; netiek rādīts, ja persona pievienota jau pilngadīga) un `age21` (no 60 d. pirms, līdz arhivēšanai). Kartītē `personNotices(p)`; brīdinājumiem `nkey`. Vecais `adult` brīdinājums (core) noņemts.
+- `dashboard.js` paziņojumu logs: `nkey` brīdinājumi ne vairāk kā 3 reizes (`localStorage cp-notice-count`).
+- `contracts.js`: `contractNew('pid|jaunietis')`, līgumam `archived` (datums), `contractArchive` (arhivēt/atjaunot), pēc līguma ar jaunieti — piedāvā arhivēt līgumus ar pārstāvi. `adultContractDone`.
+
 ## 1.37.5 — 2026-10-16
 - Jaunumu saraksts (`whatsnew.js`) pārrakstīts lietotājam: 19 bloki pa funkcijām, īsi, bez tehniskām detaļām un atkārtotiem labojumiem. Faila galvā noteikumi turpmākajiem ierakstiem. Tehniskā vēsture paliek šeit.
 

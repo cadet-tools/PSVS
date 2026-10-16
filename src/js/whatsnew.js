@@ -13,6 +13,12 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
+      '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
+      'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
+      'Tāpat **60 dienas pirms 21 gada** — brīdinājums, ka līgums beigsies, ar pogu **“Arhivēt”**.',
+      'Atverot rīku, uznirstošajā paziņojumā par katru jaunsargu tas parādās ne vairāk kā **3 reizes**; kartītē un Uzdevumos — līdz atrisināts.'
+    ] },
     { v: '1.37.4', from: '1.37.0', date: '2026-10-16', title: 'Rīka sagatavošana darbam', items: [
       'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, rezerves kopija Google Drive, grupas, obligātie dokumenti un pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu.',
       'Pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams stāvoklis: **✓ Rīks iestatīts** vai **✕** ar progresu. Uzspiežot uz tā, saraksts atveras.',
@@ -23,7 +29,6 @@
     ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Datu kvalitāte, 21 gads un darbs uz diviem datoriem', items: [
       'Lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā) parāda, kas jāsakārto: iespējami dublikāti, nederīgs personas kods, trūkst dzimuma, pārstāvja vai tālruņa, nederīgs e-pasts, nav grupas, nav atrasts dokumenta fails.',
-      'Brīdinājums, kad jaunsargam **tuvojas 21 gads** (līgums beigsies) un kad tas jau sasniegts.',
       '**Divi datori:** otrā datorā izvēlies “Atjaunot no kopijas…”, un tas izmantos to pašu Google Drive kopiju. Ja otrā datorā ir jaunāki dati, augšā parādās josla **“Ielādēt”** — nekas netiek pārrakstīts bez tavas izvēles.',
       'Lielais pulkstenis pēc prombūtnes atkal pareizi skaita **darba laiku**.'
     ] },

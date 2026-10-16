@@ -84,18 +84,50 @@
   }
   A.setupDocs = () => { done().docs = true; CP.store.changed({ silent: true }); ui.goSettingsCard('docsCard'); };
 
-  /* ---------------- 21 gads ---------------- */
-  const at21 = birth => { const b = new Date(birth + 'T12:00:00'); if (isNaN(b)) return ''; b.setFullYear(b.getFullYear() + 21); return U.iso(b); };
+  /* ---------------- 18 un 21 gads ---------------- */
+  const atAge = (birth, n) => { const b = new Date(birth + 'T12:00:00'); if (isNaN(b)) return ''; b.setFullYear(b.getFullYear() + n); return U.iso(b); };
+  const at21 = birth => atAge(birth, 21);
+  const WARN_DAYS = 60;
+  /** Vai ar jaunsargu (pēc 18) jau ir līgums: rīkā sagatavots līgums “ar jaunieti” vai instruktora atzīme */
+  const adultContract = p => !!p.adultContractAt || (p.contracts || []).some(c => c.kind === 'jaunietis' && !c.archived);
+  /** Vecuma brīdinājumi personai: [{ k: 'adult18'|'age21', sev, msg, when, diff }] — no 60 d. pirms līdz atrisināšanai */
+  function ageNotices(p) {
+    if (!p?.birth || p.status === 'archived' || p.anon) return [];
+    const out = [], d18 = atAge(p.birth, 18), d21 = at21(p.birth);
+    // ja persona pievienota jau pilngadīga — līgums jau slēgts ar viņu pašu, brīdinājums nav vajadzīgs
+    const since = String(p.joined || p.createdAt || '').slice(0, 10);
+    if (d18 && !adultContract(p) && !(since && d18 < since)) {
+      const diff = U.daysTo(d18);
+      if (diff <= WARN_DAYS) out.push({ k: 'adult18', when: d18, diff, sev: diff < 0 ? 2 : 1, msg: diff < 0 ? `${U.full(p)} — pilngadīgs kopš ${U.fmtDate(d18)}: jānoslēdz jauns līgums ar jaunsargu` : `${U.full(p)} — 18 gadi ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'} (${U.fmtDate(d18)}): jānoslēdz jauns līgums ar jaunsargu` });
+    }
+    if (d21) {
+      const diff = U.daysTo(d21);
+      if (diff <= WARN_DAYS) out.push({ k: 'age21', when: d21, diff, sev: diff < 0 ? 2 : 1, msg: diff < 0 ? `${U.full(p)} — jau 21 gads (no ${U.fmtDate(d21)}), līgums beidzies — jaunsardzes gaitas beigušās` : `${U.full(p)} — 21 gads ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'} (${U.fmtDate(d21)}), līgums beigsies` });
+    }
+    return out;
+  }
+  /** Kartītē: brīdinājumi visu laiku, kamēr nav atrisināts */
+  function personNotices(p) {
+    return ageNotices(p).map(n => `<div class="notice age-notice ${n.sev > 1 ? 'bad' : ''}" style="margin-top:10px"><span>${n.k === 'adult18' ? '🔞' : '🎓'} ${esc(n.msg.replace(U.full(p) + ' — ', ''))}</span>
+      <span class="actions">${n.k === 'adult18' ? `<button class="sm mainbtn" data-act="contractNew" data-arg="${p.id}|jaunietis">📄 Sagatavot līgumu ar jaunsargu</button><button class="sm" data-act="adultContractDone" data-arg="${p.id}" title="Ja līgums noslēgts ārpus rīka">✓ Līgums noslēgts</button>`
+        : `<button class="sm mainbtn" data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}</span></div>`).join('');
+  }
+  A.adultContractDone = pid => {
+    const p = D.person(pid); if (!p) return;
+    const d = prompt(`Līgums ar ${U.full(p)} (pilngadīgu jaunsargu) noslēgts. Datums:`, U.fmtDate(U.iso())); if (d === null) return;
+    p.adultContractAt = U.parseDate(d) || U.iso(); p.updatedAt = U.now(); D.audit(pid, 'update', ['Atzīmēts: līgums ar pilngadīgu jaunsargu noslēgts']);
+    const old = (p.contracts || []).filter(c => c.kind === 'parstavis' && !c.archived);
+    if (old.length && confirm(`Arhivēt iepriekšējo līgumu ar pārstāvi (${old.length})?`)) old.forEach(c => { c.archived = p.adultContractAt; });
+    CP.store.changed(); ui.toast('Atzīmēts — brīdinājums par pilngadību vairs netiek rādīts', 'ok');
+  };
   { const orig = D.alerts; D.alerts = () => {
     const out = orig(), yearId = D.activeYear(), live = yearId === U.schoolYear(), [from, to] = U.yearSpan(yearId);
     for (const p of S.db.people) {
       if (p.status === 'archived' || p.anon || !p.birth || !D.inYear(p)) continue;
-      const d21 = at21(p.birth); if (!d21) continue;
-      if (live) {
-        const diff = U.daysTo(d21);
-        if (diff < 0) out.push({ kind: 'age21', personId: p.id, sev: 2, msg: `${U.full(p)} — jau 21 gads (no ${U.fmtDate(d21)}), līgums beidzies`, when: d21, year: yearId });
-        else if (diff <= 60) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads ${diff === 0 ? 'šodien' : 'pēc ' + diff + ' d.'}, līgums beigsies`, when: d21, year: yearId });
-      } else if (d21 >= from && d21 <= to) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads šajā mācību gadā (${U.fmtDate(d21)}), līgums beidzas`, when: d21, year: yearId });
+      if (live) { for (const n of ageNotices(p)) out.push({ kind: n.k, nkey: `${n.k}:${p.id}:${n.when}`, personId: p.id, sev: n.sev, msg: n.msg, when: n.when, year: yearId }); continue; }
+      const d18 = atAge(p.birth, 18), d21 = at21(p.birth);
+      if (d18 >= from && d18 <= to && !adultContract(p)) out.push({ kind: 'adult18', personId: p.id, sev: 1, msg: `${U.full(p)} — 18 gadi šajā mācību gadā (${U.fmtDate(d18)}): jauns līgums ar jaunsargu`, when: d18, year: yearId });
+      if (d21 >= from && d21 <= to) out.push({ kind: 'age21', personId: p.id, sev: 1, msg: `${U.full(p)} — 21 gads šajā mācību gadā (${U.fmtDate(d21)}), līgums beidzas`, when: d21, year: yearId });
     }
     if (live && S.root) { const q = issues().length; if (q) out.push({ kind: 'quality', page: 'quality', sev: 0, msg: `Datu kvalitāte: ${plural(q, 'lieta', 'lietas')} jāsakārto (trūkstoši vai nederīgi dati)`, when: '', year: yearId }); }
     return out.sort((x, y) => (y.top || 0) - (x.top || 0) || y.sev - x.sev || String(x.when || '9').localeCompare(String(y.when || '9')));
@@ -165,5 +197,5 @@
     xs.forEach(x => setGender(x.p, x.guess)); CP.store.changed(); ui.toast(`Dzimums ielikts ${plural(xs.length, 'jaunsargam', 'jaunsargiem')}`, 'ok');
   };
 
-  CP.setup = { instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
+  CP.setup = { ageNotices, personNotices, adultContract, instProblems, chip, card: setupCard, steps, instCard, issues, at21 };
 })(window.CP);

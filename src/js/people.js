@@ -143,7 +143,7 @@
             <button data-act="print">Drukāt kartiņu</button>
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}
           </div></details>
-          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}`;
+          ${ui.saveBtn()}</div></header>${p.anon ? `<div class="notice" style="margin-top:10px">🗄 Ieraksts anonimizēts ${esc(U.fmtDate(p.anon))} (glabāšanas termiņš). Personas dati un dokumentu ieraksti dzēsti; palikusi tikai statistika — dalība mācību gados, apmeklējums, VFS rezultāti, ekipējuma uzskaite.</div>` : ''}${CP.setup?.personNotices(p) || ''}`;
       const counts = { docs: `${docs.length}${miss.length ? ' <span class="warn">⚠</span>' : ''}`, history: openTasks ? `<span class="count">${openTasks}</span>` : '', relations: fam || '', equipment: eq || '', idcard: D.idCardBadge ? D.idCardBadge(p) : '' , vfs: CP.vfs?.countFor(p.id) || ''};
       const tabs = `<nav class="tabs" role="tablist">${TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${CP.ic(TAB_IC[k])}${t}${counts[k] ? ` <small>${counts[k]}</small>` : ''}</button>`).join('')}</nav>`;
       let body = '';

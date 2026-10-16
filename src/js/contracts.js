@@ -69,10 +69,10 @@
       p_talrunis: phone(two ? p.parent2Phone : p.parentPhone), p_epasts: (two ? p.parent2Email : p.parentEmail) || ''
     };
   }
-  A.contractNew = pid => {
-    const p = pid && D.person(pid);
+  A.contractNew = arg => {
+    const [pid, want] = String(arg || '').split('|'), p = pid && D.person(pid);
     const age = p ? U.age(p.birth) : null;
-    cur = { pid: p ? p.id : '', kind: age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
+    cur = { pid: p ? p.id : '', kind: want === 'jaunietis' ? 'jaunietis' : age != null && age < 18 ? 'parstavis' : (age == null ? 'parstavis' : 'jaunietis'), form: S.db.settings.contractForm || 'papirs', tpl: '',
       parent: 1, no: p?.contractNo || '', date: U.iso(), place: inst().place || '', signMode: inst().signMode || 'same', signDate: '', fields: p ? personData(p, 1) : {} };
     openDlg();
   };
@@ -257,6 +257,9 @@
           (p.contracts = p.contracts || []).push({ id: U.uid(), no: cur.no || '', date: cur.date, kind: cur.kind, form: cur.form, path, at: U.now(), params: snapshot() });
           D.audit(p.id, 'update', ['Sagatavots līgums' + (cur.no ? ' Nr. ' + cur.no : '')]);
           ui.toast('Līgums sagatavots. Kopija saglabāta personas mapē — to var atvērt un labot Word programmā.', 'ok', 8000);
+          // pilngadīgs: jauns līgums ar jaunsargu → piedāvā arhivēt veco līgumu ar pārstāvi (vecāku dati kartītē paliek)
+          const old = cur.kind === 'jaunietis' ? (p.contracts || []).filter(x => x.kind === 'parstavis' && !x.archived) : [];
+          if (old.length && confirm(`Jauns līgums ar jaunsargu sagatavots. Arhivēt iepriekšējo līgumu ar likumisko pārstāvi (${old.length})?\n\nLīgums paliek sarakstā un personas mapē; vecāku dati kartītē netiek mainīti.`)) { old.forEach(x => { x.archived = U.iso(); }); D.audit(p.id, 'update', ['Arhivēts līgums ar pārstāvi']); }
         }
       }
       CP.store.changed();
@@ -287,10 +290,10 @@
   /* --- Kartītē: sagatavotie līgumi --- */
   CP.contracts = {
     personCard(p) {
-      const list = [...(p.contracts || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      const list = [...(p.contracts || [])].sort((a, b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0) || String(b.at).localeCompare(String(a.at)));
       return `<section class="card"><h3>${CP.ic('file', '📄')}Līgums</h3>
         ${p.contractNo ? `<p class="small" style="margin:0 0 6px">Līguma Nr.: <b>${esc(p.contractNo)}</b></p>` : ''}
-        ${list.slice(0, 4).map(c => `<div class="row"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div><button class="sm ghost" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Labot">✎</button>${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}</div>`).join('')}
+        ${list.slice(0, 6).map(c => `<div class="row ${c.archived ? 'ct-arch' : ''}"><div class="grow small">${esc(c.no ? 'Nr. ' + c.no : 'bez numura')} · ${esc(U.fmtDate(c.date))}${c.archived ? ` <span class="pill">arhivēts ${esc(U.fmtDate(c.archived))}</span>` : ''}<div class="muted">${esc(STD[`${c.kind}-${c.form}`] || '')}</div></div>${c.archived ? '' : `<button class="sm ghost" data-act="contractEdit" data-arg="${p.id}|${c.id}" title="Labot">✎</button>`}${c.path ? `<button class="sm ghost" data-act="contractOpen" data-arg="${p.id}|${c.id}" title="Lejupielādēt Word failu">⬇</button>` : ''}<button class="sm ghost" data-act="contractArchive" data-arg="${p.id}|${c.id}" title="${c.archived ? 'Atjaunot kā spēkā esošu' : 'Arhivēt (līgums vairs nav spēkā, piem., pēc pilngadības)'}">${c.archived ? '↶' : '🗄'}</button></div>`).join('')}
         <div class="actions" style="margin-top:8px"><button class="sm mainbtn" data-act="contractNew" data-arg="${p.id}">${CP.ic('file', '📄')} Sagatavot līgumu</button></div></section>`;
     },
     FIELDS_HELP
@@ -299,6 +302,12 @@
     const { c } = findC(arg); if (!c?.path) return;
     try { const h = await CP.store.handleFor(c.path, 'main'); if (!h) return ui.toast('Fails personas mapē nav atrasts: ' + c.path, 'warn', 8000); await CP.printDocx(await h.getFile(), c.path.split('/').pop()); }
     catch (e) { ui.toast('Neizdevās atvērt: ' + e.message, 'err', 9000); }
+  };
+  A.contractArchive = arg => {
+    const { p, c } = findC(arg); if (!c) return;
+    if (c.archived) { delete c.archived; D.audit(p.id, 'update', ['Līgums atjaunots kā spēkā esošs']); }
+    else { if (!confirm(`Arhivēt “Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}”? Tas paliek sarakstā un personas mapē, bet vairs netiek uzskatīts par spēkā esošu.`)) return; c.archived = U.iso(); D.audit(p.id, 'update', ['Arhivēts līgums']); }
+    CP.store.changed();
   };
   A.contractDel = arg => {
     const { p, c } = findC(arg); if (!c || !confirm(`Noņemt “Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}” no saraksta?\n\nWord fails personas mapē paliek.`)) return;
