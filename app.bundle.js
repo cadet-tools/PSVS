@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.26.0';
+  CP.VERSION = '1.26.1';
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -5015,6 +5015,11 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.26.1', from: '1.26.0', date: '2026-10-16', title: 'Notikuma kartīte kalendārā', items: [
+      'Klikšķis uz notikuma kalendārā tagad atver **kartīti tikai skatīšanai**: datums, laiks un ilgums, vieta, piezīmes, atgādinājumi, atkārtošanās un vai notikums ir importēts vai Google kalendārā. Nejauši neko izmainīt vairs nevar.',
+      'Labot var ar pogu **✎ Labot** kartītē vai ar **✎** sarakstā. Kartītē ir arī **⧉ Kopēt** uz nākamo nedēļu.',
+      'Tāpat kartīte atveras no pārskata “Grafiks — tuvākās 7 dienas”, stundu kopsavilkuma un atgādinājuma paziņojuma.'
+    ] },
     { v: '1.26.0', from: '1.25.0', date: '2026-10-16', title: 'Grupu pārvaldība un līdzenāks pārskats', items: [
       'Pārskata kartītē **Grupas** ir poga **＋ Jauna grupa**, bet pie katras grupas pogas **✎ pārdēvēt** un **✕ dzēst**. Jaunu grupu var izveidot arī tad, ja tajā vēl nav personu.',
       'Jaunā grupa uzreiz parādās **visās izvēlnēs**: personas kartītē, sarakstu filtrā, apmeklējumā, saziņā, importā un pārcelšanā uz citu gadu.',
@@ -8270,7 +8275,7 @@ window.CP = window.CP || {};
   const timeTxt = e => e.allDay ? (e.endDate && e.endDate > e.date ? `visu dienu līdz ${U.fmtDate(e.endDate)}` : 'visu dienu') : `${e.start || ''}${e.end ? '–' + e.end : ''}${e.endDate && e.endDate > e.date ? ` (līdz ${U.fmtDate(e.endDate)})` : ''}`;
   const sorted = arr => [...arr].sort((a, b) => (a.date + (a.allDay ? '00:00' : a.start)).localeCompare(b.date + (b.allDay ? '00:00' : b.start)));
   const dayEvents = iso => sorted(list().filter(e => onDay(e, iso)));
-  const chip = (e, cls = '') => `<button class="sch-chip ${cls}" style="--c:${color(e.type)}" data-act="schEdit" data-arg="${e.id}" title="${esc(`${e.title} · ${timeTxt(e)}${e.place ? ' · ' + e.place : ''}`)}">${e.allDay ? '' : `<b>${esc(e.start || '')}</b> `}${esc(e.title)}</button>`;
+  const chip = (e, cls = '') => `<button class="sch-chip ${cls}" style="--c:${color(e.type)}" data-act="schView" data-arg="${e.id}" title="${esc(`${e.title} · ${timeTxt(e)}${e.place ? ' · ' + e.place : ''}`)}">${e.allDay ? '' : `<b>${esc(e.start || '')}</b> `}${esc(e.title)}</button>`;
 
   /* ================== Lapa ================== */
   const view = () => S.sch || (S.sch = { mode: (() => { try { return localStorage.getItem('cp.schMode') || 'month'; } catch (e) { return 'month'; } })(), date: U.iso(), tab: 'cal' });
@@ -8320,7 +8325,7 @@ window.CP = window.CP || {};
   }
   const isoWeek = iso => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + 3 - wd(iso)); const y = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - y) / 86400000 - 3 + (y.getDay() + 6) % 7) / 7); };
   const row = e => `<div class="row sch-row" style="--c:${color(e.type)}"><span class="sch-bar"></span><div class="sch-when"><b>${esc(U.fmtDate(e.date).slice(0, 5))}</b> <small class="muted">${WD[wd(e.date)]}</small><div class="small">${esc(timeTxt(e))}</div></div>
-    <div class="grow"><b>${esc(e.title)}</b> <span class="tag">${esc(e.type)}</span>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}${e.notes ? `<div class="small muted">${esc(e.notes)}</div>` : ''}</div>
+    <div class="grow"><a href="#" class="sch-open" data-act="schView" data-arg="${e.id}"><b>${esc(e.title)}</b></a> <span class="tag">${esc(e.type)}</span>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}${e.notes ? `<div class="small muted">${esc(e.notes)}</div>` : ''}</div>
     <span class="small muted nowrap" title="Atgādinājumi">${(e.remind || []).length ? '🔔 ' + e.remind.map(remLabel).join(', ') : ''}${e.gcalId ? ' · <span title="Ir Google kalendārā">G✓</span>' : ''}</span><button class="sm ghost" data-act="schEdit" data-arg="${e.id}" title="Labot">✎</button></div>`;
 
   function month(v) {
@@ -8342,7 +8347,7 @@ window.CP = window.CP || {};
       // pārklāšanās: vienkāršas joslas
       const lanes = []; const place = ev.map(e => { const s = mins(e.start), en = Math.max(s + 30, mins(e.end || e.start) || s + 60); let l = lanes.findIndex(x => x <= s); if (l < 0) { l = lanes.length; lanes.push(en); } else lanes[l] = en; return { e, s, en, l }; });
       const n = Math.max(1, lanes.length);
-      const blocks = place.map(({ e, s, en, l }) => `<button class="sch-blk" data-act="schEdit" data-arg="${e.id}" style="--c:${color(e.type)};top:${(Math.max(s, H0 * 60) - H0 * 60) / 60 * px}px;height:${Math.max(22, (Math.min(en, H1 * 60) - Math.max(s, H0 * 60)) / 60 * px - 2)}px;left:${l / n * 100}%;width:${100 / n}%" title="${esc(e.title + ' · ' + timeTxt(e))}"><b>${esc(e.start)}–${esc(e.end || '')}</b> ${esc(e.title)}${e.place ? `<small>${esc(e.place)}</small>` : ''}</button>`).join('');
+      const blocks = place.map(({ e, s, en, l }) => `<button class="sch-blk" data-act="schView" data-arg="${e.id}" style="--c:${color(e.type)};top:${(Math.max(s, H0 * 60) - H0 * 60) / 60 * px}px;height:${Math.max(22, (Math.min(en, H1 * 60) - Math.max(s, H0 * 60)) / 60 * px - 2)}px;left:${l / n * 100}%;width:${100 / n}%" title="${esc(e.title + ' · ' + timeTxt(e))}"><b>${esc(e.start)}–${esc(e.end || '')}</b> ${esc(e.title)}${e.place ? `<small>${esc(e.place)}</small>` : ''}</button>`).join('');
       const nowLine = iso === today && now.getHours() >= H0 && now.getHours() < H1 ? `<div class="sch-now" style="top:${(now.getHours() * 60 + now.getMinutes() - H0 * 60) / 60 * px}px"></div>` : '';
       return `<div class="sch-col ${iso === today ? 'today' : ''}" data-day="${iso}">${Array.from({ length: H1 - H0 }, (_, h) => `<div class="sch-slot" data-act="schNew" data-arg="${iso}|${String(H0 + h).padStart(2, '0')}:00" style="height:${px}px"></div>`).join('')}${blocks}${nowLine}</div>`;
     }).join('');
@@ -8367,7 +8372,7 @@ window.CP = window.CP || {};
     return `<section class="card"><div class="att-bar"><input type="month" id="schHoursM" value="${esc(m)}" style="width:auto"><span class="grow"></span><span class="small muted">Plānotās stundas pēc grafika (visu dienu notikumi netiek skaitīti stundās).</span></div>
       <div class="kpis"><div class="kpi"><small>Stundas kopā</small><b>${f(total)}</b></div><div class="kpi"><small>Notikumi</small><b>${ev.length}</b></div><div class="kpi"><small>Kontaktstundas (nodarbības + VAM)</small><b>${f(byType.filter(x => /Nodarbība/.test(x.t)).reduce((a, b) => a + b.h, 0))} h</b></div></div>
       ${byType.map(x => `<div class="gbar"><span class="gname"><i class="sch-dot" style="background:${x.c}"></i>${esc(x.t)}</span><span class="gtrack"><span style="width:${x.h / max * 100}%;background:${x.c}"></span></span><b>${f(x.h)} h</b><small class="muted">${x.n}×</small></div>`).join('') || ui.empty('Šajā mēnesī nav notikumu.')}</section>
-      ${ev.length ? `<section class="card"><h3>${ic('list')}Notikumi</h3><table class="table"><thead><tr><th>Datums</th><th>Laiks</th><th>Notikums</th><th>Veids</th><th>Stundas</th></tr></thead><tbody>${ev.map(e => `<tr><td class="nowrap">${esc(U.fmtDate(e.date))} <small class="muted">${WD[wd(e.date)]}</small></td><td class="nowrap">${esc(timeTxt(e))}</td><td><a href="#" data-act="schEdit" data-arg="${e.id}">${esc(e.title)}</a>${e.place ? ` <small class="muted">· ${esc(e.place)}</small>` : ''}</td><td><span class="tag">${esc(e.type)}</span></td><td>${e.allDay ? '—' : f(hours(e))}</td></tr>`).join('')}</tbody></table></section>` : ''}`;
+      ${ev.length ? `<section class="card"><h3>${ic('list')}Notikumi</h3><table class="table"><thead><tr><th>Datums</th><th>Laiks</th><th>Notikums</th><th>Veids</th><th>Stundas</th></tr></thead><tbody>${ev.map(e => `<tr><td class="nowrap">${esc(U.fmtDate(e.date))} <small class="muted">${WD[wd(e.date)]}</small></td><td class="nowrap">${esc(timeTxt(e))}</td><td><a href="#" data-act="schView" data-arg="${e.id}">${esc(e.title)}</a>${e.place ? ` <small class="muted">· ${esc(e.place)}</small>` : ''}</td><td><span class="tag">${esc(e.type)}</span></td><td>${e.allDay ? '—' : f(hours(e))}</td></tr>`).join('')}</tbody></table></section>` : ''}`;
   }
 
   /* --- Notikuma logs --- */
@@ -8379,7 +8384,30 @@ window.CP = window.CP || {};
     cur = { id: '', title: '', type: 'Nodarbība', date: date || view().date || U.iso(), endDate: '', allDay: false, start: st0, end: `${String(Math.min(23, h + 2)).padStart(2, '0')}:${String(m).padStart(2, '0')}`, place: '', notes: '', remind: st().schDefaultRemind || [60, 1440] };
     dialog();
   };
-  A.schEdit = id => { const e = list().find(x => x.id === id); if (!e) return; cur = JSON.parse(JSON.stringify(e)); dialog(); };
+  A.schEdit = id => { const e = list().find(x => x.id === id); if (!e) return; U.$('schView')?.close(); cur = JSON.parse(JSON.stringify(e)); dialog(); };
+  /** Notikuma kartīte (tikai skatīšanai): klikšķis kalendārā vairs neatver labošanu, to dara ✎ */
+  A.schView = id => {
+    const e = list().find(x => x.id === id); if (!e) return;
+    let d = U.$('schView'); if (!d) { d = document.createElement('dialog'); d.id = 'schView'; d.className = 'sch-view'; document.body.appendChild(d); }
+    const days = U.daysTo(e.date), rel = days === 0 ? 'šodien' : days === 1 ? 'rīt' : days === -1 ? 'vakar' : days > 0 ? `pēc ${days} d.` : `pirms ${-days} d.`;
+    const multi = e.endDate && e.endDate > e.date, h = hours(e), series = e.seriesId ? list().filter(x => x.seriesId === e.seriesId) : [];
+    const fmtH = v => (Math.round(v * 100) / 100).toLocaleString('lv-LV');
+    const line = (icon, html) => html ? `<div class="sv-line"><span class="sv-ic">${icon}</span><div>${html}</div></div>` : '';
+    d.innerHTML = `<div class="sv-band" style="--c:${color(e.type)}"></div>
+      <header class="dlg-head"><div><span class="tag" style="background:color-mix(in srgb, ${color(e.type)} 25%, transparent)">${esc(e.type)}</span><h2 style="margin:6px 0 0">${esc(e.title)}</h2></div><button type="button" class="ghost" data-close="schView" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body">
+        ${line('📅', `<b>${WDL[wd(e.date)]}, ${esc(U.fmtDate(e.date))}</b>${multi ? ` – ${WDL[wd(e.endDate)].toLowerCase()}, ${esc(U.fmtDate(e.endDate))}` : ''} <span class="muted small">(${rel})</span>`)}
+        ${line('🕘', e.allDay ? (multi ? 'Visas dienas' : 'Visu dienu') : `<b>${esc(e.start || '')}${e.end ? '–' + esc(e.end) : ''}</b>${h ? ` <span class="muted small">· ${fmtH(h)} h</span>` : ''}`)}
+        ${line('📍', e.place ? esc(e.place) : '')}
+        ${line('📝', e.notes ? `<div class="sv-notes">${esc(e.notes)}</div>` : '')}
+        ${line('🔔', (e.remind || []).length ? 'Atgādināt: ' + e.remind.map(m => m ? remLabel(m) + ' iepriekš' : 'sākumā').join(', ') : '<span class="muted">Bez atgādinājuma</span>')}
+        ${series.length > 1 ? line('↻', `Atkārtojas katru nedēļu <span class="muted small">(${series.length} notikumi, līdz ${esc(U.fmtDate(series.map(x => x.date).sort().at(-1)))})</span>`) : ''}
+        ${e.ikey || e.gcalId ? `<div class="sv-meta small muted">${e.ikey ? '⬆ Importēts no darba plānošanas matricas. Ja to labosi rīkā, nākamais imports to var pārrakstīt.' : ''}${e.ikey && e.gcalId ? '<br>' : ''}${e.gcalId ? 'G✓ Ir Google kalendārā' : ''}</div>` : ''}
+      </div>
+      <footer class="dlg-foot"><button type="button" class="ghost" data-act="schViewDup" data-arg="${e.id}" title="Izveidot kopiju nākamajai nedēļai">⧉ Kopēt</button><span class="grow"></span><button type="button" data-close="schView">Aizvērt</button><button type="button" class="mainbtn" data-act="schEdit" data-arg="${e.id}">✎ Labot</button></footer>`;
+    if (!d.open) d.showModal();
+  };
+  A.schViewDup = id => { A.schEdit(id); A.schDup(); };
   function dialog() {
     let d = U.$('schDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'schDialog'; d.className = 'wide'; document.body.appendChild(d); }
     const e = cur, titles = [...new Set(list().map(x => x.title).filter(Boolean))].slice(-80), places = [...new Set(list().map(x => x.place).filter(Boolean))].slice(-40);
@@ -8462,7 +8490,7 @@ window.CP = window.CP || {};
       seen[key] = now; changed = true;
       const left = Math.round((startAt(e).getTime() - now) / 60000), when = `${U.fmtDate(e.date)} ${e.allDay ? '' : e.start}`.trim();
       if (nt().events !== false) {
-        ui.toast(`🔔 ${e.title} — ${inTxt(left)} (${when}${e.place ? ', ' + e.place : ''})`, 'ok', 0, { act: 'schEdit', arg: e.id, label: 'Atvērt' });
+        ui.toast(`🔔 ${e.title} — ${inTxt(left)} (${when}${e.place ? ', ' + e.place : ''})`, 'ok', 0, { act: 'schView', arg: e.id, label: 'Atvērt' });
         desk(`🔔 ${e.title}`, `${inTxt(left)} · ${when}${e.allDay ? '' : (e.end ? '–' + e.end : '')}${e.place ? '\n📍 ' + e.place : ''}`, 'ev-' + e.id, 'schedule');
       }
     }
@@ -8649,7 +8677,7 @@ window.CP = window.CP || {};
   CP.schedule.dashCard = () => {
     const today = U.iso(), ev = sorted(list().filter(e => endDay(e) >= today && e.date <= addDays(today, 7)));
     return `<section class="card" data-mcol="0"><h3>${ic('calendar')}Grafiks — tuvākās 7 dienas <button class="ghost sm right" data-page="schedule">Viss →</button></h3>
-      ${ev.slice(0, 6).map(e => `<div class="row sch-row" style="--c:${color(e.type)}"><span class="sch-bar"></span><div class="sch-when"><b>${e.date <= today ? 'Šodien' : e.date === addDays(today, 1) ? 'Rīt' : esc(WD[wd(e.date)] + ' ' + U.fmtDate(e.date).slice(0, 5))}</b><div class="small">${esc(timeTxt(e))}</div></div><div class="grow"><a href="#" data-act="schEdit" data-arg="${e.id}"><b>${esc(e.title)}</b></a>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}</div></div>`).join('') || `<p class="muted small">Tuvākajās dienās nav notikumu. <a href="#" data-act="schNew">＋ Pievienot</a></p>`}</section>`;
+      ${ev.slice(0, 6).map(e => `<div class="row sch-row" style="--c:${color(e.type)}"><span class="sch-bar"></span><div class="sch-when"><b>${e.date <= today ? 'Šodien' : e.date === addDays(today, 1) ? 'Rīt' : esc(WD[wd(e.date)] + ' ' + U.fmtDate(e.date).slice(0, 5))}</b><div class="small">${esc(timeTxt(e))}</div></div><div class="grow"><a href="#" data-act="schView" data-arg="${e.id}"><b>${esc(e.title)}</b></a>${e.place ? `<div class="small muted">📍 ${esc(e.place)}</div>` : ''}</div></div>`).join('') || `<p class="muted small">Tuvākajās dienās nav notikumu. <a href="#" data-act="schNew">＋ Pievienot</a></p>`}</section>`;
   };
   Object.assign(CP.schedule, { ics, sync, gEvent, askPermission, list, delQ, autoSync, TYPES, sorted, timeTxt, render: () => CP.render() });
 })(window.CP);

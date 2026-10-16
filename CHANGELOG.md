@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.26.1 — 2026-10-16
+- Grafiks: `A.schView` — notikuma kartīte bez ievades laukiem (mēneša un nedēļas skats, saraksta virsraksts, stundu tabula, pārskats, atgādinājuma paziņojums). Labošanas logs (`A.schEdit`) atveras tikai ar ✎ (kartītē vai saraksta rindā). Kartītē: “⧉ Kopēt” → kopija nākamajai nedēļai labošanas logā.
+
 ## 1.26.0 — 2026-10-16 — Jaunas grupas un grupas izvēlne
 - `settings.groupsByYear = { yearId: [nosaukums] }`: pieteiktās grupas (arī tukšas). `D.groups()` = šī gada personu grupas ∪ pieteiktās, tāpēc tās ir visās izvēlnēs (datalist `dl_groups`, filtri, apmeklējums, saziņa, imports, pārcelšana). `D.addGroup`, `D.declaredGroups`, `D.setDeclaredGroups`. Pārdēvējot / dzēšot tiek atjaunots arī pieteikto saraksts.
 - Pārskatā ir poga “＋ Jauna grupa” (`A.groupNew`). Tukšas grupas dzēšana bez jautājuma par personām.

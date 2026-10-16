@@ -10,6 +10,11 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
+    { v: '1.26.1', from: '1.26.0', date: '2026-10-16', title: 'Notikuma kartīte kalendārā', items: [
+      'Klikšķis uz notikuma kalendārā tagad atver **kartīti tikai skatīšanai**: datums, laiks un ilgums, vieta, piezīmes, atgādinājumi, atkārtošanās un vai notikums ir importēts vai Google kalendārā. Nejauši neko izmainīt vairs nevar.',
+      'Labot var ar pogu **✎ Labot** kartītē vai ar **✎** sarakstā. Kartītē ir arī **⧉ Kopēt** uz nākamo nedēļu.',
+      'Tāpat kartīte atveras no pārskata “Grafiks — tuvākās 7 dienas”, stundu kopsavilkuma un atgādinājuma paziņojuma.'
+    ] },
     { v: '1.26.0', from: '1.25.0', date: '2026-10-16', title: 'Grupu pārvaldība un līdzenāks pārskats', items: [
       'Pārskata kartītē **Grupas** ir poga **＋ Jauna grupa**, bet pie katras grupas pogas **✎ pārdēvēt** un **✕ dzēst**. Jaunu grupu var izveidot arī tad, ja tajā vēl nav personu.',
       'Jaunā grupa uzreiz parādās **visās izvēlnēs**: personas kartītē, sarakstu filtrā, apmeklējumā, saziņā, importā un pārcelšanā uz citu gadu.',
