@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.31.2';
+  CP.VERSION = '1.31.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2445,7 +2445,7 @@ window.CP = window.CP || {};
     if (!show) { b?.remove(); return; }
     if (b) return;
     b = document.createElement('div'); b.id = 'pinBanner'; b.className = 'gbanner pinbanner'; b.setAttribute('role', 'status');
-    b.innerHTML = `<span>🔒 Iestati PIN kodu — tad pulkstenis aizsargās jaunsargu datus, kad neesi pie datora</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
+    b.innerHTML = `<span>🔒 Iestati PIN kodu</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
     ui.topHost().appendChild(b);
   }
   A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };
@@ -4126,7 +4126,7 @@ window.CP = window.CP || {};
   const KEY = 'cp-session';
   const loadSes = () => { try { return JSON.parse(ls.get(KEY) || 'null'); } catch (e) { return null; } };
   const saveSes = () => ls.set(KEY, JSON.stringify(ses));
-  let ses = loadSes(); const t0 = Date.now();
+  let ses = loadSes(), awayFrom = 0; const t0 = Date.now();
   if (!ses || t0 - (ses.last || 0) > 5 * 60000) ses = { start: t0, last: t0, remindAt: t0 + P.workMin * 60000, breakEnd: 0 };
   saveSes();
   function restart(t = Date.now()) { ses = { start: t, last: t, remindAt: t + P.workMin * 60000, breakEnd: 0 }; saveSes(); }
@@ -4272,7 +4272,8 @@ window.CP = window.CP || {};
       attr(r, 'hh', 'transform', `rotate(${(h + mi / 60) * 30} ${C} ${C})`); attr(r, 'mm', 'transform', `rotate(${(mi + s / 60) * 6} ${C} ${C})`); attr(r, 'ss', 'transform', `rotate(${s * 6} ${C} ${C})`);
       if (P.mode === 'time') {
         set(r, 'main', `${pad(d.getHours())}:${pad(mi)}`); set(r, 'sec', pad(s));
-        set(r, 'lbl', workLbl); set(r, 'small', workTxt);
+        const away = awayFrom && r.id === 'watchBig';   // bloķējumā / prombūtnē darba laiku nerāda
+        set(r, 'lbl', away ? '' : workLbl); set(r, 'small', away ? '' : workTxt);
         attr(r, 'arcA', 'stroke-dasharray', `${f1(workPct)} 100`); attr(r, 'arcB', 'stroke-dasharray', `${f1(s / 59 * 100)} 100`);
       } else if (P.mode === 'stopwatch') {
         const ms = swNow();
@@ -4336,13 +4337,18 @@ window.CP = window.CP || {};
   function showBig(manual) {
     if (document.getElementById('watchBig')) return;
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
+    if (!manual && !ses.breakEnd) awayFrom = Math.min(lastAct, Date.now());   // prom no datora — šis laiks nav darbs
     ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
     // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
     if (manual || !CP.lock?.adopt?.(ov)) document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('on')); paint(true);
   }
-  function hideBig(force) { if (force !== true && CP.lock?.guard?.()) return; document.getElementById('watchBig')?.remove(); }
+  function hideBig(force) {
+    if (force !== true && CP.lock?.guard?.()) return;
+    document.getElementById('watchBig')?.remove();
+    if (awayFrom) { const d = Date.now() - awayFrom; awayFrom = 0; ses.start += d; ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
+  }
   CP.watchShowBig = showBig; CP.watchHideBig = hideBig;
 
   let customLast = '';
@@ -4392,9 +4398,9 @@ window.CP = window.CP || {};
         <div class="root-howto"><b>Kā sākt:</b>${ui.rootSteps()}</div>
         <p class="muted small">Kamēr mape nav pievienota, personas, dokumentus un veidlapas nevar ievadīt. Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
         : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
-      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
+      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`);
       if (!S.root) return `<div class="page">${head}${start}</div>`;   // bez mapes — tikai mapes pievienošana (statistika un darbības nav pieejamas)
-      return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
+      return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`)}
         ${start}
         ${CP.years?.banner() || ''}
         <div class="dash-top">${CP.watch ? CP.watch.html() : ''}
@@ -5366,8 +5372,10 @@ window.CP = window.CP || {};
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.31.2', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
-      'Kamēr PIN nav iestatīts, augšā redzama josla **“Iestati PIN kodu”**. Poga **“Iestatīt PIN”** aizved uz iestatījumiem. Ar **✕** joslu var paslēpt, bet nākamreiz, atverot rīku, tā parādās atkal.',
+    { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
+      '**Pārskatā** blakus pogai “Saglabāt” ir poga **“🔒 Bloķēt rīku”**.',
+      'Kamēr rīks bloķēts vai pulkstenis aizsedz ekrānu, **darba laiks netiek skaitīts** un uz pulksteņa netiek rādīts.',
+      'Kamēr PIN nav iestatīts, augšā redzama josla **“🔒 Iestati PIN kodu”**. Poga **“Iestatīt PIN”** aizved uz iestatījumiem. Ar **✕** joslu var paslēpt, bet nākamreiz, atverot rīku, tā parādās atkal.',
       'Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka **lielais pulkstenis**, un jaunsargu dati nav redzami. Noklusēti tas notiek pēc **5 minūtēm**. Laiku var mainīt **Iestatījumos → Pulkstenis un pauzes → Liels pulkstenis**.',
       '**PIN kods** (4–8 cipari): to prasa, izejot no pulksteņa un atverot rīku. Iestatīt, mainīt vai noņemt var Iestatījumos. PIN glabājas tikai tavā datorā šifrētā veidā.',
       '**Aizmirsi PIN?** Rīks nosūta 6 ciparu kodu uz tavu **atkopšanas e-pastu**, kas iestatīšanas laikā tiek apstiprināts ar kodu. Ja e-pasta nav, bloķēšanu var atiestatīt, no jauna izvēloties datu mapi. Dati netiek dzēsti.',

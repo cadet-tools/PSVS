@@ -256,7 +256,7 @@
     if (!show) { b?.remove(); return; }
     if (b) return;
     b = document.createElement('div'); b.id = 'pinBanner'; b.className = 'gbanner pinbanner'; b.setAttribute('role', 'status');
-    b.innerHTML = `<span>🔒 Iestati PIN kodu — tad pulkstenis aizsargās jaunsargu datus, kad neesi pie datora</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
+    b.innerHTML = `<span>🔒 Iestati PIN kodu</span><button type="button" data-act="lockGoSet">Iestatīt PIN</button><button type="button" class="gb-x" data-act="lockBarHide" title="Paslēpt līdz nākamajai rīka atvēršanai" aria-label="Paslēpt">✕</button>`;
     ui.topHost().appendChild(b);
   }
   A.lockBarHide = () => { pinBarHidden = true; paintPinBar(); };

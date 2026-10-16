@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.31.3 — 2026-10-16
+- Pārskatā poga “Bloķēt rīku” (`lockNow`). `watch.js`: neaktivitātes laiks (no pēdējās darbības līdz lielā pulksteņa aizvēršanai) netiek skaitīts darbā (`ses.start` pārbīdīts), lielajā pulkstenī prombūtnes laikā “Darbā” netiek rādīts. PIN joslas teksts saīsināts.
+
 ## 1.31.2 — 2026-10-16
 - Josla `#pinBanner` (ja datu mape atvērta un PIN nav iestatīts; ✕ — līdz lapas pārlādei). Kopīgs augšējo joslu konteiners `ui.topHost()` (`#topBars`) arī Google joslai.
 

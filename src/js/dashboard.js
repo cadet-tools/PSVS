@@ -32,9 +32,9 @@
         <div class="root-howto"><b>Kā sākt:</b>${ui.rootSteps()}</div>
         <p class="muted small">Kamēr mape nav pievienota, personas, dokumentus un veidlapas nevar ievadīt. Dati glabājas tikai tavā datorā, izvēlētajā mapē.</p></section>`
         : B?.step === 'index' ? `<div class="bootidx"><span class="spin"></span> Indeksē dokumentus mapē “${esc(B.name || '')}”… <b id="bootIdxN">${B.count || 0}</b> faili. Vari strādāt — dokumentu saraksti papildināsies.</div>` : '';
-      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn());
+      const head = ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`);
       if (!S.root) return `<div class="page">${head}${start}</div>`;   // bez mapes — tikai mapes pievienošana (statistika un darbības nav pieejamas)
-      return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), ui.saveBtn())}
+      return `<div class="page">${ui.pageHead('Pārskats', `${U.yearLabel(D.activeYear())} · ` + new Date().toLocaleDateString('lv-LV', { weekday: 'long', day: 'numeric', month: 'long' }), `<span class="head-btns"><button class="ghost" data-act="lockNow" title="Bloķēt rīku (Ctrl+Shift+L)">${CP.ic('lock', '🔒')} Bloķēt rīku</button>${ui.saveBtn()}</span>`)}
         ${start}
         ${CP.years?.banner() || ''}
         <div class="dash-top">${CP.watch ? CP.watch.html() : ''}

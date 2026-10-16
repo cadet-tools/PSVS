@@ -637,3 +637,4 @@ dialog.cplock.pin .watch-big .wb-host{width:min(40vh,50vw)}
 dialog.cplock.has-watch .cpl-in{width:auto;max-width:100%}
 dialog.cplock.has-watch .cpl-box{width:min(400px,92vw)}
 @media (prefers-reduced-motion:reduce){dialog.cplock .watch-big .wb-host{transition:none}}
+.head-btns{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}

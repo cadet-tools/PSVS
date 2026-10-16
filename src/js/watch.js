@@ -43,7 +43,7 @@
   const KEY = 'cp-session';
   const loadSes = () => { try { return JSON.parse(ls.get(KEY) || 'null'); } catch (e) { return null; } };
   const saveSes = () => ls.set(KEY, JSON.stringify(ses));
-  let ses = loadSes(); const t0 = Date.now();
+  let ses = loadSes(), awayFrom = 0; const t0 = Date.now();
   if (!ses || t0 - (ses.last || 0) > 5 * 60000) ses = { start: t0, last: t0, remindAt: t0 + P.workMin * 60000, breakEnd: 0 };
   saveSes();
   function restart(t = Date.now()) { ses = { start: t, last: t, remindAt: t + P.workMin * 60000, breakEnd: 0 }; saveSes(); }
@@ -189,7 +189,8 @@
       attr(r, 'hh', 'transform', `rotate(${(h + mi / 60) * 30} ${C} ${C})`); attr(r, 'mm', 'transform', `rotate(${(mi + s / 60) * 6} ${C} ${C})`); attr(r, 'ss', 'transform', `rotate(${s * 6} ${C} ${C})`);
       if (P.mode === 'time') {
         set(r, 'main', `${pad(d.getHours())}:${pad(mi)}`); set(r, 'sec', pad(s));
-        set(r, 'lbl', workLbl); set(r, 'small', workTxt);
+        const away = awayFrom && r.id === 'watchBig';   // bloķējumā / prombūtnē darba laiku nerāda
+        set(r, 'lbl', away ? '' : workLbl); set(r, 'small', away ? '' : workTxt);
         attr(r, 'arcA', 'stroke-dasharray', `${f1(workPct)} 100`); attr(r, 'arcB', 'stroke-dasharray', `${f1(s / 59 * 100)} 100`);
       } else if (P.mode === 'stopwatch') {
         const ms = swNow();
@@ -253,13 +254,18 @@
   function showBig(manual) {
     if (document.getElementById('watchBig')) return;
     const ov = document.createElement('div'); ov.id = 'watchBig'; ov.className = 'watch-big'; ov.dataset.shown = String(Date.now()); if (manual) ov.dataset.manual = '1';
+    if (!manual && !ses.breakEnd) awayFrom = Math.min(lastAct, Date.now());   // prom no datora — šis laiks nav darbs
     ov.innerHTML = `<div class="wb-host">${caseSvg(faceInner(), 'wb' + (++uid))}</div><p class="wb-hint">${manual ? 'Klikšķis ārpus pulksteņa vai Esc — atpakaļ' : 'Pakustini peli vai nospied taustiņu, lai turpinātu'}</p>`;
     ov.addEventListener('click', e => { if (!e.target.closest('[data-act]')) hideBig(); });
     // ja iestatīts PIN, bloķēšana ieliek pulksteni savā logā (virs visiem citiem logiem)
     if (manual || !CP.lock?.adopt?.(ov)) document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('on')); paint(true);
   }
-  function hideBig(force) { if (force !== true && CP.lock?.guard?.()) return; document.getElementById('watchBig')?.remove(); }
+  function hideBig(force) {
+    if (force !== true && CP.lock?.guard?.()) return;
+    document.getElementById('watchBig')?.remove();
+    if (awayFrom) { const d = Date.now() - awayFrom; awayFrom = 0; ses.start += d; ses.remindAt += d; ses.last = Date.now(); saveSes(); paint(true); }
+  }
   CP.watchShowBig = showBig; CP.watchHideBig = hideBig;
 
   let customLast = '';

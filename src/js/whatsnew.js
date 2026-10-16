@@ -10,8 +10,10 @@
   /* Bloki pa lielām funkcijām (lietotāja skatījumā). v — jaunākā bloka versija, from — pirmā.
      Jaunumu logā tiek rādīti bloki, kuru v ir jaunāka par iepriekš redzēto versiju. */
   const NEWS = [
-    { v: '1.31.2', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
-      'Kamēr PIN nav iestatīts, augšā redzama josla **“Iestati PIN kodu”**. Poga **“Iestatīt PIN”** aizved uz iestatījumiem. Ar **✕** joslu var paslēpt, bet nākamreiz, atverot rīku, tā parādās atkal.',
+    { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
+      '**Pārskatā** blakus pogai “Saglabāt” ir poga **“🔒 Bloķēt rīku”**.',
+      'Kamēr rīks bloķēts vai pulkstenis aizsedz ekrānu, **darba laiks netiek skaitīts** un uz pulksteņa netiek rādīts.',
+      'Kamēr PIN nav iestatīts, augšā redzama josla **“🔒 Iestati PIN kodu”**. Poga **“Iestatīt PIN”** aizved uz iestatījumiem. Ar **✕** joslu var paslēpt, bet nākamreiz, atverot rīku, tā parādās atkal.',
       'Ja rīku kādu laiku nelieto, ekrānu aizsedz rīka **lielais pulkstenis**, un jaunsargu dati nav redzami. Noklusēti tas notiek pēc **5 minūtēm**. Laiku var mainīt **Iestatījumos → Pulkstenis un pauzes → Liels pulkstenis**.',
       '**PIN kods** (4–8 cipari): to prasa, izejot no pulksteņa un atverot rīku. Iestatīt, mainīt vai noņemt var Iestatījumos. PIN glabājas tikai tavā datorā šifrētā veidā.',
       '**Aizmirsi PIN?** Rīks nosūta 6 ciparu kodu uz tavu **atkopšanas e-pastu**, kas iestatīšanas laikā tiek apstiprināts ar kodu. Ja e-pasta nav, bloķēšanu var atiestatīt, no jauna izvēloties datu mapi. Dati netiek dzēsti.',
