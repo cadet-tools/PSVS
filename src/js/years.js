@@ -16,7 +16,71 @@
       + `<button type="button" data-act="openAddYear">＋ Pievienot mācību gadu</button>`
       + `<button type="button" data-act="goSetCard" data-arg="yearsCard">Pārvaldīt mācību gadus</button>`;
   }
-  CP.years = { paint };
+  /* --- Mācību gada dzēšana: tukšu — pēc apstiprinājuma; ar datiem — vispirms pārceļ uz citu gadu --- */
+  function yearContent(id) {
+    const db = S.db, n = (arr, f = x => x.yearId === id) => (arr || []).filter(f).length;
+    return [
+      ['dalības', n(db.enrollments)], ['nodarbības', n(db.sessions)], ['pasākumi', n(db.events)], ['VFS testi', n(db.vfsTests)],
+      ['grupas', ((db.settings.groupsByYear || {})[id] || []).length]
+    ].filter(([, c]) => c);
+  }
+  function dropYear(id) {
+    const s = S.db.settings;
+    S.db.years = S.db.years.filter(y => y.id !== id);
+    s.yearsDeleted = [...new Set([...(s.yearsDeleted || []), id])];
+    if (s.groupsByYear) delete s.groupsByYear[id];
+  }
+  A.yearDelete = id => {
+    if (!D.yearById(id)) return;
+    if (id === D.activeYear() || id === U.schoolYear()) return ui.toast('Izvēlēto un pašreizējo mācību gadu nevar dzēst', 'warn');
+    const what = yearContent(id);
+    if (!what.length) {
+      if (!confirm(`Dzēst mācību gadu ${U.yearLabel(id)}?\n\nTajā nav neviena ieraksta. Mape datorā (Macibu_gadi/${id}) netiek dzēsta.`)) return;
+      dropYear(id); CP.store.changed(); CP.render(); paint();
+      return ui.toast(`Mācību gads ${U.yearLabel(id)} dzēsts`, 'ok');
+    }
+    const targets = [...S.db.years].filter(y => y.id !== id).sort((a, b) => Math.abs(a.start - D.yearById(id).start) - Math.abs(b.start - D.yearById(id).start));
+    let dlg = U.$('yearDelDialog');
+    if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'yearDelDialog'; document.body.appendChild(dlg); }
+    dlg.innerHTML = `<form method="dialog" id="yearDelForm">
+      <header class="dlg-head"><h2>Dzēst mācību gadu ${esc(U.yearLabel(id))}</h2><button type="button" class="ghost" data-close="yearDelDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p>Šajā gadā ir dati: <b>${what.map(([l, c]) => `${esc(l)} ${c}`).join(', ')}</b>.</p>
+        <p>Pirms dzēšanas tie jāpārceļ uz citu mācību gadu.</p>
+        <div class="field"><label for="yearDelTo">Pārcelt uz</label><select id="yearDelTo">${targets.map(y => `<option value="${esc(y.id)}">${esc(U.yearLabel(y.id))}${y.id === D.activeYear() ? ' · izvēlētais' : ''}</option>`).join('')}</select></div>
+        <p class="small muted">Ja persona jau ir izvēlētajā gadā, tur paliek tās esošā dalība (grupa, statuss). Dokumenti un ekipējums saglabā savu saņemšanas gadu; faili datorā netiek pārvietoti, un saites uz tiem darbojas kā līdz šim. Mape Macibu_gadi/${esc(id)} datorā paliek.</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="yearDelDialog">Atcelt</button><button type="button" class="mainbtn danger" id="yearDelGo">Pārcelt un dzēst</button></footer></form>`;
+    dlg.querySelector('#yearDelGo').onclick = () => {
+      const to = dlg.querySelector('#yearDelTo').value; if (!to || to === id) return;
+      if (!confirm(`Pārcelt visus ${U.yearLabel(id)} datus uz ${U.yearLabel(to)} un dzēst ${U.yearLabel(id)}?`)) return;
+      const db = S.db; let kept = 0;
+      db.enrollments = db.enrollments.filter(e => {
+        if (e.yearId !== id) return true;
+        if (D.enroll(e.personId, to)) { kept++; return false; }
+        e.yearId = to; return true;
+      });
+      // dokumenti, ekipējums, uzdevumi un saziņa paliek ar savu (vēsturisko) gadu — no tā atkarīgs, piem., ārsta izziņas derīgums
+      for (const k of ['sessions', 'events', 'vfsTests']) for (const r of db[k] || []) if (r.yearId === id) r.yearId = to;
+      const g = db.settings.groupsByYear || {};
+      if (g[id]?.length) D.setDeclaredGroups([...(g[to] || []), ...g[id]], to);
+      dropYear(id);
+      dlg.close(); CP.store.changed(); CP.render(); paint();
+      ui.toast(`${U.yearLabel(id)} dzēsts, dati pārcelti uz ${U.yearLabel(to)}${kept ? ` (${kept} personām ${U.yearLabel(to)} jau bija dalība — tā saglabāta)` : ''}`, 'ok', 9000);
+    };
+    dlg.showModal();
+  };
+
+  /* --- CADET.LV logo galvenē — loga (ne satura daļas) vidū --- */
+  function centerLogo() {
+    const bar = document.querySelector('.yearbar'), l = bar?.querySelector('.hdr-logo'); if (!l) return;
+    const r = bar.getBoundingClientRect(), pick = U.$('yearPick')?.getBoundingClientRect(), w = l.offsetWidth || 120;
+    let x = innerWidth / 2 - r.left;
+    if (pick && r.left + x + w / 2 + 12 > pick.left) x = r.width / 2;   // šaurā logā — joslas vidū, lai nepārklātu gada pogu
+    l.style.left = Math.round(x) + 'px';
+  }
+  addEventListener('resize', centerLogo);
+  if (window.ResizeObserver) { const ro = new ResizeObserver(centerLogo); const go = () => { const b = document.querySelector('.yearbar'); if (b) { ro.observe(b); centerLogo(); } else setTimeout(go, 200); }; go(); }
+
+  CP.years = { paint, centerLogo };
 
   A.toggleYear = () => { const m = U.$('yearMenu'); if (m) m.classList.toggle('hidden'); };
   A.setYear = id => {

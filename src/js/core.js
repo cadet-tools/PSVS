@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.40.1';
+  CP.VERSION = '1.41.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -410,9 +410,12 @@ window.CP = window.CP || {};
     if (typeof d.revision !== 'number' || !Number.isFinite(d.revision)) d.revision = 0;
     const yearIds = new Set();
     d.years = d.years.filter(y => y && /^(\d{4})-(\d{4})$/.test(y.id) && Number(y.id.slice(5)) === Number(y.id.slice(0, 4)) + 1 && !yearIds.has(y.id) && yearIds.add(y.id));
+    const yDel = new Set(d.settings.yearsDeleted || []);   // lietotāja dzēstie gadi netiek atjaunoti
+    for (const e of d.enrollments || []) if (e?.yearId) yDel.delete(e.yearId);
+    d.settings.yearsDeleted = [...yDel];
     for (let y = 2017; y <= 2026; y++) {
       const id = U.yearId(y);
-      if (!yearIds.has(id)) { d.years.push({ id, start: y, createdAt: null }); yearIds.add(id); }
+      if (!yearIds.has(id) && !yDel.has(id)) { d.years.push({ id, start: y, createdAt: null }); yearIds.add(id); }
     }
     d.years.forEach(y => { if (y.start == null) y.start = Number(y.id.slice(0, 4)); });
     d.years.sort((a, b) => a.start - b.start);

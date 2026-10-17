@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.41.0 — 2026-10-17
+- Mācību gadu dzēšana (`A.yearDelete`): tukšs gads — `confirm`; ar dalībām/nodarbībām/pasākumiem/VFS testiem/grupām — dialogs “Pārcelt uz” (ja persona mērķa gadā jau ir, saglabājas tās esošā dalība). Dokumenti, ekipējums, uzdevumi, saziņa saglabā savu `yearId` (ārsta izziņas derīgums). Izvēlēto un pašreizējo gadu dzēst nevar. `settings.yearsDeleted` — migrācija dzēstos 2017–2026 gadus vairs nepievieno (ja nav dalību šajā gadā). Mapes datorā netiek dzēstas.
+- CADET.LV logo galvenē centrēts pret logu (`centerLogo`, šaurā logā — joslas vidū). Gadu izvēlnē izvēlētais gads `--accent-soft` / `--acc` (bija fiksēti zaļš).
+
 ## 1.40.1 — 2026-10-17
 - “Reģistrācija un arhīvs”: dokuments bez skenēta faila (`received()` — obligātajiem pēc `D.missingDocs`) rindā `.nogot` — sarkans, ar “＋ Fails”; atzīmējot DVS vai Centra arhīvu nesaņemtam dokumentam — apstiprinājums (atceļot atzīme netiek likta). Ja atzīme jau ir bez faila — sarkans paskaidrojums. Arhīva “saņemts” vairs neņem vērā DVS atzīmi. “Obligātie dokumenti” trūkstošie — sarkani.
 
