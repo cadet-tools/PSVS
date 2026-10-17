@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.44.0';
+  CP.VERSION = '1.44.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5684,9 +5684,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.44.0', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
+    { v: '1.44.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
-      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā atzīmēti ar ★. No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
+      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā virs saraksta redzami visi mēneša pasākumi (arī tad, ja rādītas tikai nodarbību dienas) un datumi atzīmēti ar ★. No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
@@ -8117,12 +8117,13 @@ window.CP = window.CP || {};
   /** No Apmeklējuma pasākuma: jauna veidlapa ar tā nosaukumu, datumiem un dalībniekiem (vai jau sagatavotā) */
   A.formFromEvent = sid => {
     const s = (S.db.sessions || []).find(x => x.id === sid); if (!s) return;
+    document.querySelectorAll('dialog[open]').forEach(d => d.close());   // pasākuma logs nedrīkst aizsegt veidlapu
     const done = (S.db.events || []).find(e => e.fromSession === sid);
     if (done) return A.formOpen(done.id);
     const ev = blank(s.type === 'Nometne' ? 'camp' : 'instr');
     Object.assign(ev, { title: s.topic || '', dateFrom: s.date, dateTo: s.dateTo || '', instrDate: s.date, yearId: s.yearId || D.activeYear(), fromSession: sid,
       participants: Object.entries(s.att || {}).filter(([, c]) => c === '+' || c === 'k').map(([pid]) => ({ pid })).filter(x => D.person(x.pid)) });
-    S.formEdit = ev; S.formPick = { q: '', group: '', onlySel: true }; U.$('evDialog')?.close(); ui.go('formEdit');
+    S.formEdit = ev; S.formPick = { q: '', group: '', onlySel: true }; ui.go('formEdit');
   };
   A.formOpen = id => { const ev = (S.db.events || []).find(e => e.id === id); if (!ev) return; S.formEdit = JSON.parse(JSON.stringify(ev)); S.formPick = { q: '', group: '', onlySel: false }; ui.go('formEdit'); };
   A.formDelete = id => {
@@ -10109,6 +10110,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
       <div class="att-keys" id="attKeyHint"><span class="small"><b>Ar tastatūru:</b> uzklikšķini uz rūtiņas un raksti <kbd>+</kbd> (vai <kbd>B</kbd>) <kbd>N</kbd> <kbd>K</kbd> <kbd>A</kbd> <kbd>S</kbd> — atzīme tiek ierakstīta un fokuss pāriet tālāk. <kbd>Del</kbd> notīra, <kbd>Atstarpe</kbd> = klikšķis, bultiņas pārvietojas, <kbd>Esc</kbd> beidz.</span>
         <span class="seg"><span class="small muted" style="padding:0 6px">Pēc atzīmes:</span><button class="sm ${(v.dir || 'down') === 'down' ? 'on' : ''}" data-act="attDir" data-arg="down" title="Nākamā persona tajā pašā datumā (atzīmē vienu nodarbību)">↓ nākamā persona</button><button class="sm ${v.dir === 'right' ? 'on' : ''}" data-act="attDir" data-arg="right" title="Nākamais datums tai pašai personai">→ nākamais datums</button></span></div>
+      ${(() => { const [mf, mt] = [v.month + '-01', monthDates(v.month).at(-1)], list = events().filter(e => (e.group === '*' || e.group === v.group || v.group === '*') && e.date <= mt && (e.dateTo || e.date) >= mf).sort((a, b) => a.date.localeCompare(b.date));
+        return list.length ? `<div class="att-evstrip"><span class="small muted">Pasākumi šajā mēnesī:</span>${list.map(e => `<button type="button" class="sm" data-act="attEvOpen" data-arg="${e.id}" title="Atvērt pasākumu — dalībnieki un dokumenti">★ ${esc(U.fmtDate(e.date).slice(0, 5))}${e.dateTo && e.dateTo !== e.date ? '–' + esc(U.fmtDate(e.dateTo).slice(0, 5)) : ''} · ${esc(e.type)}: <b>${esc(e.topic || '')}</b> <span class="muted">(${evPresent(e).length})</span></button>`).join('')}</div>` : ''; })()}
       ${ppl.length ? `<div class="att-wrap"><table class="att-grid"><thead><tr><th class="ad-n">N.p.k.</th><th class="ad-name">Vārds, uzvārds</th>${head}<th class="ad-pct">Mēn.</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr><td></td><td class="small muted">Klātesošie</td>${foot}<td></td></tr></tfoot></table></div>` : ui.empty('Šajā grupā nav personu.')}
       <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s).</p></section>`;

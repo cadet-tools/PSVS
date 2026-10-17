@@ -176,12 +176,13 @@
   /** No Apmeklējuma pasākuma: jauna veidlapa ar tā nosaukumu, datumiem un dalībniekiem (vai jau sagatavotā) */
   A.formFromEvent = sid => {
     const s = (S.db.sessions || []).find(x => x.id === sid); if (!s) return;
+    document.querySelectorAll('dialog[open]').forEach(d => d.close());   // pasākuma logs nedrīkst aizsegt veidlapu
     const done = (S.db.events || []).find(e => e.fromSession === sid);
     if (done) return A.formOpen(done.id);
     const ev = blank(s.type === 'Nometne' ? 'camp' : 'instr');
     Object.assign(ev, { title: s.topic || '', dateFrom: s.date, dateTo: s.dateTo || '', instrDate: s.date, yearId: s.yearId || D.activeYear(), fromSession: sid,
       participants: Object.entries(s.att || {}).filter(([, c]) => c === '+' || c === 'k').map(([pid]) => ({ pid })).filter(x => D.person(x.pid)) });
-    S.formEdit = ev; S.formPick = { q: '', group: '', onlySel: true }; U.$('evDialog')?.close(); ui.go('formEdit');
+    S.formEdit = ev; S.formPick = { q: '', group: '', onlySel: true }; ui.go('formEdit');
   };
   A.formOpen = id => { const ev = (S.db.events || []).find(e => e.id === id); if (!ev) return; S.formEdit = JSON.parse(JSON.stringify(ev)); S.formPick = { q: '', group: '', onlySel: false }; ui.go('formEdit'); };
   A.formDelete = id => {

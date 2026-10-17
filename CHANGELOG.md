@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.44.1 — 2026-10-17
+- “Atvērt veidlapu” no pasākuma: pasākuma logs tiek aizvērts arī tad, ja veidlapa jau sagatavota (agrāk tas aizsedza Veidlapu lapu).
+- Mēneša tabulā josla “Pasākumi šajā mēnesī” — pasākumi redzami arī skatā “Jaunsardzes dienas”, ja to datums nav nodarbību diena.
+
 ## 1.44.0 — 2026-10-17
 - `js/evdocs.js` — kopīgs pasākumu dokumentu modulis (avoti `form` — Veidlapas, `att` — Apmeklējuma pasākumi); `forms.js` pārrakstīts uz to (darbības `evDocAdd`/`evDocDel` ar avotu un pasākuma ID argumentā).
 - Apmeklējums: “＋ Pasākums” un cilne “Pasākumi” (sesijas ar veidu ≠ Nodarbība: `topic` = nosaukums, `dateTo`, `att` tikai “+”, `docs`, `dir`). Pasākuma logā — dalībnieku atzīmēšana, dokumentu pogas, kopīgie dokumenti, “Sagatavot instruktāžas lapu / nometnes žurnālu” (`A.formFromEvent`, saite `fromSession`). Nodarbības logā vairs nav “Veids”.
