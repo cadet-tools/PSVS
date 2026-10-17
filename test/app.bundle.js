@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.48.1';
+  CP.VERSION = '1.48.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -12752,7 +12752,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   function unit() {
     const I = S.db?.settings?.instructor || {}, num = v => String(v ?? '').replace(/\D/g, '').slice(0, 3);
     let pc = '';
-    if (Array.isArray(S.db?.people)) {
+    if (S.root && Array.isArray(S.db?.people)) {
       const n = S.db.people.filter(p => p.status !== 'archived').length;
       pc = n === 0 ? '0' : n <= 10 ? '1-10' : n <= 25 ? '11-25' : n <= 50 ? '26-50' : n <= 100 ? '51-100' : '100+';
     }

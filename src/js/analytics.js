@@ -48,7 +48,7 @@
   function unit() {
     const I = S.db?.settings?.instructor || {}, num = v => String(v ?? '').replace(/\D/g, '').slice(0, 3);
     let pc = '';
-    if (Array.isArray(S.db?.people)) {
+    if (S.root && Array.isArray(S.db?.people)) {
       const n = S.db.people.filter(p => p.status !== 'archived').length;
       pc = n === 0 ? '0' : n <= 10 ? '1-10' : n <= 25 ? '11-25' : n <= 50 ? '26-50' : n <= 100 ? '51-100' : '100+';
     }

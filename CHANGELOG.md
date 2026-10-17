@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.48.2 — 2026-10-18
+- Analītika: personu skaita grupa tiek sūtīta tikai ar pieslēgtu datu mapi (bez mapes — tukša, nevis “0”).
+
 ## 1.48.1 — 2026-10-18
 - `CP.ANALYTICS_URL` — izstrādātāja Apps Script saņēmējs “CADET PERSONALS analitika” (tīmekļa lietotne, versija 1). Analītika joprojām aktīva tikai testa kanālā.
 
