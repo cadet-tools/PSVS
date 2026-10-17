@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.48.1 — 2026-10-18
+- `CP.ANALYTICS_URL` — izstrādātāja Apps Script saņēmējs “CADET PERSONALS analitika” (tīmekļa lietotne, versija 1). Analītika joprojām aktīva tikai testa kanālā.
+
 ## 1.48.0 — 2026-10-18
 - Lietošanas analītika (`js/analytics.js`, apraksts `docs/ANALYTICS.md`) — **pastāvīga rīka daļa**. Darbojas tikai tīmekļa versijā un testa kanālā (`CP.ANALYTICS_STABLE = false`); sūta tikai, ja norādīta `CP.ANALYTICS_URL` (vai testam `localStorage cp.anUrl`). Sesija (pārtraukums > 30 min → jauna): aktīvais laiks (30 s solis, ja bija ievade pēdējās 5 min), sadaļas (`ui.go`), darbību nosaukumi (`app.js` → `CP.analytics.act`), kļūdas `veids@fails:rinda` / `act:<darbība>` bez teksta; vide (versija, kanāls, lietotne/pārlūks, OS, pārlūks, ekrāna grupa, valoda, laika josla), instruktora pārvaldes / nodaļas numurs, personu skaita grupa. Pastāvīgs nejaušs ID `cp.anId`.
 - Rinda `cp.anQ` (≤ 300 sesijas, ≤ 60 dienas), sūtīšana paketē ≤ 50 (sākumā pēc 10 s, ik 15 min, `online`, aizverot/paslēpjot cilni); sesijas ID + `rev` — atkārtota sūtīšana atjauno to pašu rindu. Izslēgšana Iestatījumi → Atļaujas (`A.anToggle`, dzēš rindu un ID; `cp.anOff`). Vienreizējs paziņojums par sīkdatnēm (`cp.anSeen`). “Par rīku” teksts precizēts.
