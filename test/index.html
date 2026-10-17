@@ -850,6 +850,15 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .sum-row{padding:4px 0;border-bottom:1px solid var(--edge)}.sum-row:last-child{border-bottom:0}
 .sum-row textarea{margin:4px 0 2px 26px;width:calc(100% - 26px);font-size:13px;min-height:30px}
 
+/* Vienības logo un nosaukums */
+.unit-badge{display:flex;align-items:center;gap:8px;min-width:0;max-width:34%;flex:0 1 auto;font-weight:700;font-size:14px;color:var(--txt)}
+.unit-badge img{height:32px;width:auto;max-width:64px;object-fit:contain;flex:none}
+.unit-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:820px){.unit-badge span{display:none}}
+.unit-set{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.unit-prev{width:96px;height:96px;border:1px dashed var(--edge2);border-radius:12px;display:grid;place-items:center;flex:none;background:var(--field,transparent);overflow:hidden}
+.unit-prev img{max-width:88px;max-height:88px;object-fit:contain}
+
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
    Ideja: mierīga darba virsma, viens zaļš akcents, krāsu flīzes ar
@@ -1441,5 +1450,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.50.0"></script></body>
+<script src="app.bundle.js?v=1.51.0"></script></body>
 </html>

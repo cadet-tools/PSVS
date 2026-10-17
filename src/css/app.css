@@ -833,3 +833,12 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .sum-list{max-height:320px;overflow:auto;border:1px solid var(--edge);border-radius:10px;padding:4px 8px}
 .sum-row{padding:4px 0;border-bottom:1px solid var(--edge)}.sum-row:last-child{border-bottom:0}
 .sum-row textarea{margin:4px 0 2px 26px;width:calc(100% - 26px);font-size:13px;min-height:30px}
+
+/* Vienības logo un nosaukums */
+.unit-badge{display:flex;align-items:center;gap:8px;min-width:0;max-width:34%;flex:0 1 auto;font-weight:700;font-size:14px;color:var(--txt)}
+.unit-badge img{height:32px;width:auto;max-width:64px;object-fit:contain;flex:none}
+.unit-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:820px){.unit-badge span{display:none}}
+.unit-set{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.unit-prev{width:96px;height:96px;border:1px dashed var(--edge2);border-radius:12px;display:grid;place-items:center;flex:none;background:var(--field,transparent);overflow:hidden}
+.unit-prev img{max-width:88px;max-height:88px;object-fit:contain}

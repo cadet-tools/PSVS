@@ -17,7 +17,7 @@
   const SECS = [['att', 'Nodarbību apmeklējums (diagramma pa mēnešiem)'], ['events', 'Dalība pasākumos un nometnēs'], ['quals', 'Kvalifikācijas un nozīmītes'], ['vfs', 'VFS testu rezultāti un dinamika'], ['comment', 'Instruktora komentārs']];
   const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
   const MON = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
-  const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; return c; };
+  const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; if (c.unit == null) c.unit = true; return c; };
   const isLesson = s => !s.type || s.type === 'Nodarbība';
 
   /* ---------------- Dati vienai personai periodā ---------------- */
@@ -105,8 +105,26 @@
     /* --- Galvene --- */
     newPage(true);
     rect(pg, 0, H - 6, W, 6, C.brand);
-    y = H - 20 * MM;
-    if (logo) { const lw = 46 * MM, lh = lw * logo.height / logo.width; pg.drawImage(logo, { x: W - M - lw, y: y - lh + 14, width: lw, height: lh }); }
+    const top = H - 13 * MM; let bottom = top;
+    // labajā pusē — no kāda rīka: CADET.LV logo un zem tā “CADET PERSONĀLS”
+    { const lw = 38 * MM, lh = logo ? lw * logo.height / logo.width : 0;
+      if (logo) pg.drawImage(logo, { x: W - M - lw, y: top - lh, width: lw, height: lh });
+      text(pg, 'CADET PERSONĀLS', W - M - (logo ? lw * 0.03 : 0), top - lh - 9, { f: F.b, s: 7.5, c: C.mut, align: 'right' });
+      bottom = Math.min(bottom, top - lh - 12); }
+    // kreisajā pusē — vienības logo un nosaukums (ja izvēlēts)
+    if (o.unit) {
+      const ul = o.unit.logo ? await doc.embedPng(o.unit.logo).catch(() => null) : null;
+      const uh = 17 * MM, uw = ul ? Math.min(34 * MM, uh * ul.width / ul.height) : 0, uhh = ul ? uw * ul.height / ul.width : 0;
+      if (ul) pg.drawImage(ul, { x: M, y: top - uhh, width: uw, height: uhh });
+      if (o.unit.name) {
+        const nx = M + (ul ? uw + 10 : 0), lines = wrap(o.unit.name, F.x, 12.5, W - M - 46 * MM - nx).slice(0, 3);
+        const blockH = lines.length * 15, y0 = ul ? top - uhh / 2 + blockH / 2 - 11 : top - 11;
+        lines.forEach((ln, i) => text(pg, ln, nx, y0 - i * 15, { f: F.x, s: 12.5, c: C.ink }));
+        bottom = Math.min(bottom, y0 - (lines.length - 1) * 15 - 6);
+      }
+      if (ul) bottom = Math.min(bottom, top - uhh);
+    }
+    y = Math.min(bottom - 18, H - 20 * MM);
     text(pg, 'JAUNSARGA KOPSAVILKUMS', M, y, { f: F.b, s: 9.5, c: C.brand }); y -= 30;
     text(pg, o.name, M, y, { f: F.x, s: 26, c: C.ink }); y -= 20;
     text(pg, `Periods: ${o.periodText}`, M, y, { s: 10.5, c: C.mut }); y -= 14;
@@ -295,6 +313,7 @@
             <input type="search" data-sum="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="sumAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="sumNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row ${dlg.pids.has(p.id) ? 'on' : ''}"><label class="check"><input type="checkbox" data-sump="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label>
             ${dlg.pids.has(p.id) && c.inc.comment ? `<textarea data-sumc="${p.id}" rows="1" data-autogrow placeholder="Komentārs šai personai (nav obligāts)">${esc(p.summaryComment || '')}</textarea>` : ''}</div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>`}
+        ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-sum="unit" ${c.unit ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} — kopā ar CADET.LV logo</label>` : `<p class="small muted" style="margin:0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība.</p>`}
         <label class="check"><input type="checkbox" data-sum="save" ${S.root ? 'checked' : 'disabled'}> Saglabāt PDF katras personas dokumentu mapē (kategorija “${KIND}”)</label>
         <p class="small muted">Galvenē ir tikai vārds un uzvārds — bez personas koda, adreses un kontaktiem. ${one ? 'PDF atvērsies skatīšanai un drukāšanai.' : 'Vairākām personām — visi PDF vienā ZIP failā.'}</p>
       </div>
@@ -311,6 +330,7 @@
     if (t.dataset.sump) { if (t.checked) dlg.pids.add(t.dataset.sump); else dlg.pids.delete(t.dataset.sump); keepScroll(draw); return true; }
     const k = t.dataset.sum;
     if (k === 'from' || k === 'to') { dlg[k] = t.value; return true; }
+    if (k === 'unit') { cfg().unit = t.checked; CP.store.changed({ silent: true }); return true; }
     if (k === 'group') { dlg.group = t.value; keepScroll(draw); return true; }
     if (k === 'intro') { cfg().intro = t.value; CP.store.changed({ silent: true }); return true; }
     if (t.dataset.sumc) { const p = D.person(t.dataset.sumc); if (p) { p.summaryComment = t.value; CP.store.changed({ silent: true }); } return true; }
@@ -328,7 +348,7 @@
   async function build(p, from, to) {
     const c = cfg(), I = S.db.settings.instructor || {};
     const unit = [I.parvalde && `${I.parvalde}. novada pārvalde`, I.nodala && `${I.nodala}. nodaļa`].filter(Boolean).join(', ');
-    const bytes = await pdf({ name: U.full(p), periodText: periodText(from, to), inc: c.inc, intro: c.intro.trim(), comment: String(p.summaryComment || '').trim(), data: gather(p, from, to), instructor: { name: I.name || '', position: I.position || '', unit } });
+    const bytes = await pdf({ name: U.full(p), periodText: periodText(from, to), inc: c.inc, intro: c.intro.trim(), unit: c.unit && CP.unit?.has() ? { name: CP.unit.get().name, logo: CP.unit.logoBytes() } : null, comment: String(p.summaryComment || '').trim(), data: gather(p, from, to), instructor: { name: I.name || '', position: I.position || '', unit } });
     return { blob: new Blob([bytes], { type: 'application/pdf' }), name: `Kopsavilkums_${safe(p.last)}_${safe(p.first)}_${from}_${to}.pdf` };
   }
   async function saveTo(p, r, from, to) {

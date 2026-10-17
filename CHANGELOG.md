@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.51.0 — 2026-10-18
+- `js/unit.js`: vienības nosaukums un logo (`settings.unit = { name, logo }`; attēls → PNG ≤ 512 px datu failā). Kartīte Iestatījumi → Pamata → “Vienība”; galvenes joslā kreisajā pusē (`#unitBadge`, platums ierobežots līdz centrētajam CADET.LV logo).
+- Kopsavilkuma PDF galvene: labajā pusē vienmēr CADET.LV logo ar uzrakstu “CADET PERSONĀLS”; kreisajā — vienības logo un nosaukums, ja logā atzīmēts “Ar vienības logo un nosaukumu” (`settings.summary.unit`, noklusējumā ieslēgts). Oficiālās veidlapas (instruktāžas lapa, nometnes žurnāls, līgumi, VFS protokols, apmeklējuma žurnāls) netiek mainītas — bez logo un uzrakstiem (pārbauda t120).
+
 ## 1.50.0 — 2026-10-18
 - `js/summary.js`: jaunsarga kopsavilkums (PDF, pdf-lib + Manrope `vendor/pdf/Manrope_*.ttf`, logo `vendor/brand/CADET_pdf.png`). Dati periodā no–līdz: nodarbības (personas grupa attiecīgajā mācību gadā vai `*`), % pa mēnešiem; pasākumi (`S.db.events` + sesijas ar veidu ≠ Nodarbība, dublikāti apvienoti); kvalifikācijas (periodā iegūtās iekrāsotas); VFS testi (`CP.vfs.score`, dinamika ar nozīmīšu robežām, pēdējā testa vingrinājumi pret pirmo). Galvenē tikai vārds un uzvārds.
 - Logs `A.sumNew(pid?)`: periods (ātrās izvēles — šis / iepriekšējais mācību gads), sadaļu izvēle un kopīgais teksts saglabājas `settings.summary`, personas komentārs — `p.summaryComment`. Vairākām personām: grupa, meklēšana, “Atzīmēt redzamos”; katram savs PDF → ZIP. Saglabā `CP.store.yearPersonDir(p)` un piesaista kā dokumentu “Kopsavilkums”.

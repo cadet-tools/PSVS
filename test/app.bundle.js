@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 46 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 47 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.50.0';
+  CP.VERSION = '1.51.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -5411,7 +5411,7 @@ window.CP = window.CP || {};
   };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
-    const tabOf = { watchCard: 'base', instCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
+    const tabOf = { watchCard: 'base', instCard: 'base', unitCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
     setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
@@ -5435,6 +5435,7 @@ window.CP = window.CP || {};
         <span>Skaņa</span><div class="actions"><label class="check"><input type="checkbox" data-watch="sound" ${w.sound ? 'checked' : ''}> signāls, kad beidzas taimeris vai pauze</label><button type="button" class="sm ghost" data-act="watchTestBeep">Pārbaudīt</button></div>
       </div><p class="small muted" style="margin:12px 0 0">Lielais pulkstenis paslēpj arī personu datus, kamēr dators stāv bez uzraudzības.</p></section>`; })() : ''}
       ${CP.setup ? CP.setup.instCard() : ''}
+      ${CP.unit ? CP.unit.card() : ''}
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button>${y.id === S.db.settings.activeYear || y.id === U.schoolYear() ? '' : `<button class="sm ghost danger" data-act="yearDelete" data-arg="${esc(y.id)}" title="Dzēst mācību gadu">✕ Dzēst</button>`}</div>`).join('')}
@@ -5726,8 +5727,8 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums (PDF)', items: [
-      'Krāsains PDF ar diagrammām jaunsargam vai vecākiem par **paša izvēlētu periodu**: apmeklējums pa mēnešiem, dalība pasākumos un nometnēs, kvalifikācijas un nozīmītes, VFS rezultāti un dinamika, tavs komentārs. Galvenē tikai vārds un uzvārds. Vienai personai — kartītē (**“Jaunsarga kopsavilkums”** Pārskatā vai ⋯ izvēlnē). Vairākām — **Veidlapas → “Jaunsarga kopsavilkums”**: katrai personai savs PDF, katram var ierakstīt savu komentāru un kopīgu tekstu visiem. PDF saglabājas personas dokumentu mapē (“Kopsavilkums”), vairāki — arī vienā ZIP.'
+    { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
+      'Krāsains PDF ar diagrammām jaunsargam vai vecākiem par **paša izvēlētu periodu**: apmeklējums pa mēnešiem, dalība pasākumos un nometnēs, kvalifikācijas un nozīmītes, VFS rezultāti un dinamika, tavs komentārs. Galvenē tikai vārds un uzvārds. Vienai personai — kartītē (**“Jaunsarga kopsavilkums”** Pārskatā vai ⋯ izvēlnē). Vairākām — **Veidlapas → “Jaunsarga kopsavilkums”**: katrai personai savs PDF, katram var ierakstīt savu komentāru un kopīgu tekstu visiem. PDF saglabājas personas dokumentu mapē (“Kopsavilkums”), vairāki — arī vienā ZIP. **Vienības logo un nosaukums** (Iestatījumi → Pamata → Vienība) redzams rīka augšējā joslā un pēc izvēles kopsavilkumā — kopā ar CADET.LV logo. Oficiālajās veidlapās logo netiek likts.'
     ] },
     { v: '1.49.0', from: '1.39.0', date: '2026-10-18', title: 'Pārlūka atļaujas un lietošanas statistika', items: [
       'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠. Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
@@ -12550,6 +12551,80 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
 })(window.CP);
 
 
+/* ==== js/unit.js ==== */
+/* =====================================================================
+   Vienības logo un nosaukums.
+   • Iestatījumi → Pamata → “Vienība”: nosaukums un logo (attēla fails → PNG ≤ 512 px, glabājas datu failā:
+     settings.unit = { name, logo: 'data:image/png;base64,…' }).
+   • Rīkā: galvenes kreisajā pusē (logo + nosaukums).
+   • Neoficiālos rīka failos (piem., jaunsarga kopsavilkums) — pēc izvēles; tad vienmēr arī CADET.LV logo
+     ar uzrakstu “CADET PERSONĀLS”. Oficiālajās veidlapās (instruktāžas lapa, nometnes žurnāls, līgumi,
+     VFS protokols, apmeklējuma žurnāls) logo un uzraksti NETIEK likti.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const get = () => { const u = S.db?.settings?.unit || {}; return { name: String(u.name || '').trim(), logo: /^data:image\/png;base64,/.test(u.logo || '') ? u.logo : '' }; };
+  const set = o => { const s = S.db.settings; s.unit = { ...(s.unit || {}), ...o }; CP.store.changed({ silent: true }); paint(); };
+
+  function card() {
+    const u = get();
+    return `<section class="card" id="unitCard"><h3>${CP.ic('flag')}Vienība</h3>
+      <div class="unit-set">
+        <div class="unit-prev">${u.logo ? `<img src="${u.logo}" alt="Vienības logo">` : '<span class="muted small">Nav logo</span>'}</div>
+        <div class="grow">
+          <div class="field"><label for="unitName">Vienības nosaukums</label><input id="unitName" data-unit="name" maxlength="80" value="${esc(u.name)}" placeholder="piem., Rīgas 1. jaunsargu vienība" autocomplete="off"></div>
+          <div class="actions"><label class="btn sm">${CP.ic('upload', '⬆')} ${u.logo ? 'Mainīt logo' : 'Pievienot logo'}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" data-unit="logo" hidden></label>
+            ${u.logo ? '<button type="button" class="sm ghost danger" data-act="unitLogoDel">Noņemt logo</button>' : ''}</div>
+        </div>
+      </div>
+      <p class="small muted">Redzams rīka augšējā joslā un — ja izvēlas — rīka neoficiālajos failos, piemēram, jaunsarga kopsavilkumā (tad tur ir arī CADET.LV logo ar “CADET PERSONĀLS”). Oficiālajās veidlapās (instruktāžas lapas, nometņu žurnāli, līgumi, protokoli) logo netiek likts. Ieteicams PNG ar caurspīdīgu fonu.</p></section>`;
+  }
+  /** Galvenes josla: logo + nosaukums kreisajā pusē */
+  function paint() {
+    const bar = document.querySelector('.yearbar'); if (!bar) return;
+    let b = U.$('unitBadge'); const u = S.db ? get() : { name: '', logo: '' };
+    if (!u.name && !u.logo) { b?.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'unitBadge'; b.className = 'unit-badge'; bar.insertBefore(b, bar.firstChild); }
+    const h = `${u.logo ? `<img src="${u.logo}" alt="">` : ''}${u.name ? `<span>${esc(u.name)}</span>` : ''}`;
+    if (b.dataset.h !== h) { b.innerHTML = h; b.dataset.h = h; b.title = u.name || 'Vienības logo'; }
+    CP.years?.centerLogo?.(); fit();
+  }
+  /** Nosaukums nedrīkst pārklāt centrēto CADET.LV logo */
+  function fit() {
+    const b = U.$('unitBadge'), bar = document.querySelector('.yearbar'), l = bar?.querySelector('.hdr-logo'); if (!b || !bar) return;
+    const bl = b.getBoundingClientRect().left, ll = l && l.offsetParent ? l.getBoundingClientRect().left : bar.getBoundingClientRect().right - 260;
+    b.style.maxWidth = Math.max(40, Math.round(ll - bl - 18)) + 'px';
+  }
+  addEventListener('resize', () => requestAnimationFrame(fit));
+  async function toPng(file) {
+    if (file.size > 8 * 1024 * 1024) throw Error('fails ir lielāks par 8 MB');
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(Error('attēlu neizdevās atvērt')); i.src = url; });
+      const w0 = img.naturalWidth || 512, h0 = img.naturalHeight || 512, k = Math.min(1, 512 / Math.max(w0, h0));
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w0 * k)); c.height = Math.max(1, Math.round(h0 * k));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL('image/png');
+    } finally { URL.revokeObjectURL(url); }
+  }
+  CP.changeHandlers.push(e => {
+    const t = e.target, k = t.dataset?.unit; if (!k) return false;
+    if (k === 'name') { set({ name: t.value.trim() }); return true; }
+    if (k === 'logo' && t.files?.[0]) {
+      toPng(t.files[0]).then(logo => { set({ logo }); CP.render(); ui.toast('Vienības logo pievienots', 'ok'); }).catch(err => ui.toast('Logo neizdevās pievienot: ' + err.message, 'err', 8000));
+      return true;
+    }
+    return false;
+  });
+  A.unitLogoDel = () => { if (!confirm('Noņemt vienības logo?')) return; set({ logo: '' }); CP.render(); };
+  CP.afterRender = CP.afterRender || []; CP.afterRender.push(paint);
+  /** Logo baitos PDF iegulšanai (vai null) */
+  const logoBytes = () => { const l = get().logo; if (!l) return null; const b = atob(l.split(',')[1]); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+  CP.unit = { get, card, paint, logoBytes, has: () => { const u = get(); return !!(u.name || u.logo); } };
+})(window.CP);
+
+
 /* ==== js/summary.js ==== */
 /* =====================================================================
    Jaunsarga kopsavilkums (PDF ar diagrammām) — jaunsargam vai vecākiem.
@@ -12570,7 +12645,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   const SECS = [['att', 'Nodarbību apmeklējums (diagramma pa mēnešiem)'], ['events', 'Dalība pasākumos un nometnēs'], ['quals', 'Kvalifikācijas un nozīmītes'], ['vfs', 'VFS testu rezultāti un dinamika'], ['comment', 'Instruktora komentārs']];
   const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
   const MON = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
-  const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; return c; };
+  const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; if (c.unit == null) c.unit = true; return c; };
   const isLesson = s => !s.type || s.type === 'Nodarbība';
 
   /* ---------------- Dati vienai personai periodā ---------------- */
@@ -12658,8 +12733,26 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     /* --- Galvene --- */
     newPage(true);
     rect(pg, 0, H - 6, W, 6, C.brand);
-    y = H - 20 * MM;
-    if (logo) { const lw = 46 * MM, lh = lw * logo.height / logo.width; pg.drawImage(logo, { x: W - M - lw, y: y - lh + 14, width: lw, height: lh }); }
+    const top = H - 13 * MM; let bottom = top;
+    // labajā pusē — no kāda rīka: CADET.LV logo un zem tā “CADET PERSONĀLS”
+    { const lw = 38 * MM, lh = logo ? lw * logo.height / logo.width : 0;
+      if (logo) pg.drawImage(logo, { x: W - M - lw, y: top - lh, width: lw, height: lh });
+      text(pg, 'CADET PERSONĀLS', W - M - (logo ? lw * 0.03 : 0), top - lh - 9, { f: F.b, s: 7.5, c: C.mut, align: 'right' });
+      bottom = Math.min(bottom, top - lh - 12); }
+    // kreisajā pusē — vienības logo un nosaukums (ja izvēlēts)
+    if (o.unit) {
+      const ul = o.unit.logo ? await doc.embedPng(o.unit.logo).catch(() => null) : null;
+      const uh = 17 * MM, uw = ul ? Math.min(34 * MM, uh * ul.width / ul.height) : 0, uhh = ul ? uw * ul.height / ul.width : 0;
+      if (ul) pg.drawImage(ul, { x: M, y: top - uhh, width: uw, height: uhh });
+      if (o.unit.name) {
+        const nx = M + (ul ? uw + 10 : 0), lines = wrap(o.unit.name, F.x, 12.5, W - M - 46 * MM - nx).slice(0, 3);
+        const blockH = lines.length * 15, y0 = ul ? top - uhh / 2 + blockH / 2 - 11 : top - 11;
+        lines.forEach((ln, i) => text(pg, ln, nx, y0 - i * 15, { f: F.x, s: 12.5, c: C.ink }));
+        bottom = Math.min(bottom, y0 - (lines.length - 1) * 15 - 6);
+      }
+      if (ul) bottom = Math.min(bottom, top - uhh);
+    }
+    y = Math.min(bottom - 18, H - 20 * MM);
     text(pg, 'JAUNSARGA KOPSAVILKUMS', M, y, { f: F.b, s: 9.5, c: C.brand }); y -= 30;
     text(pg, o.name, M, y, { f: F.x, s: 26, c: C.ink }); y -= 20;
     text(pg, `Periods: ${o.periodText}`, M, y, { s: 10.5, c: C.mut }); y -= 14;
@@ -12848,6 +12941,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
             <input type="search" data-sum="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="sumAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="sumNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row ${dlg.pids.has(p.id) ? 'on' : ''}"><label class="check"><input type="checkbox" data-sump="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label>
             ${dlg.pids.has(p.id) && c.inc.comment ? `<textarea data-sumc="${p.id}" rows="1" data-autogrow placeholder="Komentārs šai personai (nav obligāts)">${esc(p.summaryComment || '')}</textarea>` : ''}</div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>`}
+        ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-sum="unit" ${c.unit ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} — kopā ar CADET.LV logo</label>` : `<p class="small muted" style="margin:0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība.</p>`}
         <label class="check"><input type="checkbox" data-sum="save" ${S.root ? 'checked' : 'disabled'}> Saglabāt PDF katras personas dokumentu mapē (kategorija “${KIND}”)</label>
         <p class="small muted">Galvenē ir tikai vārds un uzvārds — bez personas koda, adreses un kontaktiem. ${one ? 'PDF atvērsies skatīšanai un drukāšanai.' : 'Vairākām personām — visi PDF vienā ZIP failā.'}</p>
       </div>
@@ -12864,6 +12958,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     if (t.dataset.sump) { if (t.checked) dlg.pids.add(t.dataset.sump); else dlg.pids.delete(t.dataset.sump); keepScroll(draw); return true; }
     const k = t.dataset.sum;
     if (k === 'from' || k === 'to') { dlg[k] = t.value; return true; }
+    if (k === 'unit') { cfg().unit = t.checked; CP.store.changed({ silent: true }); return true; }
     if (k === 'group') { dlg.group = t.value; keepScroll(draw); return true; }
     if (k === 'intro') { cfg().intro = t.value; CP.store.changed({ silent: true }); return true; }
     if (t.dataset.sumc) { const p = D.person(t.dataset.sumc); if (p) { p.summaryComment = t.value; CP.store.changed({ silent: true }); } return true; }
@@ -12881,7 +12976,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   async function build(p, from, to) {
     const c = cfg(), I = S.db.settings.instructor || {};
     const unit = [I.parvalde && `${I.parvalde}. novada pārvalde`, I.nodala && `${I.nodala}. nodaļa`].filter(Boolean).join(', ');
-    const bytes = await pdf({ name: U.full(p), periodText: periodText(from, to), inc: c.inc, intro: c.intro.trim(), comment: String(p.summaryComment || '').trim(), data: gather(p, from, to), instructor: { name: I.name || '', position: I.position || '', unit } });
+    const bytes = await pdf({ name: U.full(p), periodText: periodText(from, to), inc: c.inc, intro: c.intro.trim(), unit: c.unit && CP.unit?.has() ? { name: CP.unit.get().name, logo: CP.unit.logoBytes() } : null, comment: String(p.summaryComment || '').trim(), data: gather(p, from, to), instructor: { name: I.name || '', position: I.position || '', unit } });
     return { blob: new Blob([bytes], { type: 'application/pdf' }), name: `Kopsavilkums_${safe(p.last)}_${safe(p.first)}_${from}_${to}.pdf` };
   }
   async function saveTo(p, r, from, to) {
