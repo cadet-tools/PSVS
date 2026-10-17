@@ -19,7 +19,7 @@ Valodu modeļi lav un eng (traineddata 4.0.0)
 
 Google Cloud Vision šajā mapē nav. Tas paliek izslēgts, kamēr lietotājs pats Iestatījumos neizvēlas citu dzinēju un neievada atslēgu.
 
-Manrope (Mikhail Sharanda) — SIL Open Font License 1.1, vendor/fonts/OFL.txt
+Manrope (Mikhail Sharanda) — SIL Open Font License 1.1, vendor/fonts/OFL.txt (tīmekļa fonts) un vendor/pdf/Manrope_*.ttf (jaunsarga kopsavilkuma PDF).
 
 Tinos (Steve Matteson, Google) — Apache-2.0, vendor/pdf/Tinos-*.ttf (apakškopa). pdf-lib 1.17.1 un @pdf-lib/fontkit 1.1.1 — MIT.
 

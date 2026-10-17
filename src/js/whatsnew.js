@@ -13,8 +13,11 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.49.0', date: '2026-10-18', title: 'Lietošanas statistika', items: [
-      'Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
+    { v: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums (PDF)', items: [
+      'Krāsains PDF ar diagrammām jaunsargam vai vecākiem par **paša izvēlētu periodu**: apmeklējums pa mēnešiem, dalība pasākumos un nometnēs, kvalifikācijas un nozīmītes, VFS rezultāti un dinamika, tavs komentārs. Galvenē tikai vārds un uzvārds. Vienai personai — kartītē (**“Jaunsarga kopsavilkums”** Pārskatā vai ⋯ izvēlnē). Vairākām — **Veidlapas → “Jaunsarga kopsavilkums”**: katrai personai savs PDF, katram var ierakstīt savu komentāru un kopīgu tekstu visiem. PDF saglabājas personas dokumentu mapē (“Kopsavilkums”), vairāki — arī vienā ZIP.'
+    ] },
+    { v: '1.49.0', from: '1.39.0', date: '2026-10-18', title: 'Pārlūka atļaujas un lietošanas statistika', items: [
+      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠. Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
     ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
@@ -47,9 +50,6 @@
     ] },
     { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
       'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
-    ] },
-    { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
-      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
     ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',

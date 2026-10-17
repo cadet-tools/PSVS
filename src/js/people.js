@@ -139,6 +139,7 @@
           <button data-act="edit" data-arg="${p.id}">✎ Rediģēt</button>
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
             ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
+            ${p.anon ? '' : `<button data-act="sumNew" data-arg="${p.id}">📊 Jaunsarga kopsavilkums (PDF)…</button>`}
             ${p.anon ? '' : `<button data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>
@@ -228,6 +229,7 @@
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
       ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
+      ${CP.summary ? CP.summary.personCard(p) : ''}
       ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p>${p.transferredTo ? `<button class="sm" data-act="transferUndo" data-arg="${p.id}" title="Ja nodots kļūdas pēc — atjaunot no arhīva un atgriezt ekipējumu">↶ Atcelt nodošanu</button>` : ''}<button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
     </div>`;
   }

@@ -502,5 +502,5 @@
   }
   // esošajām datu mapēm: jau izsniegtās nozīmītes parādās ekipējumā
   CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => { let ch = false; for (const t of tests()) if (syncEq(t)) ch = true; if (ch) CP.store.changed({ silent: true }); });
-  CP.vfs = { eqChanged, syncEq, page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
+  CP.vfs = { exName, eqChanged, syncEq, page, personTab, countFor, parse, points, score, show, NORMS, EX, lvlOfAge, ageAt, guessG, parseProtocol, personSummary, syncQuals };
 })(window.CP);
