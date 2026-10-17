@@ -64,7 +64,8 @@
         <div class="actions"><button data-act="makeArchive">Izveidot datu arhīvu</button></div>
         <div id="archiveList"></div>
         <h4>Papildu dokumentu mapes</h4>
-        <div id="sourceList"></div></section>
+        <div id="sourceList"></div>
+        <div class="actions" style="margin-top:8px"><button class="sm" data-act="extra">＋ Pievienot papildu mapi</button></div></section>
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
@@ -101,7 +102,8 @@
       </div>${T('comms')}
       <section class="card" id="commsCard"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>
-        <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div></div>
+        <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div>
+        <div class="field"><label>Signal atvērt</label><select data-set="sigMode"><option value="web" ${s.sigMode !== 'app' ? 'selected' : ''}>Caur signal.me (piedāvā atvērt lietotni)</option><option value="app" ${s.sigMode === 'app' ? 'selected' : ''}>Tieši Signal Desktop lietotnē</option></select><div class="hint muted">Signal neļauj saitē ielikt ziņas tekstu — rīks to nokopē, un tu ielīmē ar Ctrl+V.</div></div></div>
         <div class="fieldgrid" style="margin-top:10px"><div class="field"><label>Organizācija telefona kontaktos</label><input data-set="contactOrg" value="${esc(s.contactOrg || 'Jaunsardze')}"><div class="hint muted">Kontaktiem tiek pievienots “Uzņēmums” un grupa, lai tos telefonā var atrast.</div></div>
           <div class="field"><label>Google etiķete jaunsargiem</label><input data-set="labelYouth" value="${esc(s.labelYouth || 'Jaunsardze – jaunsargi')}"></div>
           <div class="field"><label>Google etiķete vecākiem</label><input data-set="labelParents" value="${esc(s.labelParents || 'Jaunsardze – vecāki')}"></div></div>
@@ -201,7 +203,7 @@
         const r = S.roots.find(x => x.id === s.id);
         const ok = !!r?.ok;
         return `<div class="row"><div class="grow"><b>${esc(s.name)}</b><div class="small muted">${esc(s.id)}</div></div><span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'Pieslēgta' : 'Nav piekļuves'}</span><button class="sm" data-act="reconnectSource" data-arg="${esc(s.id)}">Pieslēgt atkārtoti</button></div>`;
-      }).join('') : '<p class="muted small">Nav papildu mapju. Dokumentos spied “Papildu mape”.</p>';
+      }).join('') : '<p class="muted small">Nav papildu mapju. Papildu mape ir cita mape datorā (piem., vecie skenējumi), no kuras rīks var rādīt un piesaistīt dokumentus — failus tā nemaina.</p>';
     }
   };
   A.backupNow = () => CP.store.backupNow();

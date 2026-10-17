@@ -1021,6 +1021,19 @@
     }
     return { from: fromFull, path: [...destParts, target].join('/'), kind: handle.kind };
   };
+  /** Dzēš failu vai mapi datu mapē (ceļš no datu mapes saknes). Personu mapes sakni un datu failu nedzēš. */
+  store.deletePath = async (path, isDir) => {
+    if (!(await ensurePerm(true))) throw Error('nav rakstīšanas atļaujas');
+    const parts = String(path).split('/').filter(Boolean);
+    if (parts.length < 5 || parts[0] !== 'Macibu_gadi' || parts[2] !== 'Personas') throw Error('dzēst var tikai failus un apakšmapes personas mapē');
+    let dir = S.root; for (const x of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(x);
+    await dir.removeEntry(parts.at(-1), isDir ? { recursive: true } : undefined);
+  };
+  /** Cik failu ir mapē (ar apakšmapēm) — nolasa pašu mapi, ne indeksu */
+  store.countFiles = async path => {
+    let dir = S.root; for (const x of String(path).split('/').filter(Boolean)) dir = await dir.getDirectoryHandle(x);
+    let n = 0; const go = async d => { for await (const [, h] of d.entries()) { if (h.kind === 'file') n++; else await go(h); } }; await go(dir); return n;
+  };
   store.reindexDir = async parts => {
     const prefix = parts.join('/');
     S.index = S.index.filter(x => x.sourceId !== 'main' || (x.path !== prefix && !x.path.startsWith(prefix + '/')));

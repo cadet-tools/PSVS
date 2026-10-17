@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.39.1';
+  CP.VERSION = '1.40.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -317,12 +317,12 @@ window.CP = window.CP || {};
 
   CP.defaultSettings = () => ({
     countryCode: '371',
-    waMode: 'web',
+    waMode: 'web', sigMode: 'web',
     autosave: true,
     retentionDefault: 12,
     // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
     retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
-    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
+    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
@@ -391,6 +391,7 @@ window.CP = window.CP || {};
     }
     // Jauni noklusētie rīki tiek pievienoti vienreiz (ja lietotājs tos izdzēš — atpakaļ netiek likti)
     const added = d.settings.toolsAdded = [...(raw.settings?.toolsAdded || (raw.settings ? [] : ['dvs']))];
+    if (!added.includes('kind-explain')) { if (!d.settings.docKinds.includes('Paskaidrojums')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Paskaidrojums'); added.push('kind-explain'); }
     if (!added.includes('kind-idcard')) { if (!d.settings.docKinds.includes('Jaunsarga apliecība')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Jaunsarga apliecība'); added.push('kind-idcard'); }
     if (!added.includes('dvs')) { if (!d.settings.tools.some(t => /dvs\.mod\.gov\.lv/i.test(t.url || ''))) d.settings.tools.push({ name: 'DVS', url: 'https://dvs.mod.gov.lv/' }); added.push('dvs'); }
     if (d.settings.ocr.engine !== 'google') d.settings.ocr.engine = d.settings.ocr.engine || 'tesseract';
@@ -541,7 +542,7 @@ window.CP = window.CP || {};
   D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
   D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && d.path && D.docValid(d)));   // obligātajam dokumentam jābūt skenētam failam (to liek arī DVS)
   D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned && !e.keep);
-  D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
+  D.commSent = l => l.type === 'call' || (['whatsapp', 'signal', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
     const m = {};
     for (const l of db().log) if (D.commSent(l) && (!m[l.personId] || m[l.personId] < l.at)) m[l.personId] = l.at;
@@ -557,7 +558,7 @@ window.CP = window.CP || {};
   };
   D.guessKind = name => {
     const n = U.norm(name), kinds = db().settings.docKinds;
-    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts']];
+    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
     for (const [r, k] of rules) if (r.test(n) && kinds.includes(k)) return k;
     return kinds.includes('Cits') ? 'Cits' : kinds[0];
   };
@@ -1828,6 +1829,19 @@ window.CP = window.CP || {};
     }
     return { from: fromFull, path: [...destParts, target].join('/'), kind: handle.kind };
   };
+  /** Dzēš failu vai mapi datu mapē (ceļš no datu mapes saknes). Personu mapes sakni un datu failu nedzēš. */
+  store.deletePath = async (path, isDir) => {
+    if (!(await ensurePerm(true))) throw Error('nav rakstīšanas atļaujas');
+    const parts = String(path).split('/').filter(Boolean);
+    if (parts.length < 5 || parts[0] !== 'Macibu_gadi' || parts[2] !== 'Personas') throw Error('dzēst var tikai failus un apakšmapes personas mapē');
+    let dir = S.root; for (const x of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(x);
+    await dir.removeEntry(parts.at(-1), isDir ? { recursive: true } : undefined);
+  };
+  /** Cik failu ir mapē (ar apakšmapēm) — nolasa pašu mapi, ne indeksu */
+  store.countFiles = async path => {
+    let dir = S.root; for (const x of String(path).split('/').filter(Boolean)) dir = await dir.getDirectoryHandle(x);
+    let n = 0; const go = async d => { for await (const [, h] of d.entries()) { if (h.kind === 'file') n++; else await go(h); } }; await go(dir); return n;
+  };
   store.reindexDir = async parts => {
     const prefix = parts.join('/');
     S.index = S.index.filter(x => x.sourceId !== 'main' || (x.path !== prefix && !x.path.startsWith(prefix + '/')));
@@ -2658,7 +2672,7 @@ window.CP = window.CP || {};
       const n = U.normPhone(c.phone);
       return `<div class="contact"><div class="c-top"><span class="role">${esc(c.role)}</span></div><div class="c-name">${esc(c.name || '—')}</div>
         <div class="c-how">${n ? `<a href="tel:+${n}" data-act="call" data-arg="${p.id}|${c.idx}">${esc(U.prettyPhone(c.phone))}</a>` : ''}${c.email ? `<span>${esc(c.email)}</span>` : ''}</div>
-        <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
+        <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm sigbtn" data-act="msgTo" data-arg="${p.id}|${c.idx}|signal" title="Rakstīt Signal">Signal</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
     }).join('') || `<p class="muted small">Nav ievadīts neviens tālrunis vai e-pasts.</p><button class="sm" data-act="edit" data-arg="${p.id}" data-sec="contact">＋ Pievienot kontaktus</button>`;
     const req = S.db.settings.requiredDocs;
     const reqRow = k => {
@@ -2723,7 +2737,7 @@ window.CP = window.CP || {};
   }
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
-  const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
+  const TYPE = { whatsapp: ['💬', 'WhatsApp'], signal: ['💬', 'Signal'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
   const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība', event: 'Pasākums'};
   function timeline(p) {
     const items = [];
@@ -3015,14 +3029,17 @@ window.CP = window.CP || {};
     return [src, ...String(path || '').split('/').filter(Boolean)];
   };
   const whereHtml = (path, sid) => { const b = docs.where(path, sid); return `<span class="docwhere" title="${esc(b.join(' / '))}">📁 ${b.slice(0, -1).map(esc).join(' <span class="muted">›</span> ')} <span class="muted">›</span> <b>${esc(b.at(-1))}</b></span>`; };
+  /** Kartītē rādāmais nosaukums: kategorijai “Cits” — instruktora ierakstītais nosaukums */
+  docs.label = d => (d.title && String(d.title).trim()) || d.kind;
+  const needsTitle = kind => kind === 'Cits';
   function docRow(d, showPerson) {
     const exp = D.docExpiry(d) ? U.daysTo(D.docExpiry(d)) : null;
     const st = docs.statusOf(d);
     return `<div class="row doc">
       <div class="doc-ic">${/\.(jpe?g|png|webp|heic)$/i.test(d.path || '') ? '🖼' : /\.edoc$/i.test(d.path || '') ? '✍' : d.path ? '📄' : '🗂'}</div>
       <div class="grow">
-        <div><b>${esc(d.kind)}</b> ${fmtTag(d.format)} ${docs.statusHtml(d)} ${showPerson ? `· <a href="#" data-person="${d.personId}" data-goto="docs">${esc(U.full(D.person(d.personId)))}</a>` : ''}</div>
-        <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) : ''}${d.path ? '' : ' · Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
+        <div><b>${esc(docs.label(d))}</b>${d.title ? ` <span class="tag">${esc(d.kind)}</span>` : ''} ${fmtTag(d.format)} ${docs.statusHtml(d)} ${showPerson ? `· <a href="#" data-person="${d.personId}" data-goto="docs">${esc(U.full(D.person(d.personId)))}</a>` : ''}</div>
+        <div class="small muted">${[d.yearId && esc(U.yearLabel(d.yearId)), REVIEW[d.review] && esc(REVIEW[d.review]), !d.path && 'Elektronisks fails nav piesaistīts'].filter(Boolean).join(' · ')}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
         ${d.path ? `<div class="small">${whereHtml(d.path, d.sourceId)}</div>` : ''}
       </div>
       ${d.path ? `<button class="sm mainbtn" data-act="view" data-arg="${keyOf(d.sourceId, d.path)}">Atvērt</button>` : ''}
@@ -3057,8 +3074,9 @@ window.CP = window.CP || {};
       ${sugg.length ? `<details class="card docsec" data-docsec="sugg" ${sec.sugg ? 'open' : ''}><summary><h3>Mapē atrasti faili ar šo vārdu (${sugg.length}) <span class="muted small docsec-hint">vēl nav piesaistīti</span></h3></summary><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
         ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small">${whereHtml(f.path, f.sourceId)}</div></div>
           <button class="sm" data-act="view" data-arg="${keyOf(f.sourceId, f.path)}">Skatīt</button>
-          <button class="sm mainbtn" data-act="quickLink" data-arg="${keyOf(f.sourceId, f.path)}">＋ ${esc(D.guessKind(f.name))}</button>
-          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</details>`
+          <button class="sm mainbtn" data-act="quickLink" data-arg="${keyOf(f.sourceId, f.path)}">＋ ${needsTitle(D.guessKind(f.name)) ? 'Piesaistīt…' : esc(D.guessKind(f.name))}</button>
+          <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button>
+          ${f.sourceId === 'main' ? `<button class="sm ghost danger" data-act="docDelFile" data-arg="${keyOf(f.sourceId, f.path)}" title="Dzēst failu datorā">✕ Dzēst</button>` : ''}</div>`).join('')}</details>`
         : (S.root ? '' : '<p class="muted small">Izvēlies datu mapi, lai pievienotu failus un meklētu esošos.</p>')}`;
   };
   // atvērtās/aizvērtās sadaļas stāvoklis paliek, kamēr kartiņa pārzīmējas
@@ -3117,16 +3135,25 @@ window.CP = window.CP || {};
   const splitKey = a => { const i = a.indexOf('|'); return [a.slice(0, i), a.slice(i + 1)]; };
   A.quickLink = a => {
     const [sid, path] = splitKey(a), f = S.index.find(x => x.sourceId === sid && x.path === path); if (!f) return;
+    if (needsTitle(D.guessKind(f.name))) return A.associate(a);
     if (docs.link(S.selected, D.guessKind(f.name), f.ext === 'edoc' ? 'edoc' : 'pdf', f.path, f.sourceId)) { CP.store.changed(); ui.toast('Piesaistīts: ' + D.guessKind(f.name), 'ok'); }
   };
   let assoc = null;
   A.associate = a => {
-    const [sid, path] = splitKey(a); assoc = S.index.find(f => f.sourceId === sid && f.path === path); if (!assoc) return;
+    const [sid, path] = splitKey(a);
+    assoc = S.index.find(f => f.sourceId === sid && f.path === path);
+    if (!assoc) { const name = path.split('/').pop(); assoc = { sourceId: sid || 'main', path, name, ext: (name.split('.').pop() || '').toLowerCase() }; }
     ui.personOptions('associatePerson', S.selected); U.$('associateKind').innerHTML = ui.kindOptions(D.guessKind(assoc.name));
-    U.$('associateName').textContent = assoc.path; U.$('associateFormat').value = assoc.ext === 'edoc' ? 'edoc' : 'pdf'; U.$('associateDialog').showModal();
+    U.$('associateTitle').value = '';
+    U.$('associateName').innerHTML = whereHtml(assoc.path, assoc.sourceId); U.$('associateFormat').value = assoc.ext === 'edoc' ? 'edoc' : 'pdf'; assocTitleUi(); U.$('associateDialog').showModal();
   };
+  function assocTitleUi() { const on = needsTitle(U.$('associateKind').value); U.$('associateTitleWrap').classList.toggle('hidden', !on); if (on) setTimeout(() => U.$('associateTitle').focus(), 30); }
+  U.$('associateKind').addEventListener('change', assocTitleUi);
   U.$('associateConfirm').onclick = () => {
-    if (assoc && docs.link(U.$('associatePerson').value, U.$('associateKind').value, U.$('associateFormat').value, assoc.path, assoc.sourceId)) { CP.store.changed(); ui.toast('Fails piesaistīts', 'ok'); }
+    if (!assoc) return;
+    const kind = U.$('associateKind').value, title = U.$('associateTitle').value.trim();
+    if (needsTitle(kind) && !title) { U.$('associateTitle').focus(); return ui.toast('Ieraksti dokumenta nosaukumu — kategorijai “Cits” tas ir obligāts', 'warn'); }
+    if (docs.link(U.$('associatePerson').value, kind, U.$('associateFormat').value, assoc.path, assoc.sourceId, { review: 'received', ...(needsTitle(kind) ? { title } : {}) })) { CP.store.changed(); ui.toast('Fails piesaistīts — redzams sadaļā “Visi personas dokumenti”', 'ok'); }
     U.$('associateDialog').close();
   };
   A.delDoc = id => {
@@ -3146,6 +3173,7 @@ window.CP = window.CP || {};
   /** Ārsta izziņa u.c.: prasa izsniegšanas datumu, termiņu aprēķina pats (var labot) */
   function docRuleUi() {
     const kind = dform.elements.kind.value, r = D.docRule(kind), iss = dform.elements.issued, exp = dform.elements.expires;
+    const tn = needsTitle(kind); U.$('docTitleWrap').classList.toggle('hidden', !tn); dform.elements.title.required = tn;
     U.$('docIssuedLbl').innerHTML = r ? `${U.esc(kind)}: izsniegšanas datums <b class="red">*</b>` : 'Dokumenta datums (izsniegts)';
     iss.required = !!r;
     const arc = (S.db.settings.archiveDocs || []).includes(kind);
@@ -3158,12 +3186,14 @@ window.CP = window.CP || {};
     const d = S.db.documents.find(x => x.id === id); if (!d) return;
     dform.reset(); dform.dataset.edit = id; U.$('docTitle').textContent = 'Rediģēt dokumentu';
     ui.personOptions('docPerson', d.personId, true); U.$('docKind').innerHTML = ui.kindOptions(d.kind);
-    for (const k of ['format', 'received', 'issued', 'expires', 'notes', 'review']) if (dform.elements[k]) dform.elements[k].value = d[k] || '';
+    for (const k of ['format', 'received', 'issued', 'expires', 'notes', 'review', 'title']) if (dform.elements[k]) dform.elements[k].value = d[k] || '';
     dform.dataset.autoExp = d.expires && d.expires === D.docExpiry({ ...d, expires: '' }) ? '1' : '';
     docRuleUi(); U.$('documentDialog').showModal();
   };
   dform.addEventListener('submit', e => {
     e.preventDefault(); const o = Object.fromEntries(new FormData(dform));
+    o.title = needsTitle(o.kind) ? String(o.title || '').trim() : '';
+    if (needsTitle(o.kind) && !o.title) { dform.elements.title.focus(); return ui.toast('Ieraksti dokumenta nosaukumu — kategorijai “Cits” tas ir obligāts', 'warn'); }
     if (dform.dataset.edit) Object.assign(S.db.documents.find(x => x.id === dform.dataset.edit), o);
     else { S.db.documents.push({ ...o, id: U.uid(), path: '', sourceId: '', addedAt: U.now(), yearId: o.yearId || U.yearOfDate(o.received) || D.activeYear() }); D.audit(o.personId, 'doc-add', [o.kind]); }
     U.$('documentDialog').close(); CP.store.changed();
@@ -3448,11 +3478,12 @@ window.CP = window.CP || {};
         const full = [...root, ...r.rel.split('/').filter(Boolean)].join('/');
         const linked = r.kind === 'file' ? S.db.documents.find(d => d.personId === p.id && d.path === full && (d.sourceId || 'main') === 'main') : null;
         const kind = r.kind === 'dir' ? 'mape' : (r.ext || 'fails').toUpperCase();
-        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span></div>`;
+        if (r.kind === 'dir') return `<div class="row"><button class="sm" data-act="docOpen" data-arg="${enc(r.rel)}">📁 ${esc(r.name)}</button><span class="grow muted small">mape</span>${other ? '' : `<button class="sm ghost danger" data-act="docDelEntry" data-arg="${enc(r.rel)}" title="Dzēst mapi datorā">✕ Dzēst</button>`}</div>`;
         return `<div class="row"><div class="grow"><b>${esc(r.name)}</b> <span class="muted small">${esc(kind)} · ${fmtSize(r.size)}</span>${linked ? ` ${fmtTag(linked.format)} ${REVIEW[linked.review] ? `<span class="tag">${esc(REVIEW[linked.review])}</span>` : ''} ${docs.statusHtml(linked)}${linked.expires ? `<span class="muted small"> līdz ${esc(U.fmtDate(linked.expires))}</span>` : ''}` : ' <span class="muted small">nav piesaistīts</span>'}<div class="small muted">${esc(r.rel)}</div></div>
           <button class="sm mainbtn" data-act="view" data-arg="${keyOf('main', full)}">Atvērt</button>
-          ${linked ? '' : `<button class="sm" data-act="docLinkHere" data-arg="${enc(r.rel)}">Piesaistīt</button>`}
-          ${other ? '' : `<button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}" title="Pārvietot uz citu apakšmapi personas mapē">Pārvietot</button>`}</div>`;
+          ${linked ? '' : `<button class="sm" data-act="associate" data-arg="${keyOf('main', full)}" title="Piesaistīt kartītei — būs redzams sadaļā “Visi personas dokumenti”">＋ Piesaistīt</button>`}
+          ${other ? '' : `<button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}" title="Pārvietot uz citu apakšmapi personas mapē">Pārvietot</button>`}
+          <button class="sm ghost danger" data-act="docDelFile" data-arg="${keyOf('main', full)}" title="Dzēst failu datorā">✕ Dzēst</button></div>`;
       }).join('') || '<p class="muted small">Šajā mapē vēl nav dokumentu.</p>');
     } catch (e) {
       if (gen !== treeGen) return;
@@ -3547,6 +3578,33 @@ window.CP = window.CP || {};
       ui.toast(moved.copied ? 'Fails nokopēts jaunajā vietā un sasaiste atjaunota. Veco failu Chrome neļāva noņemt — tas palika iepriekšējā vietā.' : 'Fails ir pārvietots un sasaiste atjaunota', moved.copied ? 'warn' : 'ok', moved.copied ? 10000 : 4000);
     } catch (err) { ui.toast(err.message, 'err'); }
   });
+  /* --- Failu un apakšmapju dzēšana personas mapē (tikai datu mapē; papildu mapes ir tikai lasāmas) --- */
+  async function afterDelete(paths, isDir) {
+    const hit = d => (d.sourceId || 'main') === 'main' && d.path && paths.some(x => isDir ? d.path.startsWith(x + '/') : d.path === x);
+    const gone = S.db.documents.filter(hit);
+    for (const d of gone) D.audit(d.personId, 'doc-remove', [docs.label(d) + ' (fails dzēsts)']);
+    S.db.documents = S.db.documents.filter(d => !hit(d));
+    S.index = S.index.filter(f => !(f.sourceId === 'main' && paths.some(x => isDir ? f.path.startsWith(x + '/') : f.path === x)));
+    CP.store.changed(); CP.render();
+    return gone.length;
+  }
+  A.docDelFile = async a => {
+    const [sid, path] = splitKey(a); if ((sid || 'main') !== 'main') return ui.toast('Papildu mapes failus rīks nedzēš — tās ir tikai lasāmas', 'warn');
+    const linked = S.db.documents.filter(d => (d.sourceId || 'main') === 'main' && d.path === path);
+    if (!confirm(`Dzēst failu “${path.split('/').pop()}” no datora?\n\n${path}\n\n${linked.length ? `Fails ir piesaistīts kartītei (${linked.map(docs.label).join(', ')}) — tiks noņemts arī ieraksts.\n\n` : ''}Fails tiek dzēsts neatgriezeniski (nenonāk atkritnē).`)) return;
+    try { await CP.store.deletePath(path, false); const n = await afterDelete([path], false); ui.toast(`Fails dzēsts${n ? ' un ieraksts noņemts no kartītes' : ''}`, 'ok'); }
+    catch (e) { ui.toast('Neizdevās dzēst: ' + e.message, 'err', 9000); }
+  };
+  A.docDelEntry = async rel => {
+    const p = D.person(S.selected); if (!p) return;
+    const full = [...CP.store.yearPersonDir(p), ...dec(rel).split('/').filter(Boolean)].join('/');
+    let count = 0; try { count = await CP.store.countFiles(full); } catch (e) { count = S.index.filter(f => f.sourceId === 'main' && f.path.startsWith(full + '/')).length; }
+    const files = { length: count };
+    const linked = S.db.documents.filter(d => (d.sourceId || 'main') === 'main' && d.path && d.path.startsWith(full + '/'));
+    if (!confirm(`Dzēst mapi “${full.split('/').pop()}” no datora?\n\n${full}\n\n${files.length ? `Mapē ir ${files.length} fail${files.length === 1 ? 's' : 'i'}${linked.length ? `, no tiem ${linked.length} piesaistīti kartītei — ieraksti tiks noņemti` : ''}.\n\n` : 'Mape ir tukša.\n\n'}Mape tiek dzēsta neatgriezeniski kopā ar saturu.`)) return;
+    try { await CP.store.deletePath(full, true); const n = await afterDelete([full], true); S.browse.rel = ''; ui.toast(`Mape dzēsta${n ? `, noņemti ${n} ieraksti` : ''}`, 'ok'); }
+    catch (e) { ui.toast('Neizdevās dzēst: ' + e.message, 'err', 9000); }
+  };
   A.docLinkHere = rel => {
     const p = D.person(S.selected); if (!p) return;
     const full = [...CP.store.yearPersonDir(p, S.browse.year || D.activeYear()), ...dec(rel).split('/').filter(Boolean)].join('/');
@@ -3597,14 +3655,22 @@ window.CP = window.CP || {};
     const t = encodeURIComponent(text || '');
     return S.db.settings.waMode === 'app' ? `whatsapp://send?phone=${num}&text=${t}` : `https://wa.me/${num}${t ? '?text=' + t : ''}`;
   };
+  // Signal saitē tekstu ielikt nevar — to nokopē starpliktuvē, un lietotājs ielīmē (Ctrl+V)
+  const sigUrl = num => S.db.settings.sigMode === 'app' ? `sgnl://signal.me/#p/+${num}` : `https://signal.me/#p/+${num}`;
+  const sigPrep = async (ch, text) => {
+    if (ch !== 'signal') return;
+    try { await navigator.clipboard.writeText(text || ''); ui.toast('Signal atvērts. Ziņas teksts nokopēts — sarakstē ielīmē to ar Ctrl+V un nosūti.', 'warn', 12000); }
+    catch (e) { ui.toast('Signal atvērts, bet tekstu neizdevās nokopēt — nokopē to no loga ar “Kopēt”.', 'warn', 12000); }
+  };
   function channelUrl(ch, c, text, subject) {
     const num = U.normPhone(c.phone);
+    if (ch === 'signal') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return sigUrl(num); }
     if (ch === 'whatsapp') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return waUrl(num, text); }
     if (ch === 'sms') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return `sms:+${num}?body=${encodeURIComponent(text || '')}`; }
     if (!c.email) throw Error('Saņēmējam nav e-pasta adreses');
     return `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(subject || '')}&body=${encodeURIComponent(text || '')}`;
   }
-  const CH = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'E-pasts' };
+  const CH = { whatsapp: 'WhatsApp', signal: 'Signal', sms: 'SMS', email: 'E-pasts' };
 
   /* --- Ārējie rīki (iestatāmi) --- */
   comms.toolLinks = p => {
@@ -3655,13 +3721,14 @@ window.CP = window.CP || {};
       const url = channelUrl(ch, c, text, U.$('msgSubj').value);
       const id = U.uid();
       S.db.log.push({ id, personId: ctx.pid, at: U.now(), type: ch, detail: `→ ${c.role}: ${c.name || ''}\n${text}`, status: 'prepared' });
+      sigPrep(ch, text);
       openExternal(url);
       const row = S.db.log.find(x => x.id === id);
       row.status = 'opened';
       ctx.logId = id;
       setMsgActions(true);
       CP.store.changed({ silent: true });
-      ui.toast('Atvērts ārējā lietotnē. Ziņa vēl nav nosūtīta — apstiprini tikai tad, ja pats to nosūtīji.', 'warn', 9000);
+      if (ch !== 'signal') ui.toast('Atvērts ārējā lietotnē. Ziņa vēl nav nosūtīta — apstiprini tikai tad, ja pats to nosūtīji.', 'warn', 9000);
     } catch (e) { ui.toast(e.message, 'warn'); }
   };
   A.msgConfirm = () => {
@@ -3718,7 +3785,7 @@ window.CP = window.CP || {};
           <div class="fieldgrid">
             ${C.ids ? '' : `<div class="field"><label>Grupa</label>${sel('group', [['', 'Visas aktīvās personas'], ...gs.map(g => [g, g])])}</div>`}
             <div class="field"><label>Kam</label>${sel('audience', [['parents', 'Vecākiem / pārstāvjiem'], ['youth', 'Jauniešiem'], ['both', 'Abiem']])}</div>
-            <div class="field"><label>Kanāls</label>${sel('channel', [['whatsapp', 'WhatsApp'], ['sms', 'SMS'], ['email', 'E-pasts']])}</div>
+            <div class="field"><label>Kanāls</label>${sel('channel', [['whatsapp', 'WhatsApp'], ['signal', 'Signal'], ['sms', 'SMS'], ['email', 'E-pasts']])}</div>
             <div class="field"><label>Veidne</label>${sel('tpl', tpls.map((t, i) => [i, t.name]))}</div>
             <div class="field wide"><label>Teksts</label><textarea id="commsText" rows="7">${esc(C.text)}</textarea>
               <div class="hint muted">Vietturi katram tiek aizvietoti: {saņēmējs} {vārds} {uzvārds} {grupa} {trūkst} {ekipējums}</div></div>
@@ -3753,11 +3820,12 @@ window.CP = window.CP || {};
       const url = channelUrl(C.channel, r.c, text, S.db.settings.templates[C.tpl]?.name);
       const id = U.uid();
       S.db.log.push({ id, personId: r.p.id, at: U.now(), type: C.channel, detail: `→ ${r.c.role}: ${r.c.name || ''} (grupas ziņa)\n${text}`, status: 'prepared' });
+      sigPrep(C.channel, text);
       openExternal(url);
       S.db.log.find(x => x.id === id).status = 'opened';
       C.open = C.open || {}; C.open[key] = { id, status: 'opened', channel: C.channel }; C.done.add(key);
       CP.store.changed();
-      ui.toast('Atvērts ārējā lietotnē. Tas vēl nav nosūtīts.', 'warn', 7000);
+      if (C.channel !== 'signal') ui.toast('Atvērts ārējā lietotnē. Tas vēl nav nosūtīts.', 'warn', 7000);
     } catch (e) { ui.toast(e.message, 'warn'); }
   };
   A.commsMark = arg => {
@@ -5332,7 +5400,8 @@ window.CP = window.CP || {};
         <div class="actions"><button data-act="makeArchive">Izveidot datu arhīvu</button></div>
         <div id="archiveList"></div>
         <h4>Papildu dokumentu mapes</h4>
-        <div id="sourceList"></div></section>
+        <div id="sourceList"></div>
+        <div class="actions" style="margin-top:8px"><button class="sm" data-act="extra">＋ Pievienot papildu mapi</button></div></section>
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
@@ -5369,7 +5438,8 @@ window.CP = window.CP || {};
       </div>${T('comms')}
       <section class="card" id="commsCard"><h3>Saziņa</h3><div class="fieldgrid">
         <div class="field"><label>Valsts kods 8 ciparu numuriem</label><input data-set="countryCode" value="${esc(s.countryCode)}"></div>
-        <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div></div>
+        <div class="field"><label>WhatsApp atvērt</label><select data-set="waMode"><option value="web" ${s.waMode === 'web' ? 'selected' : ''}>Caur wa.me (lietotne vai WhatsApp Web)</option><option value="app" ${s.waMode === 'app' ? 'selected' : ''}>Tieši WhatsApp Desktop lietotnē</option></select></div>
+        <div class="field"><label>Signal atvērt</label><select data-set="sigMode"><option value="web" ${s.sigMode !== 'app' ? 'selected' : ''}>Caur signal.me (piedāvā atvērt lietotni)</option><option value="app" ${s.sigMode === 'app' ? 'selected' : ''}>Tieši Signal Desktop lietotnē</option></select><div class="hint muted">Signal neļauj saitē ielikt ziņas tekstu — rīks to nokopē, un tu ielīmē ar Ctrl+V.</div></div></div>
         <div class="fieldgrid" style="margin-top:10px"><div class="field"><label>Organizācija telefona kontaktos</label><input data-set="contactOrg" value="${esc(s.contactOrg || 'Jaunsardze')}"><div class="hint muted">Kontaktiem tiek pievienots “Uzņēmums” un grupa, lai tos telefonā var atrast.</div></div>
           <div class="field"><label>Google etiķete jaunsargiem</label><input data-set="labelYouth" value="${esc(s.labelYouth || 'Jaunsardze – jaunsargi')}"></div>
           <div class="field"><label>Google etiķete vecākiem</label><input data-set="labelParents" value="${esc(s.labelParents || 'Jaunsardze – vecāki')}"></div></div>
@@ -5469,7 +5539,7 @@ window.CP = window.CP || {};
         const r = S.roots.find(x => x.id === s.id);
         const ok = !!r?.ok;
         return `<div class="row"><div class="grow"><b>${esc(s.name)}</b><div class="small muted">${esc(s.id)}</div></div><span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'Pieslēgta' : 'Nav piekļuves'}</span><button class="sm" data-act="reconnectSource" data-arg="${esc(s.id)}">Pieslēgt atkārtoti</button></div>`;
-      }).join('') : '<p class="muted small">Nav papildu mapju. Dokumentos spied “Papildu mape”.</p>';
+      }).join('') : '<p class="muted small">Nav papildu mapju. Papildu mape ir cita mape datorā (piem., vecie skenējumi), no kuras rīks var rādīt un piesaistīt dokumentus — failus tā nemaina.</p>';
     }
   };
   A.backupNow = () => CP.store.backupNow();
@@ -5595,11 +5665,15 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.39.1', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+    { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
+      'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
+    ] },
+    { v: '1.40.0', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
       'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet.',
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
       '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies).',
-      'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**; poga “Pārdēvēt” noņemta — Chrome to neļauj.',
+      'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**, un lieko failu vai apakšmapi var **dzēst** tieši rīkā (“✕ Dzēst”). Poga “Pārdēvēt” noņemta — Chrome to neļauj.',
+      'Katru mapē esošu, vēl nepiesaistītu failu var **piesaistīt** — tad tas redzams sadaļā “Visi personas dokumenti”. Ir jauna kategorija **“Paskaidrojums”**; kategorijai **“Cits”** jāieraksta dokumenta nosaukums, un kartītē redzams tieši tas.',
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
       'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
@@ -11320,7 +11394,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
     templates: 'Ziņu veidnes', tools: 'Rīki', gcal: 'Google kalendārs', notify: 'Paziņojumi', ocr: 'Teksta atpazīšana', quals_s: 'Kvalifikāciju saraksts', absenceStreak: 'Kavējumu brīdinājums', docValidity: 'Dokumentu derīgums',
-    formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
+    formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', sigMode: 'Signal režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
   };
   function label(coll, k) {
     if (coll === 'people' && CP.FIELD?.[k]) { const f = CP.FIELD[k]; return (SEC[f.s] ? SEC[f.s] + ': ' : '') + f.l.replace(/^Jauna piezīme.*/, 'Piezīme'); }
@@ -11542,7 +11616,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const COMMS = new Set(['whatsapp', 'sms', 'email', 'call']);
+  const COMMS = new Set(['whatsapp', 'signal', 'sms', 'email', 'call']);
   const isMed = kind => /ārsta|izziņ|medic|veselīb/i.test(kind || '');
   const KEEP_BACKUPS = 10;
 

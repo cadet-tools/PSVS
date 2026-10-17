@@ -805,6 +805,7 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .row.doc{align-items:flex-start;row-gap:8px}
 .row.doc > .grow{flex:1 1 calc(100% - 40px);min-width:0}
 .row.doc > button:first-of-type{margin-left:38px}
+.sigbtn { background: #3a76f0; border-color: #2c63d6; color: #fff } .sigbtn:hover { background: #2c63d6 }
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1107,7 +1108,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
   <header class="dlg-head"><h2 id="msgTitle">Ziņa</h2><button type="button" class="ghost" data-close="msgDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body"><div class="fieldgrid">
     <div class="field"><label for="msgTo">Saņēmējs</label><select id="msgTo"></select></div>
-    <div class="field"><label for="msgChannel">Kanāls</label><select id="msgChannel"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">E-pasts</option></select></div>
+    <div class="field"><label for="msgChannel">Kanāls</label><select id="msgChannel"><option value="whatsapp">WhatsApp</option><option value="signal">Signal</option><option value="sms">SMS</option><option value="email">E-pasts</option></select></div>
     <div class="field"><label for="msgTpl">Veidne</label><select id="msgTpl"></select></div>
     <div class="field" id="msgSubjWrap"><label for="msgSubj">Temats</label><input id="msgSubj"></div>
     <div class="field wide"><label for="msgText">Teksts</label><textarea id="msgText" rows="7"></textarea></div>
@@ -1128,6 +1129,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
     <div class="dlg-body"><div class="fieldgrid">
       <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
       <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
+      <div class="field wide hidden" id="docTitleWrap"><label for="docTitleIn">Dokumenta nosaukums <b class="red">*</b></label><input name="title" id="docTitleIn" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
       <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
       <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
       <div class="field"><label>Saņemts</label><input name="received" type="date"></div>
@@ -1290,6 +1292,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
     <div class="field wide"><label>Persona</label><select id="associatePerson"></select></div>
     <div class="field"><label>Kategorija</label><select id="associateKind"></select></div>
     <div class="field"><label>Forma</label><select id="associateFormat"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks fails</option></select></div>
+    <div class="field wide hidden" id="associateTitleWrap"><label>Dokumenta nosaukums <b class="red">*</b></label><input id="associateTitle" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
   </div><p class="small muted">Tiek saglabāts ceļš un apraksts. Fails netiek pārvietots.</p></div>
   <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="associateDialog">Atcelt</button><button class="mainbtn" id="associateConfirm">Piesaistīt</button></footer>
 </dialog>
@@ -1393,5 +1396,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.39.1"></script></body>
+<script src="app.bundle.js?v=1.40.0"></script></body>
 </html>

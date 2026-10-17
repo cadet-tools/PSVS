@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.39.1';
+  CP.VERSION = '1.40.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -314,12 +314,12 @@ window.CP = window.CP || {};
 
   CP.defaultSettings = () => ({
     countryCode: '371',
-    waMode: 'web',
+    waMode: 'web', sigMode: 'web',
     autosave: true,
     retentionDefault: 12,
     // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
     retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
-    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Cits'],
+    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
@@ -388,6 +388,7 @@ window.CP = window.CP || {};
     }
     // Jauni noklusētie rīki tiek pievienoti vienreiz (ja lietotājs tos izdzēš — atpakaļ netiek likti)
     const added = d.settings.toolsAdded = [...(raw.settings?.toolsAdded || (raw.settings ? [] : ['dvs']))];
+    if (!added.includes('kind-explain')) { if (!d.settings.docKinds.includes('Paskaidrojums')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Paskaidrojums'); added.push('kind-explain'); }
     if (!added.includes('kind-idcard')) { if (!d.settings.docKinds.includes('Jaunsarga apliecība')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Jaunsarga apliecība'); added.push('kind-idcard'); }
     if (!added.includes('dvs')) { if (!d.settings.tools.some(t => /dvs\.mod\.gov\.lv/i.test(t.url || ''))) d.settings.tools.push({ name: 'DVS', url: 'https://dvs.mod.gov.lv/' }); added.push('dvs'); }
     if (d.settings.ocr.engine !== 'google') d.settings.ocr.engine = d.settings.ocr.engine || 'tesseract';
@@ -538,7 +539,7 @@ window.CP = window.CP || {};
   D.docValid = (d, yearId = D.activeYear(), today = U.iso()) => { const e = D.docExpiry(d); return !(e && e < today) && D.docForYear(d, yearId); };
   D.missingDocs = p => (db().settings.requiredDocs || []).filter(k => !db().documents.some(d => d.personId === p.id && d.kind === k && d.path && D.docValid(d)));   // obligātajam dokumentam jābūt skenētam failam (to liek arī DVS)
   D.openEquipment = p => db().equipment.filter(e => e.personId === p.id && !e.returned && !e.keep);
-  D.commSent = l => l.type === 'call' || (['whatsapp', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
+  D.commSent = l => l.type === 'call' || (['whatsapp', 'signal', 'sms', 'email'].includes(l.type) && (!l.status || l.status === 'confirmed'));
   D.lastContact = () => {
     const m = {};
     for (const l of db().log) if (D.commSent(l) && (!m[l.personId] || m[l.personId] < l.at)) m[l.personId] = l.at;
@@ -554,7 +555,7 @@ window.CP = window.CP || {};
   };
   D.guessKind = name => {
     const n = U.norm(name), kinds = db().settings.docKinds;
-    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts']];
+    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
     for (const [r, k] of rules) if (r.test(n) && kinds.includes(k)) return k;
     return kinds.includes('Cits') ? 'Cits' : kinds[0];
   };

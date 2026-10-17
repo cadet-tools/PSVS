@@ -41,7 +41,7 @@
     res: 'Rezultāti', gender: 'Dzimums', yearId: 'Mācību gads', personId: 'Persona', text: 'Teksts', due: 'Termiņš', done: 'Izpildīts', name: 'Nosaukums', label: 'Nosaukums',
     groups: 'Grupas', groupDays: 'Grupu nodarbību dienas', docKinds: 'Dokumentu veidi', requiredDocs: 'Obligātie dokumenti', retentionDefault: 'Glabāšanas termiņš', retention: 'Glabāšanas termiņi', autosave: 'Automātiskā saglabāšana', staff_s: 'Darbinieki',
     templates: 'Ziņu veidnes', tools: 'Rīki', gcal: 'Google kalendārs', notify: 'Paziņojumi', ocr: 'Teksta atpazīšana', quals_s: 'Kvalifikāciju saraksts', absenceStreak: 'Kavējumu brīdinājums', docValidity: 'Dokumentu derīgums',
-    formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
+    formDefaults: 'Veidlapu noklusējumi', formTemplates: 'Veidlapu veidnes', docTemplates: 'Dokumentu veidnes', contactOrg: 'Kontaktu organizācija', countryCode: 'Valsts kods', waMode: 'WhatsApp režīms', sigMode: 'Signal režīms', schDefaultRemind: 'Noklusējuma atgādinājumi'
   };
   function label(coll, k) {
     if (coll === 'people' && CP.FIELD?.[k]) { const f = CP.FIELD[k]; return (SEC[f.s] ? SEC[f.s] + ': ' : '') + f.l.replace(/^Jauna piezīme.*/, 'Piezīme'); }

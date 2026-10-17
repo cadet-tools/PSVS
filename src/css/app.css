@@ -789,3 +789,4 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .row.doc{align-items:flex-start;row-gap:8px}
 .row.doc > .grow{flex:1 1 calc(100% - 40px);min-width:0}
 .row.doc > button:first-of-type{margin-left:38px}
+.sigbtn { background: #3a76f0; border-color: #2c63d6; color: #fff } .sigbtn:hover { background: #2c63d6 }

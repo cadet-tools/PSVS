@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.40.0 — 2026-10-17
+- Signal kanāls: `signal.me/#p/+<nr>` (vai `sgnl://`, iestatījums `sigMode`), ziņas teksts tiek nokopēts starpliktuvē; poga kartītes kontaktos, ziņas logā, grupas ziņā; žurnāla tips `signal` (ietilpst `D.commSent` un glabāšanas termiņu kategorijā “Saziņa”).
+- Dokumentu mape un “Mapē atrasti faili”: “✕ Dzēst” failam un apakšmapei (`store.deletePath` — tikai `Macibu_gadi/*/Personas/<persona>/…`, ne pašu personas mapi; papildu mapes netiek dzēstas). Dzēšot piesaistītu failu, tiek noņemts arī ieraksts (auditā atzīme). Apstiprinājumā — faila ceļš un failu skaits mapē (nolasa no diska).
+- Visiem nepiesaistītajiem failiem mapē — “＋ Piesaistīt” (piesaistes logs ar kategoriju; `A.associate` strādā arī ar failiem, kas vēl nav indeksā). Ieteiktajiem failiem ar minējumu “Cits” — “＋ Piesaistīt…” ar logu.
+- Jauna kategorija “Paskaidrojums” (migrācija `kind-explain`, minēšana pēc “paskaidr”). Kategorijai “Cits” obligāts lauks `title` (piesaistes un dokumenta logā); kartītē rāda `docs.label(d)`.
+- Iestatījumi → Drošība un kopijas: papildu dokumentu mapēm poga “＋ Pievienot papildu mapi” un skaidrojums (agrāk atsauce uz neesošu pogu).
+
 ## 1.39.1 — 2026-10-17
 - “Pārvietot” un “Jauna mape” paliek (tikai aktīvā gada mapē). `store.relocate`: ja Chrome noraida `move()` failam, fails tiek nokopēts uz jauno vietu, pārbaudīts (izmērs + SHA-256) un tikai tad vecā vieta noņemta; ja noņemt neizdodas — kopija paliek, sasaiste uz jauno vietu, lietotājam brīdinājums.
 - `docs.where` / `whereHtml`: pie katra dokumenta un ieteiktā faila — pilns ceļš datorā ar datu mapes nosaukumu. Dokumenta rinda: teksts pilnā platumā, pogas zem tā.

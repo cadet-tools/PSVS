@@ -10,7 +10,7 @@
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const COMMS = new Set(['whatsapp', 'sms', 'email', 'call']);
+  const COMMS = new Set(['whatsapp', 'signal', 'sms', 'email', 'call']);
   const isMed = kind => /ārsta|izziņ|medic|veselīb/i.test(kind || '');
   const KEEP_BACKUPS = 10;
 

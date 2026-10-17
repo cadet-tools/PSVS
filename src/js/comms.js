@@ -16,14 +16,22 @@
     const t = encodeURIComponent(text || '');
     return S.db.settings.waMode === 'app' ? `whatsapp://send?phone=${num}&text=${t}` : `https://wa.me/${num}${t ? '?text=' + t : ''}`;
   };
+  // Signal saitē tekstu ielikt nevar — to nokopē starpliktuvē, un lietotājs ielīmē (Ctrl+V)
+  const sigUrl = num => S.db.settings.sigMode === 'app' ? `sgnl://signal.me/#p/+${num}` : `https://signal.me/#p/+${num}`;
+  const sigPrep = async (ch, text) => {
+    if (ch !== 'signal') return;
+    try { await navigator.clipboard.writeText(text || ''); ui.toast('Signal atvērts. Ziņas teksts nokopēts — sarakstē ielīmē to ar Ctrl+V un nosūti.', 'warn', 12000); }
+    catch (e) { ui.toast('Signal atvērts, bet tekstu neizdevās nokopēt — nokopē to no loga ar “Kopēt”.', 'warn', 12000); }
+  };
   function channelUrl(ch, c, text, subject) {
     const num = U.normPhone(c.phone);
+    if (ch === 'signal') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return sigUrl(num); }
     if (ch === 'whatsapp') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return waUrl(num, text); }
     if (ch === 'sms') { if (!num) throw Error('Saņēmējam nav tālruņa numura'); return `sms:+${num}?body=${encodeURIComponent(text || '')}`; }
     if (!c.email) throw Error('Saņēmējam nav e-pasta adreses');
     return `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(subject || '')}&body=${encodeURIComponent(text || '')}`;
   }
-  const CH = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'E-pasts' };
+  const CH = { whatsapp: 'WhatsApp', signal: 'Signal', sms: 'SMS', email: 'E-pasts' };
 
   /* --- Ārējie rīki (iestatāmi) --- */
   comms.toolLinks = p => {
@@ -74,13 +82,14 @@
       const url = channelUrl(ch, c, text, U.$('msgSubj').value);
       const id = U.uid();
       S.db.log.push({ id, personId: ctx.pid, at: U.now(), type: ch, detail: `→ ${c.role}: ${c.name || ''}\n${text}`, status: 'prepared' });
+      sigPrep(ch, text);
       openExternal(url);
       const row = S.db.log.find(x => x.id === id);
       row.status = 'opened';
       ctx.logId = id;
       setMsgActions(true);
       CP.store.changed({ silent: true });
-      ui.toast('Atvērts ārējā lietotnē. Ziņa vēl nav nosūtīta — apstiprini tikai tad, ja pats to nosūtīji.', 'warn', 9000);
+      if (ch !== 'signal') ui.toast('Atvērts ārējā lietotnē. Ziņa vēl nav nosūtīta — apstiprini tikai tad, ja pats to nosūtīji.', 'warn', 9000);
     } catch (e) { ui.toast(e.message, 'warn'); }
   };
   A.msgConfirm = () => {
@@ -137,7 +146,7 @@
           <div class="fieldgrid">
             ${C.ids ? '' : `<div class="field"><label>Grupa</label>${sel('group', [['', 'Visas aktīvās personas'], ...gs.map(g => [g, g])])}</div>`}
             <div class="field"><label>Kam</label>${sel('audience', [['parents', 'Vecākiem / pārstāvjiem'], ['youth', 'Jauniešiem'], ['both', 'Abiem']])}</div>
-            <div class="field"><label>Kanāls</label>${sel('channel', [['whatsapp', 'WhatsApp'], ['sms', 'SMS'], ['email', 'E-pasts']])}</div>
+            <div class="field"><label>Kanāls</label>${sel('channel', [['whatsapp', 'WhatsApp'], ['signal', 'Signal'], ['sms', 'SMS'], ['email', 'E-pasts']])}</div>
             <div class="field"><label>Veidne</label>${sel('tpl', tpls.map((t, i) => [i, t.name]))}</div>
             <div class="field wide"><label>Teksts</label><textarea id="commsText" rows="7">${esc(C.text)}</textarea>
               <div class="hint muted">Vietturi katram tiek aizvietoti: {saņēmējs} {vārds} {uzvārds} {grupa} {trūkst} {ekipējums}</div></div>
@@ -172,11 +181,12 @@
       const url = channelUrl(C.channel, r.c, text, S.db.settings.templates[C.tpl]?.name);
       const id = U.uid();
       S.db.log.push({ id, personId: r.p.id, at: U.now(), type: C.channel, detail: `→ ${r.c.role}: ${r.c.name || ''} (grupas ziņa)\n${text}`, status: 'prepared' });
+      sigPrep(C.channel, text);
       openExternal(url);
       S.db.log.find(x => x.id === id).status = 'opened';
       C.open = C.open || {}; C.open[key] = { id, status: 'opened', channel: C.channel }; C.done.add(key);
       CP.store.changed();
-      ui.toast('Atvērts ārējā lietotnē. Tas vēl nav nosūtīts.', 'warn', 7000);
+      if (C.channel !== 'signal') ui.toast('Atvērts ārējā lietotnē. Tas vēl nav nosūtīts.', 'warn', 7000);
     } catch (e) { ui.toast(e.message, 'warn'); }
   };
   A.commsMark = arg => {

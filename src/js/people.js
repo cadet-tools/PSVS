@@ -172,7 +172,7 @@
       const n = U.normPhone(c.phone);
       return `<div class="contact"><div class="c-top"><span class="role">${esc(c.role)}</span></div><div class="c-name">${esc(c.name || '—')}</div>
         <div class="c-how">${n ? `<a href="tel:+${n}" data-act="call" data-arg="${p.id}|${c.idx}">${esc(U.prettyPhone(c.phone))}</a>` : ''}${c.email ? `<span>${esc(c.email)}</span>` : ''}</div>
-        <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
+        <div class="c-btns">${n ? `<button class="wabtn sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|whatsapp">💬 WhatsApp</button><button class="sm sigbtn" data-act="msgTo" data-arg="${p.id}|${c.idx}|signal" title="Rakstīt Signal">Signal</button><button class="sm" data-act="call" data-arg="${p.id}|${c.idx}" title="Zvanīt">📞</button><button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|sms">SMS</button>` : ''}${c.email ? `<button class="sm" data-act="msgTo" data-arg="${p.id}|${c.idx}|email">✉</button>` : ''}</div></div>`;
     }).join('') || `<p class="muted small">Nav ievadīts neviens tālrunis vai e-pasts.</p><button class="sm" data-act="edit" data-arg="${p.id}" data-sec="contact">＋ Pievienot kontaktus</button>`;
     const req = S.db.settings.requiredDocs;
     const reqRow = k => {
@@ -237,7 +237,7 @@
   }
 
   /* --- Vēsture: saziņa, piezīmes, uzdevumi, izmaiņas vienā laika joslā --- */
-  const TYPE = { whatsapp: ['💬', 'WhatsApp'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
+  const TYPE = { whatsapp: ['💬', 'WhatsApp'], signal: ['💬', 'Signal'], sms: ['✉', 'SMS'], email: ['✉', 'E-pasts'], call: ['📞', 'Zvans'], note: ['📝', 'Piezīme'], task: ['☐', 'Uzdevums'], audit: ['✎', 'Izmaiņas'] };
   const AUDIT = { create: 'Izveidota kartīte', update: 'Mainīti dati', status: 'Mainīts statuss', archive: 'Arhivēta', restore: 'Atjaunota no arhīva', scan: 'Ievadīta no anketas', 'doc-add': 'Pievienots dokuments', 'doc-remove': 'Noņemts dokumenta ieraksts', 'doc-relink': 'Atjaunota dokumenta sasaiste', 'eq-issue': 'Izsniegts ekipējums', 'eq-return': 'Atdots ekipējums', 'eq-edit': 'Labots ekipējuma ieraksts', 'eq-delete': 'Dzēsts ekipējuma ieraksts' , idcard: 'Jaunsarga apliecība', event: 'Pasākums'};
   function timeline(p) {
     const items = [];
