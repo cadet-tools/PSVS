@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.44.1';
+  CP.VERSION = '1.44.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5684,9 +5684,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.44.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
+    { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
-      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā virs saraksta redzami visi mēneša pasākumi (arī tad, ja rādītas tikai nodarbību dienas) un datumi atzīmēti ar ★. No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
+      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
@@ -7887,6 +7887,7 @@ window.CP = window.CP || {};
           if (!path) continue;
           S.db.documents.push({ id: U.uid(), personId: p.id, kind: c.kind, title: `${label} — ${ad.title(ev)}`, eventId: ev.id, format: ext === 'edoc' ? 'edoc' : 'pdf', path, sourceId: 'main', received: U.iso(), addedAt: U.now(), yearId: ev.yearId || D.activeYear(), review: 'received', size: f.size });
           D.audit(p.id, 'doc-add', [`${label} (${ad.title(ev)})`]);
+          ad.markPresent?.(ev, p.id);   // ja atnesa dokumentu — piedalījās (instruktors var mainīt)
         } else {
           const path = await CP.store.saveFile(dir, `${label}.${ext}`, f);
           if (!path) continue;
@@ -8376,6 +8377,7 @@ window.CP = window.CP || {};
     prepare: id => { if (S.formEdit && (!id || S.formEdit.id === id)) { commit(true); return S.formEdit; } return (S.db.events || []).find(e => e.id === id); },
     saved: ev => { if (S.formEdit === ev) commit(true); },
     isCamp: ev => ev.type === 'camp',
+    markPresent: (ev, pid) => { ev.participants = ev.participants || []; if (!ev.participants.some(x => x.pid === pid)) ev.participants.push({ pid }); },
     folder: ev => ['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)],
     title: evTitle,
     after: () => renderKeepScroll()
@@ -9985,6 +9987,10 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const sessFor = (g, date) => sessions().find(s => s.group === g && s.date === date && isLesson(s));
   const events = () => sessions().filter(s => !isLesson(s));
   /** Pasākumi, kas attiecas uz grupu datumā (vairāku dienu — visā periodā) */
+  /** Pasākums, kas sākas šajā datumā (grupai) — mēneša tabulā tā kolonnā atzīmē dalību */
+  const evStart = (g, date) => events().find(e => e.date === date && (e.group === '*' || e.group === g || g === '*'));
+  /** Rūtiņas sesija: nodarbība, ja ir; citādi pasākums, kas sākas šajā datumā */
+  const cellSess = (g, date) => sessFor(g, date) || evStart(g, date);
   const eventsOn = (g, date) => events().filter(s => (s.group === '*' || s.group === g || g === '*') && s.date <= date && (s.dateTo || s.date) >= date);
   /** Personai attiecināmās nodarbības: savas grupas un visas vienības, līdz šodienai */
   const personSessions = (p, yearId = D.activeYear()) => { const g = D.groupOf(p, yearId), today = U.iso(); return sessions().filter(s => isLesson(s) && (s.group === g || s.group === '*') && s.date <= today && (!yearId || s.yearId === yearId)).sort((a, b) => a.date.localeCompare(b.date)); };
@@ -10083,7 +10089,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const groupSel = (v, id = 'attGroup', withAll = true) => `<select id="${id}">${withAll ? `<option value="*" ${v === '*' ? 'selected' : ''}>Visa vienība</option>` : ''}${D.groups().map(g => `<option ${g === v ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>`;
   function gridDates(v) {
     const all = monthDates(v.month), days = daysOf(v.group);
-    const sess = sessions().filter(s => isLesson(s) && s.group === v.group && s.date.startsWith(v.month)).map(s => s.date);
+    const sess = [...sessions().filter(s => isLesson(s) && s.group === v.group && s.date.startsWith(v.month)).map(s => s.date),
+      ...events().filter(e => (e.group === '*' || e.group === v.group || v.group === '*') && e.date.startsWith(v.month)).map(e => e.date)];   // pasākuma datums redzams vienmēr
     return v.all || !days.length ? all : [...new Set([...all.filter(d => days.includes(wdOf(d))), ...sess])].sort();
   }
 
@@ -10091,15 +10098,15 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   function grid(v) {
     const dates = gridDates(v), ppl = roster(v.group), days = daysOf(v.group), [y, m] = v.month.split('-').map(Number);
     const daysPick = v.group === '*' ? `<span class="small muted">Visas vienības dienas = grupu dienu apvienojums.</span>` : `<span class="small muted">Nodarbību dienas:</span> ${WD.map((w, i) => `<label class="wd ${days.includes(i + 1) ? 'on' : ''}" title="${WDL[i]}"><input type="checkbox" data-gday="${i + 1}" ${days.includes(i + 1) ? 'checked' : ''}>${w}</label>`).join('')}`;
-    const head = dates.map(d => { const s = sessFor(v.group, d), wd = wdOf(d), today = d === U.iso(), evs = eventsOn(v.group, d); return `<th class="ad-h ${s ? 'has' : ''} ${today ? 'today' : ''} ${days.includes(wd) ? 'jd' : ''}">${evs.length ? `<button type="button" class="ad-ev" data-act="attEvOpen" data-arg="${evs[0].id}" title="${esc(evs.map(e => `${e.type}: ${e.topic || ''}`).join('\n'))}">★</button>` : ''}<button class="ad-hb" data-act="sessOpen" data-arg="${esc(v.group)}|${d}" title="${esc((s?.topic ? s.topic + ' · ' : '') + WDL[wd - 1] + ' — klikšķis: tēma, piezīmes, “visi bija”')}">${d.slice(8)}.<small>${WD[wd - 1]}</small>${s?.topic ? '<i>●</i>' : ''}</button></th>`; }).join('');
+    const head = dates.map(d => { const s = sessFor(v.group, d), wd = wdOf(d), today = d === U.iso(), evs = eventsOn(v.group, d), evc = !s && evStart(v.group, d); return `<th class="ad-h ${s || evc ? 'has' : ''} ${evc ? 'evcol' : ''} ${today ? 'today' : ''} ${days.includes(wd) ? 'jd' : ''}">${evs.length ? `<button type="button" class="ad-ev" data-act="attEvOpen" data-arg="${evs[0].id}" title="${esc(evs.map(e => `${e.type}: ${e.topic || ''}`).join('\n'))}">★</button>` : ''}<button class="ad-hb" ${evc ? `data-act="attEvOpen" data-arg="${evc.id}" title="${esc(`${evc.type}: ${evc.topic || ''} — šajā kolonnā atzīmē, kas piedalījās; klikšķis — pasākums un dokumenti`)}"` : `data-act="sessOpen" data-arg="${esc(v.group)}|${d}" title="${esc((s?.topic ? s.topic + ' · ' : '') + WDL[wd - 1] + ' — klikšķis: tēma, piezīmes, “visi bija”')}"`}>${d.slice(8)}.<small>${WD[wd - 1]}</small>${s?.topic ? '<i>●</i>' : ''}</button></th>`; }).join('');
     const rows = ppl.map((p, i) => {
       const mSess = sessions().filter(s => isLesson(s) && (s.group === v.group || (v.group !== '*' && s.group === '*')) && s.date.startsWith(v.month));
       const r = rateOf(p.id, mSess), sk = streak(p), lim = Number(st().absenceStreak) || 3;
       return `<tr><td class="ad-n">${i + 1}.</td><td class="ad-name"><a href="#" data-person="${p.id}">${esc(U.sortName(p))}</a>${sk.n >= lim ? ` <span class="warn" title="${sk.n} kavējumi pēc kārtas">⚠${sk.n}</span>` : ''}</td>
-        ${dates.map(d => { const s = sessFor(v.group, d), c = s?.att?.[p.id] || ''; return `<td class="ad-c"><button class="acell c${c === '+' ? 'p' : c || 'x'}" data-act="attCell" data-arg="${p.id}|${d}" title="${esc(U.full(p) + ' · ' + U.fmtDate(d) + ' — klikšķis vai + n k a s')}">${esc(c)}</button></td>`; }).join('')}
+        ${dates.map(d => { const s = cellSess(v.group, d), c = s?.att?.[p.id] || ''; return `<td class="ad-c ${s && !isLesson(s) ? 'ev' : ''}"><button class="acell c${c === '+' ? 'p' : c || 'x'}" data-act="attCell" data-arg="${p.id}|${d}" title="${esc(U.full(p) + ' · ' + U.fmtDate(d) + ' — klikšķis vai + n k a s')}">${esc(c)}</button></td>`; }).join('')}
         <td class="ad-pct">${pctTag(r.pct)}</td></tr>`;
     }).join('');
-    const foot = dates.map(d => { const s = sessFor(v.group, d), n = s ? Object.values(s.att || {}).filter(c => PRESENT.has(c)).length : ''; return `<td class="ad-c small">${n === '' ? '' : n}</td>`; }).join('');
+    const foot = dates.map(d => { const s = cellSess(v.group, d), n = s ? Object.values(s.att || {}).filter(c => PRESENT.has(c)).length : ''; return `<td class="ad-c small">${n === '' ? '' : n}</td>`; }).join('');
     return `<section class="card"><div class="att-bar">
         ${groupSel(v.group)}
         <span class="att-month"><button class="sm ghost" data-act="attMonth" data-arg="-1" title="Iepriekšējais mēnesis">◀</button><input type="month" id="attMonth" value="${esc(v.month)}"><button class="sm ghost" data-act="attMonth" data-arg="1" title="Nākamais mēnesis">▶</button></span>
@@ -10114,7 +10121,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         return list.length ? `<div class="att-evstrip"><span class="small muted">Pasākumi šajā mēnesī:</span>${list.map(e => `<button type="button" class="sm" data-act="attEvOpen" data-arg="${e.id}" title="Atvērt pasākumu — dalībnieki un dokumenti">★ ${esc(U.fmtDate(e.date).slice(0, 5))}${e.dateTo && e.dateTo !== e.date ? '–' + esc(U.fmtDate(e.dateTo).slice(0, 5)) : ''} · ${esc(e.type)}: <b>${esc(e.topic || '')}</b> <span class="muted">(${evPresent(e).length})</span></button>`).join('')}</div>` : ''; })()}
       ${ppl.length ? `<div class="att-wrap"><table class="att-grid"><thead><tr><th class="ad-n">N.p.k.</th><th class="ad-name">Vārds, uzvārds</th>${head}<th class="ad-pct">Mēn.</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr><td></td><td class="small muted">Klātesošie</td>${foot}<td></td></tr></tfoot></table></div>` : ui.empty('Šajā grupā nav personu.')}
-      <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s).</p></section>`;
+      <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s). <span class="ad-ev ad-ev-legend">★</span> virs datuma — <b>pasākums</b> (nometne, sacensības u. c.): tā kolonnā atzīmē, kas piedalījās; pasākumi apmeklējuma procentos netiek skaitīti. Klikšķis uz datuma atver pasākumu ar dokumentiem.</p></section>`;
   }
   A.attMonth = d => { const v = view(); v.month = shiftMonth(v.month, Number(d)); CP.render(); };
   A.attAll = x => { view().all = x === '1'; CP.render(); };
@@ -10135,7 +10142,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   }
   /** Atzīmes ierakstīšana vienā rūtiņā (pele vai tastatūra) */
   function setCode(arg, code) {
-    const [pid, date] = String(arg).split('|'), v = view(), s = ensureSess(v.group, date);
+    const [pid, date] = String(arg).split('|'), v = view(), s = cellSess(v.group, date) || ensureSess(v.group, date);
     if (code) s.att[pid] = code; else delete s.att[pid];
     s.updatedAt = U.now();
     const btn = document.querySelector(`[data-act="attCell"][data-arg="${CSS.escape(arg)}"]`);
@@ -10150,7 +10157,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     }, 1500);
   }
   A.attCell = (arg, el) => {
-    const [pid, date] = String(arg).split('|'), c = sessFor(view().group, date)?.att?.[pid] || '';
+    const [pid, date] = String(arg).split('|'), c = cellSess(view().group, date)?.att?.[pid] || '';
     setCode(arg, CYCLE[(CYCLE.indexOf(c) + 1) % CYCLE.length]);
     el?.focus?.({ preventScroll: true });
   };
@@ -10234,7 +10241,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   A.attPdf = async how => {
     const v = view(), dates = gridDates(v), ppl = roster(v.group), [y, m] = v.month.split('-').map(Number);
     if (!dates.length) return ui.toast('Nav datumu: atzīmē nodarbību dienas vai izvēlies “Visas mēneša dienas”.', 'warn', 7000);
-    const marks = how === 'filled' ? Object.fromEntries(ppl.map(p => [p.id, Object.fromEntries(dates.map(d => [d, sessFor(v.group, d)?.att?.[p.id] || '']))])) : null;
+    const marks = how === 'filled' ? Object.fromEntries(ppl.map(p => [p.id, Object.fromEntries(dates.map(d => [d, cellSess(v.group, d)?.att?.[p.id] || '']))])) : null;
     try {
       ui.toast('Sagatavo veidlapu…', 'ok', 2000);
       const bytes = await CP.pdf.attendance({ title: 'Nodarbību apmeklējums', group: v.group === '*' ? 'visa vienība' : v.group, year: `${y}. gads`, monthTitle: MON_LOC[m - 1], dates, people: ppl, marks, legend: LEGEND, instructor: st().instructor?.name ? `${st().instructor.position || 'Instruktors'} ${st().instructor.name}` : '' });
@@ -10311,6 +10318,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     prepare: id => { if (evd && (!id || evd.id === id)) return evSave(true) ? evd : null; return sessions().find(x => x.id === id); },
     saved: ev => { if (ev === evd) evSave(true); else { const i = sessions().findIndex(x => x.id === ev.id); if (i >= 0) sessions()[i] = ev; } },
     isCamp: ev => ev.type === 'Nometne',
+    markPresent: (ev, pid) => { ev.att = ev.att || {}; if (!PRESENT.has(ev.att[pid])) ev.att[pid] = '+'; },
     folder: ev => ev.dir || CP.evDocs.dirOf(ev.yearId, `${ev.date} ${ev.type} ${ev.topic}`),
     title: evLabel,
     after: () => { if (U.$('evDialog')?.open) evDlg(); else CP.render(); }
@@ -10337,7 +10345,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         <section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${present.length ? 'ok' : ''}">${present.length} piedalījās</span></h3>
           <div class="ev-pickbar"><input type="search" id="evDlgQ" placeholder="Meklēt vārdu…" value="${esc(evQ)}" autocomplete="off"></div>
           <div class="actions" style="margin:8px 0"><button type="button" class="sm" data-act="attEvAll">Atzīmēt visus (${shown.length})</button><button type="button" class="sm ghost" data-act="attEvNone">Noņemt visus</button></div>
-          <div class="ev-list">${shown.map(p => { const on = PRESENT.has(e.att?.[p.id]); return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evatt="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, e.yearId) || '')}</small></span></label>${on ? CP.evDocs.chips('att', e, p) : ''}</div>`; }).join('') || '<p class="muted small pad">Neviens neatbilst.</p>'}</div></section>
+          <div class="ev-list">${shown.map(p => { const on = PRESENT.has(e.att?.[p.id]); return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evatt="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, e.yearId) || '')}</small></span></label>${CP.evDocs.chips('att', e, p)}</div>`; }).join('') || '<p class="muted small pad">Neviens neatbilst.</p>'}</div></section>
       </div></div></div>
       <footer class="dlg-foot">${e.id ? `<button type="button" class="ghost danger" data-act="attEvDel">Dzēst pasākumu</button>` : ''}<span class="grow"></span>${e.id ? `<button type="button" data-act="attEvForm" title="Drošības instruktāžas lapa vai nometnes žurnāls ar šī pasākuma dalībniekiem">${ic('clipboard')} ${(S.db.events || []).some(x => x.fromSession === e.id) ? 'Atvērt veidlapu' : e.type === 'Nometne' ? 'Sagatavot nometnes žurnālu' : 'Sagatavot instruktāžas lapu'}</button>` : ''}<button type="button" data-close="evDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`;
     const f = d.querySelector('form');

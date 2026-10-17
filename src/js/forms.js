@@ -435,6 +435,7 @@
     prepare: id => { if (S.formEdit && (!id || S.formEdit.id === id)) { commit(true); return S.formEdit; } return (S.db.events || []).find(e => e.id === id); },
     saved: ev => { if (S.formEdit === ev) commit(true); },
     isCamp: ev => ev.type === 'camp',
+    markPresent: (ev, pid) => { ev.participants = ev.participants || []; if (!ev.participants.some(x => x.pid === pid)) ev.participants.push({ pid }); },
     folder: ev => ['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)],
     title: evTitle,
     after: () => renderKeepScroll()

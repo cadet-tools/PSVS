@@ -52,6 +52,7 @@
           if (!path) continue;
           S.db.documents.push({ id: U.uid(), personId: p.id, kind: c.kind, title: `${label} — ${ad.title(ev)}`, eventId: ev.id, format: ext === 'edoc' ? 'edoc' : 'pdf', path, sourceId: 'main', received: U.iso(), addedAt: U.now(), yearId: ev.yearId || D.activeYear(), review: 'received', size: f.size });
           D.audit(p.id, 'doc-add', [`${label} (${ad.title(ev)})`]);
+          ad.markPresent?.(ev, p.id);   // ja atnesa dokumentu — piedalījās (instruktors var mainīt)
         } else {
           const path = await CP.store.saveFile(dir, `${label}.${ext}`, f);
           if (!path) continue;

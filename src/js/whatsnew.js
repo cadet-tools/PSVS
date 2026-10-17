@@ -13,9 +13,9 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.44.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
+    { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
-      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā virs saraksta redzami visi mēneša pasākumi (arī tad, ja rādītas tikai nodarbību dienas) un datumi atzīmēti ar ★. No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
+      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',

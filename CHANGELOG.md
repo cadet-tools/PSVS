@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.44.2 — 2026-10-17
+- Mēneša tabula: pasākuma sākuma datums vienmēr ir kolonna (`gridDates`), tās rūtiņas raksta pasākuma `att` (`cellSess` = nodarbība, ja ir, citādi pasākums, kas sākas šajā datumā); kolonna iekrāsota, datuma klikšķis atver pasākumu. Apzīmējumos — skaidrojums par ★.
+- Pievienojot dalībnieka pasākuma dokumentu, dalībnieks tiek atzīmēts kā piedalījies (`markPresent` abos avotos). Pasākuma logā dokumentu pogas redzamas visiem sarakstā esošajiem.
+
 ## 1.44.1 — 2026-10-17
 - “Atvērt veidlapu” no pasākuma: pasākuma logs tiek aizvērts arī tad, ja veidlapa jau sagatavota (agrāk tas aizsedza Veidlapu lapu).
 - Mēneša tabulā josla “Pasākumi šajā mēnesī” — pasākumi redzami arī skatā “Jaunsardzes dienas”, ja to datums nav nodarbību diena.
