@@ -812,3 +812,7 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .ad-ev{display:block;margin:0 auto 2px;padding:0 4px;font-size:11px;line-height:1.3;border:0;background:var(--accent-soft,rgba(80,160,255,.15));color:var(--teal);border-radius:6px;cursor:pointer}
 .att-evstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}.att-evstrip .sm{color:var(--txt)}
 .att-grid td.ad-c.ev{background:var(--accent-soft,rgba(80,160,255,.12))}.att-grid th.evcol{background:var(--accent-soft,rgba(80,160,255,.12))}.ad-ev-legend{display:inline-block;margin:0 2px;cursor:default}
+.aside-btns{display:flex;gap:6px}
+.addpick{display:grid;gap:10px;min-width:min(520px,86vw)}
+.addpick-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:12px 14px;white-space:normal}
+.addpick-opt span{font-size:12px;opacity:.85;font-weight:400}

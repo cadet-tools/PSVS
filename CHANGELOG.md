@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.45.2 — 2026-10-17
+- “＋ Jauna persona” (sānjosla, Pārskats, Personas) atver izvēli: jauna persona / pārņemt no cita instruktora / ievadīt no anketas (`A.addPerson` → `addPickDialog`; tieša forma — `A.addPersonNew`). Sānjoslā poga ⇩ (`transferIn`). Kartītes pārskata apakšā karte “⇪ Nodošana citam instruktoram”.
+
 ## 1.45.1 — 2026-10-17
 - Nodošana: ekipējums — “tikai saraksts” / “nodot jaunajam instruktoram (MTL)” / “neiekļaut”. Nododot: `equipmentHandover: true`, savā uzskaitē neatdotie (ne dāvinājumi) tiek slēgti ar `returnNote` “Nodots instruktoram … — MTL pārņemts” un `handedTo`. Pārņemot: “Ievietot ekipējumu manā uzskaitē” (ieslēgts, ja nodots) — ieraksti ar `src: transfer`, `changedAt` = izsniegšanas datums (MTL nav uzreiz “novecojusi”).
 

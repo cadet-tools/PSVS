@@ -220,6 +220,7 @@
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
       ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
+      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p><button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
     </div>`;
   }
 
@@ -363,7 +364,20 @@
   U.$('personFields').innerHTML = ui.fieldsHTML({ prefix: 'pf_', sectionIds: true });
   let editing = null;
 
-  A.addPerson = () => openPerson(null);
+  /** “Jauna persona”: izvēle — reģistrēt jaunu vai pārņemt no cita instruktora */
+  A.addPerson = () => {
+    let d = U.$('addPickDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'addPickDialog'; document.body.appendChild(d); }
+    d.innerHTML = `<header class="dlg-head"><h2>Pievienot personu</h2><button type="button" class="ghost" data-close="addPickDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body addpick">
+        <button type="button" class="addpick-opt mainbtn" data-act="addPersonNew"><b>＋ Jauna persona</b><span>Reģistrēt jaunu jaunsargu vai kandidātu. Ja viņš pārnāca bez pakas, aizpildi lauku “Pārnācis no cita instruktora”.</span></button>
+        <button type="button" class="addpick-opt" data-act="addPersonTransfer"><b>⇩ Pārņemt no cita instruktora</b><span>Ielikt personas lietas paku (ZIP), ko atsūtīja iepriekšējais instruktors — dati, dokumenti, kvalifikācijas, ekipējums.</span></button>
+        <button type="button" class="addpick-opt" data-act="addPersonScan"><b>📷 Ievadīt no anketas</b><span>Nolasīt datus no skenētas pieteikuma anketas.</span></button>
+      </div>`;
+    d.showModal();
+  };
+  A.addPersonNew = () => { U.$('addPickDialog')?.close(); openPerson(null); };
+  A.addPersonTransfer = () => { U.$('addPickDialog')?.close(); A.transferIn(); };
+  A.addPersonScan = () => { U.$('addPickDialog')?.close(); A.scan(); };
   A.edit = (pid, el) => openPerson(pid, el?.dataset.sec);
   function openPerson(pid, sec) {
     editing = pid || null; const p = pid ? D.person(pid) : null;

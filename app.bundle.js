@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.45.1';
+  CP.VERSION = '1.45.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2726,6 +2726,7 @@ window.CP = window.CP || {};
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
       ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
+      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p><button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
     </div>`;
   }
 
@@ -2869,7 +2870,20 @@ window.CP = window.CP || {};
   U.$('personFields').innerHTML = ui.fieldsHTML({ prefix: 'pf_', sectionIds: true });
   let editing = null;
 
-  A.addPerson = () => openPerson(null);
+  /** “Jauna persona”: izvēle — reģistrēt jaunu vai pārņemt no cita instruktora */
+  A.addPerson = () => {
+    let d = U.$('addPickDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'addPickDialog'; document.body.appendChild(d); }
+    d.innerHTML = `<header class="dlg-head"><h2>Pievienot personu</h2><button type="button" class="ghost" data-close="addPickDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body addpick">
+        <button type="button" class="addpick-opt mainbtn" data-act="addPersonNew"><b>＋ Jauna persona</b><span>Reģistrēt jaunu jaunsargu vai kandidātu. Ja viņš pārnāca bez pakas, aizpildi lauku “Pārnācis no cita instruktora”.</span></button>
+        <button type="button" class="addpick-opt" data-act="addPersonTransfer"><b>⇩ Pārņemt no cita instruktora</b><span>Ielikt personas lietas paku (ZIP), ko atsūtīja iepriekšējais instruktors — dati, dokumenti, kvalifikācijas, ekipējums.</span></button>
+        <button type="button" class="addpick-opt" data-act="addPersonScan"><b>📷 Ievadīt no anketas</b><span>Nolasīt datus no skenētas pieteikuma anketas.</span></button>
+      </div>`;
+    d.showModal();
+  };
+  A.addPersonNew = () => { U.$('addPickDialog')?.close(); openPerson(null); };
+  A.addPersonTransfer = () => { U.$('addPickDialog')?.close(); A.transferIn(); };
+  A.addPersonScan = () => { U.$('addPickDialog')?.close(); A.scan(); };
   A.edit = (pid, el) => openPerson(pid, el?.dataset.sec);
   function openPerson(pid, sec) {
     editing = pid || null; const p = pid ? D.person(pid) : null;
@@ -5686,9 +5700,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.45.1', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
-      'Kartītē (⋯) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
-      'Personu sarakstā **“⇩ Pārņemt no cita instruktora”** — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
+    { v: '1.45.2', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
+      'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
+      'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
     ] },
     { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
