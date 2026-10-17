@@ -96,7 +96,7 @@
       const tabs = `<nav class="tabs"><button class="${P.show === 'linked' ? 'active' : ''}" data-act="docsShow" data-arg="linked">Reģistrētie</button><button class="${P.show === 'missing' ? 'active' : ''}" data-act="docsShow" data-arg="missing">Trūkstošie</button><button class="${P.show === 'files' ? 'active' : ''}" data-act="docsShow" data-arg="files">Faili mapēs</button></nav>`;
       let body = '';
       if (P.show === 'linked') {
-        const list = S.db.documents.filter(d => D.inYear(D.person(d.personId)) && (!P.kind || d.kind === P.kind) && (!q || U.norm(d.kind + ' ' + d.path + ' ' + U.full(D.person(d.personId))).includes(q)))
+        const list = S.db.documents.filter(d => D.inYear(D.person(d.personId)) && (!P.kind || d.kind === P.kind) && (!q || U.norm(d.kind + ' ' + (d.title || '') + ' ' + d.path + ' ' + U.full(D.person(d.personId))).includes(q)))
           .sort((a, b) => U.cmp(U.sortName(D.person(a.personId)), U.sortName(D.person(b.personId))));
         body = `<div class="filters card"><input id="docsQ" type="search" placeholder="Meklēt pēc personas, kategorijas, faila…" value="${esc(P.q)}"><select data-docs="kind"><option value="">Visas kategorijas</option>${ui.kindOptions(P.kind)}</select></div>
           <section class="card" id="docsBody">${list.map(d => docRow(d, true)).join('') || '<p class="muted">Nav dokumentu.</p>'}</section>`;

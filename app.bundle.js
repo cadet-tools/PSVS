@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.45.2';
+  CP.VERSION = '1.45.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -534,6 +534,15 @@ window.CP = window.CP || {};
   ].map((c, i) => ({ ...c, idx: i })).filter(c => U.normPhone(c.phone) || c.email);
   D.docsOf = p => db().documents.filter(d => d.personId === p.id);
   /* --- Derīguma termiņi (piem., ārsta izziņa: 12 mēn. un tikai savā mācību gadā) --- */
+  /** Visas dokumentu kategorijas vienā sarakstā: iestatītās, pasākumu dokumenti un faktiski lietotās; “Cits” — beigās */
+  D.allDocKinds = () => {
+    const s = db().settings, out = [];
+    const add = k => { k = String(k || '').trim(); if (k && k !== 'Cits' && !out.includes(k)) out.push(k); };
+    (s.docKinds || []).forEach(add);
+    [...(s.evDocsAll || []), ...(s.evDocsCamp || [])].forEach(add);   // dalībnieka pasākuma dokumenti (kopīgie pieder pasākumam)
+    (db().documents || []).forEach(d => add(d.kind));
+    return [...out, 'Cits'];
+  };
   D.docRule = kind => (db().settings.docValidity || {})[kind] || null;
   D.docDate = d => String(d.issued || d.received || d.addedAt || '').slice(0, 10);
   /** Termiņš: ievadītais “derīgs līdz” vai izsniegšanas datums + N mēneši − 1 diena */
@@ -2227,7 +2236,7 @@ window.CP = window.CP || {};
     U.$(sel).innerHTML = S.db.people.filter(p => (all || D.isCurrent(p) || p.id === chosen) && (D.inYear(p) || p.id === chosen)).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)))
       .map(p => `<option value="${p.id}" ${p.id === chosen ? 'selected' : ''}>${U.esc(U.sortName(p))}${D.groupOf(p) ? ' · ' + U.esc(D.groupOf(p)) : ''}</option>`).join('');
   };
-  ui.kindOptions = sel => [...(sel && !S.db.settings.docKinds.includes(sel) ? [sel] : []), ...S.db.settings.docKinds].map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
+  ui.kindOptions = sel => [...(sel && !D.allDocKinds().includes(sel) ? [sel] : []), ...D.allDocKinds()].map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
 
   CP.ui = ui;
 })(window.CP);
@@ -3115,7 +3124,7 @@ window.CP = window.CP || {};
       const tabs = `<nav class="tabs"><button class="${P.show === 'linked' ? 'active' : ''}" data-act="docsShow" data-arg="linked">Reģistrētie</button><button class="${P.show === 'missing' ? 'active' : ''}" data-act="docsShow" data-arg="missing">Trūkstošie</button><button class="${P.show === 'files' ? 'active' : ''}" data-act="docsShow" data-arg="files">Faili mapēs</button></nav>`;
       let body = '';
       if (P.show === 'linked') {
-        const list = S.db.documents.filter(d => D.inYear(D.person(d.personId)) && (!P.kind || d.kind === P.kind) && (!q || U.norm(d.kind + ' ' + d.path + ' ' + U.full(D.person(d.personId))).includes(q)))
+        const list = S.db.documents.filter(d => D.inYear(D.person(d.personId)) && (!P.kind || d.kind === P.kind) && (!q || U.norm(d.kind + ' ' + (d.title || '') + ' ' + d.path + ' ' + U.full(D.person(d.personId))).includes(q)))
           .sort((a, b) => U.cmp(U.sortName(D.person(a.personId)), U.sortName(D.person(b.personId))));
         body = `<div class="filters card"><input id="docsQ" type="search" placeholder="Meklēt pēc personas, kategorijas, faila…" value="${esc(P.q)}"><select data-docs="kind"><option value="">Visas kategorijas</option>${ui.kindOptions(P.kind)}</select></div>
           <section class="card" id="docsBody">${list.map(d => docRow(d, true)).join('') || '<p class="muted">Nav dokumentu.</p>'}</section>`;
@@ -5700,13 +5709,13 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.45.3', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
+      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
+      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja).'
+    ] },
     { v: '1.45.2', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
       'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
       'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
-    ] },
-    { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
-      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
-      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',

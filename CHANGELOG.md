@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.45.3 — 2026-10-17
+- `D.allDocKinds()` — iestatītās kategorijas + dalībnieku pasākuma dokumentu veidi + faktiski lietotās, “Cits” beigās; lieto Dokumentu lapas filtrs un visi kategoriju saraksti (`ui.kindOptions`). Agrāk filtrā nebija “Vecāku atļauja” u. c. pasākumu dokumentu. Meklēšana skatās arī dokumenta nosaukumu.
+
 ## 1.45.2 — 2026-10-17
 - “＋ Jauna persona” (sānjosla, Pārskats, Personas) atver izvēli: jauna persona / pārņemt no cita instruktora / ievadīt no anketas (`A.addPerson` → `addPickDialog`; tieša forma — `A.addPersonNew`). Sānjoslā poga ⇩ (`transferIn`). Kartītes pārskata apakšā karte “⇪ Nodošana citam instruktoram”.
 

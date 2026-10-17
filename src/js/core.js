@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.45.2';
+  CP.VERSION = '1.45.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -531,6 +531,15 @@ window.CP = window.CP || {};
   ].map((c, i) => ({ ...c, idx: i })).filter(c => U.normPhone(c.phone) || c.email);
   D.docsOf = p => db().documents.filter(d => d.personId === p.id);
   /* --- Derīguma termiņi (piem., ārsta izziņa: 12 mēn. un tikai savā mācību gadā) --- */
+  /** Visas dokumentu kategorijas vienā sarakstā: iestatītās, pasākumu dokumenti un faktiski lietotās; “Cits” — beigās */
+  D.allDocKinds = () => {
+    const s = db().settings, out = [];
+    const add = k => { k = String(k || '').trim(); if (k && k !== 'Cits' && !out.includes(k)) out.push(k); };
+    (s.docKinds || []).forEach(add);
+    [...(s.evDocsAll || []), ...(s.evDocsCamp || [])].forEach(add);   // dalībnieka pasākuma dokumenti (kopīgie pieder pasākumam)
+    (db().documents || []).forEach(d => add(d.kind));
+    return [...out, 'Cits'];
+  };
   D.docRule = kind => (db().settings.docValidity || {})[kind] || null;
   D.docDate = d => String(d.issued || d.received || d.addedAt || '').slice(0, 10);
   /** Termiņš: ievadītais “derīgs līdz” vai izsniegšanas datums + N mēneši − 1 diena */
