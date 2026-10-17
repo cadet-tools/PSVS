@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.44.2';
+  CP.VERSION = '1.45.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -285,6 +285,7 @@ window.CP = window.CP || {};
     { k: 'gender', l: 'Dzimums', s: 'basic', t: 'select', opts: [['', 'Nav norādīts'], ['m', 'Zēns / jaunietis'], ['f', 'Meitene / jauniete']], noScan: 1 },
     { k: 'group', l: 'Grupa', s: 'study', list: 'dl_groups' },
     { k: 'joined', l: 'Iestāšanās datums', s: 'study', t: 'date', v: 'date' },
+    { k: 'fromInstructor', l: 'Pārnācis no cita instruktora', s: 'study', ph: 'instruktors, vienība — ja pārnāca', noScan: 1 },
     { k: 'school', l: 'Mācību iestāde', s: 'study', v: 'place' },
     { k: 'schoolClass', l: 'Klase / kurss', s: 'study', v: 'schoolClass' },
     { k: 'phone', l: 'Tālrunis', s: 'contact', t: 'tel', v: 'phone' },

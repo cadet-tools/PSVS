@@ -64,7 +64,7 @@
     render() {
       const L = S.list, gs = D.groups();
       return `<div class="page">` + ui.pageHead('Personas', `Mācību gads ${U.yearLabel(D.activeYear())}. Viena persona ir viens profils.`,
-        `<button data-act="openMove">Pārcelt no cita gada</button><button data-act="scan">📷 Ievadīt no anketas</button><button data-act="import">⬆ Imports</button><button class="mainbtn" data-act="addPerson">＋ Jauna persona</button>`)
+        `<button data-act="transferIn" title="Ielikt rīkā personas lietas paku, ko atsūtīja cits instruktors">⇩ Pārņemt no cita instruktora</button><button data-act="openMove">Pārcelt no cita gada</button><button data-act="scan">📷 Ievadīt no anketas</button><button data-act="import">⬆ Imports</button><button class="mainbtn" data-act="addPerson">＋ Jauna persona</button>`)
         + (CP.years?.banner() || '')
         + `<div class="filters card">
           <input id="listQ" type="search" placeholder="Meklēt vārdu, tālruni, vecāku, skolu…" value="${esc(L.q)}">
@@ -132,13 +132,14 @@
       if (!p) { S.page = 'people'; return CP.pages.people.render(); }
       const miss = D.missingDocs(p), docs = D.docsOf(p), fam = D.family(p).length + S.db.relations.filter(r => r.a === p.id || r.b === p.id).length;
       const openTasks = S.db.tasks.filter(t => t.personId === p.id && !t.done).length, eq = D.openEquipment(p).length;
-      const sub = [`<span class="tag">${esc(U.yearLabel(D.activeYear()))}</span>`, D.groupOf(p) && `<span class="tag">${esc(D.groupOf(p))}</span>`, p.birth && `${U.age(p.birth)} g.`, [p.school, p.schoolClass].filter(Boolean).map(esc).join(', ')].filter(Boolean).join(' · ');
+      const sub = [`<span class="tag">${esc(U.yearLabel(D.activeYear()))}</span>`, D.groupOf(p) && `<span class="tag">${esc(D.groupOf(p))}</span>`, p.birth && `${U.age(p.birth)} g.`, [p.school, p.schoolClass].filter(Boolean).map(esc).join(', '), p.fromInstructor && `<span class="tag" title="Pārnācis no cita instruktora">↪ no: ${esc(p.fromInstructor)}</span>`, p.transferredTo && `<span class="tag" title="Nodots citam instruktoram ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}">⇪ nodots${p.transferredTo.name ? ': ' + esc(p.transferredTo.name) : ''}</span>`].filter(Boolean).join(' · ');
       const head = `${ui.backBtn()}<header class="person-head">${ui.avatar(p, 'lg')}<div class="ph-main"><h1>${esc(U.full(p))} ${ui.status(D.partStatus(p))}</h1><p class="muted">${sub || 'Nav grupas'}</p></div>
         <div class="actions">
           <button data-act="msg" data-arg="${p.id}">✉ Ziņa</button>
           <button data-act="edit" data-arg="${p.id}">✎ Rediģēt</button>
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
             ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
+            ${p.anon ? '' : `<button data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>
             ${p.status === 'archived' ? `<button class="danger" data-act="erase" data-arg="${p.id}">Dzēst neatgriezeniski…</button>` : ''}

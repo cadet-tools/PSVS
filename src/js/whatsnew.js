@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
+      'Kartītē (⋯) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, ekipējums, piezīmes, pārkāpumi), un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
+      'Personu sarakstā **“⇩ Pārņemt no cita instruktora”** — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
+    ] },
     { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē.'
@@ -35,8 +39,7 @@
       'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
     ] },
     { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
-      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās.',
-      'Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
+      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
     ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
@@ -46,8 +49,7 @@
     { v: '1.38.0', date: '2026-10-16', title: 'Pilngadība un 21 gads: līgumi', items: [
       '**60 dienas pirms 18. dzimšanas dienas** rīks atgādina, ka jāslēdz **jauns līgums ar jaunsargu**. Brīdinājums redzams jaunsarga kartītē un Uzdevumos, līdz līgums ir; pēc dzimšanas dienas tas kļūst sarkans. Vecāku dati kartītē paliek.',
       'Kartītē poga **“Sagatavot līgumu ar jaunsargu”**. Saglabājot jauno līgumu, rīks piedāvā **arhivēt veco līgumu** ar pārstāvi; arhivēt var arī ar 🗄 pie līguma. Ja līgums noslēgts ārpus rīka — **“✓ Līgums noslēgts”**.',
-      'Tāpat **60 dienas pirms 21 gada** — brīdinājums, ka līgums beigsies, ar pogu **“Arhivēt”**.',
-      'Atverot rīku, uznirstošajā paziņojumā par katru jaunsargu tas parādās ne vairāk kā **3 reizes**; kartītē un Uzdevumos — līdz atrisināts.'
+      'Tāpat **60 dienas pirms 21 gada** — brīdinājums, ka līgums beigsies, ar pogu **“Arhivēt”**. Atverot rīku, uznirstošajā paziņojumā par katru jaunsargu tas parādās ne vairāk kā **3 reizes**; kartītē un Uzdevumos — līdz atrisināts.'
     ] },
     { v: '1.37.4', from: '1.37.0', date: '2026-10-16', title: 'Rīka sagatavošana darbam', items: [
       'Pārskatā ir saraksts **“Sagatavo rīku darbam”**: datu mape, instruktora dati, PIN kods, rezerves kopija Google Drive, grupas, obligātie dokumenti un pirmais jaunsargs. Pie katra soļa ir poga, kas aizved uz īsto vietu.',
