@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.39.1 — 2026-10-17
+- “Pārvietot” un “Jauna mape” paliek (tikai aktīvā gada mapē). `store.relocate`: ja Chrome noraida `move()` failam, fails tiek nokopēts uz jauno vietu, pārbaudīts (izmērs + SHA-256) un tikai tad vecā vieta noņemta; ja noņemt neizdodas — kopija paliek, sasaiste uz jauno vietu, lietotājam brīdinājums.
+- `docs.where` / `whereHtml`: pie katra dokumenta un ieteiktā faila — pilns ceļš datorā ar datu mapes nosaukumu. Dokumenta rinda: teksts pilnā platumā, pogas zem tā.
+- “Dokumentu mape”: gadu pogas (`docYears` — gadi ar personas dokumentiem + aktīvais, `A.docYear`), iepriekšējā gada mape netiek veidota no jauna; “Piesaistīt” izmanto skatīto gadu. Tests t105: dokuments pēc pārcelšanas uz jaunu gadu paliek sarakstā ar veco vietu un atveras.
+
 ## 1.39.0 — 2026-10-17
 - Dokumentu skatītājs (`renderInto`): .docx ar docx-preview, eDoc/ASiC-E/BDOC — iekšējie faili (PDF/DOCX/attēls) ar pārslēgšanu, .xlsx/.csv kā tabula (`CP.sheetReader`), attēli un PDF kā līdz šim; .doc/.xls/.heic/.tiff — skaidrojums. “Jaunā cilnē” tikai pārlūkā atveramiem tipiem.
 - Personas Dokumentu cilne: secība “Visi personas dokumenti” → “Dokumentu mape” → “Mapē atrasti faili”; abas pēdējās — `<details>`, sākumā aizvērtas, stāvoklis `S.docSec` tiek atiestatīts `ui.go`, izejot no kartiņas vai mainot personu.

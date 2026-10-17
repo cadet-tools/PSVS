@@ -19,6 +19,18 @@
     return `<span class="pill ${PILL[st.state] || 'warn'}" data-docstatus="${esc(d.id)}" title="${esc(st.detail || label)}">${esc(label)}</span>`;
   };
 
+  /** Mācību gadi, kuros personai ir mape ar dokumentiem (+ aktīvais) */
+  function docYears(p) {
+    const ys = new Set([D.activeYear()]);
+    for (const d of D.docsOf(p)) { const m = /^Macibu_gadi\/([^/]+)\/Personas\//.exec(d.path || ''); if (m && (d.sourceId || 'main') === 'main') ys.add(m[1]); }
+    return [...ys].sort();
+  }
+  /** Kur dokuments atrodas datorā: datu mape › … › fails */
+  docs.where = (path, sid) => {
+    const src = (sid || 'main') === 'main' ? (S.rootName || 'datu mape') : (S.roots.find(r => r.id === sid)?.name || 'papildu mape');
+    return [src, ...String(path || '').split('/').filter(Boolean)];
+  };
+  const whereHtml = (path, sid) => { const b = docs.where(path, sid); return `<span class="docwhere" title="${esc(b.join(' / '))}">📁 ${b.slice(0, -1).map(esc).join(' <span class="muted">›</span> ')} <span class="muted">›</span> <b>${esc(b.at(-1))}</b></span>`; };
   function docRow(d, showPerson) {
     const exp = D.docExpiry(d) ? U.daysTo(D.docExpiry(d)) : null;
     const st = docs.statusOf(d);
@@ -26,7 +38,8 @@
       <div class="doc-ic">${/\.(jpe?g|png|webp|heic)$/i.test(d.path || '') ? '🖼' : /\.edoc$/i.test(d.path || '') ? '✍' : d.path ? '📄' : '🗂'}</div>
       <div class="grow">
         <div><b>${esc(d.kind)}</b> ${fmtTag(d.format)} ${docs.statusHtml(d)} ${showPerson ? `· <a href="#" data-person="${d.personId}" data-goto="docs">${esc(U.full(D.person(d.personId)))}</a>` : ''}</div>
-        <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) + ' · ' : ''}${d.path ? esc(d.path) : 'Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
+        <div class="small muted">${d.yearId ? esc(U.yearLabel(d.yearId)) + ' · ' : ''}${REVIEW[d.review] ? esc(REVIEW[d.review]) : ''}${d.path ? '' : ' · Elektronisks fails nav piesaistīts'}${st?.detail && st.detail !== CP.FILE_STATUS[st.state] ? ' · ' + esc(st.detail) : ''}${d.received ? ' · saņemts ' + U.fmtDate(d.received) : ''}${d.issued ? ' · izsniegts ' + U.fmtDate(d.issued) : ''}${D.docExpiry(d) ? ` · <span class="${exp < 0 ? 'red' : exp <= 30 ? 'warn' : ''}">derīgs līdz ${U.fmtDate(D.docExpiry(d))}</span>` : (D.docRule(d.kind) ? ' · <span class="warn">nav norādīts izsniegšanas datums</span>' : '')}${D.docRule(d.kind)?.schoolYear && !D.docForYear(d, D.activeYear()) ? ' · <span class="warn">citam mācību gadam</span>' : ''}${d.notes ? ' · ' + esc(d.notes) : ''}</div>
+        ${d.path ? `<div class="small">${whereHtml(d.path, d.sourceId)}</div>` : ''}
       </div>
       ${d.path ? `<button class="sm mainbtn" data-act="view" data-arg="${keyOf(d.sourceId, d.path)}">Atvērt</button>` : ''}
       ${d.path ? `<button class="sm" data-act="checkDoc" data-arg="${d.id}" title="Pārbaudīt, vai fails ir vietā un nav mainījies">Pārbaudīt</button><button class="sm" data-act="relinkDoc" data-arg="${d.id}">Atjaunot sasaisti</button>` : ''}
@@ -48,14 +61,17 @@
     const sec = S.docSec && S.docSec.pid === p.id ? S.docSec : (S.docSec = { pid: p.id, tree: false, sugg: false });
     return `<section class="card"><h3>Visi personas dokumenti (${list.length})<span class="right actions"><button class="sm" data-act="attach" data-arg="${p.id}">📎 Pievienot skenētu dokumentu</button></span></h3>
         <div class="dropzone" data-drop="${p.id}">${list.map(d => docRow(d, false)).join('') || '<p class="muted small">Nav dokumentu. Ievelc failus šeit vai spied “Pievienot skenētu dokumentu”.</p>'}</div></section>
-      <details class="card docbrowser docsec" data-docsec="tree" ${sec.tree ? 'open' : ''}><summary><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span> <span class="muted small docsec-hint">visi faili personas mapē</span></h3></summary>
+      <details class="card docbrowser docsec" data-docsec="tree" ${sec.tree ? 'open' : ''}><summary><h3>Dokumentu mape <span class="tag">${esc(U.yearLabel(D.activeYear()))}</span> <span class="muted small docsec-hint">visi faili personas mapē datorā</span></h3></summary>
+        ${(() => { const ys = docYears(p), cur = S.browse.pid === p.id && S.browse.year ? S.browse.year : D.activeYear();
+          return ys.length > 1 ? `<div class="actions docsec-years"><span class="small muted">Mācību gads:</span>${ys.map(y => `<button type="button" class="sm ${y === cur ? 'on' : ''}" data-act="docYear" data-arg="${esc(y)}">${esc(U.yearLabel(y))}${y === D.activeYear() ? ' · tagad' : ''}</button>`).join('')}</div>` : ''; })()}
+        <p class="small docsec-where" id="docWhere"></p>
         <div class="actions docsec-acts"><button class="sm" data-act="docMkdir" data-arg="${p.id}">Jauna mape</button><button class="sm mainbtn" data-act="docAddOpen" data-arg="${p.id}">Pievienot failu</button><button class="sm" data-act="docRefresh" data-arg="${p.id}">Atsvaidzināt</button></div>
         <div class="crumbs" id="docCrumbs"></div>
         <input id="docTreeQ" type="search" placeholder="Meklēt dokumenta nosaukumā…" value="${esc(S.browse.q || '')}">
         <p class="muted small">Meklēšana skatās nosaukumus un ceļus, nevis failu saturu. Oriģināls datorā netiek dzēsts.</p>
         <div id="docTree" class="dropzone" data-drop="${p.id}"><p class="muted small">Ielādē mapi…</p></div></details>
       ${sugg.length ? `<details class="card docsec" data-docsec="sugg" ${sec.sugg ? 'open' : ''}><summary><h3>Mapē atrasti faili ar šo vārdu (${sugg.length}) <span class="muted small docsec-hint">vēl nav piesaistīti</span></h3></summary><p class="muted small">Piesaisti ar vienu klikšķi — kategorija noteikta pēc faila nosaukuma.</p>
-        ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small muted">${esc(f.sourceName)} / ${esc(f.path)}</div></div>
+        ${sugg.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small">${whereHtml(f.path, f.sourceId)}</div></div>
           <button class="sm" data-act="view" data-arg="${keyOf(f.sourceId, f.path)}">Skatīt</button>
           <button class="sm mainbtn" data-act="quickLink" data-arg="${keyOf(f.sourceId, f.path)}">＋ ${esc(D.guessKind(f.name))}</button>
           <button class="sm" data-act="associate" data-arg="${keyOf(f.sourceId, f.path)}">Cita…</button></div>`).join('')}</details>`
@@ -363,7 +379,7 @@
   function fillRelink() {
     const q = U.norm(U.$('relinkQ').value);
     const rows = S.index.filter(f => !q || f.n.includes(q)).slice(0, 40);
-    U.$('relinkList').innerHTML = rows.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small muted">${esc(f.sourceName)} / ${esc(f.path)}</div></div><button class="sm mainbtn" data-act="relinkUse" data-arg="${keyOf(f.sourceId, f.path)}">Izvēlēties</button></div>`).join('') || '<p class="muted small">Šajās mapēs nekas netika atrasts. Vari izvēlēties failu datorā.</p>';
+    U.$('relinkList').innerHTML = rows.map(f => `<div class="row"><div class="grow"><b>${esc(f.name)}</b><div class="small">${whereHtml(f.path, f.sourceId)}</div></div><button class="sm mainbtn" data-act="relinkUse" data-arg="${keyOf(f.sourceId, f.path)}">Izvēlēties</button></div>`).join('') || '<p class="muted small">Šajās mapēs nekas netika atrasts. Vari izvēlēties failu datorā.</p>';
   }
   CP.inputHandlers.push(e => { if (e.target.id !== 'relinkQ') return false; fillRelink(); return true; });
   A.relinkUse = async key => {
@@ -412,7 +428,7 @@
   docs.syncBrowse = () => {
     const p = D.person(S.selected);
     if (!p) return;
-    if (S.browse.pid !== p.id || S.browse.year !== D.activeYear()) S.browse = { pid: p.id, year: D.activeYear(), rel: '', q: '' };
+    if (S.browse.pid !== p.id || !S.browse.year || (S.browse.active !== D.activeYear())) S.browse = { pid: p.id, year: D.activeYear(), active: D.activeYear(), rel: '', q: '' };
   };
   let treeGen = 0;
   docs.paintTree = async () => {
@@ -422,7 +438,8 @@
     if (!box || !p) return;
     if (!S.root) { box.innerHTML = '<p class="muted small">Izvēlies datu mapi, lai veidotu personas mapes un pievienotu failus.</p>'; if (crumbs) crumbs.innerHTML = ''; return; }
     let root;
-    try { root = await CP.store.ensurePersonYearFolder(p); }
+    const year = S.browse.year || D.activeYear(), other = year !== D.activeYear();
+    try { if (other) root = CP.store.yearPersonDir(p, year); else root = await CP.store.ensurePersonYearFolder(p); }
     catch (e) {
       if (gen !== treeGen) return;
       box.innerHTML = `<p class="warn">Neizdevās atvērt personas mapi: ${esc(e.message)}. Dokumentu sasaistes ir saglabātas.</p>`;
@@ -432,6 +449,8 @@
     const rel = S.browse.rel || '';
     const parts = [...root, ...rel.split('/').filter(Boolean)];
     const label = root[root.length - 1];
+    const wh = U.$('docWhere');
+    if (wh) wh.innerHTML = `${whereHtml([...root, ...rel.split('/').filter(Boolean)].join('/') + '/', 'main').replace(/<span class="muted">›<\/span> <b><\/b>/, '')}${other ? ` <span class="warn">· iepriekšējā gada mape — jauni faili tiek likti ${esc(U.yearLabel(D.activeYear()))} mapē</span>` : ''}`;
     if (crumbs) {
       const bits = rel ? rel.split('/').filter(Boolean) : [];
       crumbs.innerHTML = `<button type="button" class="sm" data-act="docOpen" data-arg="">${esc(label)}</button>` + bits.map((b, i) => `<span class="muted">/</span><button type="button" class="sm" data-act="docOpen" data-arg="${enc(bits.slice(0, i + 1).join('/'))}">${esc(b)}</button>`).join('');
@@ -449,7 +468,7 @@
         return `<div class="row"><div class="grow"><b>${esc(r.name)}</b> <span class="muted small">${esc(kind)} · ${fmtSize(r.size)}</span>${linked ? ` ${fmtTag(linked.format)} ${REVIEW[linked.review] ? `<span class="tag">${esc(REVIEW[linked.review])}</span>` : ''} ${docs.statusHtml(linked)}${linked.expires ? `<span class="muted small"> līdz ${esc(U.fmtDate(linked.expires))}</span>` : ''}` : ' <span class="muted small">nav piesaistīts</span>'}<div class="small muted">${esc(r.rel)}</div></div>
           <button class="sm mainbtn" data-act="view" data-arg="${keyOf('main', full)}">Atvērt</button>
           ${linked ? '' : `<button class="sm" data-act="docLinkHere" data-arg="${enc(r.rel)}">Piesaistīt</button>`}
-          <button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}">Pārvietot</button></div>`;
+          ${other ? '' : `<button class="sm" data-act="docMoveOpen" data-arg="${enc(r.rel)}" title="Pārvietot uz citu apakšmapi personas mapē">Pārvietot</button>`}</div>`;
       }).join('') || '<p class="muted small">Šajā mapē vēl nav dokumentu.</p>');
     } catch (e) {
       if (gen !== treeGen) return;
@@ -466,6 +485,7 @@
     U.$(id).innerHTML = folderOptions(list, selected || '');
   }
   A.docRefresh = () => docs.paintTree();
+  A.docYear = y => { docs.syncBrowse(); S.browse.year = y; S.browse.rel = ''; S.browse.q = ''; document.querySelectorAll('[data-act="docYear"]').forEach(b => b.classList.toggle('on', b.dataset.arg === y)); docs.paintTree(); };
   A.docOpen = rel => { S.browse.rel = dec(rel); S.browse.q = ''; const q = U.$('docTreeQ'); if (q) q.value = ''; docs.paintTree(); };
   A.docUp = () => { S.browse.rel = (S.browse.rel || '').split('/').slice(0, -1).join('/'); docs.paintTree(); };
   A.docMkdir = async () => {
@@ -540,12 +560,12 @@
       await CP.store.reindexDir(root);
       U.$('moveFileDialog').close();
       CP.store.changed();
-      ui.toast('Fails ir pārvietots un sasaiste atjaunota', 'ok');
+      ui.toast(moved.copied ? 'Fails nokopēts jaunajā vietā un sasaiste atjaunota. Veco failu Chrome neļāva noņemt — tas palika iepriekšējā vietā.' : 'Fails ir pārvietots un sasaiste atjaunota', moved.copied ? 'warn' : 'ok', moved.copied ? 10000 : 4000);
     } catch (err) { ui.toast(err.message, 'err'); }
   });
   A.docLinkHere = rel => {
     const p = D.person(S.selected); if (!p) return;
-    const full = [...CP.store.yearPersonDir(p), ...dec(rel).split('/').filter(Boolean)].join('/');
+    const full = [...CP.store.yearPersonDir(p, S.browse.year || D.activeYear()), ...dec(rel).split('/').filter(Boolean)].join('/');
     const name = full.split('/').pop();
     if (docs.link(p.id, D.guessKind(name), /\.edoc$/i.test(name) ? 'edoc' : 'pdf', full, 'main', { review: 'received' })) {
       CP.store.changed(); ui.toast('Dokuments piesaistīts kartītei', 'ok');

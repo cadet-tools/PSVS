@@ -13,17 +13,18 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
-      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās.',
-      'Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
-    ] },
-    { v: '1.39.0', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+    { v: '1.39.1', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
       'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet.',
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
-      '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies). Poga “Pārdēvēt” dokumentu mapē noņemta — Chrome to neļauj.',
+      '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies).',
+      'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**; poga “Pārdēvēt” noņemta — Chrome to neļauj.',
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
       'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
+    ] },
+    { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
+      'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās.',
+      'Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠.'
     ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',

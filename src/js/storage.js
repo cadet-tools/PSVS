@@ -982,7 +982,8 @@
       if (e.name !== 'NotFoundError') throw e;
       handle = await srcDir.getDirectoryHandle(name);
     }
-    if (typeof handle.move !== 'function') throw Error('Šis pārlūks neļauj droši pārdēvēt vai pārvietot. Dokuments paliek savā vietā.');
+    const canMove = typeof handle.move === 'function';
+    if (!canMove && handle.kind !== 'file') throw Error('Šis pārlūks neļauj pārvietot mapes. Mape paliek savā vietā.');
     const samePlace = await srcDir.isSameEntry(destDir);
     if (!(samePlace && target === name)) {
       let clash = false;
@@ -993,8 +994,23 @@
     let sizeBefore = null;
     if (handle.kind === 'file') sizeBefore = (await handle.getFile()).size;
     if (!(samePlace && target === name)) {
-      if (samePlace) await handle.move(target);
-      else await handle.move(destDir, target);
+      let moved = false;
+      if (canMove) {
+        try { if (samePlace) await handle.move(target); else await handle.move(destDir, target); moved = true; }
+        catch (e) { if (handle.kind !== 'file' || samePlace) throw Error(samePlace ? 'Chrome neļauj pārdēvēt šo failu. Dokuments paliek savā vietā.' : 'Chrome neļauj pārvietot šo mapi. Mape paliek savā vietā.'); }
+      }
+      if (!moved) {
+        // Chrome dažās mapēs atsaka move(): kopē uz jauno vietu, pārbauda saturu un tikai tad noņem veco vietu
+        const src = await handle.getFile(), sha = await U.sha256Blob(src);
+        const fh = await destDir.getFileHandle(target, { create: true }), w = await fh.createWritable(); await w.write(src); await w.close();
+        const copy = await fh.getFile();
+        if (copy.size !== src.size || await U.sha256Blob(copy) !== sha) {
+          try { await destDir.removeEntry(target); } catch (e) { }
+          throw Error('kopija jaunajā vietā nesakrīt ar oriģinālu. Fails paliek vecajā vietā.');
+        }
+        try { await srcDir.removeEntry(name); }
+        catch (e) { return { from: fromFull, path: [...destParts, target].join('/'), kind: 'file', copied: true }; }
+      }
     }
     let next;
     try { next = handle.kind === 'file' ? await destDir.getFileHandle(target) : await destDir.getDirectoryHandle(target); }

@@ -782,3 +782,10 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .perm-how li{margin:4px 0}
 .perm-addr{user-select:all;word-break:break-all;background:var(--edge);padding:1px 5px;border-radius:5px}
 .set-tabs .tab-warn{color:#f0b35a;font-weight:600}
+.docwhere{color:var(--muted,#98a6a0);word-break:break-word}.docwhere b{color:var(--txt);font-weight:600}
+.docsec-years{margin-bottom:6px;align-items:center}.docsec-years button.on{border-color:var(--teal);background:color-mix(in srgb,var(--teal) 18%,transparent)}
+.docsec-where{margin:0 0 8px}
+/* dokumenta rinda: teksts pilnā platumā, pogas zem tā */
+.row.doc{align-items:flex-start;row-gap:8px}
+.row.doc > .grow{flex:1 1 calc(100% - 40px);min-width:0}
+.row.doc > button:first-of-type{margin-left:38px}
