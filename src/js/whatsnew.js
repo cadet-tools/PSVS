@@ -12,7 +12,10 @@
      NOTEIKUMI: viens bloks — viena funkcija; tikai tas, ko lietotājs pamana un var izmantot.
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
-  const NEWS = [
+  const ALL = [
+    { v: '1.48.0', ch: 'test', date: '2026-10-18', title: 'Lietošanas statistika', items: [
+      'Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
+    ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja). Kategorija “Vecāku piekrišana” noņemta — tāda dokumenta nav; esošie ieraksti kļuvuši par “Vecāku atļauja”.'
@@ -75,17 +78,14 @@
       'Kad termiņš beidzies, Pārskatā parādās atgādinājums. Lapā **“Glabāšanas termiņi”** izvēlies, ko **anonimizēt** vai dzēst — rīks pats neko nedzēš. Anonimizējot paliek tikai statistika.',
       'Sānjoslā zem datu mapes redzams, vai dati ir **sinhronizēti ar Google Drive**, un, ja nav, — poga “Iestatīt” vai “Pieslēgties”.'
     ] },
-    { v: '1.36.2', from: '1.36.1', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
-      'Izsniegtā VFS sporta nozīmīte parādās jaunsarga **ekipējumā** un ir jāatdod. Ja tā ir dāvinājums, spied **“🎁 Dāvināt”** — tad to atdot nevajag. Tas der arī citiem priekšmetiem.'
-    ] },
     { v: '1.35.0', date: '2026-10-16', title: 'Dokumentu nodošana Centra arhīvam', items: [
       'Kartītē **“Reģistrācija un arhīvs”** var atzīmēt, ka anketas un līguma oriģināli **nodoti Centra arhīvam**, ar datumu. Ja saņemts dokuments vēl nav nodots, ir brīdinājums.',
       'Personu sarakstā atlasītajiem var atzīmēt visu uzreiz: **“✓ Arhīvam”**. Dokumentu sarakstu maina Iestatījumos → Dokumenti.'
     ] },
-    { v: '1.34.1', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
+    { v: '1.36.2', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
       'Sadaļa **“VFS”**: fiziskās sagatavotības testi pēc JC normatīviem. Pakāpe pēc vecuma testa dienā, **punkti tiek aprēķināti uzreiz**, sporta nozīmīte (bronza, sudrabs, zelts) — automātiski un arī kvalifikācijās.',
       '**Protokols (PDF)** un **nozīmīšu uzskaite (Excel)** oficiālajās veidnēs. Agrāko gadu Word protokolus var importēt.',
-      'Jaunsarga kartītē cilne **“VFS”** ar rezultātiem un dinamiku. Personai ir jauns lauks **“Dzimums”**.'
+      'Jaunsarga kartītē cilne **“VFS”** ar rezultātiem un dinamiku. Personai ir jauns lauks **“Dzimums”**. Izsniegtā nozīmīte parādās **ekipējumā** un ir jāatdod; dāvinājumam — **“🎁 Dāvināt”** (der arī citiem priekšmetiem).'
     ] },
     { v: '1.33.0', date: '2026-10-16', title: 'Darbību žurnāls', items: [
       'Lapa **“Darbību žurnāls”** rāda visas izmaiņas datos: kas mainīts, no kā uz ko un kad. Iepriekšējo vērtību vai dzēstu ierakstu var **atjaunot**.',
@@ -124,6 +124,8 @@
       'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi. CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
     ] }
   ];
+  /* ch: 'test' — bloks tikai testa kanālā (funkcija vēl nav stabilajā) */
+  const NEWS = ALL.filter(b => !b.ch || b.ch === CP.CHANNEL);
   CP.NEWS = NEWS;
   const cmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
   const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');

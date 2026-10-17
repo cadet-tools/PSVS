@@ -68,6 +68,14 @@
       state: np === 'granted' ? 'ok' : np === 'denied' ? 'bad' : np === 'unsupported' ? 'off' : 'off',
       label: np === 'granted' ? 'Atļauti' : np === 'denied' ? 'Bloķēti' : np === 'unsupported' ? 'Pārlūks neatbalsta' : 'Nav jautāts',
       btn: np === 'default' ? '🔔 Atļaut' : '', act: 'permNotif' });
+    // 8. Anonīma lietošanas statistika (docs/ANALYTICS.md)
+    const AN = CP.analytics;
+    if (AN?.allowed()) {
+      const on = AN.enabled();
+      out.push({ k: 'stats', icon: 'chart', title: 'Lietošanas statistika un sīkdatnes', need: false,
+        why: 'Rīks pārlūka atmiņā glabā nejaušu ID un izstrādātājam sūta anonīmu statistiku: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versija, pārlūks, kļūdu veidi un novada pārvaldes / nodaļas numurs. Personu dati, dokumenti un failu nosaukumi netiek sūtīti.',
+        state: on ? 'ok' : 'off', label: on ? 'Ieslēgta' : 'Izslēgta', btn: on ? 'Izslēgt' : 'Ieslēgt', act: 'anToggle' });
+    }
     last = out; return out;
   }
   const PILL = { ok: 'ok', ask: 'warn', bad: 'bad', off: '' };

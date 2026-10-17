@@ -24,7 +24,7 @@
     ['idcard', 'Jaunsarga apliecības', 'Numuri, statusi, derīgums un brīdinājumi par dublikātiem.'],
     ['message', 'Saziņa', 'WhatsApp, SMS, e-pasts un zvans no kartītes, ziņas grupai un kontakti uz telefonu ar QR kodu.'],
     ['bell', 'Atgādinājumi', 'Trūkstošie dokumenti, termiņi, vecuma izmaiņas, sakrītoši tālruņi un uzdevumi.'],
-    ['shield', 'Dati pie tevis', 'Nekas netiek sūtīts uz serveri. Dati glabājas tikai tavā izvēlētajā mapē.']
+    ['shield', 'Dati pie tevis', 'Personu dati netiek sūtīti uz serveri. Tie glabājas tikai tavā izvēlētajā mapē.']
   ];
 
   CP.pages.about = {
@@ -43,7 +43,8 @@
             <ul class="about-list"><li>uzturēt kārtībā jaunsargu un viņu vecāku datus;</li><li>redzēt, kuriem trūkst dokumentu vai jāatdod ekipējums;</li><li>ātri sazināties ar jaunieti vai vecākiem;</li><li>sagatavot jaunu mācību gadu, nepazaudējot vēsturi.</li></ul>
           </section>
           <section class="card"><h3>${ic('shield')}Kur glabājas dati</h3>
-            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Uz serveriem nekas netiek sūtīts, un citi lietotāji tavus datus neredz.</p>
+            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Personu dati uz serveriem netiek sūtīti, un citi lietotāji tavus datus neredz.</p>
+            ${CP.analytics?.allowed() ? '<p class="muted small">Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu lietošanas statistiku — cik bieži un kuras sadaļas lieto, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas.</p>' : ''}
             <p class="muted small">Izņēmums: ja Iestatījumos ieslēdz Google Vision rokraksta atpazīšanu, anketas attēls tiek nosūtīts Google. Pēc noklusējuma tā ir izslēgta.</p>
           </section>
         </div>

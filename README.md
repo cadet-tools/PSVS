@@ -7,7 +7,9 @@ Jaunsardzes instruktora rīks jauniešu uzskaitei. Tajā ir personu kartītes, d
 
 ## Kur glabājas dati
 
-**Tikai tavā datorā,** mapē, kuru izvēlies pats. Programma ielādējas no GitHub, bet darbojas tavā pārlūkā un lasa un raksta failus tieši tavā mapē. Uz GitHub vai citiem serveriem netiek sūtīts nekas: ne personu dati, ne dokumenti, ne anketu attēli. To nodrošina arī lapas drošības politika (Content-Security-Policy), kas aizliedz savienojumus ar citām adresēm.
+**Tikai tavā datorā,** mapē, kuru izvēlies pats. Programma ielādējas no GitHub, bet darbojas tavā pārlūkā un lasa un raksta failus tieši tavā mapē. Uz GitHub vai citiem serveriem netiek sūtīti ne personu dati, ne dokumenti, ne anketu attēli. To nodrošina arī lapas drošības politika (Content-Security-Policy), kas aizliedz savienojumus ar citām adresēm.
+
+**Lietošanas statistika:** rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu statistiku — cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas. Sīkāk: [docs/ANALYTICS.md](docs/ANALYTICS.md). Pagaidām darbojas tikai testa versijā.
 
 Vienīgais izņēmums ir **Google Vision** rokraksta atpazīšana. Tā pēc noklusējuma ir izslēgta, un to ieslēdz tikai ar savu API atslēgu Iestatījumos. Tad anketas attēls tiek nosūtīts Google.
 
@@ -38,6 +40,7 @@ Jauna versija ielādējas automātiski. Kad tā pienāk, programma parāda **↻
 ## Uzturētājam
 
 - `index.html`, `app.bundle.js`, `sw.js` — stabilā versija. `test/` — testa kanāls. `vendor/` — bibliotēkas (pdf.js, Tesseract, QR).
+- **Analītika ir pastāvīga rīka daļa** — `src/js/analytics.js`, saņēmējs un panelis `docs/analitika/` (Google Apps Script). Pārbūvējot to nedzēš; apraksts un pārbaude: [docs/ANALYTICS.md](docs/ANALYTICS.md).
 - `src/` — avota kods (moduļi `src/js`, `src/css`). Būvēšana: `python3 src/_buvesana/build_web.py <avots> <repo> <node_modules>`.
 - Jaunu versiju vispirms ieliek `test/`, pārbauda, un tikai tad saknē.
 - **Datu saglabāšanas noteikumi atjauninot:** datu shēmu (`CP.SCHEMA`) palielina tikai tad, kad mainās datu struktūra; `CP.migrate()` drīkst laukus tikai pievienot vai pārveidot, nekad nedzēst; nezināmi lauki paliek neskarti. Pirms migrācijas rīks pats saglabā kopiju `_rezerves`. Vecāka versija jaunāka faila datus neatļauj saglabāt.

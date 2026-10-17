@@ -16,7 +16,8 @@
     if (d.act) {
       const fn = A[d.act]; if (!fn) return console.warn('Nav darbības', d.act);
       if (!S.root && !CP.noRootOk(d.act)) { CP.needRoot(); return; }
-      try { await fn(d.arg, el, e); } catch (err) { console.error(err); ui.toast('Kļūda: ' + err.message, 'err'); }
+      CP.analytics?.act(d.act);   // anonīma statistika: tikai darbības nosaukums (docs/ANALYTICS.md)
+      try { await fn(d.arg, el, e); } catch (err) { console.error(err); CP.analytics?.err(err, 'act:' + d.act); ui.toast('Kļūda: ' + err.message, 'err'); }
       return;
     }
     if (d.page) {

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<base target="_top">
+<style>
+  :root { --bg:#0b1219; --card:#121c26; --line:#223242; --ink:#ecf3f7; --mut:#8ea3b3; --acc:#2bb673; --acc2:#3d8bfd; --warn:#f0a43a; --bad:#e5534b; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f3f6f8; --card:#fff; --line:#dde5ea; --ink:#14212b; --mut:#5d7180; --acc:#1f9d5c; --acc2:#2f6fdb; } }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif }
+  header { position:sticky; top:0; z-index:2; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 20px; display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center }
+  h1 { font-size:17px; margin:0; font-weight:650 } h1 b { color:var(--acc) }
+  .grow { flex:1 }
+  select, .seg button { background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font:inherit }
+  .seg { display:inline-flex } .seg button { border-radius:0; margin-left:-1px; cursor:pointer } .seg button:first-child { border-radius:8px 0 0 8px } .seg button:last-child { border-radius:0 8px 8px 0 }
+  .seg button.on { background:var(--acc); border-color:var(--acc); color:#fff }
+  main { padding:16px 20px 40px; max-width:1500px; margin:0 auto; display:grid; gap:14px; grid-template-columns:repeat(12,1fr) }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; min-width:0 }
+  .card h2 { font-size:14px; margin:0 0 10px; font-weight:650; display:flex; gap:8px; align-items:center } .card h2 .grow { flex:1 }
+  .kpis { grid-column:1/-1; display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)) }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px }
+  .kpi .v { font-size:26px; font-weight:700; letter-spacing:-.5px } .kpi .l { color:var(--mut); font-size:12.5px } .kpi .d { font-size:12px; color:var(--mut) }
+  .w12 { grid-column:span 12 } .w8 { grid-column:span 8 } .w6 { grid-column:span 6 } .w4 { grid-column:span 4 }
+  @media (max-width:1100px) { .w8,.w6,.w4 { grid-column:span 12 } }
+  @media (max-width:640px) { header { padding:10px 12px } main { display:block; padding:12px } main > * { margin-bottom:12px } .card { overflow-x:auto } .kpis { grid-template-columns:repeat(2,1fr) } .heat { min-width:520px } .coh { min-width:520px } }
+  .mut { color:var(--mut) } .small { font-size:12.5px }
+  table { width:100%; border-collapse:collapse; font-size:13px } th { text-align:left; color:var(--mut); font-weight:600; border-bottom:1px solid var(--line); padding:6px 8px }
+  td { padding:6px 8px; border-bottom:1px solid var(--line) } td.n, th.n { text-align:right; font-variant-numeric:tabular-nums }
+  .scroll { max-height:420px; overflow:auto }
+  .bars { display:grid; grid-template-columns:minmax(90px,38%) 1fr auto; gap:5px 10px; align-items:center; font-size:13px }
+  .bars .bl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .bars .bt { height:12px; background:var(--line); border-radius:6px; overflow:hidden }
+  .bars .bf { height:100%; background:var(--acc2); border-radius:6px } .bars .bv { color:var(--mut); font-variant-numeric:tabular-nums; text-align:right; min-width:52px }
+  svg text { fill:var(--mut); font-size:11px } .ax { stroke:var(--line) }
+  .heat td { padding:0; border:0 } .heat td div { height:18px; margin:1px; border-radius:3px }
+  .coh td.c { text-align:center; font-variant-numeric:tabular-nums }
+  .empty { color:var(--mut); padding:20px 0; text-align:center }
+  .tag { display:inline-block; padding:1px 7px; border-radius:10px; background:var(--line); font-size:12px }
+  .bad { color:var(--bad) }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>CADET</b> PERSONĀLS — lietošana</h1>
+  <span class="grow"></span>
+  <label class="small mut">Periods <span class="seg" id="per"></span></label>
+  <label class="small mut">Kanāls <select id="ch"><option value="">visi</option><option value="stable">stabilā</option><option value="test">testa</option></select></label>
+  <label class="small mut">Pārvalde <select id="pv"></select></label>
+</header>
+<main id="m"></main>
+<script>
+const DATA = <?!= data ?>;
+/* rinda: [lietotājs, sākums, pēdējā darbība, aktīvs s, versija, kanāls, veids, OS, pārlūks, ekrāns, pārvalde, nodaļa, personas, sadaļas{}, darbības{}, kļūdas{}] */
+const R = DATA.map(r => ({ u:r[0], t0:r[1], t1:r[2], a:r[3], v:r[4], ch:r[5], m:r[6], os:r[7], br:r[8], sc:r[9], p:r[10], n:r[11], pc:r[12], pg:r[13]||{}, f:r[14]||{}, e:r[15]||{} })).filter(r => r.u && r.t0);
+const PAGES = { dashboard:'Pārskats', people:'Personas', person:'Personas kartīte', comms:'Saziņa', schedule:'Grafiks', attendance:'Apmeklējums', forms:'Veidlapas', formEdit:'Veidlapas labošana', documents:'Dokumenti', equipment:'Ekipējums', alerts:'Uzdevumi', archive:'Arhīvs', about:'Par rīku', settings:'Iestatījumi', feedback:'Ziņot', contracts:'Līgumi', registry:'Reģistrs', idcards:'Apliecības', vfs:'VFS testi', watch:'Hronometrs', changelog:'Izmaiņu žurnāls', staff:'Personāls', ext:'Citu personas', quals:'Kvalifikācijas', years:'Mācību gadi' };
+const ACTS = { addPerson:'＋ Persona', addPersonNew:'Jauna persona', addPersonTransfer:'Pārņemt personu (paka)', addPersonScan:'Persona no anketas', transferOut:'Nodot citam instruktoram', transferIn:'Pieņemt paku', transferUndo:'Atsaukt nodošanu',
+  scan:'Ievadīt anketu', scanRun:'Nolasīt anketu', scanSave:'Saglabāt anketu', formNew:'Jauna veidlapa', formFromEvent:'Veidlapa no pasākuma', formPdf:'Veidlapa PDF', formPrint:'Veidlapas druka', formDocx:'Veidlapa Word',
+  contractNew:'Jauns līgums', contractWord:'Līgums Word', contractPreview:'Līguma priekšskats', msg:'Ziņa personai', groupMsg:'Ziņa grupai', msgSend:'Sūtīt ziņu', remindDocs:'Atgādināt dokumentus', bulkMsg:'Ziņa atlasītajiem', call:'Zvans',
+  vcard:'Kontakts telefonā', bulkVcard:'Kontakti telefonā (vairāki)', addDoc:'Pievienot dokumentu', associate:'Piesaistīt failu', checkDoc:'Pārbaudīt dokumentu', view:'Skatīt dokumentu', readDoc:'Nolasīt dokumentu', docDelFile:'Dzēst failu', docMkdir:'Jauna mape',
+  evDocAdd:'Pasākuma dokuments', attCell:'Atzīme žurnālā', sessNew:'Jauna nodarbība', attEvNew:'Jauns pasākums', attPdf:'Žurnāls PDF', schNew:'Jauns grafika notikums', gcalSync:'Google kalendārs', schImport:'Grafika imports',
+  addEq:'Izsniegt ekipējumu', returnEq:'Atdot ekipējumu', yearDelete:'Dzēst mācību gadu', openMove:'Pārcelt uz citu gadu', moveDo:'Pārcelt personas', backupNow:'Rezerves kopija', encRun:'Šifrētā kopija', exportCsv:'CSV eksports', exportPerson:'Personas lieta', print:'Drukāt',
+  archive:'Arhivēt', restore:'Atjaunot no arhīva', erase:'Dzēst neatgriezeniski', fbSend:'Ziņot izstrādātājam', netSync:'Sinhronizēt Google', netPrepare:'Sagatavot bezsaistei', installApp:'Instalēt lietotni', vfsOpenTest:'VFS tests', vfsProtocol:'VFS protokols', copyField:'Kopēt lauku', editIdCard:'Apliecība', addNote:'Piezīme', taskDone:'Uzdevums izpildīts', jAdd:'Žurnāla ieraksts', anToggle:'Statistikas slēdzis' };
+const DAY = 864e5, $ = id => document.getElementById(id), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const dkey = t => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const mkey = t => { const d = new Date(t); return d.getFullYear() * 12 + d.getMonth(); };
+const wkey = t => { const d = new Date(t); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return +d; };
+const MON = ['jan','feb','mar','apr','mai','jūn','jūl','aug','sep','okt','nov','dec'];
+const fmtD = t => { const d = new Date(t); return `${d.getDate()}. ${MON[d.getMonth()]}`; };
+const fmtM = k => `${MON[k % 12]} ${Math.floor(k / 12)}`;
+const fmtDT = t => { const d = new Date(t); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const unitName = (p, n) => p ? `${p}. pārvalde${n ? `, ${n}. nodaļa` : ''}` : 'nav norādīts';
+const st = { per: 30, ch: '', pv: '', gran: 'd' };
+
+/* filtri */
+const PERS = [[7,'7 d'],[30,'30 d'],[90,'90 d'],[365,'gads'],[0,'viss']];
+$('per').innerHTML = PERS.map(([v,l]) => `<button type="button" data-v="${v}">${l}</button>`).join('');
+$('per').onclick = e => { const b = e.target.closest('button'); if (b) { st.per = +b.dataset.v; draw(); } };
+const pvs = [...new Set(R.map(r => r.p).filter(Boolean))].sort((a, b) => a - b);
+$('pv').innerHTML = '<option value="">visas</option>' + pvs.map(p => `<option value="${esc(p)}">${esc(p)}. pārvalde</option>`).join('');
+$('ch').onchange = e => { st.ch = e.target.value; draw(); }; $('pv').onchange = e => { st.pv = e.target.value; draw(); };
+document.addEventListener('click', e => { const b = e.target.closest('[data-gran]'); if (b) { st.gran = b.dataset.gran; draw(); } });
+
+/* zīmēšanas palīgi */
+function bars(list, opt = {}) {
+  if (!list.length) return '<div class="empty">Nav datu</div>';
+  const max = Math.max(...list.map(x => x[1])) || 1;
+  return `<div class="bars">${list.map(([l, v, t]) => `<div class="bl" title="${esc(l)}">${esc(l)}</div><div class="bt"><div class="bf" style="width:${(v / max * 100).toFixed(1)}%;${opt.color ? 'background:' + opt.color : ''}"></div></div><div class="bv">${t ?? v}</div>`).join('')}</div>`;
+}
+function line(pts, h = 210) {
+  if (!pts.length) return '<div class="empty">Nav datu</div>';
+  const W = 900, H = h, L = 34, B = 24, T = 10, max = Math.max(1, ...pts.map(p => p[1])), n = pts.length;
+  const step = Math.max(1, Math.ceil(max / 4)), top = step * 4;
+  const x = i => L + (n === 1 ? (W - L) / 2 : i * (W - L - 8) / (n - 1)), y = v => T + (H - T - B) * (1 - v / top);
+  const bw = Math.max(2, Math.min(26, (W - L) / n * 0.6));
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const yy = y(k * step); g += `<line class="ax" x1="${L}" x2="${W}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${k * step}</text>`; }
+  const every = Math.ceil(n / 10);
+  pts.forEach((p, i) => {
+    g += `<rect x="${x(i) - bw / 2}" y="${y(p[1])}" width="${bw}" height="${Math.max(0, H - B - y(p[1]))}" rx="2" fill="var(--acc)" opacity=".85"><title>${esc(p[0])}: ${p[1]}</title></rect>`;
+    if (i % every === 0 || i === n - 1) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(p[0])}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="height:${H}px">${g}</svg>`;
+}
+const card = (cls, title, body, extra = '') => `<section class="card ${cls}"><h2>${title}<span class="grow"></span>${extra}</h2>${body}</section>`;
+const kpi = (v, l, d = '') => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`;
+const uniq = rs => new Set(rs.map(r => r.u)).size;
+const topN = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n);
+
+function draw() {
+  [...$('per').children].forEach(b => b.classList.toggle('on', +b.dataset.v === st.per));
+  const now = Date.now(), today = new Date(); today.setHours(0, 0, 0, 0);
+  const base = R.filter(r => (!st.ch || r.ch === st.ch) && (!st.pv || r.p === st.pv));
+  const from = st.per ? +today - (st.per - 1) * DAY : Math.min(now, ...base.map(r => r.t0));
+  const P = base.filter(r => r.t1 >= from);
+  if (!R.length) { $('m').innerHTML = `<section class="card w12"><div class="empty">Vēl nav saņemta neviena sesija. Kad rīks būs atvērts ar ieslēgtu statistiku, dati parādīsies šeit (bezsaistē uzkrātie — pēc savienojuma atjaunošanas).</div></section>`; return; }
+  const first = {}; base.forEach(r => { if (!first[r.u] || r.t0 < first[r.u]) first[r.u] = r.t0; });
+  const act = d => uniq(base.filter(r => r.t1 >= +today - (d - 1) * DAY));
+  const fresh = Object.values(first).filter(t => t >= from).length;
+  const secs = P.map(r => r.a).sort((a, b) => a - b), med = secs.length ? secs[Math.floor(secs.length / 2)] : 0;
+  const hours = P.reduce((s, r) => s + r.a, 0) / 3600;
+  const errs = P.reduce((s, r) => s + Object.values(r.e).reduce((a, b) => a + b, 0), 0);
+  const back = (() => { const us = new Set(P.map(r => r.u)); let n = 0; us.forEach(u => { if (first[u] < from) n++; }); return us.size ? Math.round(n / us.size * 100) : 0; })();
+  let h = `<div class="kpis">
+    ${kpi(act(1), 'Aktīvi šodien')}${kpi(act(7), 'Aktīvi 7 dienās')}${kpi(act(30), 'Aktīvi 30 dienās')}
+    ${kpi(fresh, 'Jauni lietotāji', 'periodā')}${kpi(back + '%', 'Atgriezušies', 'periodā aktīvi un sākuši agrāk')}
+    ${kpi(P.length, 'Sesijas', 'periodā')}${kpi(Math.round(med / 60) + ' min', 'Tipisks darba ilgums', 'mediāna, aktīvais laiks')}
+    ${kpi(hours.toFixed(1) + ' h', 'Kopā darba laiks', 'periodā')}${kpi(errs ? `<span class="bad">${errs}</span>` : 0, 'Kļūdas', 'periodā')}</div>`;
+
+  /* aktīvie lietotāji laikā */
+  const gk = st.gran === 'm' ? mkey : st.gran === 'w' ? wkey : dkey, buckets = new Map();
+  if (st.gran === 'd') for (let t = from; t <= now; t += DAY) buckets.set(dkey(t), { l: fmtD(t), u: new Set() });
+  if (st.gran === 'w') for (let t = wkey(from); t <= now; t += 7 * DAY) buckets.set(t, { l: fmtD(t), u: new Set() });
+  if (st.gran === 'm') for (let k = mkey(from); k <= mkey(now); k++) buckets.set(k, { l: fmtM(k), u: new Set() });
+  P.forEach(r => [Math.max(r.t0, from), r.t1].forEach(t => buckets.get(gk(t))?.u.add(r.u)));
+  const seg = `<span class="seg">${[['d','Diena'],['w','Nedēļa'],['m','Mēnesis']].map(([k,l]) => `<button type="button" data-gran="${k}" class="${st.gran === k ? 'on' : ''}">${l}</button>`).join('')}</span>`;
+  h += card('w8', 'Aktīvie lietotāji', line([...buckets.values()].map(b => [b.l, b.u.size])), seg);
+
+  /* pārvaldes un nodaļas */
+  const U = {}; P.forEach(r => { const k = r.p + '|' + r.n; const o = U[k] = U[k] || { p: r.p, n: r.n, u: new Set(), s: 0, a: 0, last: 0 }; o.u.add(r.u); o.s++; o.a += r.a; o.last = Math.max(o.last, r.t1); });
+  const ul = Object.values(U).sort((a, b) => b.u.size - a.u.size || (+a.p - +b.p));
+  h += card('w4', 'Kur lieto — pārvaldes un nodaļas', ul.length ? `<div class="scroll"><table><tr><th>Vienība</th><th class="n">Lietot.</th><th class="n">Sesijas</th><th class="n">Stundas</th><th class="n">Pēdējo reizi</th></tr>${ul.map(o => `<tr><td>${esc(unitName(o.p, o.n))}</td><td class="n">${o.u.size}</td><td class="n">${o.s}</td><td class="n">${(o.a / 3600).toFixed(1)}</td><td class="n">${fmtD(o.last)}</td></tr>`).join('')}</table></div>` : '<div class="empty">Nav datu</div>');
+
+  /* atgriešanās pa mēnešiem */
+  const cm = {}; Object.entries(first).forEach(([u, t]) => { (cm[mkey(t)] = cm[mkey(t)] || new Set()).add(u); });
+  const activeM = {}; base.forEach(r => { for (let k = mkey(r.t0); k <= mkey(r.t1); k++) (activeM[k] = activeM[k] || new Set()).add(r.u); });
+  const curM = mkey(now), coh = Object.keys(cm).map(Number).sort((a, b) => b - a).slice(0, 8);
+  const cell = (k, i) => { if (k + i > curM) return '<td class="c mut">·</td>'; const c = cm[k], a = activeM[k + i]; let n = 0; c.forEach(u => { if (a?.has(u)) n++; }); const p = Math.round(n / c.size * 100); return `<td class="c" style="background:color-mix(in srgb, var(--acc) ${p * 0.7}%, transparent)">${p}%</td>`; };
+  h += card('w6', 'Atgriešanās — vai turpina lietot', coh.length ? `<table class="coh"><tr><th>Sāka</th><th class="n">Lietot.</th>${[1,2,3,4,5,6].map(i => `<th class="n">+${i} mēn.</th>`).join('')}</tr>${coh.map(k => `<tr><td>${fmtM(k)}</td><td class="n">${cm[k].size}</td>${[1,2,3,4,5,6].map(i => cell(k, i)).join('')}</tr>`).join('')}</table><p class="small mut">Cik % no tiem, kas sāka attiecīgajā mēnesī, lietoja rīku arī pēc 1, 2, … mēnešiem.</p>` : '<div class="empty">Nav datu</div>');
+
+  /* kad strādā */
+  const hm = Array.from({ length: 7 }, () => Array(24).fill(0)); P.forEach(r => { const d = new Date(r.t0); hm[(d.getDay() + 6) % 7][d.getHours()]++; });
+  const hmax = Math.max(1, ...hm.flat()), WD = ['P','O','T','C','Pk','S','Sv'];
+  h += card('w6', 'Kad strādā (sesiju sākums)', `<table class="heat"><tr><td></td>${Array.from({ length: 24 }, (_, i) => `<td class="small mut" style="text-align:center">${i % 3 ? '' : i}</td>`).join('')}</tr>${hm.map((row, d) => `<tr><td class="small mut" style="padding-right:6px">${WD[d]}</td>${row.map((v, hh) => `<td title="${WD[d]} ${hh}:00 — ${v}"><div style="background:${v ? `color-mix(in srgb, var(--acc2) ${20 + v / hmax * 80}%, transparent)` : 'var(--line)'};opacity:${v ? 1 : .35}"></div></td>`).join('')}</tr>`).join('')}</table>`);
+
+  /* sadaļas un funkcijas */
+  const pg = {}; P.forEach(r => Object.keys(r.pg).forEach(k => { pg[k] = (pg[k] || 0) + 1; }));
+  h += card('w6', 'Sadaļas — % sesiju, kurās atvērta', bars(topN(pg, 30).map(([k, v]) => [PAGES[k] || k, v, Math.round(v / Math.max(1, P.length) * 100) + '%'])));
+  const fu = {}, fn = {}; P.forEach(r => Object.entries(r.f).forEach(([k, v]) => { (fu[k] = fu[k] || new Set()).add(r.u); fn[k] = (fn[k] || 0) + v; }));
+  const fl = Object.keys(fu).sort((a, b) => fu[b].size - fu[a].size || fn[b] - fn[a]).slice(0, 30);
+  h += card('w6', 'Funkcijas — cik lietotāju izmanto', bars(fl.map(k => [ACTS[k] || k, fu[k].size, `${fu[k].size} · ${fn[k]}×`])) + '<p class="small mut">Skaitlis: lietotāji · reizes. Tehniskie nosaukumi — pogas, kurām nav latviska apraksta panelī.</p>');
+
+  /* versijas un vide (katram lietotājam — pēdējā sesija) */
+  const lastBy = {}; P.forEach(r => { if (!lastBy[r.u] || r.t1 > lastBy[r.u].t1) lastBy[r.u] = r; });
+  const LU = Object.values(lastBy), cnt = f => { const o = {}; LU.forEach(r => { const k = f(r) || '—'; o[k] = (o[k] || 0) + 1; }); return o; };
+  const vers = Object.entries(cnt(r => r.v)).sort((a, b) => b[0].localeCompare(a[0], undefined, { numeric: true }));
+  h += card('w4', 'Versijas (lietotāji)', bars(vers.map(([k, v]) => [k, v])) + `<p class="small mut">Kanāls: ${Object.entries(cnt(r => r.ch === 'test' ? 'testa' : 'stabilā')).map(([k, v]) => `<span class="tag">${k} ${v}</span>`).join(' ')}</p>`);
+  const env = (t, f, map) => `<div class="small mut" style="margin:8px 0 4px">${t}</div>` + bars(topN(cnt(f), 8).map(([k, v]) => [map?.[k] || k, v]));
+  h += card('w4', 'Vide', env('Kā atver', r => r.m, { app: 'Instalēta lietotne', web: 'Pārlūka cilne' }) + env('Operētājsistēma', r => r.os) + env('Pārlūks', r => r.br) + env('Ekrāna platums', r => r.sc));
+  const PCO = ['0','1-10','11-25','26-50','51-100','100+'], pcs = cnt(r => r.pc);
+  h += card('w4', 'Cik jauniešu instruktors uzskaita', bars(PCO.filter(k => pcs[k]).map(k => [k + ' personas', pcs[k]])) + `<p class="small mut">Datu mape pieslēgta: ${LU.filter(r => r.pc !== '').length} no ${LU.length} lietotājiem.</p>`);
+
+  /* kļūdas */
+  const ek = {}; P.forEach(r => Object.entries(r.e).forEach(([k, v]) => { const o = ek[k] = ek[k] || { n: 0, u: new Set(), v: new Set(), last: 0 }; o.n += v; o.u.add(r.u); o.v.add(r.v); o.last = Math.max(o.last, r.t1); }));
+  const el = Object.entries(ek).sort((a, b) => b[1].n - a[1].n).slice(0, 40);
+  h += card('w12', 'Kļūdas (veids @ vieta)', el.length ? `<div class="scroll"><table><tr><th>Kļūda</th><th class="n">Reizes</th><th class="n">Lietotāji</th><th>Versijas</th><th class="n">Pēdējo reizi</th></tr>${el.map(([k, o]) => `<tr><td><code>${esc(k)}</code></td><td class="n">${o.n}</td><td class="n">${o.u.size}</td><td>${esc([...o.v].sort().join(', '))}</td><td class="n">${fmtDT(o.last)}</td></tr>`).join('')}</table></div><p class="small mut">“act:…” — kļūda, nospiežot pogu; “app.bundle.js:N” — rinda programmas failā attiecīgajā versijā.</p>` : '<div class="empty">Periodā kļūdu nav 🎉</div>');
+  h += `<p class="small mut w12">Dati: ${R.length} sesijas, ${uniq(R)} lietotāji. Rāda periodu no ${fmtD(from)}. Sesijas, kas vecākas par 13 mēnešiem, tiek dzēstas automātiski. Lapā ir tikai anonīma statistika — bez vārdiem, dokumentiem un failu nosaukumiem.</p>`;
+  $('m').innerHTML = h;
+}
+draw();
+</script>
+</body>
+</html>

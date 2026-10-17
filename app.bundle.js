@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 44 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 45 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,9 +11,13 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.47.1';
+  CP.VERSION = '1.48.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
+  /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
+     Stabilajā kanālā analītika darbojas tikai, kad ANALYTICS_STABLE = true (vispirms pārbauda testa kanālā). */
+  CP.ANALYTICS_URL = '';
+  CP.ANALYTICS_STABLE = false;
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -5661,7 +5665,7 @@ window.CP = window.CP || {};
     ['idcard', 'Jaunsarga apliecības', 'Numuri, statusi, derīgums un brīdinājumi par dublikātiem.'],
     ['message', 'Saziņa', 'WhatsApp, SMS, e-pasts un zvans no kartītes, ziņas grupai un kontakti uz telefonu ar QR kodu.'],
     ['bell', 'Atgādinājumi', 'Trūkstošie dokumenti, termiņi, vecuma izmaiņas, sakrītoši tālruņi un uzdevumi.'],
-    ['shield', 'Dati pie tevis', 'Nekas netiek sūtīts uz serveri. Dati glabājas tikai tavā izvēlētajā mapē.']
+    ['shield', 'Dati pie tevis', 'Personu dati netiek sūtīti uz serveri. Tie glabājas tikai tavā izvēlētajā mapē.']
   ];
 
   CP.pages.about = {
@@ -5680,7 +5684,8 @@ window.CP = window.CP || {};
             <ul class="about-list"><li>uzturēt kārtībā jaunsargu un viņu vecāku datus;</li><li>redzēt, kuriem trūkst dokumentu vai jāatdod ekipējums;</li><li>ātri sazināties ar jaunieti vai vecākiem;</li><li>sagatavot jaunu mācību gadu, nepazaudējot vēsturi.</li></ul>
           </section>
           <section class="card"><h3>${ic('shield')}Kur glabājas dati</h3>
-            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Uz serveriem nekas netiek sūtīts, un citi lietotāji tavus datus neredz.</p>
+            <p>Tikai tavā datorā vai zibatmiņā, mapē, kuru izvēlies pats. Personu dati uz serveriem netiek sūtīti, un citi lietotāji tavus datus neredz.</p>
+            ${CP.analytics?.allowed() ? '<p class="muted small">Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu lietošanas statistiku — cik bieži un kuras sadaļas lieto, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas.</p>' : ''}
             <p class="muted small">Izņēmums: ja Iestatījumos ieslēdz Google Vision rokraksta atpazīšanu, anketas attēls tiek nosūtīts Google. Pēc noklusējuma tā ir izslēgta.</p>
           </section>
         </div>
@@ -5718,7 +5723,10 @@ window.CP = window.CP || {};
      NOTEIKUMI: viens bloks — viena funkcija; tikai tas, ko lietotājs pamana un var izmantot.
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
-  const NEWS = [
+  const ALL = [
+    { v: '1.48.0', ch: 'test', date: '2026-10-18', title: 'Lietošanas statistika', items: [
+      'Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
+    ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja). Kategorija “Vecāku piekrišana” noņemta — tāda dokumenta nav; esošie ieraksti kļuvuši par “Vecāku atļauja”.'
@@ -5781,17 +5789,14 @@ window.CP = window.CP || {};
       'Kad termiņš beidzies, Pārskatā parādās atgādinājums. Lapā **“Glabāšanas termiņi”** izvēlies, ko **anonimizēt** vai dzēst — rīks pats neko nedzēš. Anonimizējot paliek tikai statistika.',
       'Sānjoslā zem datu mapes redzams, vai dati ir **sinhronizēti ar Google Drive**, un, ja nav, — poga “Iestatīt” vai “Pieslēgties”.'
     ] },
-    { v: '1.36.2', from: '1.36.1', date: '2026-10-16', title: 'VFS nozīmītes ekipējumā', items: [
-      'Izsniegtā VFS sporta nozīmīte parādās jaunsarga **ekipējumā** un ir jāatdod. Ja tā ir dāvinājums, spied **“🎁 Dāvināt”** — tad to atdot nevajag. Tas der arī citiem priekšmetiem.'
-    ] },
     { v: '1.35.0', date: '2026-10-16', title: 'Dokumentu nodošana Centra arhīvam', items: [
       'Kartītē **“Reģistrācija un arhīvs”** var atzīmēt, ka anketas un līguma oriģināli **nodoti Centra arhīvam**, ar datumu. Ja saņemts dokuments vēl nav nodots, ir brīdinājums.',
       'Personu sarakstā atlasītajiem var atzīmēt visu uzreiz: **“✓ Arhīvam”**. Dokumentu sarakstu maina Iestatījumos → Dokumenti.'
     ] },
-    { v: '1.34.1', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
+    { v: '1.36.2', from: '1.34.0', date: '2026-10-16', title: 'VFS testi un sporta nozīmītes', items: [
       'Sadaļa **“VFS”**: fiziskās sagatavotības testi pēc JC normatīviem. Pakāpe pēc vecuma testa dienā, **punkti tiek aprēķināti uzreiz**, sporta nozīmīte (bronza, sudrabs, zelts) — automātiski un arī kvalifikācijās.',
       '**Protokols (PDF)** un **nozīmīšu uzskaite (Excel)** oficiālajās veidnēs. Agrāko gadu Word protokolus var importēt.',
-      'Jaunsarga kartītē cilne **“VFS”** ar rezultātiem un dinamiku. Personai ir jauns lauks **“Dzimums”**.'
+      'Jaunsarga kartītē cilne **“VFS”** ar rezultātiem un dinamiku. Personai ir jauns lauks **“Dzimums”**. Izsniegtā nozīmīte parādās **ekipējumā** un ir jāatdod; dāvinājumam — **“🎁 Dāvināt”** (der arī citiem priekšmetiem).'
     ] },
     { v: '1.33.0', date: '2026-10-16', title: 'Darbību žurnāls', items: [
       'Lapa **“Darbību žurnāls”** rāda visas izmaiņas datos: kas mainīts, no kā uz ko un kad. Iepriekšējo vērtību vai dzēstu ierakstu var **atjaunot**.',
@@ -5830,6 +5835,8 @@ window.CP = window.CP || {};
       'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi. CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
     ] }
   ];
+  /* ch: 'test' — bloks tikai testa kanālā (funkcija vēl nav stabilajā) */
+  const NEWS = ALL.filter(b => !b.ch || b.ch === CP.CHANNEL);
   CP.NEWS = NEWS;
   const cmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
   const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
@@ -12694,6 +12701,155 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
 })(window.CP);
 
 
+/* ==== js/analytics.js ==== */
+/* =====================================================================
+   Lietošanas analītika (anonīma) — PASTĀVĪGA RĪKA DAĻA, nedzēst pārbūvējot.
+   Apraksts: docs/ANALYTICS.md. Saņēmējs: tools/analitika/Kods.gs (Google Apps Script).
+
+   • Viena “sesija” = viens darba posms (pārtraukums > 30 min → jauna sesija).
+     Sesijā tiek skaitīts: aktīvais laiks, atvērtās sadaļas, nospiesto pogu (darbību)
+     nosaukumi, kļūdu veidi (tikai veids@fails:rinda, bez teksta).
+   • Vide: versija, kanāls, lietotne/pārlūks, OS, pārlūka veids, ekrāna grupa, valoda,
+     laika josla, instruktora novada pārvaldes un nodaļas NUMURS, personu skaita grupa.
+   • ID: nejaušs skaitlis šajā pārlūkā (cp.anId) — tikai atgriešanās skaitīšanai.
+   • NEKAD netiek sūtīts: vārdi, personas kodi, kartīšu saturs, dokumenti, failu un mapju
+     nosaukumi, kontakti, piezīmes, kļūdu teksti, data-arg vērtības.
+   • Bezsaistē: sesijas krājas rindā (cp.anQ, līdz 300 sesijām / 60 dienām) un tiek
+     nosūtītas vēlāk ar sākotnējo laiku; sesijas ID novērš dublēšanos.
+   • Izslēgt: Iestatījumi → Atļaujas → “Lietošanas statistika”.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const S = CP.state, ui = CP.ui, A = CP.actions;
+  const K = { id: 'cp.anId', q: 'cp.anQ', cur: 'cp.anCur', off: 'cp.anOff', seen: 'cp.anSeen', url: 'cp.anUrl' };
+  const FORMAT = 'cadet-an-v1', GAP = 30 * 60e3, IDLE = 5 * 60e3, TICK = 30e3, MAXQ = 300, MAXAGE = 60 * 864e5, EVERY = 15 * 60e3, MAXKEYS = 80;
+  const ls = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { } }
+  };
+  /** Kanāli, kuros analītika darbojas (stabilajā — tikai kad CP.ANALYTICS_STABLE = true) */
+  const allowed = () => !!CP.WEB && (CP.CHANNEL === 'test' || !!CP.ANALYTICS_STABLE);
+  const enabled = () => allowed() && !ls.get(K.off, false);
+  const url = () => ls.get(K.url, '') || CP.ANALYTICS_URL || '';
+  const rnd = n => { const b = new Uint8Array(n); crypto.getRandomValues(b); return [...b].map(x => x.toString(16).padStart(2, '0')).join(''); };
+  const uid = () => { let id = ls.get(K.id, ''); if (!/^[0-9a-f]{16,32}$/.test(id)) { id = rnd(12); ls.set(K.id, id); } return id; };
+  const safeKey = k => String(k || '').replace(/[^\w.:@\-]/g, '').slice(0, 60);
+  const inc = (m, k, n = 1) => { k = safeKey(k); if (!k) return; if (!(k in m) && Object.keys(m).length >= MAXKEYS) return; m[k] = (m[k] || 0) + n; };
+
+  /* --- Vide (bez “pirkstu nospieduma”: tikai rupjas grupas) --- */
+  function env() {
+    const ua = navigator.userAgent;
+    const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'cits';
+    const br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'cits';
+    const w = screen.width || innerWidth;
+    const sc = w < 900 ? '<900' : w < 1400 ? '900-1399' : w < 1920 ? '1400-1919' : '1920+';
+    let m = 'web'; try { if (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches) m = 'app'; } catch (e) { }
+    let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { }
+    return { v: CP.VERSION, ch: CP.CHANNEL, m, os, br, sc, lg: String(navigator.language || '').slice(0, 10), tz: tz.slice(0, 40) };
+  }
+  /** Instruktora vienība (tikai numuri) un personu skaita grupa — no ielādētajiem datiem */
+  function unit() {
+    const I = S.db?.settings?.instructor || {}, num = v => String(v ?? '').replace(/\D/g, '').slice(0, 3);
+    let pc = '';
+    if (Array.isArray(S.db?.people)) {
+      const n = S.db.people.filter(p => p.status !== 'archived').length;
+      pc = n === 0 ? '0' : n <= 10 ? '1-10' : n <= 25 ? '11-25' : n <= 50 ? '26-50' : n <= 100 ? '51-100' : '100+';
+    }
+    return { p: num(I.parvalde), n: num(I.nodala), pc, df: S.root ? 1 : 0 };
+  }
+
+  /* --- Rinda --- */
+  const loadQ = () => { const q = ls.get(K.q, {}); return q && typeof q === 'object' ? q : {}; };
+  function saveQ(q) {
+    const now = Date.now(), all = Object.values(q).filter(x => x && now - (x.t1 || 0) < MAXAGE).sort((a, b) => b.t1 - a.t1).slice(0, MAXQ);
+    ls.set(K.q, Object.fromEntries(all.map(x => [x.s, x])));
+  }
+  let cur = null, lastInput = Date.now(), dirty = false;
+  function persist() {
+    if (!cur) return;
+    Object.assign(cur, unit()); cur.rev = (cur.rev || 0) + (dirty ? 1 : 0); dirty = false;
+    const q = loadQ(); q[cur.s] = { ...cur, sent: q[cur.s]?.sent || 0 }; saveQ(q); ls.set(K.cur, { s: cur.s, t1: cur.t1, v: cur.v });
+  }
+  function start() {
+    if (!enabled()) return;
+    const prev = ls.get(K.cur, null), q = loadQ(), now = Date.now();
+    if (prev && q[prev.s] && prev.v === CP.VERSION && now - prev.t1 < GAP) { cur = { ...q[prev.s] }; delete cur.sent; }
+    else { cur = { s: rnd(10), u: uid(), t0: now, t1: now, a: 0, pg: {}, f: {}, e: {}, rev: 1, ...env() }; dirty = true; }
+    persist();
+  }
+  const touch = () => { if (!cur) return; const now = Date.now(); if (now - cur.t1 > GAP) { persist(); start(); } else cur.t1 = now; dirty = true; };
+
+  /* --- Uzskaite --- */
+  function page(p) { if (!enabled() || !cur) return; touch(); inc(cur.pg, p); persist(); }
+  function act(name) { if (!enabled() || !cur) return; touch(); inc(cur.f, name); persist(); }
+  function err(e, where) {
+    if (!enabled() || !cur) return;
+    const name = safeKey(e?.name || 'Error').slice(0, 30) || 'Error';
+    touch(); inc(cur.e, `${name}@${safeKey(where || 'nezin').slice(0, 28)}`);
+  }
+  window.addEventListener('error', e => { const f = String(e.filename || '').split('/').pop().split('?')[0]; err(e.error || { name: 'Error' }, f ? `${f}:${e.lineno || 0}` : 'nezin'); });
+  window.addEventListener('unhandledrejection', e => err(e.reason instanceof Error ? e.reason : { name: 'Rejection' }, 'promise'));
+  ['pointerdown', 'keydown', 'wheel'].forEach(t => addEventListener(t, () => { lastInput = Date.now(); }, { passive: true, capture: true }));
+  setInterval(() => {
+    if (!enabled() || !cur || document.hidden || Date.now() - lastInput > IDLE) return;
+    touch(); cur.a += TICK / 1000; persist();
+  }, TICK);
+
+  /* --- Sūtīšana --- */
+  let busy = false, lastFlush = 0;
+  const pack = x => { const { sent, rev, ...o } = x; return o; };
+  async function flush(force) {
+    if (!enabled() || !url() || busy || !navigator.onLine) return false;
+    if (!force && Date.now() - lastFlush < 5 * 60e3) return false;
+    if (cur) persist();
+    const q = loadQ(), items = Object.values(q).filter(x => x.rev !== x.sent).sort((a, b) => a.t0 - b.t0).slice(0, 50);
+    if (!items.length) return true;
+    busy = true; lastFlush = Date.now();
+    try {
+      const body = JSON.stringify({ k: FORMAT, items: items.map(pack) });
+      const r = await fetch(url(), { method: 'POST', body, redirect: 'follow', keepalive: body.length < 60000, credentials: 'omit' });   // text/plain → bez CORS priekšpieprasījuma
+      const j = await r.json().catch(() => ({}));
+      if (!j.ok) return false;
+      const q2 = loadQ();
+      for (const it of items) { const x = q2[it.s]; if (!x) continue; if (cur && x.s === cur.s) x.sent = it.rev; else if (x.rev === it.rev) delete q2[x.s]; else x.sent = it.rev; }
+      saveQ(q2); return true;
+    } catch (e) { return false; }   // nav savienojuma / saņēmējs nav pieejams — mēģinās vēlāk, rīks strādā tālāk
+    finally { busy = false; }
+  }
+  addEventListener('online', () => setTimeout(() => flush(true), 8000));
+  document.addEventListener('visibilitychange', () => { if (document.hidden && cur) { persist(); flush(true); } });
+  setInterval(() => flush(false), EVERY);
+
+  /* --- Ieslēgt / izslēgt (Iestatījumi → Atļaujas) --- */
+  A.anToggle = () => {
+    if (ls.get(K.off, false)) { ls.del(K.off); start(); ui.toast('Lietošanas statistika ieslēgta', 'ok'); }
+    else { ls.set(K.off, true); ls.del(K.q); ls.del(K.cur); ls.del(K.id); cur = null; ui.toast('Lietošanas statistika izslēgta. Šajā pārlūkā uzkrātā statistika un ID izdzēsti.', 'ok', 6000); }
+    CP.perms?.paint?.();
+  };
+  A.anSettings = () => { S.setTab = 'perm'; ui.go('settings'); };
+  CP.noRootOk && (() => { const o = CP.noRootOk; CP.noRootOk = a => a === 'anToggle' || a === 'anSettings' || o(a); })();
+
+  /* --- Sākums --- */
+  { const og = ui.go; ui.go = (p, opts) => { const r = og(p, opts); page(p); return r; }; }
+  setTimeout(() => {
+    if (!enabled()) return;
+    start(); page(S.page);
+    if (!ls.get(K.seen, false)) {
+      ls.set(K.seen, true);
+      ui.toast('Rīks izmanto sīkdatnes (pārlūka atmiņu) un apkopo anonīmu lietošanas statistiku — bez personu datiem. Izslēgt var Iestatījumos → Atļaujas.', '', 12000, { act: 'anSettings', label: 'Iestatījumi' });
+    }
+    setTimeout(() => flush(true), 10000);
+  }, 3000);
+
+  CP.analytics = {
+    allowed, enabled, url, act, err, page, flush,
+    state: () => ({ on: enabled(), allowed: allowed(), configured: !!url(), queued: Object.values(loadQ()).filter(x => x.rev !== x.sent).length, session: cur ? pack(cur) : null }),
+    queue: () => Object.values(loadQ()).map(pack)
+  };
+})(window.CP);
+
+
 /* ==== js/perms.js ==== */
 /* =====================================================================
    Iestatījumi → Atļaujas: kuras pārlūka atļaujas rīks izmanto, kāds ir
@@ -12765,6 +12921,14 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       state: np === 'granted' ? 'ok' : np === 'denied' ? 'bad' : np === 'unsupported' ? 'off' : 'off',
       label: np === 'granted' ? 'Atļauti' : np === 'denied' ? 'Bloķēti' : np === 'unsupported' ? 'Pārlūks neatbalsta' : 'Nav jautāts',
       btn: np === 'default' ? '🔔 Atļaut' : '', act: 'permNotif' });
+    // 8. Anonīma lietošanas statistika (docs/ANALYTICS.md)
+    const AN = CP.analytics;
+    if (AN?.allowed()) {
+      const on = AN.enabled();
+      out.push({ k: 'stats', icon: 'chart', title: 'Lietošanas statistika un sīkdatnes', need: false,
+        why: 'Rīks pārlūka atmiņā glabā nejaušu ID un izstrādātājam sūta anonīmu statistiku: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versija, pārlūks, kļūdu veidi un novada pārvaldes / nodaļas numurs. Personu dati, dokumenti un failu nosaukumi netiek sūtīti.',
+        state: on ? 'ok' : 'off', label: on ? 'Ieslēgta' : 'Izslēgta', btn: on ? 'Izslēgt' : 'Ieslēgt', act: 'anToggle' });
+    }
     last = out; return out;
   }
   const PILL = { ok: 'ok', ask: 'warn', bad: 'bad', off: '' };
@@ -13124,7 +13288,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     if (d.act) {
       const fn = A[d.act]; if (!fn) return console.warn('Nav darbības', d.act);
       if (!S.root && !CP.noRootOk(d.act)) { CP.needRoot(); return; }
-      try { await fn(d.arg, el, e); } catch (err) { console.error(err); ui.toast('Kļūda: ' + err.message, 'err'); }
+      CP.analytics?.act(d.act);   // anonīma statistika: tikai darbības nosaukums (docs/ANALYTICS.md)
+      try { await fn(d.arg, el, e); } catch (err) { console.error(err); CP.analytics?.err(err, 'act:' + d.act); ui.toast('Kļūda: ' + err.message, 'err'); }
       return;
     }
     if (d.page) {
