@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.47.1 — 2026-10-17
+- Noņemta dokumentu kategorija “Vecāku piekrišana” (migrācija `kind-noconsent`: no `docKinds` un `requiredDocs`, esošie dokumenti → “Vecāku atļauja”). `D.guessKind` izmanto `D.allDocKinds()` — faila nosaukums ar “atļauja/piekrišana” → “Vecāku atļauja”.
+
 ## 1.47.0 — 2026-10-17
 - `js/offline.js`: statuss galvenē (`#netPill`), logs `netDialog`; bezsaistes sagatavošana — `vendor/offline.json` (būvē `build_web.py`: visi vendor faili ar izmēru un sha1) → kešs `cadet-vendor` (nemainīgs nosaukums, neatkarīgs no versijas; mainītie faili atjaunojas pēc kontrolsummas, `localStorage cp.offlineMap`). Sākas fonā 6 s pēc atvēršanas, ja tiešsaistē un nav gatavs. Rinda arī Iestatījumi → Atļaujas.
 - Pēc `online` (pārbaudīts ar `version.json`): `encBackup.run({quiet})` un `CP.gcal.sync(false)`, ja ir neiesūtītas izmaiņas un derīgs Google savienojums; citādi paziņojums ar “Pieslēgties” (`netConnect`). `CP.gcal` un `CP.encBackup.pending` eksportēti.

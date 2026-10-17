@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.47.0';
+  CP.VERSION = '1.47.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -319,7 +319,7 @@ window.CP = window.CP || {};
     retentionDefault: 12,
     // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
     retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
-    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
+    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
@@ -390,6 +390,8 @@ window.CP = window.CP || {};
     }
     // Jauni noklusētie rīki tiek pievienoti vienreiz (ja lietotājs tos izdzēš — atpakaļ netiek likti)
     const added = d.settings.toolsAdded = [...(raw.settings?.toolsAdded || (raw.settings ? [] : ['dvs']))];
+    // “Vecāku piekrišana” nav atsevišķs dokuments — esošie ieraksti kļūst par “Vecāku atļauja”
+    if (!added.includes('kind-noconsent')) { d.settings.docKinds = d.settings.docKinds.filter(k => k !== 'Vecāku piekrišana'); for (const x of d.documents || []) if (x.kind === 'Vecāku piekrišana') x.kind = 'Vecāku atļauja'; d.settings.requiredDocs = (d.settings.requiredDocs || []).map(k => k === 'Vecāku piekrišana' ? 'Vecāku atļauja' : k); added.push('kind-noconsent'); }
     if (!added.includes('kind-explain')) { if (!d.settings.docKinds.includes('Paskaidrojums')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Paskaidrojums'); added.push('kind-explain'); }
     if (!added.includes('kind-idcard')) { if (!d.settings.docKinds.includes('Jaunsarga apliecība')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Jaunsarga apliecība'); added.push('kind-idcard'); }
     if (!added.includes('dvs')) { if (!d.settings.tools.some(t => /dvs\.mod\.gov\.lv/i.test(t.url || ''))) d.settings.tools.push({ name: 'DVS', url: 'https://dvs.mod.gov.lv/' }); added.push('dvs'); }
@@ -568,8 +570,8 @@ window.CP = window.CP || {};
     return String(text || '').replace(/\{([^}]+)\}/g, (m, k) => k in map ? (map[k] || '') : m).replace(/,\s*!/g, '!');
   };
   D.guessKind = name => {
-    const n = U.norm(name), kinds = db().settings.docKinds;
-    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
+    const n = U.norm(name), kinds = D.allDocKinds();
+    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku atļauja'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
     for (const [r, k] of rules) if (r.test(n) && kinds.includes(k)) return k;
     return kinds.includes('Cits') ? 'Cits' : kinds[0];
   };

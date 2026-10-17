@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.47.0';
+  CP.VERSION = '1.47.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -322,7 +322,7 @@ window.CP = window.CP || {};
     retentionDefault: 12,
     // glabāšanas termiņi (mēneši); izstājušos termiņš = retentionDefault. Skat. retention.js
     retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
-    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Vecāku piekrišana', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
+    docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
@@ -393,6 +393,8 @@ window.CP = window.CP || {};
     }
     // Jauni noklusētie rīki tiek pievienoti vienreiz (ja lietotājs tos izdzēš — atpakaļ netiek likti)
     const added = d.settings.toolsAdded = [...(raw.settings?.toolsAdded || (raw.settings ? [] : ['dvs']))];
+    // “Vecāku piekrišana” nav atsevišķs dokuments — esošie ieraksti kļūst par “Vecāku atļauja”
+    if (!added.includes('kind-noconsent')) { d.settings.docKinds = d.settings.docKinds.filter(k => k !== 'Vecāku piekrišana'); for (const x of d.documents || []) if (x.kind === 'Vecāku piekrišana') x.kind = 'Vecāku atļauja'; d.settings.requiredDocs = (d.settings.requiredDocs || []).map(k => k === 'Vecāku piekrišana' ? 'Vecāku atļauja' : k); added.push('kind-noconsent'); }
     if (!added.includes('kind-explain')) { if (!d.settings.docKinds.includes('Paskaidrojums')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Paskaidrojums'); added.push('kind-explain'); }
     if (!added.includes('kind-idcard')) { if (!d.settings.docKinds.includes('Jaunsarga apliecība')) d.settings.docKinds.splice(Math.max(0, d.settings.docKinds.indexOf('Cits')), 0, 'Jaunsarga apliecība'); added.push('kind-idcard'); }
     if (!added.includes('dvs')) { if (!d.settings.tools.some(t => /dvs\.mod\.gov\.lv/i.test(t.url || ''))) d.settings.tools.push({ name: 'DVS', url: 'https://dvs.mod.gov.lv/' }); added.push('dvs'); }
@@ -571,8 +573,8 @@ window.CP = window.CP || {};
     return String(text || '').replace(/\{([^}]+)\}/g, (m, k) => k in map ? (map[k] || '') : m).replace(/,\s*!/g, '!');
   };
   D.guessKind = name => {
-    const n = U.norm(name), kinds = db().settings.docKinds;
-    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku piekrišana'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
+    const n = U.norm(name), kinds = D.allDocKinds();
+    const rules = [[/anket|pieteikum/, 'Pieteikuma anketa'], [/ligum/, 'Līgums'], [/izzin|arst|medic|026/, 'Ārsta izziņa'], [/mtl|aprit/, 'MTL aprites lapa'], [/piekris|atlauj/, 'Vecāku atļauja'], [/pateic/, 'Pateicības raksts'], [/paskaidr/, 'Paskaidrojums']];
     for (const [r, k] of rules) if (r.test(n) && kinds.includes(k)) return k;
     return kinds.includes('Cits') ? 'Cits' : kinds[0];
   };
@@ -5717,6 +5719,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
+      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
+      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja). Kategorija “Vecāku piekrišana” noņemta — tāda dokumenta nav; esošie ieraksti kļuvuši par “Vecāku atļauja”.'
+    ] },
     { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
       'Galvenē statuss **● Tiešsaiste / ○ Bezsaiste** (ar skaitli, ja izmaiņas gaida nosūtīšanu uz Google). Uzspiežot — detaļas un pogas “Sinhronizēt tagad”, “Sagatavot bezsaistei”.',
       'Rīks fonā pats **sagatavojas darbam bezsaistē** (~18 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
@@ -5728,10 +5734,6 @@ window.CP = window.CP || {};
     { v: '1.46.0', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
       'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējums** var **aiziet kopā ar jaunsargu** (jaunais instruktors pārņem uzskaiti un MTL — tavā uzskaitē tas atzīmējas kā nodots), palikt tavā uzskaitē (sarakstu iekļauj informācijai) vai netikt iekļauts, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”. Ja nodots kļūdas pēc — **“↶ Atcelt nodošanu”** atjauno personu no arhīva un atgriež ekipējumu.',
       'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
-    ] },
-    { v: '1.45.3', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
-      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
-      'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja).'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
