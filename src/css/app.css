@@ -790,3 +790,10 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .row.doc > .grow{flex:1 1 calc(100% - 40px);min-width:0}
 .row.doc > button:first-of-type{margin-left:38px}
 .sigbtn { background: #3a76f0; border-color: #2c63d6; color: #fff } .sigbtn:hover { background: #2c63d6 }
+
+/* nav saņemts — sarkans (Reģistrācija un arhīvs, Obligātie dokumenti) */
+.reg-row.nogot{background:color-mix(in srgb,var(--red) 10%,transparent);box-shadow:inset 3px 0 0 var(--red)}
+.reg-row.nogot b{color:var(--red)}
+.reg-add{flex:none;padding:3px 8px}
+.reqdoc.miss{border-color:color-mix(in srgb,var(--red) 55%,var(--edge));background:color-mix(in srgb,var(--red) 8%,transparent)}
+.reqdoc.miss b{color:var(--red)}

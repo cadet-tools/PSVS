@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.40.1 — 2026-10-17
+- “Reģistrācija un arhīvs”: dokuments bez skenēta faila (`received()` — obligātajiem pēc `D.missingDocs`) rindā `.nogot` — sarkans, ar “＋ Fails”; atzīmējot DVS vai Centra arhīvu nesaņemtam dokumentam — apstiprinājums (atceļot atzīme netiek likta). Ja atzīme jau ir bez faila — sarkans paskaidrojums. Arhīva “saņemts” vairs neņem vērā DVS atzīmi. “Obligātie dokumenti” trūkstošie — sarkani.
+
 ## 1.40.0 — 2026-10-17
 - Signal kanāls: `signal.me/#p/+<nr>` (vai `sgnl://`, iestatījums `sigMode`), ziņas teksts tiek nokopēts starpliktuvē; poga kartītes kontaktos, ziņas logā, grupas ziņā; žurnāla tips `signal` (ietilpst `D.commSent` un glabāšanas termiņu kategorijā “Saziņa”).
 - Dokumentu mape un “Mapē atrasti faili”: “✕ Dzēst” failam un apakšmapei (`store.deletePath` — tikai `Macibu_gadi/*/Personas/<persona>/…`, ne pašu personas mapi; papildu mapes netiek dzēstas). Dzēšot piesaistītu failu, tiek noņemts arī ieraksts (auditā atzīme). Apstiprinājumā — faila ceļš un failu skaits mapē (nolasa no diska).

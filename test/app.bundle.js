@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.40.0';
+  CP.VERSION = '1.40.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -4120,7 +4120,9 @@ window.CP = window.CP || {};
   }
   A.arcToggle = arg => {
     const [id, i] = String(arg).split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind) return;
-    const was = !!arcOf(p, kind); setArc(p, kind, !was);
+    const was = !!arcOf(p, kind);
+    if (!was && !received(p, kind) && !confirm(`“${kind}” vēl nav saņemts — kartītē nav skenēta faila.\n\nVai tiešām atzīmēt, ka oriģināls nodots Centra arhīvam?`)) return CP.render();
+    setArc(p, kind, !was);
     D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: ${was ? 'atzīme noņemta' : 'nodots'}`]); CP.store.changed();
   };
   CP.changeHandlers.push(e => {
@@ -4176,7 +4178,9 @@ window.CP = window.CP || {};
   };
   A.dvsToggle = arg => {
     const [id, i] = String(arg).split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind) return;
-    const was = !!dvsOf(p, kind); setDvs(p, kind, !was);
+    const was = !!dvsOf(p, kind);
+    if (!was && !received(p, kind) && !confirm(`“${kind}” vēl nav saņemts — kartītē nav skenēta faila.\n\nDVS reģistrē skenēto dokumentu. Vai tiešām atzīmēt kā reģistrētu DVS?`)) return CP.render();
+    setDvs(p, kind, !was);
     D.audit(p.id, 'update', [`DVS — ${kind}: ${was ? 'atzīme noņemta' : 'reģistrēts'}`]); CP.store.changed();
   };
   /** Reģistrācijas datuma maiņa (dokuments var būt reģistrēts citā dienā) */
@@ -4195,6 +4199,12 @@ window.CP = window.CP || {};
     CP.store.changed(); CP.ui.toast(k === 'dvs' ? `DVS: visi dokumenti atzīmēti kā reģistrēti ${n} personām` : k === 'arhivs' ? `Centra arhīvs: visi dokumenti atzīmēti kā nodoti ${n} personām` : `${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
   };
 
+  /** Dokuments saņemts = kartītē ir skenēts fails (obligātajiem) vai vismaz ieraksts ar failu */
+  function received(p, kind) {
+    if ((S.db.settings.requiredDocs || []).includes(kind)) return !D.missingDocs(p).includes(kind);
+    return D.docsOf(p).some(d => d.kind === kind && d.path);
+  }
+  const addBtn = (p, kind) => `<button type="button" class="sm reg-add" data-act="attach" data-arg="${p.id}|${esc(kind)}" title="Pievienot skenētu dokumentu">＋ Fails</button>`;
   /** Kartītes sānu panelis */
   function personCard(p) {
     const list = on(); if (!list.length) return '';
@@ -4203,10 +4213,10 @@ window.CP = window.CP || {};
       const docs = dvsDocs(), dm = D.dvsMissing(p), okN = docs.length - docs.filter(k => !dvsOf(p, k)).length;
       return `<div class="reg-group"><div class="reg-title"><b>DVS</b> <span class="pill ${okN === docs.length ? 'ok' : ''}">${okN}/${docs.length} reģistrēti</span></div>
         ${docs.map((kind, i) => {
-          const v = dvsOf(p, kind), inTool = !missTool.includes(kind);
-          return `<div class="reg-row ${v ? 'ok' : (fol ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="dvsToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
-            <span><b>${esc(kind)}</b><br><small class="muted">rīkā: ${inTool ? '<span class="okc">✓ pievienots</span>' : '<span class="warn">✗ nav pievienots</span>'}${v ? '' : (fol ? ' · DVS: <span class="warn">nav reģistrēts</span>' : '')}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS">` : ''}</div>`;
+          const v = dvsOf(p, kind), inTool = received(p, kind);
+          return `<div class="reg-row ${v ? 'ok' : !inTool ? 'nogot' : (fol ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="dvsToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
+            <span><b>${esc(kind)}</b><br><small class="muted">${inTool ? 'rīkā: <span class="okc">✓ pievienots</span>' : '<span class="red">✗ nav saņemts — vispirms pievieno skenētu failu</span>'}${v ? (inTool ? '' : ' · <span class="red">atzīmēts DVS bez faila rīkā</span>') : (fol && inTool ? ' · DVS: <span class="warn">nav reģistrēts</span>' : '')}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS">` : ''}${inTool ? '' : addBtn(p, kind)}</div>`;
         }).join('')}
         ${fol && dm.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē katru dokumentu, kad tas reģistrēts DVS. Datumu var nomainīt.</p>` : ''}</div>`;
     })() : '';
@@ -4214,10 +4224,10 @@ window.CP = window.CP || {};
       const docs = arcDocs(), okN = docs.filter(k => arcOf(p, k)).length;
       return `<div class="reg-group"><div class="reg-title"><b>Centra arhīvs</b> <span class="pill ${okN === docs.length ? 'ok' : ''}">${okN}/${docs.length} nodoti</span></div>
         ${docs.map((kind, i) => {
-          const v = arcOf(p, kind), got = !missTool.includes(kind) || dvsOf(p, kind), miss = fol && !v && got;
-          return `<div class="reg-row ${v ? 'ok' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
-            <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : 'vēl nav saņemts'}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}</div>`;
+          const v = arcOf(p, kind), got = received(p, kind), miss = fol && !v && got;
+          return `<div class="reg-row ${v ? 'ok' : !got ? 'nogot' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
+            <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' + (got ? '' : ' · <span class="red">kartītē nav skenēta faila</span>') : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : '<span class="red">✗ vēl nav saņemts</span>'}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}${got ? '' : addBtn(p, kind)}</div>`;
         }).join('')}</div>`;
     })() : '';
     const ek = list.some(r => r.k === 'eklase') ? (() => {
@@ -5665,10 +5675,7 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
-      'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
-    ] },
-    { v: '1.40.0', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
+    { v: '1.40.1', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
       'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet.',
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
       '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies).',
@@ -5676,7 +5683,10 @@ window.CP = window.CP || {};
       'Katru mapē esošu, vēl nepiesaistītu failu var **piesaistīt** — tad tas redzams sadaļā “Visi personas dokumenti”. Ir jauna kategorija **“Paskaidrojums”**; kategorijai **“Cits”** jāieraksta dokumenta nosaukums, un kartītē redzams tieši tas.',
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
       'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
-      '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz.'
+      '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz. Dokuments, kas vēl **nav saņemts**, sadaļā “Reģistrācija un arhīvs” ir **sarkans** ar pogu “＋ Fails”, un, mēģinot to atzīmēt DVS vai arhīvā, rīks brīdina.'
+    ] },
+    { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
+      'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
     ] },
     { v: '1.39.0', date: '2026-10-17', title: 'Pārlūka atļaujas', items: [
       'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās.',

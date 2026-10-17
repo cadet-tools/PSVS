@@ -32,7 +32,9 @@
   }
   A.arcToggle = arg => {
     const [id, i] = String(arg).split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind) return;
-    const was = !!arcOf(p, kind); setArc(p, kind, !was);
+    const was = !!arcOf(p, kind);
+    if (!was && !received(p, kind) && !confirm(`“${kind}” vēl nav saņemts — kartītē nav skenēta faila.\n\nVai tiešām atzīmēt, ka oriģināls nodots Centra arhīvam?`)) return CP.render();
+    setArc(p, kind, !was);
     D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: ${was ? 'atzīme noņemta' : 'nodots'}`]); CP.store.changed();
   };
   CP.changeHandlers.push(e => {
@@ -88,7 +90,9 @@
   };
   A.dvsToggle = arg => {
     const [id, i] = String(arg).split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind) return;
-    const was = !!dvsOf(p, kind); setDvs(p, kind, !was);
+    const was = !!dvsOf(p, kind);
+    if (!was && !received(p, kind) && !confirm(`“${kind}” vēl nav saņemts — kartītē nav skenēta faila.\n\nDVS reģistrē skenēto dokumentu. Vai tiešām atzīmēt kā reģistrētu DVS?`)) return CP.render();
+    setDvs(p, kind, !was);
     D.audit(p.id, 'update', [`DVS — ${kind}: ${was ? 'atzīme noņemta' : 'reģistrēts'}`]); CP.store.changed();
   };
   /** Reģistrācijas datuma maiņa (dokuments var būt reģistrēts citā dienā) */
@@ -107,6 +111,12 @@
     CP.store.changed(); CP.ui.toast(k === 'dvs' ? `DVS: visi dokumenti atzīmēti kā reģistrēti ${n} personām` : k === 'arhivs' ? `Centra arhīvs: visi dokumenti atzīmēti kā nodoti ${n} personām` : `${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
   };
 
+  /** Dokuments saņemts = kartītē ir skenēts fails (obligātajiem) vai vismaz ieraksts ar failu */
+  function received(p, kind) {
+    if ((S.db.settings.requiredDocs || []).includes(kind)) return !D.missingDocs(p).includes(kind);
+    return D.docsOf(p).some(d => d.kind === kind && d.path);
+  }
+  const addBtn = (p, kind) => `<button type="button" class="sm reg-add" data-act="attach" data-arg="${p.id}|${esc(kind)}" title="Pievienot skenētu dokumentu">＋ Fails</button>`;
   /** Kartītes sānu panelis */
   function personCard(p) {
     const list = on(); if (!list.length) return '';
@@ -115,10 +125,10 @@
       const docs = dvsDocs(), dm = D.dvsMissing(p), okN = docs.length - docs.filter(k => !dvsOf(p, k)).length;
       return `<div class="reg-group"><div class="reg-title"><b>DVS</b> <span class="pill ${okN === docs.length ? 'ok' : ''}">${okN}/${docs.length} reģistrēti</span></div>
         ${docs.map((kind, i) => {
-          const v = dvsOf(p, kind), inTool = !missTool.includes(kind);
-          return `<div class="reg-row ${v ? 'ok' : (fol ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="dvsToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
-            <span><b>${esc(kind)}</b><br><small class="muted">rīkā: ${inTool ? '<span class="okc">✓ pievienots</span>' : '<span class="warn">✗ nav pievienots</span>'}${v ? '' : (fol ? ' · DVS: <span class="warn">nav reģistrēts</span>' : '')}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS">` : ''}</div>`;
+          const v = dvsOf(p, kind), inTool = received(p, kind);
+          return `<div class="reg-row ${v ? 'ok' : !inTool ? 'nogot' : (fol ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="dvsToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
+            <span><b>${esc(kind)}</b><br><small class="muted">${inTool ? 'rīkā: <span class="okc">✓ pievienots</span>' : '<span class="red">✗ nav saņemts — vispirms pievieno skenētu failu</span>'}${v ? (inTool ? '' : ' · <span class="red">atzīmēts DVS bez faila rīkā</span>') : (fol && inTool ? ' · DVS: <span class="warn">nav reģistrēts</span>' : '')}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS">` : ''}${inTool ? '' : addBtn(p, kind)}</div>`;
         }).join('')}
         ${fol && dm.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē katru dokumentu, kad tas reģistrēts DVS. Datumu var nomainīt.</p>` : ''}</div>`;
     })() : '';
@@ -126,10 +136,10 @@
       const docs = arcDocs(), okN = docs.filter(k => arcOf(p, k)).length;
       return `<div class="reg-group"><div class="reg-title"><b>Centra arhīvs</b> <span class="pill ${okN === docs.length ? 'ok' : ''}">${okN}/${docs.length} nodoti</span></div>
         ${docs.map((kind, i) => {
-          const v = arcOf(p, kind), got = !missTool.includes(kind) || dvsOf(p, kind), miss = fol && !v && got;
-          return `<div class="reg-row ${v ? 'ok' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
-            <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : 'vēl nav saņemts'}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}</div>`;
+          const v = arcOf(p, kind), got = received(p, kind), miss = fol && !v && got;
+          return `<div class="reg-row ${v ? 'ok' : !got ? 'nogot' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
+            <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' + (got ? '' : ' · <span class="red">kartītē nav skenēta faila</span>') : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : '<span class="red">✗ vēl nav saņemts</span>'}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}${got ? '' : addBtn(p, kind)}</div>`;
         }).join('')}</div>`;
     })() : '';
     const ek = list.some(r => r.k === 'eklase') ? (() => {
