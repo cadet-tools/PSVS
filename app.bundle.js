@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.51.0';
+  CP.VERSION = '1.51.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -12710,7 +12710,20 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const text = (pg, t, x, y, { f = F.r, s = 10, c = C.ink, align } = {}) => { const str = clean(t), w = width(str, f, s); pg.drawText(str, { x: align === 'right' ? x - w : align === 'center' ? x - w / 2 : x, y, size: s, font: f, color: c }); return w; };
     function wrap(t, f, s, w) {
       const out = [];
-      for (const para of clean(t).split(/\n/)) { let line = ''; for (const word of para.split(/\s+/).filter(Boolean)) { const c = line ? line + ' ' + word : word; if (width(c, f, s) <= w || !line) line = c; else { out.push(line); line = word; } } out.push(line); }
+      for (const para of clean(t).split(/\n/)) {
+        let line = '';
+        for (let word of para.split(/\s+/).filter(Boolean)) {
+          const c = line ? line + ' ' + word : word;
+          if (width(c, f, s) <= w) { line = c; continue; }
+          if (line) { out.push(line); line = ''; }
+          while (width(word, f, s) > w) {   // ļoti garš vārds — dala pa burtiem
+            let k = 1; while (k < word.length && width(word.slice(0, k + 1), f, s) <= w) k++;
+            out.push(word.slice(0, k)); word = word.slice(k);
+          }
+          line = word;
+        }
+        out.push(line);
+      }
       return out;
     }
     const rect = (pg, x, y, w, h, color, o = {}) => pg.drawRectangle({ x, y, width: w, height: h, color, borderColor: o.border, borderWidth: o.border ? (o.bw || 0.8) : 0, opacity: o.op ?? 1 });
@@ -12745,14 +12758,15 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       const uh = 17 * MM, uw = ul ? Math.min(34 * MM, uh * ul.width / ul.height) : 0, uhh = ul ? uw * ul.height / ul.width : 0;
       if (ul) pg.drawImage(ul, { x: M, y: top - uhh, width: uw, height: uhh });
       if (o.unit.name) {
-        const nx = M + (ul ? uw + 10 : 0), lines = wrap(o.unit.name, F.x, 12.5, W - M - 46 * MM - nx).slice(0, 3);
+        const nx = M + (ul ? uw + 10 : 0), maxW = W - M - 38 * MM - 14 - nx, all = wrap(o.unit.name, F.x, 12.5, maxW), lines = all.slice(0, 3);
+        if (all.length > 3) { let l = lines[2]; while (l && width(l + '…', F.x, 12.5) > maxW) l = l.slice(0, -1); lines[2] = l + '…'; }
         const blockH = lines.length * 15, y0 = ul ? top - uhh / 2 + blockH / 2 - 11 : top - 11;
         lines.forEach((ln, i) => text(pg, ln, nx, y0 - i * 15, { f: F.x, s: 12.5, c: C.ink }));
         bottom = Math.min(bottom, y0 - (lines.length - 1) * 15 - 6);
       }
       if (ul) bottom = Math.min(bottom, top - uhh);
     }
-    y = Math.min(bottom - 18, H - 20 * MM);
+    y = Math.min(bottom - 26, H - 20 * MM);
     text(pg, 'JAUNSARGA KOPSAVILKUMS', M, y, { f: F.b, s: 9.5, c: C.brand }); y -= 30;
     text(pg, o.name, M, y, { f: F.x, s: 26, c: C.ink }); y -= 20;
     text(pg, `Periods: ${o.periodText}`, M, y, { s: 10.5, c: C.mut }); y -= 14;

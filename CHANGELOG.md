@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.51.1 — 2026-10-18
+- Kopsavilkuma PDF: CADET.LV logo augstākā izšķirtspējā ar caurspīdīgu malu (`vendor/brand/CADET_pdf.png`, 1200 px) — kreisā mala vairs neizskatās nogriezta. Garš vienības nosaukums tiek lauzts rindās (arī ļoti gari vārdi — pa burtiem), ne vairāk kā 3 rindas ar “…”, un nekad nepārklāj CADET.LV logo.
+
 ## 1.51.0 — 2026-10-18
 - `js/unit.js`: vienības nosaukums un logo (`settings.unit = { name, logo }`; attēls → PNG ≤ 512 px datu failā). Kartīte Iestatījumi → Pamata → “Vienība”; galvenes joslā kreisajā pusē (`#unitBadge`, platums ierobežots līdz centrētajam CADET.LV logo).
 - Kopsavilkuma PDF galvene: labajā pusē vienmēr CADET.LV logo ar uzrakstu “CADET PERSONĀLS”; kreisajā — vienības logo un nosaukums, ja logā atzīmēts “Ar vienības logo un nosaukumu” (`settings.summary.unit`, noklusējumā ieslēgts). Oficiālās veidlapas (instruktāžas lapa, nometnes žurnāls, līgumi, VFS protokols, apmeklējuma žurnāls) netiek mainītas — bez logo un uzrakstiem (pārbauda t120).
