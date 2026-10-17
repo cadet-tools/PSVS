@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
+      'Galvenē statuss **● Tiešsaiste / ○ Bezsaiste** (ar skaitli, ja izmaiņas gaida nosūtīšanu uz Google). Uzspiežot — detaļas un pogas “Sinhronizēt tagad”, “Sagatavot bezsaistei”.',
+      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~18 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
+    ] },
     { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
       'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',
       'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem. Personas var **importēt no e-klases** vai sava Excel saraksta.'
@@ -35,8 +39,7 @@
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
       'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**, un lieko failu vai apakšmapi var **dzēst** tieši rīkā (“✕ Dzēst”). Poga “Pārdēvēt” noņemta — Chrome to neļauj.',
       'Katru mapē esošu, vēl nepiesaistītu failu var **piesaistīt** — tad tas redzams sadaļā “Visi personas dokumenti”. Ir jauna kategorija **“Paskaidrojums”**; kategorijai **“Cits”** jāieraksta dokumenta nosaukums, un kartītē redzams tieši tas.',
-      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
-      'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
+      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē. Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz. Dokuments, kas vēl **nav saņemts**, sadaļā “Reģistrācija un arhīvs” ir **sarkans** ar pogu “＋ Fails”, un, mēģinot to atzīmēt DVS vai arhīvā, rīks brīdina.'
     ] },
     { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
@@ -88,9 +91,6 @@
       'Lapa **“Darbību žurnāls”** rāda visas izmaiņas datos: kas mainīts, no kā uz ko un kad. Iepriekšējo vērtību vai dzēstu ierakstu var **atjaunot**.',
       'Atver no Pārskata → “Pēdējās izmaiņas” vai no personas kartītes → Vēsture.'
     ] },
-    { v: '1.32.2', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
-      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
-    ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       'Ja rīku nelieto (noklusēti 5 min), ekrānu aizsedz lielais pulkstenis, un jaunsargu dati nav redzami. Ar **PIN kodu** to atbloķē tikai tu; PIN prasa arī, atverot rīku.',
       'Bloķēt uzreiz: poga **“🔒 Bloķēt rīku”** Pārskatā vai **Ctrl+Shift+L**. Aizmirstot PIN, kodu var saņemt e-pastā.'
@@ -121,7 +121,7 @@
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',
-      'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi.'
+      'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi. CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
     ] }
   ];
   CP.NEWS = NEWS;

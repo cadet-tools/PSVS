@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 43 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 44 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.46.0';
+  CP.VERSION = '1.47.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -5717,6 +5717,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
+      'Galvenē statuss **● Tiešsaiste / ○ Bezsaiste** (ar skaitli, ja izmaiņas gaida nosūtīšanu uz Google). Uzspiežot — detaļas un pogas “Sinhronizēt tagad”, “Sagatavot bezsaistei”.',
+      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~18 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
+    ] },
     { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
       'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',
       'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem. Personas var **importēt no e-klases** vai sava Excel saraksta.'
@@ -5739,8 +5743,7 @@ window.CP = window.CP || {};
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
       'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**, un lieko failu vai apakšmapi var **dzēst** tieši rīkā (“✕ Dzēst”). Poga “Pārdēvēt” noņemta — Chrome to neļauj.',
       'Katru mapē esošu, vēl nepiesaistītu failu var **piesaistīt** — tad tas redzams sadaļā “Visi personas dokumenti”. Ir jauna kategorija **“Paskaidrojums”**; kategorijai **“Cits”** jāieraksta dokumenta nosaukums, un kartītē redzams tieši tas.',
-      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
-      'Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
+      'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē. Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz. Dokuments, kas vēl **nav saņemts**, sadaļā “Reģistrācija un arhīvs” ir **sarkans** ar pogu “＋ Fails”, un, mēģinot to atzīmēt DVS vai arhīvā, rīks brīdina.'
     ] },
     { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
@@ -5792,9 +5795,6 @@ window.CP = window.CP || {};
       'Lapa **“Darbību žurnāls”** rāda visas izmaiņas datos: kas mainīts, no kā uz ko un kad. Iepriekšējo vērtību vai dzēstu ierakstu var **atjaunot**.',
       'Atver no Pārskata → “Pēdējās izmaiņas” vai no personas kartītes → Vēsture.'
     ] },
-    { v: '1.32.2', from: '1.32.0', date: '2026-10-16', title: 'CADET.LV', items: [
-      'CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
-    ] },
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       'Ja rīku nelieto (noklusēti 5 min), ekrānu aizsedz lielais pulkstenis, un jaunsargu dati nav redzami. Ar **PIN kodu** to atbloķē tikai tu; PIN prasa arī, atverot rīku.',
       'Bloķēt uzreiz: poga **“🔒 Bloķēt rīku”** Pārskatā vai **Ctrl+Shift+L**. Aizmirstot PIN, kodu var saņemt e-pastā.'
@@ -5825,7 +5825,7 @@ window.CP = window.CP || {};
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',
-      'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi.'
+      'Pārskatā pulkstenis ar hronometru un taimeri; rīks atgādina paņemt pauzi. CADET PERSONĀLS ir daļa no **CADET.LV** rīku saimes — logo rīka augšā ved uz cadet.lv.'
     ] }
   ];
   CP.NEWS = NEWS;
@@ -9122,7 +9122,7 @@ window.CP = window.CP || {};
   G()?.onToken(() => setTimeout(paintSync, 50));
   A.encGoSet = () => CP.ui.goSettingsCard('encCard');
   const paint = () => { const el = U.$('encCard'); if (el) el.outerHTML = card(); paintSync(); };
-  CP.encBackup = { localDir: () => (CFG && !isDrive(CFG) && CFG.dir) || null, card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
+  CP.encBackup = { pending: () => pending(), localDir: () => (CFG && !isDrive(CFG) && CFG.dir) || null, card, run, paint, paintSync, checkRemote, pull, state: () => ({ enabled: enabled(CFG), drive: isDrive(CFG), last: CFG?.last || null, remote: REMOTE, multi: !!CFG?.multi, device: DEV }) };
   // brīdinājums pārskatā: kopija sen nav atjaunota vai gaida atļauju
   { const orig = D.alerts; D.alerts = () => { const out = orig(); if (enabled(CFG) && S.root) { const age = CFG.last ? (Date.now() - new Date(CFG.last.at)) / 864e5 : 99; if (status === 'perm' || age > 7) out.push({ kind: 'backup', sev: 1, when: CFG.last?.at?.slice(0, 10) || '', msg: status === 'perm' ? 'Šifrētajai rezerves kopijai vajag atļauju — Iestatījumos spied “Izveidot kopiju tagad”' : `Šifrētā rezerves kopija nav atjaunota ${CFG.last ? Math.floor(age) + ' dienas' : 'ne reizi'} — Iestatījumos spied “Izveidot kopiju tagad”` }); } return out; }; }
 
@@ -11356,6 +11356,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const pendingCal = () => list().filter(e => (!e.gcalId || e.gsig !== sig(e)) && endDay(e) >= addDays(U.iso(), -60)).length + delQ().length;
   CP.google.needs.push(() => S.db && gc().calendarId && gc().clientId && pendingCal() ? { what: 'kalendārs', scope: 'cal' } : null);
   CP.google.onToken(() => { if (CP.google.has('cal')) autoSync(); });
+  CP.gcal = { pending: () => (S.db ? pendingCal() : 0), enabled: () => !!(S.db && gc().calendarId && gc().clientId), sync: interactive => sync(!!interactive), lastSync: () => gc().lastSync || '' };
   A.gcalSync = () => sync(true);
   /* Google savienošanas palīgs: soļi ar tiešajām saitēm, kopēšanas pogām un atzīmēm “izdarīts” */
   const HKEY = 'cp.gcalSteps';
@@ -12538,6 +12539,159 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
 })(window.CP);
 
 
+/* ==== js/offline.js ==== */
+/* =====================================================================
+   Tiešsaiste / bezsaiste
+   • Statuss galvenē: ● Tiešsaiste / ○ Bezsaiste (+ cik izmaiņu gaida Google).
+   • Darbs bezsaistē: visas bibliotēkas un veidnes (vendor/offline.json)
+     tiek iepriekš saglabātas pārlūka kešā “cadet-vendor”; mainītie faili
+     atjaunojas pēc kontrolsummas. Personu dati un dokumenti kešā nenonāk.
+   • Kad savienojums atjaunojas: šifrētā kopija Google Drive un Google
+     kalendārs tiek sinhronizēti automātiski; ja vajag pieslēgties Google —
+     paziņojums ar pogu.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const VCACHE = 'cadet-vendor', MKEY = 'cp.offlineMap';
+  const st = { online: navigator.onLine, ready: null, done: 0, total: 0, bytes: 0, running: false, error: '', since: Date.now() };
+  const canCache = () => CP.WEB && 'caches' in window && 'serviceWorker' in navigator;
+  const mapGet = () => { try { return JSON.parse(localStorage.getItem(MKEY) || '{}'); } catch (e) { return {}; } };
+  const mapSet = m => { try { localStorage.setItem(MKEY, JSON.stringify(m)); } catch (e) { } };
+  const abs = f => new URL(CP.VENDOR + f, location.href).href;
+
+  async function manifest(net) {
+    const url = abs('offline.json');
+    if (net) {
+      const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw Error('bezsaistes saraksts nav atrasts');
+      const j = await r.clone().json(); (await caches.open(VCACHE)).put(url, r); return j;
+    }
+    const hit = await (await caches.open(VCACHE)).match(url); return hit ? hit.json() : null;
+  }
+  /** Pārbauda, vai visi faili ir kešā (bez tīkla) */
+  async function check() {
+    if (!canCache()) { st.ready = null; return paint(); }
+    try {
+      const m = await manifest(false); if (!m) { st.ready = false; st.total = 0; st.done = 0; return paint(); }
+      const c = await caches.open(VCACHE), map = mapGet(); let n = 0;
+      for (const x of m.files) if (map[x.f] === x.h && await c.match(abs(x.f), { ignoreSearch: true })) n++;
+      st.total = m.files.length; st.done = n; st.ready = n === m.files.length;
+    } catch (e) { st.ready = false; }
+    paint();
+  }
+  /** Lejupielādē trūkstošos vai mainītos failus */
+  async function prepare(manual) {
+    if (!canCache()) { if (manual) ui.toast('Bezsaistes režīms pieejams tikai tīmekļa versijā (https).', 'warn'); return; }
+    if (st.running) return; if (!navigator.onLine) { if (manual) ui.toast('Nav interneta — sagatavot bezsaistei var, kad savienojums ir.', 'warn'); return; }
+    st.running = true; st.error = ''; paint();
+    try {
+      const m = await manifest(true), c = await caches.open(VCACHE), map = mapGet();
+      st.total = m.files.length; st.done = 0; st.bytes = 0;
+      for (const x of m.files) {
+        const url = abs(x.f);
+        if (!(map[x.f] === x.h && await c.match(url, { ignoreSearch: true }))) {
+          const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw Error(`${x.f}: ${r.status}`);
+          await c.put(url, r); map[x.f] = x.h; mapSet(map); st.bytes += x.s;
+        }
+        st.done++; paint();
+      }
+      for (const k of Object.keys(map)) if (!m.files.some(x => x.f === k)) delete map[k];
+      mapSet(map); st.ready = true;
+      if (manual) ui.toast('✓ Rīks sagatavots darbam bezsaistē', 'ok', 5000);
+    } catch (e) { st.error = e.message; st.ready = false; if (manual) ui.toast('Bezsaistei neizdevās sagatavot: ' + e.message, 'warn', 9000); }
+    finally { st.running = false; paint(); }
+  }
+
+  /* --- Sinhronizācija ar Google, kad savienojums atjaunojas --- */
+  const pend = () => {
+    const out = [], E = CP.encBackup?.state?.(), G = CP.google;
+    if (E?.enabled && E.drive && CP.encBackup.pending?.()) out.push({ k: 'drive', l: 'šifrētā kopija Google Drive', scope: 'drive', ok: () => G?.has('drive') });
+    if (CP.gcal?.enabled() && CP.gcal.pending()) out.push({ k: 'cal', l: `Google kalendārs (${CP.gcal.pending()})`, scope: 'cal', ok: () => G?.has('cal') });
+    return out;
+  };
+  let syncing = false;
+  async function syncAll(manual) {
+    if (syncing || !S.root) return; const list = pend();
+    if (!list.length) { if (manual) ui.toast('Viss jau sinhronizēts ar Google', 'ok', 4000); return; }
+    if (!navigator.onLine) return manual && ui.toast('Nav interneta — sinhronizēs, kad savienojums atjaunosies.', 'warn', 7000);
+    syncing = true; paint();
+    const need = [], done = [];
+    try {
+      for (const x of list) {
+        if (!x.ok()) { need.push(x); continue; }
+        try { if (x.k === 'drive') await CP.encBackup.run({ quiet: true }); else await CP.gcal.sync(false); done.push(x.l); }
+        catch (e) { need.push(x); }
+      }
+    } finally { syncing = false; paint(); }
+    if (need.length) {
+      CP.google?.paintBanner?.();
+      ui.toast(`Savienojums ir. Lai nosūtītu izmaiņas (${need.map(x => x.l).join(', ')}), pieslēdzies Google.`, 'warn', 15000, { act: 'netConnect', label: 'Pieslēgties' });
+    } else if (done.length && !manual) ui.toast(`Savienojums atjaunots — izmaiņas nosūtītas: ${done.join(', ')}`, 'ok', 7000);
+    else if (done.length) ui.toast(`Sinhronizēts: ${done.join(', ')}`, 'ok', 5000);
+  }
+  A.netConnect = async () => {
+    const list = pend(), scopes = [...new Set(list.map(x => x.scope))]; if (!scopes.length) return;
+    if (await CP.google.token(scopes, true)) syncAll(true);
+  };
+  A.netSync = () => syncAll(true);
+  A.netPrepare = () => prepare(true);
+
+  /* --- Statuss galvenē --- */
+  function pill() {
+    const p = pend().length;
+    return st.online
+      ? `<span class="net-dot on"></span>Tiešsaiste${p ? ` <span class="net-badge" title="Izmaiņas gaida nosūtīšanu uz Google">${p}</span>` : ''}${st.running ? ' <span class="muted">· sagatavo bezsaistei ' + Math.round(st.done / Math.max(1, st.total) * 100) + '%</span>' : ''}`
+      : `<span class="net-dot off"></span>Bezsaiste${p ? ` <span class="net-badge" title="Izmaiņas nosūtīs, kad būs internets">${p}</span>` : ''}`;
+  }
+  function paint() {
+    let b = U.$('netPill');
+    const host = U.$('yearPick'); if (!host) return;
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'netPill'; b.className = 'net-pill'; b.dataset.act = 'netInfo'; host.parentNode.insertBefore(b, host); }
+    b.classList.toggle('offline', !st.online);
+    b.title = st.online ? 'Ir interneta savienojums' + (st.ready ? ' · rīks gatavs darbam bezsaistē' : st.ready === false ? ' · rīks vēl nav pilnībā sagatavots bezsaistei' : '') : 'Nav interneta — darbs turpinās, dati glabājas datorā';
+    const h = pill(); if (b.dataset.h !== h) { b.innerHTML = h; b.dataset.h = h; }
+    if (U.$('netDialog')?.open) info();
+  }
+  function info() {
+    let d = U.$('netDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'netDialog'; document.body.appendChild(d); }
+    const p = pend(), E = CP.encBackup?.state?.(), last = E?.last?.at;
+    const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
+    d.innerHTML = `<header class="dlg-head"><h2>${st.online ? '● Tiešsaiste' : '○ Bezsaiste'}</h2><button type="button" class="ghost" data-close="netDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body net-info">
+        <p style="margin-top:0">${st.online ? 'Ir interneta savienojums.' : 'Nav interneta. <b>Darbs turpinās</b> — personas, dokumenti un izmaiņas glabājas tavā datu mapē datorā. Google kopija un kalendārs tiks atjaunināti, kad savienojums atjaunosies.'}</p>
+        <h4>Darbs bezsaistē</h4>
+        <p class="small">${st.ready === null ? 'Šajā versijā (atvērts no datora faila) bezsaistes kešs nav vajadzīgs — viss jau ir datorā.' : st.running ? `Sagatavo… ${st.done}/${st.total} (${pct}%)` : st.ready ? '✓ Rīks gatavs darbam bezsaistē: Word un PDF skatīšana, veidlapas, līgumi, anketu nolasīšana, personas lietas paka.' : `⚠ Vēl nav pilnībā sagatavots (${st.done}/${st.total || '?'})${st.error ? ' — ' + esc(st.error) : ''}. Bez tā bezsaistē var nestrādāt Word skatīšana, PDF veidlapas, līgumi un anketu nolasīšana.`}</p>
+        ${st.ready === null ? '' : `<div class="actions"><button type="button" class="sm ${st.ready ? '' : 'mainbtn'}" data-act="netPrepare" ${st.running || !st.online ? 'disabled' : ''}>${st.ready ? 'Pārbaudīt atjauninājumus' : 'Sagatavot bezsaistei'} (~${Math.round(18)} MB)</button></div>`}
+        <h4>Sinhronizācija ar Google</h4>
+        ${p.length ? `<p class="small">Gaida nosūtīšanu: <b>${esc(p.map(x => x.l).join(', '))}</b>.</p>` : `<p class="small">Viss nosūtīts.${last ? ' Pēdējā kopija: ' + esc(U.fmtDateTime(last)) + '.' : ''}${CP.gcal?.lastSync() ? ' Kalendārs: ' + esc(U.fmtDateTime(CP.gcal.lastSync())) + '.' : ''}</p>`}
+        ${p.length ? `<div class="actions"><button type="button" class="sm mainbtn" data-act="netSync" ${st.online ? '' : 'disabled'}>⟳ Sinhronizēt tagad</button></div>` : ''}
+        <p class="small muted">Bez interneta nestrādā arī: “Ziņot”, WhatsApp / Signal saites, Google Vision atpazīšana un atjauninājumu pārbaude.</p>
+      </div>`;
+    if (!d.open) d.showModal();
+  }
+  A.netInfo = () => { check().then(info); };
+
+  /* --- Notikumi --- */
+  async function reallyOnline() {
+    try { const r = await fetch(new URL('version.json', location.href).href + '?t=' + Date.now(), { cache: 'no-store' }); return r.ok; } catch (e) { return false; }
+  }
+  addEventListener('offline', () => {
+    st.online = false; st.since = Date.now(); paint();
+    ui.toast('Nav interneta. Darbs turpinās — dati glabājas datorā; Google kopija un kalendārs tiks atjaunināti vēlāk.', 'warn', 8000);
+  });
+  addEventListener('online', () => setTimeout(async () => {
+    if (!(await reallyOnline())) return;
+    const was = st.online; st.online = true; paint();
+    if (!was) { await syncAll(false); if (!st.ready) prepare(false); }
+  }, 2500));
+  // sākumā: statuss, pārbaude un (tiešsaistē) fona sagatavošana
+  setTimeout(async () => { paint(); await check(); if (st.online && st.ready === false) prepare(false); }, 6000);
+  CP.afterRender = CP.afterRender || []; CP.afterRender.push(() => paint());
+  setInterval(paint, 60000);
+  CP.offline = { state: () => ({ ...st }), prepare, check, syncAll, pending: pend };
+})(window.CP);
+
+
 /* ==== js/perms.js ==== */
 /* =====================================================================
    Iestatījumi → Atļaujas: kuras pārlūka atļaujas rīks izmanto, kāds ir
@@ -12596,7 +12750,13 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       why: 'Vajadzīgi Google pieteikšanās logam. Ja tie bloķēti, pieslēgties Google nevar.',
       state: popupOk === null ? 'off' : popupOk ? 'ok' : 'bad', label: popupOk === null ? 'Nav pārbaudīts' : popupOk ? 'Atļauti' : 'Bloķēti',
       btn: 'Pārbaudīt', act: 'permPopup' });
-    // 6. Paziņojumi
+    // 6. Darbs bezsaistē (bibliotēkas un veidnes pārlūka kešā)
+    const off = CP.offline?.state?.();
+    if (off && off.ready !== null) out.push({ k: 'offline', icon: 'download', title: 'Darbs bezsaistē (bibliotēkas un veidnes kešā)', need: false,
+      why: 'Bez tā bez interneta var nestrādāt Word skatīšana, PDF veidlapas, līgumi un anketu nolasīšana. Personu dati kešā nenonāk.',
+      state: off.ready ? 'ok' : off.running ? 'ask' : 'off', label: off.ready ? 'Gatavs' : off.running ? `Sagatavo ${off.done}/${off.total}` : `Nav pilnībā (${off.done}/${off.total || '?'})`,
+      btn: off.ready || off.running ? '' : 'Sagatavot', act: 'netPrepare' });
+    // 7. Paziņojumi
     const np = 'Notification' in window ? Notification.permission : 'unsupported';
     out.push({ k: 'notif', icon: 'bell', title: 'Paziņojumi uz darbvirsmas', need: false,
       why: 'Atgādinājumi par grafika notikumiem, kad rīks nav priekšplānā. Bez tiem atgādinājumi redzami tikai rīkā.',

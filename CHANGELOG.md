@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.47.0 — 2026-10-17
+- `js/offline.js`: statuss galvenē (`#netPill`), logs `netDialog`; bezsaistes sagatavošana — `vendor/offline.json` (būvē `build_web.py`: visi vendor faili ar izmēru un sha1) → kešs `cadet-vendor` (nemainīgs nosaukums, neatkarīgs no versijas; mainītie faili atjaunojas pēc kontrolsummas, `localStorage cp.offlineMap`). Sākas fonā 6 s pēc atvēršanas, ja tiešsaistē un nav gatavs. Rinda arī Iestatījumi → Atļaujas.
+- Pēc `online` (pārbaudīts ar `version.json`): `encBackup.run({quiet})` un `CP.gcal.sync(false)`, ja ir neiesūtītas izmaiņas un derīgs Google savienojums; citādi paziņojums ar “Pieslēgties” (`netConnect`). `CP.gcal` un `CP.encBackup.pending` eksportēti.
+- Service worker: vendor faili glabājas `cadet-vendor`; veidne (docx/xlsx), kuras nav kešā, bezsaistē vairs neatgriež `index.html` (agrāk — klusi bojāts līgums), bet kļūdu. `vendor/offline.json` vienmēr no tīkla.
+
 ## 1.46.0 — 2026-10-17
 - Kopēšanas pogas kartītē: `ui.dl` 4. elements — `"pid|lauks"`, `A.copyField` (personas kods — `U.fmtCode`, datumi — `U.fmtDate`, tālrunis — `U.prettyPhone`, `_full` — vārds, uzvārds).
 - Nodošana: `A.transferUndo` (“↶ Atcelt nodošanu”) — atjauno no arhīva (ja iemesls “Pārgāja pie cita instruktora”), atgriež ar šo nodošanu slēgto ekipējumu, noņem `transferredTo`, piezīme. Piezīmēs: nododot — “Pārgāja no … uz …”, pārņemot — “Pārgājis no … uz …” (bija “Pārņemts/Pārnācis no …”). Dalībā pasākumos viens pasākums (Apmeklējums + Veidlapas) vairs neatkārtojas.

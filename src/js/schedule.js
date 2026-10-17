@@ -348,6 +348,7 @@
   const pendingCal = () => list().filter(e => (!e.gcalId || e.gsig !== sig(e)) && endDay(e) >= addDays(U.iso(), -60)).length + delQ().length;
   CP.google.needs.push(() => S.db && gc().calendarId && gc().clientId && pendingCal() ? { what: 'kalendārs', scope: 'cal' } : null);
   CP.google.onToken(() => { if (CP.google.has('cal')) autoSync(); });
+  CP.gcal = { pending: () => (S.db ? pendingCal() : 0), enabled: () => !!(S.db && gc().calendarId && gc().clientId), sync: interactive => sync(!!interactive), lastSync: () => gc().lastSync || '' };
   A.gcalSync = () => sync(true);
   /* Google savienošanas palīgs: soļi ar tiešajām saitēm, kopēšanas pogām un atzīmēm “izdarīts” */
   const HKEY = 'cp.gcalSteps';

@@ -76,6 +76,16 @@ for s in (192, 512):
 with open(f'{v}/LICENCES.txt', 'a', encoding='utf-8') as f:
     f.write('\nTesseract.js 7.0.0 un tesseract.js-core 7.0.0 — Apache-2.0 (https://github.com/naptha/tesseract.js). Valodu dati lav/eng 4.0.0_best_int — Apache-2.0 (tesseract-ocr/tessdata).\n')
 
+# bezsaistes saraksts: visi vendor faili ar izmēru un īsu kontrolsummu (rīks tos iepriekš saglabā kešā)
+import hashlib
+_off = []
+for _r, _d, _fs in os.walk(v):
+    for _f in sorted(_fs):
+        _p = os.path.join(_r, _f); _rel = os.path.relpath(_p, v).replace(os.sep, '/')
+        if _rel == 'offline.json' or _rel.endswith('.txt'): continue
+        _off.append({'f': _rel, 's': os.path.getsize(_p), 'h': hashlib.sha1(open(_p, 'rb').read()).hexdigest()[:12]})
+json.dump({'files': sorted(_off, key=lambda x: x['f'])}, open(f'{v}/offline.json', 'w', encoding='utf-8'))
+
 # avots uzturēšanai
 os.makedirs(f'{repo}/src')
 for d in ['js', 'css']: shutil.copytree(f'{src}/{d}', f'{repo}/src/{d}')

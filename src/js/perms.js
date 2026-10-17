@@ -55,7 +55,13 @@
       why: 'Vajadzīgi Google pieteikšanās logam. Ja tie bloķēti, pieslēgties Google nevar.',
       state: popupOk === null ? 'off' : popupOk ? 'ok' : 'bad', label: popupOk === null ? 'Nav pārbaudīts' : popupOk ? 'Atļauti' : 'Bloķēti',
       btn: 'Pārbaudīt', act: 'permPopup' });
-    // 6. Paziņojumi
+    // 6. Darbs bezsaistē (bibliotēkas un veidnes pārlūka kešā)
+    const off = CP.offline?.state?.();
+    if (off && off.ready !== null) out.push({ k: 'offline', icon: 'download', title: 'Darbs bezsaistē (bibliotēkas un veidnes kešā)', need: false,
+      why: 'Bez tā bez interneta var nestrādāt Word skatīšana, PDF veidlapas, līgumi un anketu nolasīšana. Personu dati kešā nenonāk.',
+      state: off.ready ? 'ok' : off.running ? 'ask' : 'off', label: off.ready ? 'Gatavs' : off.running ? `Sagatavo ${off.done}/${off.total}` : `Nav pilnībā (${off.done}/${off.total || '?'})`,
+      btn: off.ready || off.running ? '' : 'Sagatavot', act: 'netPrepare' });
+    // 7. Paziņojumi
     const np = 'Notification' in window ? Notification.permission : 'unsupported';
     out.push({ k: 'notif', icon: 'bell', title: 'Paziņojumi uz darbvirsmas', need: false,
       why: 'Atgādinājumi par grafika notikumiem, kad rīks nav priekšplānā. Bez tiem atgādinājumi redzami tikai rīkā.',
