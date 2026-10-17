@@ -33,7 +33,10 @@
         </div>
         <label class="check"><input type="checkbox" name="docs" checked> Dokumentu faili (${docs.length})</label>
         <label class="check"><input type="checkbox" name="hist" checked> Dalība, apmeklējums un kvalifikācijas</label>
-        <label class="check"><input type="checkbox" name="eq" checked> Ekipējuma saraksts${eq.length ? ` <span class="warn">(${eq.length} neatdoti)</span>` : ''}</label>
+        <div class="field" style="margin:6px 0"><label>Ekipējums${eq.length ? ` <span class="warn">(${eq.length} neatdoti)</span>` : ''}</label><select name="eq">
+          <option value="list">Tikai saraksts informācijai — ekipējums paliek manā uzskaitē</option>
+          ${eq.length ? `<option value="hand">Nodot jaunajam instruktoram (viņš pārņem MTL) — manā uzskaitē atzīmēt kā nodotu</option>` : ''}
+          <option value="none">Neiekļaut</option></select></div>
         <label class="check"><input type="checkbox" name="notes"> Piezīmes</label>
         <label class="check"><input type="checkbox" name="inc"> Uzvedība un pārkāpumi</label>
         <hr>
@@ -44,7 +47,7 @@
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="trOutDialog">Atcelt</button><button class="mainbtn" type="submit">⇪ Sagatavot paku</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => {
       e.preventDefault(); const f = e.target, btn = f.querySelector('[type=submit]');
-      const o = { toName: f.toName.value.trim(), toUnit: f.toUnit.value.trim(), docs: f.docs.checked, hist: f.hist.checked, eq: f.eq.checked, notes: f.notes.checked, inc: f.inc.checked, archive: f.archive.checked && !f.archive.disabled };
+      const o = { toName: f.toName.value.trim(), toUnit: f.toUnit.value.trim(), docs: f.docs.checked, hist: f.hist.checked, eq: f.eq.value !== 'none', eqHand: f.eq.value === 'hand', notes: f.notes.checked, inc: f.inc.checked, archive: f.archive.checked && !f.archive.disabled };
       btn.disabled = true; btn.textContent = 'Sagatavo…';
       try { await buildOut(p, o); d.close(); }
       catch (err) { console.error(err); ui.toast('Paku neizdevās sagatavot: ' + err.message, 'err', 10000); btn.disabled = false; btn.textContent = '⇪ Sagatavot paku'; }
@@ -87,7 +90,8 @@
       ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
       const r = D.attRate ? D.attRate(p) : null; if (r) out.attendance = { present: r.present, absent: r.absent, excused: r.excused, pct: r.pct };
     }
-    if (o.eq) out.equipment = S.db.equipment.filter(e => e.personId === p.id && !e.returned).map(e => ({ item: e.item, qty: e.qty || 1, size: e.size || '', inventory: e.inventory || '', issued: e.issued || '', gift: !!e.keep, notes: e.notes || '' }));
+    if (o.eq) out.equipment = S.db.equipment.filter(e => e.personId === p.id && !e.returned).map(e => ({ item: e.item, qty: e.qty || 1, size: e.size || '', inventory: e.inventory || '', issued: e.issued || '', due: e.due || '', gift: !!e.keep, notes: e.notes || '' }));
+    out.equipmentHandover = !!o.eqHand;   // jaunais instruktors pārņem MTL
     if (o.notes) out.notes = (p.noteLog || []).map(n => ({ at: n.at, text: n.text }));
     if (o.inc) out.incidents = (p.incidents || []).map(x => ({ date: x.date, type: x.type || '', severity: x.severity || '', text: x.text || '', action: x.action || '' }));
     zip.file('CADET_persona.json', JSON.stringify(out, null, 2));
@@ -96,6 +100,10 @@
     const name = `Personas_lieta_${safe(p.last)}_${safe(p.first)}_${U.iso()}.zip`.replace(/ /g, '_');
     U.download(blob, name);
     p.transferredTo = { name: o.toName, unit: o.toUnit, at: U.now() };
+    if (o.eqHand) for (const e of S.db.equipment.filter(x => x.personId === p.id && !x.returned && !x.keep)) {   // MTL pārņem cits instruktors — manā uzskaitē slēgts
+      e.returned = U.iso(); e.returnNote = `Nodots instruktoram${o.toName ? ' ' + o.toName : ''}${o.toUnit ? ' (' + o.toUnit + ')' : ''} — MTL pārņemts`; e.handedTo = { name: o.toName, unit: o.toUnit, at: U.now() }; e.changedAt = U.now();
+      D.audit(p.id, 'eq-edit', [e.item + ' — nodots citam instruktoram']);
+    }
     D.audit(p.id, 'update', [`Sagatavota nodošanas paka${o.toName ? ' — ' + o.toName : ''}`]);
     if (o.archive) CP.people.archivePerson(p, { left: U.iso(), reason: `Pārgāja pie cita instruktora${o.toName || o.toUnit ? ': ' + [o.toName, o.toUnit].filter(Boolean).join(', ') : ''}` });
     CP.store.changed(); CP.render();
@@ -118,7 +126,7 @@ ${SEC.map(([k, l]) => rows(k) ? `<h2>${e(l)}</h2><table>${rows(k)}</table>` : ''
 ${o.quals.length || o.participation.length || o.attendance ? `<h2>Kvalifikācijas</h2>${tbl(['Kvalifikācija', 'Datums', 'Piezīme'], o.quals, q => `<tr><td>${e(q.name)}</td><td>${dt(q.date)}</td><td>${e(q.note)}</td></tr>`)}
 <h2>Dalība pasākumos</h2>${tbl(['Datums', 'Veids', 'Nosaukums'], o.participation, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.title)}</td></tr>`)}
 ${o.attendance ? `<p>Nodarbību apmeklējums šajā mācību gadā: <b>${o.attendance.pct ?? '—'}${o.attendance.pct != null ? '%' : ''}</b> (bija ${o.attendance.present}, nebija ${o.attendance.absent}, attaisnoti ${o.attendance.excused}).</p>` : ''}` : ''}
-${o.equipment.length ? `<h2>Neatdotais ekipējums</h2>${tbl(['Priekšmets', 'Daudz.', 'Izmērs', 'Inv. nr.', 'Izsniegts'], o.equipment, x => `<tr><td>${e(x.item)}${x.gift ? ' <span class="m">(dāvinājums)</span>' : ''}</td><td>${e(x.qty)}</td><td>${e(x.size)}</td><td>${e(x.inventory)}</td><td>${dt(x.issued)}</td></tr>`)}` : ''}
+${o.equipment.length ? `<h2>${o.equipmentHandover ? 'Ekipējums — nodots jaunajam instruktoram (MTL pārņem)' : 'Neatdotais ekipējums (informācijai)'}</h2>${tbl(['Priekšmets', 'Daudz.', 'Izmērs', 'Inv. nr.', 'Izsniegts'], o.equipment, x => `<tr><td>${e(x.item)}${x.gift ? ' <span class="m">(dāvinājums)</span>' : ''}</td><td>${e(x.qty)}</td><td>${e(x.size)}</td><td>${e(x.inventory)}</td><td>${dt(x.issued)}</td></tr>`)}` : ''}
 ${o.notes.length ? `<h2>Piezīmes</h2>${o.notes.map(n => `<p><span class="m">${dt(n.at)}</span> ${e(n.text)}</p>`).join('')}` : ''}
 ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids', 'Apraksts', 'Rīcība'], o.incidents, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.text)}</td><td>${e(x.action)}</td></tr>`)}` : ''}
 </body></html>`;
@@ -159,17 +167,19 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
           <div class="field"><label>Grupa (${esc(U.yearLabel(D.activeYear()))})</label><input name="group" list="dl_groups" value="${esc(dup ? D.groupOf(dup) : '')}" placeholder="var atstāt tukšu"></div>
           <div class="field"><label>Statuss</label><select name="status"><option value="active">Jaunsargs</option><option value="candidate">Kandidāts</option></select></div>
         </div>
-        <p class="small muted">Dokumentu faili tiek iekopēti personas mapē (apakšmapē “Parnemtie”). Ekipējums netiek pievienots — tas pieder iepriekšējai vienībai; saraksts saglabājas piezīmē.</p>
+        ${o.equipment?.length ? `<label class="check"><input type="checkbox" name="eqIn" ${o.equipmentHandover ? 'checked' : ''}> Ievietot ekipējumu manā uzskaitē (${o.equipment.length}: ${esc(o.equipment.map(x => x.item).join(', '))}) — es pārņemu MTL</label>
+          <p class="small muted" style="margin-top:2px">${o.equipmentHandover ? 'Iepriekšējais instruktors ekipējumu nodeva tev.' : 'Iepriekšējais instruktors ekipējumu atstāja savā uzskaitē — ievieto tikai tad, ja esat vienojušies.'} Ja neievieto, saraksts saglabājas piezīmē.</p>` : ''}
+        <p class="small muted">Dokumentu faili tiek iekopēti personas mapē (apakšmapē “Parnemtie”).</p>
       </div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="trInDialog">Atcelt</button><button class="mainbtn" type="submit">⇩ Pārņemt</button></footer></form>`);
     d.querySelector('form').onsubmit = async e => {
       e.preventDefault(); const f = e.target, btn = f.querySelector('[type=submit]'); btn.disabled = true; btn.textContent = 'Pārņem…';
-      try { const p = await doImport(f.mode.value === 'merge' ? dup : null, f.group.value.trim(), f.status.value); d.close(); if (p) ui.go('person', { person: p.id, tab: 'docs' }); }
+      try { const p = await doImport(f.mode.value === 'merge' ? dup : null, f.group.value.trim(), f.status.value, !!f.eqIn?.checked); d.close(); if (p) ui.go('person', { person: p.id, tab: 'docs' }); }
       catch (err) { console.error(err); ui.toast('Neizdevās pārņemt: ' + err.message, 'err', 10000); btn.disabled = false; btn.textContent = '⇩ Pārņemt'; }
     };
     d.showModal();
   }
-  async function doImport(existing, group, status) {
+  async function doImport(existing, group, status, eqIn) {
     const o = pkg.json, P = o.person, keys = PERSON_KEYS(), from = [o.from?.name, o.from?.unit].filter(Boolean).join(', ');
     let p = existing;
     if (p) {
@@ -210,7 +220,11 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     if (o.years?.length) lines.push('Iepriekšējie gadi: ' + o.years.map(y => `${y.year}${y.group ? ' ' + y.group : ''}`).join('; '));
     if (o.attendance?.pct != null) lines.push(`Apmeklējums iepriekšējā vienībā: ${o.attendance.pct}%`);
     if (o.participation?.length) lines.push('Pasākumi: ' + o.participation.map(x => `${U.fmtDate(x.date)} ${x.type}${x.title ? ' ' + x.title : ''}`).join('; '));
-    if (o.equipment?.length) lines.push('Ekipējums no iepriekšējās vienības: ' + o.equipment.map(x => `${x.item}${x.qty > 1 ? ' ×' + x.qty : ''}${x.inventory ? ' (' + x.inventory + ')' : ''}`).join(', '));
+    if (eqIn) for (const x of o.equipment || []) {
+      S.db.equipment.push({ id: U.uid(), personId: p.id, item: x.item, qty: Number(x.qty) || 1, size: x.size || '', inventory: x.inventory || '', issued: x.issued || U.iso(), due: x.due || '', returned: '', notes: [x.notes, `pārņemts no ${from || 'cita instruktora'}`].filter(Boolean).join(' · '), ...(x.gift ? { keep: true, keepAt: x.issued || U.iso() } : {}), changedAt: x.issued ? x.issued + 'T00:00:00' : U.now(), yearId: D.activeYear(), src: 'transfer' });
+      D.audit(p.id, 'eq-issue', [`${x.item} (pārņemts)`]);
+    }
+    if (o.equipment?.length && !eqIn) lines.push('Ekipējums no iepriekšējās vienības: ' + o.equipment.map(x => `${x.item}${x.qty > 1 ? ' ×' + x.qty : ''}${x.inventory ? ' (' + x.inventory + ')' : ''}`).join(', '));
     for (const x of o.notes || []) lines.push(`Piezīme (${U.fmtDate(String(x.at).slice(0, 10))}): ${x.text}`);
     (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: lines.join('\n') });
     for (const x of o.incidents || []) (p.incidents = p.incidents || []).push({ id: U.uid(), date: x.date, type: x.type, severity: x.severity || 'note', text: x.text + ' (no iepriekšējās vienības)', action: x.action, at: U.now() });

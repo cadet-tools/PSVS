@@ -13,9 +13,9 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
-      'Kartītē (⋯) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, ekipējums, piezīmes, pārkāpumi), un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
-      'Personu sarakstā **“⇩ Pārņemt no cita instruktora”** — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
+    { v: '1.45.1', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
+      'Kartītē (⋯) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
+      'Personu sarakstā **“⇩ Pārņemt no cita instruktora”** — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
     ] },
     { v: '1.44.2', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',

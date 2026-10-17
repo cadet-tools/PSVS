@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.45.1 — 2026-10-17
+- Nodošana: ekipējums — “tikai saraksts” / “nodot jaunajam instruktoram (MTL)” / “neiekļaut”. Nododot: `equipmentHandover: true`, savā uzskaitē neatdotie (ne dāvinājumi) tiek slēgti ar `returnNote` “Nodots instruktoram … — MTL pārņemts” un `handedTo`. Pārņemot: “Ievietot ekipējumu manā uzskaitē” (ieslēgts, ja nodots) — ieraksti ar `src: transfer`, `changedAt` = izsniegšanas datums (MTL nav uzreiz “novecojusi”).
+
 ## 1.45.0 — 2026-10-17
 - `js/transfer.js`: `A.transferOut` — ZIP (JSZip) ar `CADET_persona.json` (`format: cadet-person-transfer`, v1: no/kam, personas lauki no `CP.FIELDS`, gadi, dokumenti ar faila ceļu, kvalifikācijas, dalība, apmeklējums, neatdotais ekipējums, pēc izvēles piezīmes un pārkāpumi), `Personas_lieta.html` (patstāvīgs pārskats ar saitēm uz `dokumenti/…`) un dokumentu failiem; `p.transferredTo`, pēc izvēles arhivēšana. `A.transferIn` — ZIP vai JSON, dublikātu meklēšana (personas kods vai vārds+uzvārds+dz. datums) ar “papildināt esošo”, dokumenti → `<personas mape>/Parnemtie/`, kvalifikācijas pēc nosaukuma, vēsture — piezīmju žurnālā; ekipējums netiek veidots.
 - Jauns neobligāts personas lauks `fromInstructor` (“Pārnācis no cita instruktora”, sadaļa Mācības); kartītes galvenē “↪ no: …” un “⇪ nodots: …”.
