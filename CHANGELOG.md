@@ -1,5 +1,10 @@
 # Izmaiņu vēsture
 
+## 1.44.0 — 2026-10-17
+- `js/evdocs.js` — kopīgs pasākumu dokumentu modulis (avoti `form` — Veidlapas, `att` — Apmeklējuma pasākumi); `forms.js` pārrakstīts uz to (darbības `evDocAdd`/`evDocDel` ar avotu un pasākuma ID argumentā).
+- Apmeklējums: “＋ Pasākums” un cilne “Pasākumi” (sesijas ar veidu ≠ Nodarbība: `topic` = nosaukums, `dateTo`, `att` tikai “+”, `docs`, `dir`). Pasākuma logā — dalībnieku atzīmēšana, dokumentu pogas, kopīgie dokumenti, “Sagatavot instruktāžas lapu / nometnes žurnālu” (`A.formFromEvent`, saite `fromSession`). Nodarbības logā vairs nav “Veids”.
+- `sessFor`, personas nodarbības, rādītāji, mēneša tabula — tikai nodarbības (`isLesson`); agrāk kā nodarbība saglabātie pasākumi pāriet uz cilni “Pasākumi” un vairs neietekmē apmeklējuma %. Mēneša tabulas galvenē ★ pie datumiem ar pasākumu. Kartītē “Dalība un kvalifikācijas” — dokumentu ✓/✗ un “Atvērt”.
+
 ## 1.43.0 — 2026-10-17
 - Pasākuma dokumenti (`forms.js`): dalībnieka dokumenti → `S.db.documents` ar `eventId` un `title` “<veids> — <pasākums> (datums)”, faili `Macibu_gadi/<gads>/Pasakumi/<pasākums>/Dalibnieki/<Uzvārds Vārds> - <veids>.<ext>`; kopīgie → `ev.docs`, faili pasākuma mapē. Veidi no iestatījumiem `evDocsAll`, `evDocsCamp`, `evDocsEvent`, `evDocsEventCamp`; “Cits” — ar nosaukumu (`prompt`). Pievienojot, pasākums tiek saglabāts (`commit`). Noņemšana — tikai ieraksts, fails paliek.
 - Personas kartītē “Pasākumi” — ✓/✗ pa pasākuma dokumentiem. `ui.kindOptions` saglabā kategoriju, kuras nav sarakstā (piem., “Vecāku atļauja”); dokumenta logā nosaukums vairs netiek dzēsts kategorijām, kas nav “Cits”.

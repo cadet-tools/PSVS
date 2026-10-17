@@ -804,3 +804,9 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .evdoc.ok{display:inline-flex;gap:2px}.evdoc.ok > .sm:first-child{color:var(--teal);border-color:color-mix(in srgb,var(--teal) 45%,var(--edge))}
 .evdoc.miss{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,var(--edge))}
 .row.evdoc-need b{color:var(--red)}
+
+/* Apmeklējums: pasākumi */
+.ev-dlg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:980px){.ev-dlg{grid-template-columns:1fr}}
+.ev-dlg .ev-list{max-height:58vh;overflow:auto}
+.ad-ev{display:block;margin:0 auto 2px;padding:0 4px;font-size:11px;line-height:1.3;border:0;background:var(--accent-soft,rgba(80,160,255,.15));color:var(--teal);border-radius:6px;cursor:pointer}
