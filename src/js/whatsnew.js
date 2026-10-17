@@ -13,13 +13,17 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
+      'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',
+      'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem. Personas var **importēt no e-klases** vai sava Excel saraksta.'
+    ] },
+    { v: '1.46.0', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
+      'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējums** var **aiziet kopā ar jaunsargu** (jaunais instruktors pārņem uzskaiti un MTL — tavā uzskaitē tas atzīmējas kā nodots), palikt tavā uzskaitē (sarakstu iekļauj informācijai) vai netikt iekļauts, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”. Ja nodots kļūdas pēc — **“↶ Atcelt nodošanu”** atjauno personu no arhīva un atgriež ekipējumu.',
+      'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
+    ] },
     { v: '1.45.3', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja).'
-    ] },
-    { v: '1.45.2', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
-      'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
-      'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
@@ -114,10 +118,6 @@
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes.',
       'Visas veidlapas ir vienā sarakstā ar filtriem. Var izmantot arī savas Word veidnes.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
-    ] },
-    { v: '1.16.1', from: '1.14.1', date: '2026-10-13', title: 'Personas, piezīmes un imports', items: [
-      'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem.',
-      'Personas var **importēt no e-klases** vai sava Excel saraksta.'
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',

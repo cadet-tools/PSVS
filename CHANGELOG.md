@@ -1,5 +1,13 @@
 # Izmaiņu vēsture
 
+## 1.46.0 — 2026-10-17
+- Kopēšanas pogas kartītē: `ui.dl` 4. elements — `"pid|lauks"`, `A.copyField` (personas kods — `U.fmtCode`, datumi — `U.fmtDate`, tālrunis — `U.prettyPhone`, `_full` — vārds, uzvārds).
+- Nodošana: `A.transferUndo` (“↶ Atcelt nodošanu”) — atjauno no arhīva (ja iemesls “Pārgāja pie cita instruktora”), atgriež ar šo nodošanu slēgto ekipējumu, noņem `transferredTo`, piezīme. Piezīmēs: nododot — “Pārgāja no … uz …”, pārņemot — “Pārgājis no … uz …” (bija “Pārņemts/Pārnācis no …”). Dalībā pasākumos viens pasākums (Apmeklējums + Veidlapas) vairs neatkārtojas.
+
+## 1.45.4 — 2026-10-17
+- Nodošanas logā ekipējuma izvēle vienmēr ar trim iespējām; noklusējums, ja ir neatdots ekipējums — “aiziet kopā ar jaunsargu” (`hand`).
+- Noņemti lauki “Foto/video publicēšana” un “Piekrišanas datums” (piekrišana dota līgumā): no `CP.FIELDS`, kartītes pārskata un anketas nolasīšanas. Agrāk ievadītās vērtības ierakstos netiek dzēstas.
+
 ## 1.45.3 — 2026-10-17
 - `D.allDocKinds()` — iestatītās kategorijas + dalībnieku pasākuma dokumentu veidi + faktiski lietotās, “Cits” beigās; lieto Dokumentu lapas filtrs un visi kategoriju saraksti (`ui.kindOptions`). Agrāk filtrā nebija “Vecāku atļauja” u. c. pasākumu dokumentu. Meklēšana skatās arī dokumenta nosaukumu.
 

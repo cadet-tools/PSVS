@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.45.3';
+  CP.VERSION = '1.46.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -306,8 +306,7 @@ window.CP = window.CP || {};
     { k: 'emergencyName', l: 'Vārds, uzvārds', s: 'emergency', v: 'fullname' },
     { k: 'emergencyPhone', l: 'Tālrunis', s: 'emergency', t: 'tel', v: 'phone' },
     { k: 'emergencyRelation', l: 'Radniecība', s: 'emergency', list: 'dl_rel' },
-    { k: 'photoConsent', l: 'Foto/video publicēšana', s: 'admin', t: 'select', opts: [['', 'Nav zināms'], ['yes', 'Piekrīt'], ['no', 'Nepiekrīt']] },
-    { k: 'photoConsentDate', l: 'Piekrišanas datums', s: 'admin', t: 'date', v: 'date' },
+    // foto/video piekrišana netiek prasīta atsevišķi — to dod, parakstot līgumu (agrāk ievadītās vērtības ierakstos paliek)
     { k: 'retentionMonths', l: 'Glabāšana pēc izstāšanās (mēn.)', s: 'admin', t: 'number', noScan: 1 },
     { k: 'notes', l: 'Jauna piezīme (tiks pievienota piezīmju žurnālam)', s: 'admin', t: 'textarea', wide: 1 }
   ];

@@ -160,6 +160,14 @@
     }
   };
 
+  /** Kopē vienu personas lauku (personas kods — pilnā formā, arī ja ekrānā maskēts) */
+  A.copyField = arg => {
+    const [pid, k] = String(arg).split('|'), p = D.person(pid); if (!p) return;
+    const f = CP.FIELD[k] || {}, v = k === '_full' ? U.full(p) : k === 'group' ? D.groupOf(p) : p[k];
+    if (v == null || v === '') return;
+    const text = f.v === 'personalCode' ? U.fmtCode(v) : f.t === 'date' ? U.fmtDate(v) : f.t === 'tel' ? U.prettyPhone(v) : String(v);
+    navigator.clipboard.writeText(text).then(() => ui.toast(`Nokopēts: ${f.l || 'Vārds, uzvārds'}`, 'ok', 2500), () => ui.toast(text, 'ok', 8000));
+  };
   function codeView(p, key) {
     const v = p[key]; if (!v) return '';
     const shown = S.reveal.has(p.id + key);
@@ -206,13 +214,13 @@
     const parent = D.contacts(p).find(c => c.kind === 'parent');
     return `<div class="cards2">
       <section class="card"><h3>Pamatdati <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="basic">✎</button></h3>${ui.dl([
-        ['Vārds, uzvārds', U.full(p)], ['Dzimšanas datums', p.birth ? `${U.fmtDate(p.birth)} (${U.age(p.birth)} g.)` : ''], ['Personas kods', codeView(p, 'personalCode'), 1],
-        ['Tālrunis', p.phone && U.prettyPhone(p.phone)], ['E-pasts', p.email], ['Faktiskā adrese', p.addressActual || p.addressDeclared]])}</section>
+        ['Vārds, uzvārds', U.full(p), 0, `${p.id}|_full`], ['Dzimšanas datums', p.birth ? `${U.fmtDate(p.birth)} (${U.age(p.birth)} g.)` : '', 0, `${p.id}|birth`], ['Personas kods', codeView(p, 'personalCode'), 1, `${p.id}|personalCode`],
+        ['Tālrunis', p.phone && U.prettyPhone(p.phone), 0, `${p.id}|phone`], ['E-pasts', p.email, 0, `${p.id}|email`], ['Faktiskā adrese', p.addressActual || p.addressDeclared, 0, `${p.id}|${p.addressActual ? 'addressActual' : 'addressDeclared'}`]])}</section>
       <section class="card"><h3>Dalība <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="study">✎</button></h3>${ui.dl([
         ['Mācību gads', U.yearLabel(D.activeYear())], ['Statuss šajā gadā', ui.status(D.partStatus(p)), 1], ['Grupa šajā gadā', D.groupOf(p)], ['Iestājies', U.fmtDate(p.joined)], ['Mācību iestāde', p.school], ['Klase / kurss', p.schoolClass],
-        ['Foto/video', photo(p)], p.status === 'archived' && ['Izstājies', `${U.fmtDate(p.left)}${p.reason ? ' · ' + p.reason : ''}`]])}</section>
+        p.status === 'archived' && ['Izstājies', `${U.fmtDate(p.left)}${p.reason ? ' · ' + p.reason : ''}`]])}</section>
       <section class="card"><h3>Likumiskais pārstāvis <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="parent">✎</button></h3>${ui.dl([
-        ['Vārds, uzvārds', p.parentName], ['Saistība', p.parentRelation], ['Tālrunis', p.parentPhone && U.prettyPhone(p.parentPhone)], ['E-pasts', p.parentEmail],
+        ['Vārds, uzvārds', p.parentName, 0, `${p.id}|parentName`], ['Saistība', p.parentRelation], ['Tālrunis', p.parentPhone && U.prettyPhone(p.parentPhone), 0, `${p.id}|parentPhone`], ['E-pasts', p.parentEmail, 0, `${p.id}|parentEmail`],
         p.parent2Name && ['Otrs vecāks', `${p.parent2Name}${p.parent2Phone ? ' · ' + U.prettyPhone(p.parent2Phone) : ''}`],
         ['Ārkārtas kontakts', [p.emergencyName, p.emergencyPhone && U.prettyPhone(p.emergencyPhone)].filter(Boolean).join(' · ')]])}
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
@@ -220,7 +228,7 @@
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
       ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
-      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p><button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
+      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p>${p.transferredTo ? `<button class="sm" data-act="transferUndo" data-arg="${p.id}" title="Ja nodots kļūdas pēc — atjaunot no arhīva un atgriezt ekipējumu">↶ Atcelt nodošanu</button>` : ''}<button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
     </div>`;
   }
 
@@ -233,7 +241,7 @@
     };
     return `<div class="cards2">${CP.SECTIONS.map(([sid, title]) => {
       const fields = CP.FIELDS.filter(f => f.s === sid);
-      return `<section class="card ${sid === 'admin' ? 'wide' : ''}"><h3>${title} <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="${sid}">✎</button></h3>${ui.dl(fields.map(f => [f.l, val(f), 1]))}</section>`;
+      return `<section class="card ${sid === 'admin' ? 'wide' : ''}"><h3>${title} <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="${sid}">✎</button></h3>${ui.dl(fields.map(f => [f.l, val(f), 1, f.k === 'status' || f.t === 'textarea' ? '' : `${p.id}|${f.k}`]))}</section>`;
     }).join('')}
     <section class="card wide"><h3>Ieraksts</h3>${ui.dl([['Izveidots', U.fmtDateTime(p.createdAt)], ['Pēdējās izmaiņas', U.fmtDateTime(p.updatedAt)], ['Glabāšana pēc izstāšanās', `${p.retentionMonths ?? S.db.settings.retentionDefault} mēn.`]])}</section></div>`;
   }

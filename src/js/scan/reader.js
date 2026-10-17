@@ -194,7 +194,6 @@
       { f: 'parentName', sec: 'parent', try: [{ m: 'above', a: /vards uzvard/, notBefore: /berna\s*$/, last: true }, { m: 'between', a: /^es\b/, b: /piekritu/ }] },
       { f: '_name2', sec: 'parent', try: [{ m: 'above', a: /berna vards uzvards/ }] },
       ...PERSON_BLOCK('parent'),
-      { f: 'photoConsent', sec: 'parent', try: [{ m: 'checkbox', a: /foto video publicesan|foto video/ }] },
       { f: 'emergencyName', sec: 'emergency', try: [{ m: 'above', a: /vards uzvard/ }, { m: 'right', a: /arkartas kontaktpersona/ }, { m: 'below', a: /arkartas kontaktpersona/ }] },
       { f: 'emergencyPhone', sec: 'emergency', try: [{ m: 'between', a: /\btalrunis\b|\btalr\b/, b: /radniecib/ }] },
       { f: 'emergencyRelation', sec: 'emergency', try: [{ m: 'right', a: /radniecib/ }] }

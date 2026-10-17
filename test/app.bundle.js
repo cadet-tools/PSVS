@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.45.3';
+  CP.VERSION = '1.46.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -309,8 +309,7 @@ window.CP = window.CP || {};
     { k: 'emergencyName', l: 'Vārds, uzvārds', s: 'emergency', v: 'fullname' },
     { k: 'emergencyPhone', l: 'Tālrunis', s: 'emergency', t: 'tel', v: 'phone' },
     { k: 'emergencyRelation', l: 'Radniecība', s: 'emergency', list: 'dl_rel' },
-    { k: 'photoConsent', l: 'Foto/video publicēšana', s: 'admin', t: 'select', opts: [['', 'Nav zināms'], ['yes', 'Piekrīt'], ['no', 'Nepiekrīt']] },
-    { k: 'photoConsentDate', l: 'Piekrišanas datums', s: 'admin', t: 'date', v: 'date' },
+    // foto/video piekrišana netiek prasīta atsevišķi — to dod, parakstot līgumu (agrāk ievadītās vērtības ierakstos paliek)
     { k: 'retentionMonths', l: 'Glabāšana pēc izstāšanās (mēn.)', s: 'admin', t: 'number', noScan: 1 },
     { k: 'notes', l: 'Jauna piezīme (tiks pievienota piezīmju žurnālam)', s: 'admin', t: 'textarea', wide: 1 }
   ];
@@ -2085,7 +2084,8 @@ window.CP = window.CP || {};
   ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */
-  ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}</dd>`).join('')}</dl>`;
+  /** rindas: [nosaukums, vērtība, raw(HTML), kopēšana "pid|lauks"] — kopēšanas poga tikai, ja ir vērtība */
+  ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw, cp]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}${cp && v ? ` <button type="button" class="ghost sm cpy" data-act="copyField" data-arg="${U.esc(cp)}" title="Kopēt “${U.esc(k)}”" aria-label="Kopēt">⧉</button>` : ''}</dd>`).join('')}</dl>`;
   ui.chips = (items) => `<div class="chips">${items.join('')}</div>`;
 
   /** Formas lauki no CP.FIELDS — viena definīcija kartiņai un anketu ievadei */
@@ -2675,6 +2675,14 @@ window.CP = window.CP || {};
     }
   };
 
+  /** Kopē vienu personas lauku (personas kods — pilnā formā, arī ja ekrānā maskēts) */
+  A.copyField = arg => {
+    const [pid, k] = String(arg).split('|'), p = D.person(pid); if (!p) return;
+    const f = CP.FIELD[k] || {}, v = k === '_full' ? U.full(p) : k === 'group' ? D.groupOf(p) : p[k];
+    if (v == null || v === '') return;
+    const text = f.v === 'personalCode' ? U.fmtCode(v) : f.t === 'date' ? U.fmtDate(v) : f.t === 'tel' ? U.prettyPhone(v) : String(v);
+    navigator.clipboard.writeText(text).then(() => ui.toast(`Nokopēts: ${f.l || 'Vārds, uzvārds'}`, 'ok', 2500), () => ui.toast(text, 'ok', 8000));
+  };
   function codeView(p, key) {
     const v = p[key]; if (!v) return '';
     const shown = S.reveal.has(p.id + key);
@@ -2721,13 +2729,13 @@ window.CP = window.CP || {};
     const parent = D.contacts(p).find(c => c.kind === 'parent');
     return `<div class="cards2">
       <section class="card"><h3>Pamatdati <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="basic">✎</button></h3>${ui.dl([
-        ['Vārds, uzvārds', U.full(p)], ['Dzimšanas datums', p.birth ? `${U.fmtDate(p.birth)} (${U.age(p.birth)} g.)` : ''], ['Personas kods', codeView(p, 'personalCode'), 1],
-        ['Tālrunis', p.phone && U.prettyPhone(p.phone)], ['E-pasts', p.email], ['Faktiskā adrese', p.addressActual || p.addressDeclared]])}</section>
+        ['Vārds, uzvārds', U.full(p), 0, `${p.id}|_full`], ['Dzimšanas datums', p.birth ? `${U.fmtDate(p.birth)} (${U.age(p.birth)} g.)` : '', 0, `${p.id}|birth`], ['Personas kods', codeView(p, 'personalCode'), 1, `${p.id}|personalCode`],
+        ['Tālrunis', p.phone && U.prettyPhone(p.phone), 0, `${p.id}|phone`], ['E-pasts', p.email, 0, `${p.id}|email`], ['Faktiskā adrese', p.addressActual || p.addressDeclared, 0, `${p.id}|${p.addressActual ? 'addressActual' : 'addressDeclared'}`]])}</section>
       <section class="card"><h3>Dalība <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="study">✎</button></h3>${ui.dl([
         ['Mācību gads', U.yearLabel(D.activeYear())], ['Statuss šajā gadā', ui.status(D.partStatus(p)), 1], ['Grupa šajā gadā', D.groupOf(p)], ['Iestājies', U.fmtDate(p.joined)], ['Mācību iestāde', p.school], ['Klase / kurss', p.schoolClass],
-        ['Foto/video', photo(p)], p.status === 'archived' && ['Izstājies', `${U.fmtDate(p.left)}${p.reason ? ' · ' + p.reason : ''}`]])}</section>
+        p.status === 'archived' && ['Izstājies', `${U.fmtDate(p.left)}${p.reason ? ' · ' + p.reason : ''}`]])}</section>
       <section class="card"><h3>Likumiskais pārstāvis <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="parent">✎</button></h3>${ui.dl([
-        ['Vārds, uzvārds', p.parentName], ['Saistība', p.parentRelation], ['Tālrunis', p.parentPhone && U.prettyPhone(p.parentPhone)], ['E-pasts', p.parentEmail],
+        ['Vārds, uzvārds', p.parentName, 0, `${p.id}|parentName`], ['Saistība', p.parentRelation], ['Tālrunis', p.parentPhone && U.prettyPhone(p.parentPhone), 0, `${p.id}|parentPhone`], ['E-pasts', p.parentEmail, 0, `${p.id}|parentEmail`],
         p.parent2Name && ['Otrs vecāks', `${p.parent2Name}${p.parent2Phone ? ' · ' + U.prettyPhone(p.parent2Phone) : ''}`],
         ['Ārkārtas kontakts', [p.emergencyName, p.emergencyPhone && U.prettyPhone(p.emergencyPhone)].filter(Boolean).join(' · ')]])}
         ${!parent && U.age(p.birth) < 18 ? '<p class="warn small">Nepilngadīgam nav norādīts pārstāvja kontakts.</p>' : ''}</section>
@@ -2735,7 +2743,7 @@ window.CP = window.CP || {};
       <section class="card wide"><h3>Dalība pa mācību gadiem</h3>${D.enrollmentsOf(p.id).map(e => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(e.yearId))}</b> <span class="tag">${esc(e.group || 'bez grupas')}</span> ${ui.status(e.status)}<div class="small muted">${e.at ? U.fmtDate(String(e.at).slice(0, 10)) : ''}${e.fromYearId ? ' · pārcelts no ' + esc(U.yearLabel(e.fromYearId)) : ''}</div>${journal('year', p.id, e.yearId, 'Piezīme par šo mācību gadu…')}</div></div>`).join('') || '<p class="muted small">Šai personai vēl nav dalības ierakstu.</p>'}</section>
       ${CP.attendance ? CP.attendance.historyCards(p) : ''}
       <section class="card wide"><h3>Piezīmes</h3>${journal('person', p.id, '', 'Jauna piezīme par personu (piem., veselība, īpaši norādījumi, vienošanās)…')}</section>
-      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p><button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
+      ${p.anon ? '' : `<section class="card wide transfer-card"><h3>⇪ Nodošana citam instruktoram</h3><div class="row"><p class="small grow" style="margin:0">${p.transferredTo ? `Personas lieta sagatavota nodošanai ${esc(U.fmtDate(String(p.transferredTo.at).slice(0, 10)))}${p.transferredTo.name ? ' — ' + esc(p.transferredTo.name) : ''}${p.transferredTo.unit ? ', ' + esc(p.transferredTo.unit) : ''}. Ja vajag, sagatavo vēlreiz.` : 'Ja jaunsargs pāriet pie cita instruktora, sagatavo personas lietas paku (dati, dokumenti, kvalifikācijas, pēc izvēles ekipējums un MTL). Jaunais instruktors to ieliek savā rīkā ar “⇩ Pārņemt no cita instruktora”.'}</p>${p.transferredTo ? `<button class="sm" data-act="transferUndo" data-arg="${p.id}" title="Ja nodots kļūdas pēc — atjaunot no arhīva un atgriezt ekipējumu">↶ Atcelt nodošanu</button>` : ''}<button class="sm mainbtn" data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button></div></section>`}
     </div>`;
   }
 
@@ -2748,7 +2756,7 @@ window.CP = window.CP || {};
     };
     return `<div class="cards2">${CP.SECTIONS.map(([sid, title]) => {
       const fields = CP.FIELDS.filter(f => f.s === sid);
-      return `<section class="card ${sid === 'admin' ? 'wide' : ''}"><h3>${title} <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="${sid}">✎</button></h3>${ui.dl(fields.map(f => [f.l, val(f), 1]))}</section>`;
+      return `<section class="card ${sid === 'admin' ? 'wide' : ''}"><h3>${title} <button class="ghost sm right" data-act="edit" data-arg="${p.id}" data-sec="${sid}">✎</button></h3>${ui.dl(fields.map(f => [f.l, val(f), 1, f.k === 'status' || f.t === 'textarea' ? '' : `${p.id}|${f.k}`]))}</section>`;
     }).join('')}
     <section class="card wide"><h3>Ieraksts</h3>${ui.dl([['Izveidots', U.fmtDateTime(p.createdAt)], ['Pēdējās izmaiņas', U.fmtDateTime(p.updatedAt)], ['Glabāšana pēc izstāšanās', `${p.retentionMonths ?? S.db.settings.retentionDefault} mēn.`]])}</section></div>`;
   }
@@ -5709,13 +5717,17 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
+      'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',
+      'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem. Personas var **importēt no e-klases** vai sava Excel saraksta.'
+    ] },
+    { v: '1.46.0', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
+      'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējums** var **aiziet kopā ar jaunsargu** (jaunais instruktors pārņem uzskaiti un MTL — tavā uzskaitē tas atzīmējas kā nodots), palikt tavā uzskaitē (sarakstu iekļauj informācijai) vai netikt iekļauts, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”. Ja nodots kļūdas pēc — **“↶ Atcelt nodošanu”** atjauno personu no arhīva un atgriež ekipējumu.',
+      'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
+    ] },
     { v: '1.45.3', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
       'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja).'
-    ] },
-    { v: '1.45.2', from: '1.45.0', date: '2026-10-17', title: 'Nodošana citam instruktoram', items: [
-      'Kartītes apakšā (un ⋯ izvēlnē) **“⇪ Nodot citam instruktoram”** sagatavo **personas lietas paku** (ZIP): pārskats lasīšanai un drukāšanai bez rīka, skenētie dokumenti un dati rīkam. Var izvēlēties, ko iekļaut (dokumenti, dalība un kvalifikācijas, piezīmes, pārkāpumi). **Ekipējumu** var iekļaut tikai informācijai vai **nodot jaunajam instruktoram** (viņš pārņem MTL) — tad tavā uzskaitē tas atzīmējas kā nodots, un pēc tam personu arhivēt ar iemeslu “Pārgāja pie cita instruktora”.',
-      'Spiežot **“＋ Jauna persona”**, var izvēlēties **“⇩ Pārņemt no cita instruktora”** (arī poga ⇩ blakus ＋ sānjoslā) — izvēlies saņemto paku: rīks izveido personu (vai papildina esošo), iekopē dokumentus, pēc izvēles **ievieto ekipējumu tavā uzskaitē** un saglabā iepriekšējo vēsturi piezīmē. Ja pakas nav, reģistrē kā parasti un aizpildi lauku **“Pārnācis no cita instruktora”**.'
     ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
@@ -5810,10 +5822,6 @@ window.CP = window.CP || {};
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes.',
       'Visas veidlapas ir vienā sarakstā ar filtriem. Var izmantot arī savas Word veidnes.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
-    ] },
-    { v: '1.16.1', from: '1.14.1', date: '2026-10-13', title: 'Personas, piezīmes un imports', items: [
-      'Statusi: **Kandidāts, Jaunsargs, Pārtraukts**. Piezīmes ir žurnāls ar datumiem.',
-      'Personas var **importēt no e-klases** vai sava Excel saraksta.'
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',
@@ -6340,7 +6348,6 @@ window.CP = window.CP || {};
       { f: 'parentName', sec: 'parent', try: [{ m: 'above', a: /vards uzvard/, notBefore: /berna\s*$/, last: true }, { m: 'between', a: /^es\b/, b: /piekritu/ }] },
       { f: '_name2', sec: 'parent', try: [{ m: 'above', a: /berna vards uzvards/ }] },
       ...PERSON_BLOCK('parent'),
-      { f: 'photoConsent', sec: 'parent', try: [{ m: 'checkbox', a: /foto video publicesan|foto video/ }] },
       { f: 'emergencyName', sec: 'emergency', try: [{ m: 'above', a: /vards uzvard/ }, { m: 'right', a: /arkartas kontaktpersona/ }, { m: 'below', a: /arkartas kontaktpersona/ }] },
       { f: 'emergencyPhone', sec: 'emergency', try: [{ m: 'between', a: /\btalrunis\b|\btalr\b/, b: /radniecib/ }] },
       { f: 'emergencyRelation', sec: 'emergency', try: [{ m: 'right', a: /radniecib/ }] }
@@ -12309,9 +12316,9 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         <label class="check"><input type="checkbox" name="docs" checked> Dokumentu faili (${docs.length})</label>
         <label class="check"><input type="checkbox" name="hist" checked> Dalība, apmeklējums un kvalifikācijas</label>
         <div class="field" style="margin:6px 0"><label>Ekipējums${eq.length ? ` <span class="warn">(${eq.length} neatdoti)</span>` : ''}</label><select name="eq">
+          <option value="hand" ${eq.length ? 'selected' : ''}>Ekipējums aiziet kopā ar jaunsargu — jaunais instruktors pārņem uzskaiti un MTL</option>
           <option value="list">Tikai saraksts informācijai — ekipējums paliek manā uzskaitē</option>
-          ${eq.length ? `<option value="hand">Nodot jaunajam instruktoram (viņš pārņem MTL) — manā uzskaitē atzīmēt kā nodotu</option>` : ''}
-          <option value="none">Neiekļaut</option></select></div>
+          <option value="none">Neiekļaut</option></select>${eq.length ? '' : '<small class="muted">Personai pašlaik nav neatdota ekipējuma.</small>'}</div>
         <label class="check"><input type="checkbox" name="notes"> Piezīmes</label>
         <label class="check"><input type="checkbox" name="inc"> Uzvedība un pārkāpumi</label>
         <hr>
@@ -12362,7 +12369,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       out.participation = [
         ...(S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).map(e => ({ date: e.dateFrom || e.instrDate || '', type: e.type === 'camp' ? 'Nometne' : 'Pasākums', title: e.title || '' })),
         ...(S.db.sessions || []).filter(s => s.type && s.type !== 'Nodarbība' && ['+', 'k'].includes(s.att?.[p.id])).map(s => ({ date: s.date, type: s.type, title: s.topic || '' }))
-      ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      ].sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .filter((x, i, arr) => arr.findIndex(y => y.date === x.date && U.norm(y.title) === U.norm(x.title)) === i);   // viens pasākums Apmeklējumā un Veidlapās — vienreiz
       const r = D.attRate ? D.attRate(p) : null; if (r) out.attendance = { present: r.present, absent: r.absent, excused: r.excused, pct: r.pct };
     }
     if (o.eq) out.equipment = S.db.equipment.filter(e => e.personId === p.id && !e.returned).map(e => ({ item: e.item, qty: e.qty || 1, size: e.size || '', inventory: e.inventory || '', issued: e.issued || '', due: e.due || '', gift: !!e.keep, notes: e.notes || '' }));
@@ -12375,6 +12383,8 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const name = `Personas_lieta_${safe(p.last)}_${safe(p.first)}_${U.iso()}.zip`.replace(/ /g, '_');
     U.download(blob, name);
     p.transferredTo = { name: o.toName, unit: o.toUnit, at: U.now() };
+    { const fromMe = [inst.name, out.from.unit].filter(Boolean).join(', '), toWho = [o.toName, o.toUnit].filter(Boolean).join(', ');
+      (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: `Pārgāja${fromMe ? ' no ' + fromMe : ''}${toWho ? ' uz ' + toWho : ' pie cita instruktora'} — sagatavota personas lietas paka.` }); }
     if (o.eqHand) for (const e of S.db.equipment.filter(x => x.personId === p.id && !x.returned && !x.keep)) {   // MTL pārņem cits instruktors — manā uzskaitē slēgts
       e.returned = U.iso(); e.returnNote = `Nodots instruktoram${o.toName ? ' ' + o.toName : ''}${o.toUnit ? ' (' + o.toUnit + ')' : ''} — MTL pārņemts`; e.handedTo = { name: o.toName, unit: o.toUnit, at: U.now() }; e.changedAt = U.now();
       D.audit(p.id, 'eq-edit', [e.item + ' — nodots citam instruktoram']);
@@ -12406,6 +12416,20 @@ ${o.notes.length ? `<h2>Piezīmes</h2>${o.notes.map(n => `<p><span class="m">${d
 ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids', 'Apraksts', 'Rīcība'], o.incidents, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.text)}</td><td>${e(x.action)}</td></tr>`)}` : ''}
 </body></html>`;
   }
+
+  /** Kļūdas gadījumā: atjauno no arhīva, atgriež nodoto ekipējumu manā uzskaitē, noņem nodošanas atzīmi */
+  A.transferUndo = pid => {
+    const p = D.person(pid), t = p?.transferredTo; if (!t) return;
+    const eqs = S.db.equipment.filter(e => e.personId === p.id && e.handedTo && Math.abs(new Date(e.handedTo.at) - new Date(t.at)) < 6e4);
+    const arch = p.status === 'archived' && /^Pārgāja pie cita instruktora/.test(p.reason || '');
+    if (!confirm(`Atcelt nodošanu${t.name ? ' (' + t.name + ')' : ''}?\n\n${arch ? '• persona tiks atjaunota no arhīva\n' : ''}${eqs.length ? `• ekipējums (${eqs.map(e => e.item).join(', ')}) atgriezīsies tavā uzskaitē kā neatdots\n` : ''}• nodošanas atzīme tiks noņemta\n\nJa paku jau nosūtīji, palūdz jaunajam instruktoram to neizmantot.`)) return;
+    if (arch) { p.status = 'active'; p.left = ''; p.reason = ''; p.archiveSnapshot = undefined; D.audit(p.id, 'restore'); }
+    for (const e of eqs) { e.returned = ''; e.returnNote = ''; delete e.handedTo; e.changedAt = U.now(); D.audit(p.id, 'eq-edit', [e.item + ' — nodošana atcelta']); }
+    (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: `Nodošana${t.name ? ' instruktoram ' + t.name : ''} atcelta.` });
+    delete p.transferredTo; p.updatedAt = U.now();
+    D.audit(p.id, 'update', ['Nodošana citam instruktoram atcelta']);
+    CP.store.changed(); CP.render(); ui.toast('Nodošana atcelta' + (arch ? ', persona atjaunota no arhīva' : ''), 'ok', 7000);
+  };
 
   /* ================= Pārņemt ================= */
   let pkg = null;
@@ -12456,6 +12480,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   }
   async function doImport(existing, group, status, eqIn) {
     const o = pkg.json, P = o.person, keys = PERSON_KEYS(), from = [o.from?.name, o.from?.unit].filter(Boolean).join(', ');
+    const me = st().instructor || {}, to = [o.to?.name || me.name, o.to?.unit].filter(Boolean).join(', ');
+    const move = `Pārgājis no ${from || 'cita instruktora'}${to ? ' uz ' + to : ''}`;
     let p = existing;
     if (p) {
       for (const k of keys) if ((p[k] == null || p[k] === '') && P[k] != null && P[k] !== '' && k !== 'status') p[k] = P[k];
@@ -12469,7 +12495,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     }
     p.fromInstructor = from || p.fromInstructor || 'cits instruktors';
     p.transferFrom = { ...(o.from || {}), at: U.now(), file: pkg.name };
-    D.bindYear(p, { group, status: p.status, note: `Pārnācis no: ${from || 'cita instruktora'}` });
+    D.bindYear(p, { group, status: p.status, note: move });
     // kvalifikācijas
     const Q = st().quals = st().quals || [];
     for (const q of o.quals || []) {
@@ -12491,7 +12517,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       }
     }
     // vēsture piezīmē (pasākumi, apmeklējums, ekipējums, piezīmes, pārkāpumi)
-    const lines = [`Pārņemts no ${from || 'cita instruktora'} (${U.fmtDate(U.iso())}).`];
+    const lines = [`${move} (${U.fmtDate(U.iso())}).`];
     if (o.years?.length) lines.push('Iepriekšējie gadi: ' + o.years.map(y => `${y.year}${y.group ? ' ' + y.group : ''}`).join('; '));
     if (o.attendance?.pct != null) lines.push(`Apmeklējums iepriekšējā vienībā: ${o.attendance.pct}%`);
     if (o.participation?.length) lines.push('Pasākumi: ' + o.participation.map(x => `${U.fmtDate(x.date)} ${x.type}${x.title ? ' ' + x.title : ''}`).join('; '));

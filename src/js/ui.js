@@ -162,7 +162,8 @@
   ui.saveBtn = () => `<button data-act="save" class="mainbtn ${S.dirty ? 'pending' : ''}" title="Ctrl+S">${CP.ic('save', '💾')} Saglabāt</button>`;
   ui.empty = (text, action = '') => `<div class="empty"><p>${text}</p>${action}</div>`;
   /** Definīciju saraksts: etiķete pa kreisi, vērtība blakus (nevis ekrāna otrā malā) */
-  ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}</dd>`).join('')}</dl>`;
+  /** rindas: [nosaukums, vērtība, raw(HTML), kopēšana "pid|lauks"] — kopēšanas poga tikai, ja ir vērtība */
+  ui.dl = rows => `<dl class="dl">${rows.filter(Boolean).map(([k, v, raw, cp]) => `<dt>${U.esc(k)}</dt><dd>${raw ? (v || '<span class="muted">—</span>') : (v ? U.esc(v) : '<span class="muted">—</span>')}${cp && v ? ` <button type="button" class="ghost sm cpy" data-act="copyField" data-arg="${U.esc(cp)}" title="Kopēt “${U.esc(k)}”" aria-label="Kopēt">⧉</button>` : ''}</dd>`).join('')}</dl>`;
   ui.chips = (items) => `<div class="chips">${items.join('')}</div>`;
 
   /** Formas lauki no CP.FIELDS — viena definīcija kartiņai un anketu ievadei */

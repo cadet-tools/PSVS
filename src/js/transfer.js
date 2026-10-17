@@ -34,9 +34,9 @@
         <label class="check"><input type="checkbox" name="docs" checked> Dokumentu faili (${docs.length})</label>
         <label class="check"><input type="checkbox" name="hist" checked> Dalība, apmeklējums un kvalifikācijas</label>
         <div class="field" style="margin:6px 0"><label>Ekipējums${eq.length ? ` <span class="warn">(${eq.length} neatdoti)</span>` : ''}</label><select name="eq">
+          <option value="hand" ${eq.length ? 'selected' : ''}>Ekipējums aiziet kopā ar jaunsargu — jaunais instruktors pārņem uzskaiti un MTL</option>
           <option value="list">Tikai saraksts informācijai — ekipējums paliek manā uzskaitē</option>
-          ${eq.length ? `<option value="hand">Nodot jaunajam instruktoram (viņš pārņem MTL) — manā uzskaitē atzīmēt kā nodotu</option>` : ''}
-          <option value="none">Neiekļaut</option></select></div>
+          <option value="none">Neiekļaut</option></select>${eq.length ? '' : '<small class="muted">Personai pašlaik nav neatdota ekipējuma.</small>'}</div>
         <label class="check"><input type="checkbox" name="notes"> Piezīmes</label>
         <label class="check"><input type="checkbox" name="inc"> Uzvedība un pārkāpumi</label>
         <hr>
@@ -87,7 +87,8 @@
       out.participation = [
         ...(S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).map(e => ({ date: e.dateFrom || e.instrDate || '', type: e.type === 'camp' ? 'Nometne' : 'Pasākums', title: e.title || '' })),
         ...(S.db.sessions || []).filter(s => s.type && s.type !== 'Nodarbība' && ['+', 'k'].includes(s.att?.[p.id])).map(s => ({ date: s.date, type: s.type, title: s.topic || '' }))
-      ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      ].sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .filter((x, i, arr) => arr.findIndex(y => y.date === x.date && U.norm(y.title) === U.norm(x.title)) === i);   // viens pasākums Apmeklējumā un Veidlapās — vienreiz
       const r = D.attRate ? D.attRate(p) : null; if (r) out.attendance = { present: r.present, absent: r.absent, excused: r.excused, pct: r.pct };
     }
     if (o.eq) out.equipment = S.db.equipment.filter(e => e.personId === p.id && !e.returned).map(e => ({ item: e.item, qty: e.qty || 1, size: e.size || '', inventory: e.inventory || '', issued: e.issued || '', due: e.due || '', gift: !!e.keep, notes: e.notes || '' }));
@@ -100,6 +101,8 @@
     const name = `Personas_lieta_${safe(p.last)}_${safe(p.first)}_${U.iso()}.zip`.replace(/ /g, '_');
     U.download(blob, name);
     p.transferredTo = { name: o.toName, unit: o.toUnit, at: U.now() };
+    { const fromMe = [inst.name, out.from.unit].filter(Boolean).join(', '), toWho = [o.toName, o.toUnit].filter(Boolean).join(', ');
+      (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: `Pārgāja${fromMe ? ' no ' + fromMe : ''}${toWho ? ' uz ' + toWho : ' pie cita instruktora'} — sagatavota personas lietas paka.` }); }
     if (o.eqHand) for (const e of S.db.equipment.filter(x => x.personId === p.id && !x.returned && !x.keep)) {   // MTL pārņem cits instruktors — manā uzskaitē slēgts
       e.returned = U.iso(); e.returnNote = `Nodots instruktoram${o.toName ? ' ' + o.toName : ''}${o.toUnit ? ' (' + o.toUnit + ')' : ''} — MTL pārņemts`; e.handedTo = { name: o.toName, unit: o.toUnit, at: U.now() }; e.changedAt = U.now();
       D.audit(p.id, 'eq-edit', [e.item + ' — nodots citam instruktoram']);
@@ -131,6 +134,20 @@ ${o.notes.length ? `<h2>Piezīmes</h2>${o.notes.map(n => `<p><span class="m">${d
 ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids', 'Apraksts', 'Rīcība'], o.incidents, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.text)}</td><td>${e(x.action)}</td></tr>`)}` : ''}
 </body></html>`;
   }
+
+  /** Kļūdas gadījumā: atjauno no arhīva, atgriež nodoto ekipējumu manā uzskaitē, noņem nodošanas atzīmi */
+  A.transferUndo = pid => {
+    const p = D.person(pid), t = p?.transferredTo; if (!t) return;
+    const eqs = S.db.equipment.filter(e => e.personId === p.id && e.handedTo && Math.abs(new Date(e.handedTo.at) - new Date(t.at)) < 6e4);
+    const arch = p.status === 'archived' && /^Pārgāja pie cita instruktora/.test(p.reason || '');
+    if (!confirm(`Atcelt nodošanu${t.name ? ' (' + t.name + ')' : ''}?\n\n${arch ? '• persona tiks atjaunota no arhīva\n' : ''}${eqs.length ? `• ekipējums (${eqs.map(e => e.item).join(', ')}) atgriezīsies tavā uzskaitē kā neatdots\n` : ''}• nodošanas atzīme tiks noņemta\n\nJa paku jau nosūtīji, palūdz jaunajam instruktoram to neizmantot.`)) return;
+    if (arch) { p.status = 'active'; p.left = ''; p.reason = ''; p.archiveSnapshot = undefined; D.audit(p.id, 'restore'); }
+    for (const e of eqs) { e.returned = ''; e.returnNote = ''; delete e.handedTo; e.changedAt = U.now(); D.audit(p.id, 'eq-edit', [e.item + ' — nodošana atcelta']); }
+    (p.noteLog = p.noteLog || []).push({ id: U.uid(), at: U.now(), text: `Nodošana${t.name ? ' instruktoram ' + t.name : ''} atcelta.` });
+    delete p.transferredTo; p.updatedAt = U.now();
+    D.audit(p.id, 'update', ['Nodošana citam instruktoram atcelta']);
+    CP.store.changed(); CP.render(); ui.toast('Nodošana atcelta' + (arch ? ', persona atjaunota no arhīva' : ''), 'ok', 7000);
+  };
 
   /* ================= Pārņemt ================= */
   let pkg = null;
@@ -181,6 +198,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   }
   async function doImport(existing, group, status, eqIn) {
     const o = pkg.json, P = o.person, keys = PERSON_KEYS(), from = [o.from?.name, o.from?.unit].filter(Boolean).join(', ');
+    const me = st().instructor || {}, to = [o.to?.name || me.name, o.to?.unit].filter(Boolean).join(', ');
+    const move = `Pārgājis no ${from || 'cita instruktora'}${to ? ' uz ' + to : ''}`;
     let p = existing;
     if (p) {
       for (const k of keys) if ((p[k] == null || p[k] === '') && P[k] != null && P[k] !== '' && k !== 'status') p[k] = P[k];
@@ -194,7 +213,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     }
     p.fromInstructor = from || p.fromInstructor || 'cits instruktors';
     p.transferFrom = { ...(o.from || {}), at: U.now(), file: pkg.name };
-    D.bindYear(p, { group, status: p.status, note: `Pārnācis no: ${from || 'cita instruktora'}` });
+    D.bindYear(p, { group, status: p.status, note: move });
     // kvalifikācijas
     const Q = st().quals = st().quals || [];
     for (const q of o.quals || []) {
@@ -216,7 +235,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       }
     }
     // vēsture piezīmē (pasākumi, apmeklējums, ekipējums, piezīmes, pārkāpumi)
-    const lines = [`Pārņemts no ${from || 'cita instruktora'} (${U.fmtDate(U.iso())}).`];
+    const lines = [`${move} (${U.fmtDate(U.iso())}).`];
     if (o.years?.length) lines.push('Iepriekšējie gadi: ' + o.years.map(y => `${y.year}${y.group ? ' ' + y.group : ''}`).join('; '));
     if (o.attendance?.pct != null) lines.push(`Apmeklējums iepriekšējā vienībā: ${o.attendance.pct}%`);
     if (o.participation?.length) lines.push('Pasākumi: ' + o.participation.map(x => `${U.fmtDate(x.date)} ${x.type}${x.title ? ' ' + x.title : ''}`).join('; '));
