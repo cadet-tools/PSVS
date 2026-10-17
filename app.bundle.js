@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.41.0';
+  CP.VERSION = '1.42.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -2922,7 +2922,7 @@ window.CP = window.CP || {};
     if (S.root) CP.store.ensurePersonYearFolder(p).catch(e => ui.toast('Personas dokumentu mapi neizdevās izveidot: ' + e.message, 'warn'));
     S.selected = p.id; S.page = 'person'; S.tab = 'overview'; return p;
   }
-  CP.people = { savePerson, openPerson };
+  CP.people = { savePerson, openPerson, archivePerson: (p, o) => archive(p, o) };
 
   /* --- Arhīvs, atjaunošana, dzēšana --- */
   function archive(p, o) {
@@ -5395,7 +5395,7 @@ window.CP = window.CP || {};
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button>${y.id === S.db.settings.activeYear || y.id === U.schoolYear() ? '' : `<button class="sm ghost danger" data-act="yearDelete" data-arg="${esc(y.id)}" title="Dzēst mācību gadu">✕ Dzēst</button>`}</div>`).join('')}
-        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">Pārcelt personas</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
+        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">⇄ Pārcelt dalībniekus uz citu gadu</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
         <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
       </div>${T('sec')}
       <section class="card" id="dataCard"><h3>Datu glabāšana</h3>
@@ -5678,14 +5678,14 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
-    { v: '1.41.0', date: '2026-10-17', title: 'Mācību gadu dzēšana', items: [
+    { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
+      'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
       'Iestatījumos → Mācību gadi pie gada ir poga **“✕ Dzēst”**. Tukšu gadu dzēš pēc apstiprinājuma; ja gadā ir dalības, nodarbības, pasākumi vai VFS testi, rīks vispirms jautā, **uz kuru gadu tos pārcelt**. Izvēlēto un pašreizējo gadu dzēst nevar.',
       'CADET.LV logo galvenē ir loga vidū, un izvēlētais gads gadu sarakstā iekrāsots **akcenta krāsā**.'
     ] },
     { v: '1.40.1', from: '1.19.0', date: '2026-10-17', title: 'Dokumenti un reģistrācija', items: [
-      'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet.',
+      'Poga **“Atvērt”** parāda dokumentu tieši rīkā — arī **Word (.docx)**, **eDoc** (redzams parakstītais saturs), Excel (.xlsx) un CSV. Lejupielādēt vairs nav jāiet. **“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies).',
       'Kartītes Dokumentu cilnē pirmie ir **“Visi personas dokumenti”**. Sadaļas “Dokumentu mape” un “Mapē atrasti faili” sākumā ir aizvērtas — atver, ja vajag; izejot no kartiņas, tās atkal aizveras.',
-      '**“Pārbaudīt”** uzreiz pārslēdz dokumenta nozīmi uz **“Pārbaudīts”** (fails ir vietā un nav mainījies).',
       'Pie katra dokumenta redzams, **kur tas atrodas datorā** (datu mape › Macibu_gadi › gads › Personas › personas mape › fails). Pēc pārcelšanas uz jaunu mācību gadu dokumenti paliek iepriekšējā gada mapē un turpina atvērties; “Dokumentu mapē” var pārslēgt gadu. Failus var sakārtot apakšmapēs ar **“Jauna mape”** un **“Pārvietot”**, un lieko failu vai apakšmapi var **dzēst** tieši rīkā (“✕ Dzēst”). Poga “Pārdēvēt” noņemta — Chrome to neļauj.',
       'Katru mapē esošu, vēl nepiesaistītu failu var **piesaistīt** — tad tas redzams sadaļā “Visi personas dokumenti”. Ir jauna kategorija **“Paskaidrojums”**; kategorijai **“Cits”** jāieraksta dokumenta nosaukums, un kartītē redzams tieši tas.',
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē.',
@@ -6004,37 +6004,52 @@ window.CP = window.CP || {};
     ui.toast(n ? `Piesaistītas ${n} personas gadam ${U.yearLabel(yearId)}` : 'Personas jau bija piesaistītas', 'ok');
   };
 
+  /* --- Dalībnieku pārcelšana uz citu mācību gadu (atzīmētie — pārceļ, pārējos — pēc izvēles arhivē) --- */
+  let moveSel = new Set(), moveFromSeen = '';
+  const mvFrom = () => U.$('moveFrom').value, mvTo = () => U.$('moveTo').value;
+  function moveAllPeople() { return D.peopleInYear(mvFrom()).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b))); }
   function movePeople() {
-    const from = U.$('moveFrom').value, q = U.norm(U.$('moveQ').value).replace(/ /g, '');
-    return D.peopleInYear(from).filter(p => !q || U.norm(U.full(p) + ' ' + U.sortName(p)).replace(/ /g, '').includes(q))
-      .sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
+    const q = U.norm(U.$('moveQ').value).replace(/ /g, '');
+    return moveAllPeople().filter(p => !q || U.norm(U.full(p) + ' ' + U.sortName(p)).replace(/ /g, '').includes(q));
   }
+  /** Kurus arhivēs: gada dalībnieki, kas nav atzīmēti, nav arhivēti un nav jau mērķa gadā */
+  const moveRest = () => moveAllPeople().filter(p => !moveSel.has(p.id) && p.status !== 'archived' && !D.enroll(p.id, mvTo()));
   function moveCount() {
-    const n = U.qsa('#moveList input:checked').length;
-    U.$('moveCount').textContent = `Atlasītas: ${n} personas`;
-    U.$('moveDo').textContent = n ? `Pārcelt ${n} personas` : 'Pārcelt atlasītās personas';
+    const n = [...moveSel].filter(id => !D.enroll(id, mvTo())).length, rest = moveRest().length, arc = U.$('moveArchiveRest').checked && rest;
+    U.$('moveCount').textContent = `Atzīmēti: ${n} · nepārcelti: ${rest}`;
+    U.$('moveArchiveLbl').innerHTML = `Nepārceltos (${rest}) pārvietot uz arhīvu${rest ? ` — <span class="muted">${esc(moveRest().slice(0, 6).map(U.full).join(', '))}${rest > 6 ? ' …' : ''}</span>` : ''}`;
+    U.$('moveDo').textContent = n || arc ? `Pārcelt ${n}${arc ? ` un arhivēt ${rest}` : ''}` : 'Pārcelt';
+    U.$('moveDo').disabled = !n && !arc;
   }
   function paintMove() {
-    const dest = D.activeYear();
-    U.$('moveDest').textContent = U.yearLabel(dest);
-    const from = U.$('moveFrom').value;
-    U.$('moveList').innerHTML = movePeople().map(p => {
-      const en = D.enroll(p.id, from);
-      const already = !!D.enroll(p.id, dest);
-      return `<label class="moveitem ${already ? 'muted' : ''}"><input type="checkbox" value="${esc(p.id)}" ${already ? 'disabled' : ''}> <span><b>${esc(U.full(p))}</b> <small class="muted">${esc(en?.group || 'bez grupas')}${p.status === 'archived' ? ' · arhivēta' : ''}${already ? ' · jau šajā gadā' : ''}</small></span></label>`;
-    }).join('') || '<p class="muted">Šajā gadā nav personu.</p>';
+    const from = mvFrom(), to = mvTo();
+    if (from !== moveFromSeen) {   // jauns avota gads — atzīmē visus aktīvos
+      moveFromSeen = from;
+      moveSel = new Set(moveAllPeople().filter(p => p.status !== 'archived' && !D.enroll(p.id, to)).map(p => p.id));
+    }
+    const needIzz = Object.keys(S.db.settings.docValidity || {}).filter(k => (S.db.settings.requiredDocs || []).includes(k));
+    U.$('moveList').innerHTML = from === to ? '<p class="warn">Izvēlies citu mācību gadu, uz kuru pārcelt.</p>' : (movePeople().map(p => {
+      const en = D.enroll(p.id, from), already = !!D.enroll(p.id, to), eq = D.openEquipment(p).length;
+      return `<label class="moveitem ${already ? 'muted' : ''}"><input type="checkbox" data-mv="${esc(p.id)}" ${moveSel.has(p.id) && !already ? 'checked' : ''} ${already ? 'disabled' : ''}>
+        <span class="grow"><b>${esc(U.full(p))}</b> <small class="muted">${esc(en?.group || 'bez grupas')}${p.status === 'archived' ? ' · arhivēta' : ''}${already ? ` · jau ${esc(U.yearLabel(to))}` : ''}${eq ? ` · <span class="warn">neatdots ekipējums: ${eq}</span>` : ''}${needIzz.length && !already ? ` · ${esc(needIzz.join(', '))} — jāiesniedz jauna` : ''}</small></span></label>`;
+    }).join('') || '<p class="muted">Šajā gadā nav personu.</p>');
     moveCount();
   }
-  A.openMove = fromId => {
-    const dest = D.activeYear();
-    U.$('moveDest').textContent = U.yearLabel(dest);
-    const opts = (S.db.years || []).filter(y => y.id !== dest);
-    U.$('moveFrom').innerHTML = opts.map(y => `<option value="${esc(y.id)}" ${y.id === fromId ? 'selected' : ''}>${esc(U.yearLabel(y.id))}</option>`).join('');
-    if (!opts.length) return ui.toast('Nav cita mācību gada, no kura pārcelt', 'warn');
-    U.$('moveQ').value = '';
-    U.$('moveGroup').value = '';
-    U.$('moveActivate').checked = false;
-    paintMove();
+  document.addEventListener('change', e => {
+    const id = e.target?.dataset?.mv; if (id != null) { if (e.target.checked) moveSel.add(id); else moveSel.delete(id); moveCount(); return; }
+    if (e.target?.id === 'moveTo') paintMove();
+    if (e.target?.id === 'moveArchiveRest') moveCount();
+  });
+  A.openMove = (fromId, toId) => {
+    const years = [...(S.db.years || [])].sort((a, b) => b.start - a.start);
+    if (years.length < 2) return ui.toast('Vajag vismaz divus mācību gadus. Vispirms pievieno jauno gadu.', 'warn');
+    const to = toId && D.yearById(toId) ? toId : D.activeYear();
+    const prev = years.find(y => y.id !== to && y.start < (D.yearById(to)?.start ?? 0) && D.peopleInYear(y.id).length)?.id;
+    const from = fromId && D.yearById(fromId) && fromId !== to ? fromId : (prev || years.find(y => y.id !== to).id);
+    const opt = (sel, skip) => years.map(y => `<option value="${esc(y.id)}" ${y.id === sel ? 'selected' : ''}>${esc(U.yearLabel(y.id))} (${D.peopleInYear(y.id).length})</option>`).join('');
+    U.$('moveFrom').innerHTML = opt(from); U.$('moveTo').innerHTML = opt(to);
+    U.$('moveQ').value = ''; U.$('moveGroup').value = ''; U.$('moveActivate').checked = false; U.$('moveArchiveRest').checked = true;
+    moveFromSeen = ''; paintMove();
     U.$('moveDialog').showModal();
   };
   CP.changeHandlers.push(e => { if (e.target.id !== 'moveFrom') return false; paintMove(); return true; });
@@ -6048,14 +6063,17 @@ window.CP = window.CP || {};
     if (!menu || menu.classList.contains('hidden') || e.target.closest('#yearBtn')) return;
     if (e.target.closest('#yearPick')) menu.classList.add('hidden');
   });
-  A.moveAll = () => { U.qsa('#moveList input:not(:disabled)').forEach(i => { i.checked = true; }); moveCount(); };
-  A.moveNone = () => { U.qsa('#moveList input').forEach(i => { i.checked = false; }); moveCount(); };
+  A.moveAll = () => { for (const p of movePeople()) if (!D.enroll(p.id, mvTo())) moveSel.add(p.id); paintMove(); };
+  A.moveNone = () => { for (const p of movePeople()) moveSel.delete(p.id); paintMove(); };
   A.moveDo = async () => {
-    const dest = D.activeYear(), from = U.$('moveFrom').value, group = U.$('moveGroup').value.trim();
-    const ids = U.qsa('#moveList input:checked').map(i => i.value);
-    if (!ids.length) return ui.toast('Atzīmē vismaz vienu personu', 'warn');
+    const from = mvFrom(), dest = mvTo(), group = U.$('moveGroup').value.trim();
+    if (!from || !dest || from === dest) return ui.toast('Izvēlies divus dažādus mācību gadus', 'warn');
+    const ids = [...moveSel].filter(id => D.person(id) && D.inYear(D.person(id), from));
+    const rest = U.$('moveArchiveRest').checked ? moveRest() : [];
+    if (!ids.length && !rest.length) return ui.toast('Atzīmē vismaz vienu personu', 'warn');
     const archived = ids.filter(id => D.person(id)?.status === 'archived');
     if (archived.length && !U.$('moveActivate').checked && !confirm(`${archived.length} atlasītās personas ir arhivētas. Tās tiks piesaistītas gadam, bet paliks arhivētas. Turpināt?`)) return;
+    if (rest.length && !confirm(`Pārcelt ${ids.length} uz ${U.yearLabel(dest)} un ${rest.length} nepārceltos pārvietot uz arhīvu?\n\n${rest.slice(0, 15).map(U.full).join(', ')}${rest.length > 15 ? ' …' : ''}\n\nArhivētos vēlāk var atjaunot. Viņu dati un dokumenti paliek.`)) return;
     const skipped = [], added = [], made = [];
     for (const id of ids) {
       const p = D.person(id); if (!p) continue;
@@ -6065,22 +6083,25 @@ window.CP = window.CP || {};
       if (activate) { p.status = 'active'; p.updatedAt = U.now(); D.audit(id, 'restore'); }
       D.bindYear(p, {
         yearId: dest,
-        group,
+        group: group || src?.group || '',
         status: p.status === 'archived' ? 'archived' : (src?.status && src.status !== 'archived' ? src.status : 'active'),
         note: `Pārcelts no ${U.yearLabel(from)}`,
         fromYearId: from
       });
-      added.push(U.full(p));
-      made.push(p);
+      added.push(U.full(p)); made.push(p);
       D.audit(id, 'year-move', [U.yearLabel(from) + ' → ' + U.yearLabel(dest)]);
     }
+    const [, endFrom] = U.yearSpan(from);
+    const left = endFrom && endFrom < U.iso() ? endFrom : U.iso();
+    for (const p of rest) CP.people.archivePerson(p, { left, reason: `Nav pārcelts uz ${U.yearLabel(dest)}` });
     for (const p of made) {
       try { await CP.store.ensurePersonYearFolder(p, dest); }
-      catch (err) { ui.toast('Jaunā gada mapi neizdevās izveidot ' + U.full(p) + ': ' + err.message + '. Dokumenti nav kopēti.', 'warn', 9000); }
+      catch (err) { ui.toast('Jaunā gada mapi neizdevās izveidot ' + U.full(p) + ': ' + err.message, 'warn', 9000); }
     }
     U.$('moveDialog').close();
-    CP.store.changed();
-    ui.toast(`Pārceltas ${added.length} personas.${skipped.length ? ' Jau bija šajā gadā: ' + skipped.join(', ') : ''}`, skipped.length ? 'warn' : 'ok', 9000);
+    CP.store.changed(); CP.render();
+    ui.toast(`Pārceltas ${added.length} personas uz ${U.yearLabel(dest)}${rest.length ? `, arhivētas ${rest.length}` : ''}.${skipped.length ? ' Jau bija šajā gadā: ' + skipped.join(', ') : ''}`, skipped.length ? 'warn' : 'ok', 9000,
+      dest !== D.activeYear() ? { act: 'setYear', arg: dest, label: `Atvērt ${U.yearLabel(dest)}` } : null);
   };
 
 })(window.CP);

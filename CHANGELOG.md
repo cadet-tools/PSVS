@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.42.0 — 2026-10-17
+- Pārcelšanas dialogs pārveidots: “No” un “Uz” gads (agrāk mērķis — tikai izvēlētais gads), atzīmes glabājas `moveSel` (meklēšana tās nezaudē), aktīvie atzīmēti pēc noklusējuma; “Nepārceltos pārvietot uz arhīvu” (`CP.people.archivePerson`, aiziešanas datums — avota gada beigas vai šodiena, iemesls “Nav pārcelts uz …”); tukša grupa = katram sava grupa no avota gada; sarakstā neatdotā ekipējuma skaits un gada dokumenti (`docValidity` ∩ obligātie), kam vajadzēs jaunu. Poga Iestatījumos: “⇄ Pārcelt dalībniekus uz citu gadu”.
+
 ## 1.41.0 — 2026-10-17
 - Mācību gadu dzēšana (`A.yearDelete`): tukšs gads — `confirm`; ar dalībām/nodarbībām/pasākumiem/VFS testiem/grupām — dialogs “Pārcelt uz” (ja persona mērķa gadā jau ir, saglabājas tās esošā dalība). Dokumenti, ekipējums, uzdevumi, saziņa saglabā savu `yearId` (ārsta izziņas derīgums). Izvēlēto un pašreizējo gadu dzēst nevar. `settings.yearsDeleted` — migrācija dzēstos 2017–2026 gadus vairs nepievieno (ja nav dalību šajā gadā). Mapes datorā netiek dzēstas.
 - CADET.LV logo galvenē centrēts pret logu (`centerLogo`, šaurā logā — joslas vidū). Gadu izvēlnē izvēlētais gads `--accent-soft` / `--acc` (bija fiksēti zaļš).

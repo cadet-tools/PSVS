@@ -1387,21 +1387,23 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <dialog id="moveDialog" class="wide">
-  <header class="dlg-head"><h2>Pārcelt no cita gada</h2><button type="button" class="ghost" data-close="moveDialog" aria-label="Aizvērt">✕</button></header>
+  <header class="dlg-head"><h2>Pārcelt dalībniekus uz citu mācību gadu</h2><button type="button" class="ghost" data-close="moveDialog" aria-label="Aizvērt">✕</button></header>
   <div class="dlg-body">
-    <p>Galamērķis: <b id="moveDest"></b></p>
     <div class="fieldgrid">
-      <div class="field"><label for="moveFrom">No kura mācību gada pārcelt</label><select id="moveFrom"></select></div>
-      <div class="field"><label for="moveGroup">Grupa galamērķa gadā</label><input id="moveGroup" list="dl_groups" placeholder="Var atstāt tukšu"></div>
+      <div class="field"><label for="moveFrom">No mācību gada</label><select id="moveFrom"></select></div>
+      <div class="field"><label for="moveTo">Uz mācību gadu</label><select id="moveTo"></select></div>
+      <div class="field"><label for="moveGroup">Grupa jaunajā gadā</label><input id="moveGroup" list="dl_groups" placeholder="Tukšs — katram paliek sava grupa"></div>
     </div>
+    <div class="notice small move-info">Līdzi jaunajā gadā paliek <b>līgums, anketa, MTL aprites lapas</b> (arī iepriekšējās) un <b>neatdotais ekipējums</b> — tie attiecas uz personu, nevis gadu. <b>Ārsta izziņa</b> ir derīga tikai savā mācību gadā — rīks atgādinās iesniegt jaunu.</div>
     <input id="moveQ" type="search" placeholder="Meklēt pēc vārda un uzvārda">
     <div class="actions"><button type="button" class="sm" data-act="moveAll">Atzīmēt visus</button><button type="button" class="sm" data-act="moveNone">Noņemt visas atzīmes</button><span id="moveCount" class="muted small"></span></div>
     <div id="moveList" class="movelist"></div>
-    <label class="check"><input type="checkbox" id="moveActivate"> Aktivizēt arhivētās personas (bez šīs atzīmes tās paliek arhivētas)</label>
+    <label class="check"><input type="checkbox" id="moveArchiveRest" checked> <span id="moveArchiveLbl">Nepārceltos pārvietot uz arhīvu</span></label>
+    <label class="check"><input type="checkbox" id="moveActivate"> Aktivizēt atzīmētās arhivētās personas (bez šīs atzīmes tās paliek arhivētas)</label>
   </div>
-  <footer class="dlg-foot"><button type="button" data-close="moveDialog">Atcelt</button><button type="button" class="mainbtn" id="moveDo" data-act="moveDo">Pārcelt atlasītās personas</button></footer>
+  <footer class="dlg-foot"><button type="button" data-close="moveDialog">Atcelt</button><span class="grow"></span><button type="button" class="mainbtn" id="moveDo" data-act="moveDo">Pārcelt</button></footer>
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.41.0"></script></body>
+<script src="app.bundle.js?v=1.42.0"></script></body>
 </html>

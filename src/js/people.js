@@ -419,7 +419,7 @@
     if (S.root) CP.store.ensurePersonYearFolder(p).catch(e => ui.toast('Personas dokumentu mapi neizdevās izveidot: ' + e.message, 'warn'));
     S.selected = p.id; S.page = 'person'; S.tab = 'overview'; return p;
   }
-  CP.people = { savePerson, openPerson };
+  CP.people = { savePerson, openPerson, archivePerson: (p, o) => archive(p, o) };
 
   /* --- Arhīvs, atjaunošana, dzēšana --- */
   function archive(p, o) {
