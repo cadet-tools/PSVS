@@ -1,6 +1,6 @@
 /* CADET PERSONĀLS — bezsaistes kešs. Kešo TIKAI programmas failus (kodu, bibliotēkas).
    Personu dati un dokumenti caur šo nekad neiet: tie tiek lasīti tieši no datora mapes. */
-const CACHE = 'cadet-test-1.48.2', PREFIX = 'cadet-test-';
+const CACHE = 'cadet-test-1.49.0', PREFIX = 'cadet-test-';
 // Bibliotēkas un veidnes (mape vendor) — atsevišķs, nemainīgs kešs: atjauninot programmu, tās nav jālejupielādē no jauna.
 // Rīks tās sagatavo bezsaistei pats (vendor/offline.json), mainītos failus atjaunina.
 const VENDOR = 'cadet-vendor';

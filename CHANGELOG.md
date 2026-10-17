@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.49.0 — 2026-10-18
+- Analītika ieslēgta arī stabilajā kanālā (`CP.ANALYTICS_STABLE = true`) pēc pārbaudes testa kanālā ar īsto Apps Script saņēmēju. Jaunumu bloks “Lietošanas statistika” redzams abos kanālos.
+
 ## 1.48.2 — 2026-10-18
 - Analītika: personu skaita grupa tiek sūtīta tikai ar pieslēgtu datu mapi (bez mapes — tukša, nevis “0”).
 

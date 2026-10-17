@@ -20,7 +20,7 @@ js/analytics.js ──POST (text/plain)──▶ Apps Script tīmekļa lietotne 
 | `js/app.js` | `CP.analytics.act(nosaukums)` un `CP.analytics.err(…)` pogu apstrādē |
 | `js/perms.js` | Rinda “Lietošanas statistika un sīkdatnes” (Iestatījumi → Atļaujas) |
 | `js/about.js` | Teksts “Kur glabājas dati” (tikai, ja analītika aktīva) |
-| `js/whatsnew.js` | Jaunumu bloks ar `ch: 'test'` |
+| `js/whatsnew.js` | Jaunumu bloks “Lietošanas statistika” (`ch` lauks ļauj bloku rādīt tikai vienā kanālā) |
 | `js/core.js` | `CP.ANALYTICS_URL`, `CP.ANALYTICS_STABLE` |
 | `tools/analitika/Kods.gs`, `Panelis.html` (repozitorijā `docs/analitika/`) | Saņēmējs un panelis Google Apps Script; `gasmock.js` — imitācija pārbaudēm |
 
@@ -29,7 +29,7 @@ Nav jauna servera, instalējamas programmas vai maksas pakalpojuma. CSP nav main
 ## Kad darbojas
 
 - Tikai tīmekļa versijā (https).
-- **Testa kanālā** (`/PSVS/test/`). Stabilajā — tikai, kad `CP.ANALYTICS_STABLE = true` (ieslēdz pēc pārbaudes testa kanālā).
+- Abos kanālos (stabilajā un testa) — `CP.ANALYTICS_STABLE = true` kopš 1.49.0. Ar `false` darbotos tikai testa kanālā (piem., lai pārbaudītu lielas izmaiņas).
 - Sūta tikai, ja `CP.ANALYTICS_URL` ir norādīta (testam var ielikt arī `localStorage['cp.anUrl'] = JSON.stringify('…/exec')`). Kamēr adreses nav, sesijas krājas tikai pārlūkā.
 - Ja lietotājs to izslēdzis (Iestatījumi → Atļaujas) — nekas netiek ne uzskaitīts, ne sūtīts.
 

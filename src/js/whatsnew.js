@@ -13,7 +13,7 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.48.0', ch: 'test', date: '2026-10-18', title: 'Lietošanas statistika', items: [
+    { v: '1.49.0', date: '2026-10-18', title: 'Lietošanas statistika', items: [
       'Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
     ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [

@@ -11,13 +11,13 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.48.2';
+  CP.VERSION = '1.49.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
      Stabilajā kanālā analītika darbojas tikai, kad ANALYTICS_STABLE = true (vispirms pārbauda testa kanālā). */
   CP.ANALYTICS_URL = 'https://script.google.com/macros/s/AKfycbzO6Gc7VYcph6gIa1wbCSFyOe0OJN1X5Mkd-diq1Fzc_eKKpGb150brf71_6uz_F2JoZQ/exec';
-  CP.ANALYTICS_STABLE = false;
+  CP.ANALYTICS_STABLE = true;
   CP.SCHEMA = 7;
   CP.DATAFILE = 'CADET_PERSONALS_DATI.json';
   /* Tīmekļa versija (GitHub Pages, https) vai lokālā (file://). Kanāls: stabilā vai testa — no <meta name="cp-channel">. */
@@ -5724,7 +5724,7 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.48.0', ch: 'test', date: '2026-10-18', title: 'Lietošanas statistika', items: [
+    { v: '1.49.0', date: '2026-10-18', title: 'Lietošanas statistika', items: [
       'Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
     ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [

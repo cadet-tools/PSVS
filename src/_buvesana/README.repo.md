@@ -9,7 +9,7 @@ Jaunsardzes instruktora rīks jauniešu uzskaitei. Tajā ir personu kartītes, d
 
 **Tikai tavā datorā,** mapē, kuru izvēlies pats. Programma ielādējas no GitHub, bet darbojas tavā pārlūkā un lasa un raksta failus tieši tavā mapē. Uz GitHub vai citiem serveriem netiek sūtīti ne personu dati, ne dokumenti, ne anketu attēli. To nodrošina arī lapas drošības politika (Content-Security-Policy), kas aizliedz savienojumus ar citām adresēm.
 
-**Lietošanas statistika:** rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu statistiku — cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas. Sīkāk: [docs/ANALYTICS.md](docs/ANALYTICS.md). Pagaidām darbojas tikai testa versijā.
+**Lietošanas statistika:** rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu statistiku — cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas. Sīkāk: [docs/ANALYTICS.md](docs/ANALYTICS.md).
 
 Vienīgais izņēmums ir **Google Vision** rokraksta atpazīšana. Tā pēc noklusējuma ir izslēgta, un to ieslēdz tikai ar savu API atslēgu Iestatījumos. Tad anketas attēls tiek nosūtīts Google.
 
