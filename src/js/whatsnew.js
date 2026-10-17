@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.43.0', date: '2026-10-17', title: 'Pasākumu dokumenti', items: [
+      'Pasākuma lapā (Veidlapas) pie katra izvēlētā dalībnieka ir pogas dokumentu pievienošanai: **Vecāku atļauja** (visiem pasākumiem), **Dalībnieka aptaujas lapa** (nometnēm) un **＋ cits**. Pievienotie redzami arī jaunsarga kartītē — “Visi personas dokumenti” un “Pasākumi” (✓ / ✗).',
+      'Kartē **“Pasākuma dokumenti”** — kopīgie: **Kopējā parakstu lapa**, nometnei **aizpildīts nometnes žurnāls** un citi, kā arī cik dalībniekiem dokumenti jau ir. Dokumentu sarakstus var mainīt Iestatījumos → Dokumenti.'
+    ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
       'Iestatījumos → Mācību gadi pie gada ir poga **“✕ Dzēst”**. Tukšu gadu dzēš pēc apstiprinājuma; ja gadā ir dalības, nodarbības, pasākumi vai VFS testi, rīks vispirms jautā, **uz kuru gadu tos pārcelt**. Izvēlēto un pašreizējo gadu dzēst nevar.',
@@ -50,8 +54,7 @@
       'Pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams stāvoklis: **✓ Rīks iestatīts** vai **✕** ar progresu. Uzspiežot uz tā, saraksts atveras.',
       '**Iestatījumi** ir sadalīti cilnēs: Pamata, Drošība un kopijas, Dokumenti, Saziņa.',
       '**Instruktora darba dati** (tie nonāk līgumos) ir Iestatījumos → Pamata. E-pastam jābūt darba adresei **…@jc.gov.lv**.',
-      'Vārdi, uzvārdi un vietu nosaukumi automātiski sākas ar **lielo burtu**.',
-      '**Arhīvs** ir atsevišķa lapa ar visiem arhivētajiem no visiem mācību gadiem.'
+      'Vārdi, uzvārdi un vietu nosaukumi automātiski sākas ar **lielo burtu**. **Arhīvs** ir atsevišķa lapa ar visiem arhivētajiem no visiem mācību gadiem.'
     ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Datu kvalitāte, 21 gads un darbs uz diviem datoriem', items: [
       'Lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā) parāda, kas jāsakārto: iespējami dublikāti, nederīgs personas kods, trūkst dzimuma, pārstāvja vai tālruņa, nederīgs e-pasts, nav grupas, nav atrasts dokumenta fails.',

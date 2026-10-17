@@ -175,7 +175,7 @@
   /** Ārsta izziņa u.c.: prasa izsniegšanas datumu, termiņu aprēķina pats (var labot) */
   function docRuleUi() {
     const kind = dform.elements.kind.value, r = D.docRule(kind), iss = dform.elements.issued, exp = dform.elements.expires;
-    const tn = needsTitle(kind); U.$('docTitleWrap').classList.toggle('hidden', !tn); dform.elements.title.required = tn;
+    const tn = needsTitle(kind); U.$('docTitleWrap').classList.toggle('hidden', !tn && !dform.elements.title.value); dform.elements.title.required = tn;
     U.$('docIssuedLbl').innerHTML = r ? `${U.esc(kind)}: izsniegšanas datums <b class="red">*</b>` : 'Dokumenta datums (izsniegts)';
     iss.required = !!r;
     const arc = (S.db.settings.archiveDocs || []).includes(kind);
@@ -194,7 +194,7 @@
   };
   dform.addEventListener('submit', e => {
     e.preventDefault(); const o = Object.fromEntries(new FormData(dform));
-    o.title = needsTitle(o.kind) ? String(o.title || '').trim() : '';
+    o.title = String(o.title || '').trim();
     if (needsTitle(o.kind) && !o.title) { dform.elements.title.focus(); return ui.toast('Ieraksti dokumenta nosaukumu — kategorijai “Cits” tas ir obligāts', 'warn'); }
     if (dform.dataset.edit) Object.assign(S.db.documents.find(x => x.id === dform.dataset.edit), o);
     else { S.db.documents.push({ ...o, id: U.uid(), path: '', sourceId: '', addedAt: U.now(), yearId: o.yearId || U.yearOfDate(o.received) || D.activeYear() }); D.audit(o.personId, 'doc-add', [o.kind]); }

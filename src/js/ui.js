@@ -313,7 +313,7 @@
     U.$(sel).innerHTML = S.db.people.filter(p => (all || D.isCurrent(p) || p.id === chosen) && (D.inYear(p) || p.id === chosen)).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)))
       .map(p => `<option value="${p.id}" ${p.id === chosen ? 'selected' : ''}>${U.esc(U.sortName(p))}${D.groupOf(p) ? ' · ' + U.esc(D.groupOf(p)) : ''}</option>`).join('');
   };
-  ui.kindOptions = sel => S.db.settings.docKinds.map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
+  ui.kindOptions = sel => [...(sel && !S.db.settings.docKinds.includes(sel) ? [sel] : []), ...S.db.settings.docKinds].map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
 
   CP.ui = ui;
 })(window.CP);

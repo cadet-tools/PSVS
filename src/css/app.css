@@ -797,3 +797,10 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .reg-add{flex:none;padding:3px 8px}
 .reqdoc.miss{border-color:color-mix(in srgb,var(--red) 55%,var(--edge));background:color-mix(in srgb,var(--red) 8%,transparent)}
 .reqdoc.miss b{color:var(--red)}
+
+/* Pasākuma dokumenti */
+.evdocs{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px;padding-left:34px;margin-top:2px}
+.evdocs .sm{padding:2px 8px;font-size:12px}
+.evdoc.ok{display:inline-flex;gap:2px}.evdoc.ok > .sm:first-child{color:var(--teal);border-color:color-mix(in srgb,var(--teal) 45%,var(--edge))}
+.evdoc.miss{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,var(--edge))}
+.row.evdoc-need b{color:var(--red)}

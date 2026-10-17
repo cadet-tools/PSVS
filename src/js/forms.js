@@ -233,7 +233,7 @@
         const on = chosen.has(p.id), m = D.eventDocIssues(p), part = (ev.participants || []).find(x => x.pid === p.id);
         return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evpick="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, ev.yearId) || '')}</small>
           ${m.length ? `<br><small class="warn" title="Bez šiem dokumentiem jaunsargs nedrīkst piedalīties pasākumā">⚠ Trūkst: ${esc(m.join(', '))}</small>` : ''}</span></label>
-          ${on && ev.type === 'camp' ? personCoun(p, part) : ''}</div>`;
+          ${on && ev.type === 'camp' ? personCoun(p, part) : ''}${on ? personDocChips(ev, p) : ''}</div>`;
       };
       const ownN = ps.filter(p => !p._ext).length, extN = ps.length - ownN;
       const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ownN} izvēlēti${extN ? ` + ${extN} no citām vienībām` : ''}</span></h3>
@@ -248,7 +248,7 @@
       const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
         ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
       return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
-        <div class="ev-layout"><div>${left}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
+        <div class="ev-layout"><div>${left}${eventDocsCard(ev)}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
     }
   };
 
@@ -417,13 +417,89 @@
     } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
   };
 
+  /* ================= Pasākuma dokumenti =================
+     Dalībnieka dokumenti (vecāku atļauja, aptaujas lapa…) → S.db.documents ar eventId (redzami arī personas kartītē).
+     Kopīgie (parakstu lapa, aizpildīts žurnāls…) → ev.docs. Faili: Macibu_gadi/<gads>/Pasakumi/<pasākums>/[Dalibnieki/]. */
+  const evKinds = ev => ({
+    person: [...(st().evDocsAll || []), ...(ev.type === 'camp' ? st().evDocsCamp || [] : [])],
+    event: [...(st().evDocsEvent || []), ...(ev.type === 'camp' ? st().evDocsEventCamp || [] : [])]
+  });
+  const evTitle = ev => `${ev.title || TYPES[ev.type].short}${ev.dateFrom || ev.instrDate ? ' (' + U.fmtDate(ev.dateFrom || ev.instrDate) + ')' : ''}`;
+  const pDocs = (ev, pid) => ev.id ? S.db.documents.filter(d => d.eventId === ev.id && d.personId === pid) : [];
+  const evDir = ev => ['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)];
+  let evUp = null;
+  const evInput = () => { let i = U.$('evDocFile'); if (!i) { i = document.createElement('input'); i.type = 'file'; i.id = 'evDocFile'; i.hidden = true; i.multiple = true; document.body.appendChild(i); i.addEventListener('change', onEvFile); } return i; };
+  /** arg: "p|<pid>|<kind>" vai "e||<kind>"; kind tukšs → “Cits” (jautā nosaukumu) */
+  A.evDocAdd = arg => {
+    if (!S.root) return CP.needRoot?.() || ui.toast('Vispirms izvēlies datu mapi', 'warn');
+    const [scope, pid, kind0] = String(arg).split('|');
+    let kind = kind0, title = '';
+    if (!kind) { title = (prompt(scope === 'p' ? 'Kas tas par dokumentu? (piem., Medikamentu lietošanas atļauja)' : 'Kas tas par dokumentu? (piem., Maršruta karte, Akts)') || '').trim(); if (!title) return; kind = 'Cits'; }
+    const ev = S.formEdit; if (!ev) return;
+    commit(true);   // pasākumam jābūt saglabātam, lai dokumentus var piesaistīt
+    evUp = { evId: ev.id, scope, pid, kind, title };
+    const i = evInput(); i.multiple = scope === 'e'; i.value = ''; i.click();
+  };
+  async function onEvFile(e) {
+    const files = [...e.target.files]; e.target.value = ''; const c = evUp; evUp = null;
+    const ev = S.formEdit && S.formEdit.id === c?.evId ? S.formEdit : null; if (!c || !ev || !files.length) return;
+    let n = 0;
+    for (const f of files) {
+      const ext = (f.name.split('.').pop() || 'pdf').toLowerCase(), label = c.title || c.kind;
+      try {
+        if (c.scope === 'p') {
+          const p = D.person(c.pid); if (!p) continue;
+          const path = await CP.store.saveFile([...evDir(ev), 'Dalibnieki'], `${U.sortName(p)} - ${label}.${ext}`, f);
+          if (!path) continue;
+          S.db.documents.push({ id: U.uid(), personId: p.id, kind: c.kind, title: `${label} — ${evTitle(ev)}`, eventId: ev.id, format: ext === 'edoc' ? 'edoc' : 'pdf', path, sourceId: 'main', received: U.iso(), addedAt: U.now(), yearId: ev.yearId || D.activeYear(), review: 'received', size: f.size });
+          D.audit(p.id, 'doc-add', [`${label} (${ev.title || TYPES[ev.type].short})`]);
+        } else {
+          const path = await CP.store.saveFile(evDir(ev), `${label}.${ext}`, f);
+          if (!path) continue;
+          (ev.docs = ev.docs || []).push({ id: U.uid(), kind: c.kind, title: c.title || '', path, at: U.now(), size: f.size });
+        }
+        n++;
+      } catch (err) { ui.toast('Neizdevās saglabāt ' + f.name + ': ' + err.message, 'err', 9000); }
+    }
+    if (n) { commit(true); CP.store.changed(); renderKeepScroll(); ui.toast(n === 1 ? `Pievienots: ${c.title || c.kind}` : `Pievienoti ${n} faili`, 'ok'); }
+  }
+  A.evDocDel = arg => {
+    const [scope, id] = String(arg).split('|'), ev = S.formEdit; if (!ev) return;
+    if (scope === 'p') {
+      const d = S.db.documents.find(x => x.id === id); if (!d || !confirm(`Noņemt “${d.title || d.kind}” no pasākuma un kartītes?\n\nFails mapē paliek.`)) return;
+      S.db.documents = S.db.documents.filter(x => x.id !== id); D.audit(d.personId, 'doc-remove', [d.title || d.kind]);
+    } else {
+      const d = (ev.docs || []).find(x => x.id === id); if (!d || !confirm(`Noņemt “${d.title || d.kind}” no pasākuma?\n\nFails mapē paliek.`)) return;
+      ev.docs = ev.docs.filter(x => x.id !== id);
+    }
+    commit(true); CP.store.changed(); renderKeepScroll();
+  };
+  /** Dalībnieka rindā: obligātie pasākuma dokumenti (✓ atvērt / ＋ pievienot) un citi */
+  function personDocChips(ev, p) {
+    const K = evKinds(ev).person, mine = pDocs(ev, p.id);
+    const chip = k => { const d = mine.find(x => x.kind === k); return d ? `<span class="evdoc ok"><button type="button" class="sm" data-act="view" data-arg="main|${esc(d.path)}" title="Atvērt">✓ ${esc(k)}</button><button type="button" class="sm ghost" data-act="evDocDel" data-arg="p|${d.id}" title="Noņemt">✕</button></span>` : `<button type="button" class="sm evdoc miss" data-act="evDocAdd" data-arg="p|${p.id}|${esc(k)}" title="Pievienot skenētu dokumentu">＋ ${esc(k)}</button>`; };
+    const other = mine.filter(d => !K.includes(d.kind));
+    return `<div class="evdocs">${K.map(chip).join('')}${other.map(d => `<span class="evdoc ok"><button type="button" class="sm" data-act="view" data-arg="main|${esc(d.path)}">✓ ${esc((d.title || d.kind).split(' — ')[0])}</button><button type="button" class="sm ghost" data-act="evDocDel" data-arg="p|${d.id}" title="Noņemt">✕</button></span>`).join('')}<button type="button" class="sm ghost" data-act="evDocAdd" data-arg="p|${p.id}|" title="Pievienot citu dokumentu">＋ cits</button></div>`;
+  }
+  function eventDocsCard(ev) {
+    const K = evKinds(ev), own = evPeople(ev).filter(p => !p._ext), docs = ev.docs || [];
+    const per = K.person.map(k => { const n = own.filter(p => pDocs(ev, p.id).some(d => d.kind === k)).length; return `<span class="pill ${own.length && n === own.length ? 'ok' : n < own.length ? 'warn' : ''}">${esc(k)}: ${n}/${own.length}</span>`; }).join(' ');
+    const row = d => `<div class="row"><div class="grow"><b>${esc(d.title || d.kind)}</b><div class="small muted">${esc(U.fmtDate(String(d.at).slice(0, 10)))} · ${esc(d.path)}</div></div><button class="sm mainbtn" data-act="view" data-arg="main|${esc(d.path)}">Atvērt</button><button class="sm ghost danger" data-act="evDocDel" data-arg="e|${d.id}" title="Noņemt no pasākuma (fails paliek)">✕</button></div>`;
+    return `<section class="card" id="evDocsCard"><h3>${ic('files')}Pasākuma dokumenti</h3>
+      ${K.person.length ? `<p class="small" style="margin-top:0">Dalībnieku dokumenti: ${per || '—'} <span class="muted">— pievieno pie katra dalībnieka sarakstā labajā pusē.</span></p>` : ''}
+      ${K.event.map(k => { const have = docs.filter(d => d.kind === k); return `<div class="row ${have.length ? '' : 'evdoc-need'}"><div class="grow"><b>${have.length ? '✓' : '✗'} ${esc(k)}</b>${have.length ? '' : '<div class="small muted">vēl nav pievienots</div>'}</div><button class="sm ${have.length ? '' : 'mainbtn'}" data-act="evDocAdd" data-arg="e||${esc(k)}">＋ ${have.length ? 'Vēl' : 'Pievienot'}</button></div>${have.map(row).join('')}`; }).join('')}
+      ${docs.filter(d => !K.event.includes(d.kind)).map(row).join('')}
+      <div class="actions" style="margin-top:8px"><button class="sm" data-act="evDocAdd" data-arg="e||">＋ Cits dokuments</button></div>
+      <p class="small muted">Faili tiek saglabāti mapē ${esc(evDir(ev).join(' › '))}. Dalībnieku dokumenti redzami arī katra jaunsarga kartītē.</p></section>`;
+  }
+
   /* --- Personas kartītē: dalība pasākumos --- */
   CP.forms = {
     evPeople, evStaff, renderKeepScroll: () => renderKeepScroll(), commit: q => commit(q),
     personCard(p) {
       const evs = (S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).sort((a, b) => String(b.dateFrom || b.instrDate).localeCompare(String(a.dateFrom || a.instrDate)));
       if (!evs.length) return '';
-      return `<section class="card"><h3>${ic('clipboard')}Pasākumi</h3>${evs.slice(0, 6).map(e => `<div class="row"><div class="grow"><b>${esc(e.title || TYPES[e.type].short)}</b><div class="small muted">${esc(TYPES[e.type].short)} · ${esc(e.when || U.fmtDate(e.instrDate))}</div></div><button class="sm ghost" data-act="formOpen" data-arg="${e.id}">Atvērt</button></div>`).join('')}${evs.length > 6 ? `<p class="small muted">… un vēl ${evs.length - 6}</p>` : ''}</section>`;
+      return `<section class="card"><h3>${ic('clipboard')}Pasākumi</h3>${evs.slice(0, 6).map(e => `<div class="row"><div class="grow"><b>${esc(e.title || TYPES[e.type].short)}</b><div class="small muted">${esc(TYPES[e.type].short)} · ${esc(e.when || U.fmtDate(e.instrDate))}</div>${(() => { const K = evKinds(e).person, mine = pDocs(e, p.id); return K.length || mine.length ? `<div class="small">${K.map(k => mine.some(d => d.kind === k) ? `<span class="okc">✓ ${esc(k)}</span>` : `<span class="red">✗ ${esc(k)}</span>`).join(' · ')}${mine.filter(d => !K.includes(d.kind)).map(d => ` · <span class="okc">✓ ${esc((d.title || d.kind).split(' — ')[0])}</span>`).join('')}</div>` : ''; })()}</div><button class="sm ghost" data-act="formOpen" data-arg="${e.id}">Atvērt</button></div>`).join('')}${evs.length > 6 ? `<p class="small muted">… un vēl ${evs.length - 6}</p>` : ''}</section>`;
     },
     whenText
   };

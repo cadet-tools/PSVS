@@ -80,6 +80,10 @@
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
         <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
         <div class="field wide"><label>Dokumenti, kuru oriģināli jānodod Centra arhīvam (ar komatu)</label><input data-set="archiveDocs" value="${esc((s.archiveDocs || ['Pieteikuma anketa', 'Līgums']).join(', '))}"></div>
+        <div class="field wide"><label>Pasākumi — katra dalībnieka dokumenti visiem pasākumiem (ar komatu)</label><input data-set="evDocsAll" value="${esc((s.evDocsAll || []).join(', '))}"></div>
+        <div class="field wide"><label>Nometnēs — katra dalībnieka papildu dokumenti</label><input data-set="evDocsCamp" value="${esc((s.evDocsCamp || []).join(', '))}"></div>
+        <div class="field wide"><label>Pasākuma kopīgie dokumenti (visiem pasākumiem)</label><input data-set="evDocsEvent" value="${esc((s.evDocsEvent || []).join(', '))}"></div>
+        <div class="field wide"><label>Nometnes kopīgie dokumenti</label><input data-set="evDocsEventCamp" value="${esc((s.evDocsEventCamp || []).join(', '))}"><div class="hint muted">Tos pievieno pasākuma lapā (Veidlapas). “Cits” dokumentu var pievienot vienmēr.</div></div>
         <div class="field wide"><label>Atgādināt, ja persona nav atzīmēta kā ievadīta / nodota</label><div class="actions">${CP.REGS.map(r => `<label class="check"><input type="checkbox" data-reg-set="${r.k}" ${(s.registries || []).includes(r.k) ? 'checked' : ''}> ${esc(r.l)}</label>`).join('')}</div></div></div></section>
 
       <section class="card"><h3>Anketu nolasīšana</h3><div class="fieldgrid">
@@ -126,7 +130,7 @@
     const t = e.target, d = t.dataset, s = S.db.settings;
     if (d.set) {
       if (d.set === 'autosave') s.autosave = t.checked;
-      else if (d.set === 'archiveDocs') s.archiveDocs = t.value.split(',').map(x => x.trim()).filter(Boolean);
+      else if (['archiveDocs', 'evDocsAll', 'evDocsCamp', 'evDocsEvent', 'evDocsEventCamp'].includes(d.set)) s[d.set] = t.value.split(',').map(x => x.trim()).filter(Boolean);
       else if (d.set === 'docKinds' || d.set === 'requiredDocs') { s[d.set] = t.value.split(',').map(x => x.trim()).filter(Boolean); if (!s.docKinds.length) s.docKinds = CP.defaultSettings().docKinds; }
       else if (d.set === 'retentionDefault') s.retentionDefault = Number(t.value || 12);
       else s[d.set] = t.value.trim();

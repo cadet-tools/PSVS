@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.43.0 — 2026-10-17
+- Pasākuma dokumenti (`forms.js`): dalībnieka dokumenti → `S.db.documents` ar `eventId` un `title` “<veids> — <pasākums> (datums)”, faili `Macibu_gadi/<gads>/Pasakumi/<pasākums>/Dalibnieki/<Uzvārds Vārds> - <veids>.<ext>`; kopīgie → `ev.docs`, faili pasākuma mapē. Veidi no iestatījumiem `evDocsAll`, `evDocsCamp`, `evDocsEvent`, `evDocsEventCamp`; “Cits” — ar nosaukumu (`prompt`). Pievienojot, pasākums tiek saglabāts (`commit`). Noņemšana — tikai ieraksts, fails paliek.
+- Personas kartītē “Pasākumi” — ✓/✗ pa pasākuma dokumentiem. `ui.kindOptions` saglabā kategoriju, kuras nav sarakstā (piem., “Vecāku atļauja”); dokumenta logā nosaukums vairs netiek dzēsts kategorijām, kas nav “Cits”.
+
 ## 1.42.0 — 2026-10-17
 - Pārcelšanas dialogs pārveidots: “No” un “Uz” gads (agrāk mērķis — tikai izvēlētais gads), atzīmes glabājas `moveSel` (meklēšana tās nezaudē), aktīvie atzīmēti pēc noklusējuma; “Nepārceltos pārvietot uz arhīvu” (`CP.people.archivePerson`, aiziešanas datums — avota gada beigas vai šodiena, iemesls “Nav pārcelts uz …”); tukša grupa = katram sava grupa no avota gada; sarakstā neatdotā ekipējuma skaits un gada dokumenti (`docValidity` ∩ obligātie), kam vajadzēs jaunu. Poga Iestatījumos: “⇄ Pārcelt dalībniekus uz citu gadu”.
 

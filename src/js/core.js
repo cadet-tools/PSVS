@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.42.0';
+  CP.VERSION = '1.43.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -323,6 +323,8 @@ window.CP = window.CP || {};
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
+    // pasākumu dokumenti: katram dalībniekam (visiem pasākumiem / nometnēm) un pasākumam kopīgie
+    evDocsAll: ['Vecāku atļauja'], evDocsCamp: ['Dalībnieka aptaujas lapa'], evDocsEvent: ['Kopējā parakstu lapa'], evDocsEventCamp: ['Nometnes žurnāls (aizpildīts)'],
     // dokumenti ar derīguma termiņu: mēneši no izsniegšanas; schoolYear — derīgs tikai savā mācību gadā
     groupDays: {},
     absenceStreak: 3,
@@ -376,7 +378,7 @@ window.CP = window.CP || {};
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'changelog', 'sources', 'years', 'enrollments', 'events', 'sessions', 'schedule', 'scheduleDel', 'vfsTests']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals', 'archiveDocs']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals', 'archiveDocs', 'evDocsAll', 'evDocsCamp', 'evDocsEvent', 'evDocsEventCamp']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     // jaunā atzīme “Centra arhīvs” — esošajām datu mapēm ieslēdz vienu reizi (lietotājs vēlāk var izslēgt)
     if (!raw.settings?.arhivsAdded) { if (!d.settings.registries.includes('arhivs')) d.settings.registries.splice(1, 0, 'arhivs'); d.settings.arhivsAdded = true; }
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };

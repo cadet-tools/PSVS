@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.42.0';
+  CP.VERSION = '1.43.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   CP.SCHEMA = 7;
@@ -326,6 +326,8 @@ window.CP = window.CP || {};
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
     registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
+    // pasākumu dokumenti: katram dalībniekam (visiem pasākumiem / nometnēm) un pasākumam kopīgie
+    evDocsAll: ['Vecāku atļauja'], evDocsCamp: ['Dalībnieka aptaujas lapa'], evDocsEvent: ['Kopējā parakstu lapa'], evDocsEventCamp: ['Nometnes žurnāls (aizpildīts)'],
     // dokumenti ar derīguma termiņu: mēneši no izsniegšanas; schoolYear — derīgs tikai savā mācību gadā
     groupDays: {},
     absenceStreak: 3,
@@ -379,7 +381,7 @@ window.CP = window.CP || {};
     d.settings = { ...def, ...(raw.settings || {}) };
     d.settings.ocr = { ...def.ocr, ...(raw.settings?.ocr || {}) };
     for (const k of ['people', 'documents', 'equipment', 'relations', 'log', 'tasks', 'audit', 'changelog', 'sources', 'years', 'enrollments', 'events', 'sessions', 'schedule', 'scheduleDel', 'vfsTests']) if (!Array.isArray(d[k])) d[k] = [];
-    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals', 'archiveDocs']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
+    for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals', 'archiveDocs', 'evDocsAll', 'evDocsCamp', 'evDocsEvent', 'evDocsEventCamp']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     // jaunā atzīme “Centra arhīvs” — esošajām datu mapēm ieslēdz vienu reizi (lietotājs vēlāk var izslēgt)
     if (!raw.settings?.arhivsAdded) { if (!d.settings.registries.includes('arhivs')) d.settings.registries.splice(1, 0, 'arhivs'); d.settings.arhivsAdded = true; }
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
@@ -2224,7 +2226,7 @@ window.CP = window.CP || {};
     U.$(sel).innerHTML = S.db.people.filter(p => (all || D.isCurrent(p) || p.id === chosen) && (D.inYear(p) || p.id === chosen)).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)))
       .map(p => `<option value="${p.id}" ${p.id === chosen ? 'selected' : ''}>${U.esc(U.sortName(p))}${D.groupOf(p) ? ' · ' + U.esc(D.groupOf(p)) : ''}</option>`).join('');
   };
-  ui.kindOptions = sel => S.db.settings.docKinds.map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
+  ui.kindOptions = sel => [...(sel && !S.db.settings.docKinds.includes(sel) ? [sel] : []), ...S.db.settings.docKinds].map(k => `<option ${k === sel ? 'selected' : ''}>${U.esc(k)}</option>`).join('');
 
   CP.ui = ui;
 })(window.CP);
@@ -3176,7 +3178,7 @@ window.CP = window.CP || {};
   /** Ārsta izziņa u.c.: prasa izsniegšanas datumu, termiņu aprēķina pats (var labot) */
   function docRuleUi() {
     const kind = dform.elements.kind.value, r = D.docRule(kind), iss = dform.elements.issued, exp = dform.elements.expires;
-    const tn = needsTitle(kind); U.$('docTitleWrap').classList.toggle('hidden', !tn); dform.elements.title.required = tn;
+    const tn = needsTitle(kind); U.$('docTitleWrap').classList.toggle('hidden', !tn && !dform.elements.title.value); dform.elements.title.required = tn;
     U.$('docIssuedLbl').innerHTML = r ? `${U.esc(kind)}: izsniegšanas datums <b class="red">*</b>` : 'Dokumenta datums (izsniegts)';
     iss.required = !!r;
     const arc = (S.db.settings.archiveDocs || []).includes(kind);
@@ -3195,7 +3197,7 @@ window.CP = window.CP || {};
   };
   dform.addEventListener('submit', e => {
     e.preventDefault(); const o = Object.fromEntries(new FormData(dform));
-    o.title = needsTitle(o.kind) ? String(o.title || '').trim() : '';
+    o.title = String(o.title || '').trim();
     if (needsTitle(o.kind) && !o.title) { dform.elements.title.focus(); return ui.toast('Ieraksti dokumenta nosaukumu — kategorijai “Cits” tas ir obligāts', 'warn'); }
     if (dform.dataset.edit) Object.assign(S.db.documents.find(x => x.id === dform.dataset.edit), o);
     else { S.db.documents.push({ ...o, id: U.uid(), path: '', sourceId: '', addedAt: U.now(), yearId: o.yearId || U.yearOfDate(o.received) || D.activeYear() }); D.audit(o.personId, 'doc-add', [o.kind]); }
@@ -5429,6 +5431,10 @@ window.CP = window.CP || {};
         <div class="field wide"><label>Dokumentu kategorijas (ar komatu)</label><input data-set="docKinds" value="${esc(s.docKinds.join(', '))}"></div>
         <div class="field wide"><label>Obligātie dokumenti katrai personai (ar komatu)</label><input data-set="requiredDocs" value="${esc(s.requiredDocs.join(', '))}"></div>
         <div class="field wide"><label>Dokumenti, kuru oriģināli jānodod Centra arhīvam (ar komatu)</label><input data-set="archiveDocs" value="${esc((s.archiveDocs || ['Pieteikuma anketa', 'Līgums']).join(', '))}"></div>
+        <div class="field wide"><label>Pasākumi — katra dalībnieka dokumenti visiem pasākumiem (ar komatu)</label><input data-set="evDocsAll" value="${esc((s.evDocsAll || []).join(', '))}"></div>
+        <div class="field wide"><label>Nometnēs — katra dalībnieka papildu dokumenti</label><input data-set="evDocsCamp" value="${esc((s.evDocsCamp || []).join(', '))}"></div>
+        <div class="field wide"><label>Pasākuma kopīgie dokumenti (visiem pasākumiem)</label><input data-set="evDocsEvent" value="${esc((s.evDocsEvent || []).join(', '))}"></div>
+        <div class="field wide"><label>Nometnes kopīgie dokumenti</label><input data-set="evDocsEventCamp" value="${esc((s.evDocsEventCamp || []).join(', '))}"><div class="hint muted">Tos pievieno pasākuma lapā (Veidlapas). “Cits” dokumentu var pievienot vienmēr.</div></div>
         <div class="field wide"><label>Atgādināt, ja persona nav atzīmēta kā ievadīta / nodota</label><div class="actions">${CP.REGS.map(r => `<label class="check"><input type="checkbox" data-reg-set="${r.k}" ${(s.registries || []).includes(r.k) ? 'checked' : ''}> ${esc(r.l)}</label>`).join('')}</div></div></div></section>
 
       <section class="card"><h3>Anketu nolasīšana</h3><div class="fieldgrid">
@@ -5475,7 +5481,7 @@ window.CP = window.CP || {};
     const t = e.target, d = t.dataset, s = S.db.settings;
     if (d.set) {
       if (d.set === 'autosave') s.autosave = t.checked;
-      else if (d.set === 'archiveDocs') s.archiveDocs = t.value.split(',').map(x => x.trim()).filter(Boolean);
+      else if (['archiveDocs', 'evDocsAll', 'evDocsCamp', 'evDocsEvent', 'evDocsEventCamp'].includes(d.set)) s[d.set] = t.value.split(',').map(x => x.trim()).filter(Boolean);
       else if (d.set === 'docKinds' || d.set === 'requiredDocs') { s[d.set] = t.value.split(',').map(x => x.trim()).filter(Boolean); if (!s.docKinds.length) s.docKinds = CP.defaultSettings().docKinds; }
       else if (d.set === 'retentionDefault') s.retentionDefault = Number(t.value || 12);
       else s[d.set] = t.value.trim();
@@ -5678,6 +5684,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const NEWS = [
+    { v: '1.43.0', date: '2026-10-17', title: 'Pasākumu dokumenti', items: [
+      'Pasākuma lapā (Veidlapas) pie katra izvēlētā dalībnieka ir pogas dokumentu pievienošanai: **Vecāku atļauja** (visiem pasākumiem), **Dalībnieka aptaujas lapa** (nometnēm) un **＋ cits**. Pievienotie redzami arī jaunsarga kartītē — “Visi personas dokumenti” un “Pasākumi” (✓ / ✗).',
+      'Kartē **“Pasākuma dokumenti”** — kopīgie: **Kopējā parakstu lapa**, nometnei **aizpildīts nometnes žurnāls** un citi, kā arī cik dalībniekiem dokumenti jau ir. Dokumentu sarakstus var mainīt Iestatījumos → Dokumenti.'
+    ] },
     { v: '1.42.0', from: '1.41.0', date: '2026-10-17', title: 'Mācību gadi: pārcelšana un dzēšana', items: [
       'Iestatījumos → Mācību gadi poga **“⇄ Pārcelt dalībniekus uz citu gadu”**: izvēlies, no kura uz kuru gadu, un **atzīmē, kurus pārcelt** (aktīvie atzīmēti jau sākumā). **Nepārceltos** var uzreiz pārvietot uz arhīvu. Katram paliek sava grupa (vai norādi jaunu visiem). Līgums, anketa, MTL aprites lapas (arī iepriekšējās) un neatdotais ekipējums pieder personai un paliek spēkā arī jaunajā gadā; **ārsta izziņa** derīga tikai savā mācību gadā — sarakstā redzams, kam vajadzēs jaunu.',
       'Iestatījumos → Mācību gadi pie gada ir poga **“✕ Dzēst”**. Tukšu gadu dzēš pēc apstiprinājuma; ja gadā ir dalības, nodarbības, pasākumi vai VFS testi, rīks vispirms jautā, **uz kuru gadu tos pārcelt**. Izvēlēto un pašreizējo gadu dzēst nevar.',
@@ -5715,8 +5725,7 @@ window.CP = window.CP || {};
       'Pie pogām **“Bloķēt rīku”** un **“Saglabāt”** vienmēr redzams stāvoklis: **✓ Rīks iestatīts** vai **✕** ar progresu. Uzspiežot uz tā, saraksts atveras.',
       '**Iestatījumi** ir sadalīti cilnēs: Pamata, Drošība un kopijas, Dokumenti, Saziņa.',
       '**Instruktora darba dati** (tie nonāk līgumos) ir Iestatījumos → Pamata. E-pastam jābūt darba adresei **…@jc.gov.lv**.',
-      'Vārdi, uzvārdi un vietu nosaukumi automātiski sākas ar **lielo burtu**.',
-      '**Arhīvs** ir atsevišķa lapa ar visiem arhivētajiem no visiem mācību gadiem.'
+      'Vārdi, uzvārdi un vietu nosaukumi automātiski sākas ar **lielo burtu**. **Arhīvs** ir atsevišķa lapa ar visiem arhivētajiem no visiem mācību gadiem.'
     ] },
     { v: '1.37.0', date: '2026-10-16', title: 'Datu kvalitāte, 21 gads un darbs uz diviem datoriem', items: [
       'Lapa **“Datu kvalitāte”** (atver no brīdinājuma Pārskatā) parāda, kas jāsakārto: iespējami dublikāti, nederīgs personas kods, trūkst dzimuma, pārstāvja vai tālruņa, nederīgs e-pasts, nav grupas, nav atrasts dokumenta fails.',
@@ -8059,7 +8068,7 @@ window.CP = window.CP || {};
         const on = chosen.has(p.id), m = D.eventDocIssues(p), part = (ev.participants || []).find(x => x.pid === p.id);
         return `<div class="row pick ${on ? 'on' : ''}"><label class="check grow"><input type="checkbox" data-evpick="${p.id}" ${on ? 'checked' : ''}> ${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted"> ${esc(D.groupOf(p, ev.yearId) || '')}</small>
           ${m.length ? `<br><small class="warn" title="Bez šiem dokumentiem jaunsargs nedrīkst piedalīties pasākumā">⚠ Trūkst: ${esc(m.join(', '))}</small>` : ''}</span></label>
-          ${on && ev.type === 'camp' ? personCoun(p, part) : ''}</div>`;
+          ${on && ev.type === 'camp' ? personCoun(p, part) : ''}${on ? personDocChips(ev, p) : ''}</div>`;
       };
       const ownN = ps.filter(p => !p._ext).length, extN = ps.length - ownN;
       const right = `<section class="card ev-pick"><h3>${ic('users')}Dalībnieki <span class="pill ${ps.length ? 'ok' : ''}">${ownN} izvēlēti${extN ? ` + ${extN} no citām vienībām` : ''}</span></h3>
@@ -8074,7 +8083,7 @@ window.CP = window.CP || {};
       const actions = `<button data-act="formSave">${ic('save', '💾')} Saglabāt</button><button class="mainbtn" data-act="formPdf">${ic('file', '📄')} Skatīt PDF</button><button data-act="formPrint">Drukāt</button><button data-act="formDownload">${ic('download', '⬇')} Lejupielādēt PDF</button>
         ${tpls.map(t => `<button data-act="formDocx" data-arg="${t.id}" title="Aizpildīt manu Word veidni">${ic('file', '📄')} Word: ${esc(t.name)}</button>`).join('')}`;
       return `<div class="page">${ui.pageHead(ev.title ? esc(ev.title) : (ev.id ? 'Pasākums' : 'Jauna ' + T.l.toLowerCase()), esc(T.l) + (ev.when ? ' · ' + esc(ev.when) : ''), actions)}
-        <div class="ev-layout"><div>${left}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
+        <div class="ev-layout"><div>${left}${eventDocsCard(ev)}${CP.extPeople ? CP.extPeople.card(ev) : ''}</div><div>${right}</div></div></div>`;
     }
   };
 
@@ -8243,13 +8252,89 @@ window.CP = window.CP || {};
     } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
   };
 
+  /* ================= Pasākuma dokumenti =================
+     Dalībnieka dokumenti (vecāku atļauja, aptaujas lapa…) → S.db.documents ar eventId (redzami arī personas kartītē).
+     Kopīgie (parakstu lapa, aizpildīts žurnāls…) → ev.docs. Faili: Macibu_gadi/<gads>/Pasakumi/<pasākums>/[Dalibnieki/]. */
+  const evKinds = ev => ({
+    person: [...(st().evDocsAll || []), ...(ev.type === 'camp' ? st().evDocsCamp || [] : [])],
+    event: [...(st().evDocsEvent || []), ...(ev.type === 'camp' ? st().evDocsEventCamp || [] : [])]
+  });
+  const evTitle = ev => `${ev.title || TYPES[ev.type].short}${ev.dateFrom || ev.instrDate ? ' (' + U.fmtDate(ev.dateFrom || ev.instrDate) + ')' : ''}`;
+  const pDocs = (ev, pid) => ev.id ? S.db.documents.filter(d => d.eventId === ev.id && d.personId === pid) : [];
+  const evDir = ev => ['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)];
+  let evUp = null;
+  const evInput = () => { let i = U.$('evDocFile'); if (!i) { i = document.createElement('input'); i.type = 'file'; i.id = 'evDocFile'; i.hidden = true; i.multiple = true; document.body.appendChild(i); i.addEventListener('change', onEvFile); } return i; };
+  /** arg: "p|<pid>|<kind>" vai "e||<kind>"; kind tukšs → “Cits” (jautā nosaukumu) */
+  A.evDocAdd = arg => {
+    if (!S.root) return CP.needRoot?.() || ui.toast('Vispirms izvēlies datu mapi', 'warn');
+    const [scope, pid, kind0] = String(arg).split('|');
+    let kind = kind0, title = '';
+    if (!kind) { title = (prompt(scope === 'p' ? 'Kas tas par dokumentu? (piem., Medikamentu lietošanas atļauja)' : 'Kas tas par dokumentu? (piem., Maršruta karte, Akts)') || '').trim(); if (!title) return; kind = 'Cits'; }
+    const ev = S.formEdit; if (!ev) return;
+    commit(true);   // pasākumam jābūt saglabātam, lai dokumentus var piesaistīt
+    evUp = { evId: ev.id, scope, pid, kind, title };
+    const i = evInput(); i.multiple = scope === 'e'; i.value = ''; i.click();
+  };
+  async function onEvFile(e) {
+    const files = [...e.target.files]; e.target.value = ''; const c = evUp; evUp = null;
+    const ev = S.formEdit && S.formEdit.id === c?.evId ? S.formEdit : null; if (!c || !ev || !files.length) return;
+    let n = 0;
+    for (const f of files) {
+      const ext = (f.name.split('.').pop() || 'pdf').toLowerCase(), label = c.title || c.kind;
+      try {
+        if (c.scope === 'p') {
+          const p = D.person(c.pid); if (!p) continue;
+          const path = await CP.store.saveFile([...evDir(ev), 'Dalibnieki'], `${U.sortName(p)} - ${label}.${ext}`, f);
+          if (!path) continue;
+          S.db.documents.push({ id: U.uid(), personId: p.id, kind: c.kind, title: `${label} — ${evTitle(ev)}`, eventId: ev.id, format: ext === 'edoc' ? 'edoc' : 'pdf', path, sourceId: 'main', received: U.iso(), addedAt: U.now(), yearId: ev.yearId || D.activeYear(), review: 'received', size: f.size });
+          D.audit(p.id, 'doc-add', [`${label} (${ev.title || TYPES[ev.type].short})`]);
+        } else {
+          const path = await CP.store.saveFile(evDir(ev), `${label}.${ext}`, f);
+          if (!path) continue;
+          (ev.docs = ev.docs || []).push({ id: U.uid(), kind: c.kind, title: c.title || '', path, at: U.now(), size: f.size });
+        }
+        n++;
+      } catch (err) { ui.toast('Neizdevās saglabāt ' + f.name + ': ' + err.message, 'err', 9000); }
+    }
+    if (n) { commit(true); CP.store.changed(); renderKeepScroll(); ui.toast(n === 1 ? `Pievienots: ${c.title || c.kind}` : `Pievienoti ${n} faili`, 'ok'); }
+  }
+  A.evDocDel = arg => {
+    const [scope, id] = String(arg).split('|'), ev = S.formEdit; if (!ev) return;
+    if (scope === 'p') {
+      const d = S.db.documents.find(x => x.id === id); if (!d || !confirm(`Noņemt “${d.title || d.kind}” no pasākuma un kartītes?\n\nFails mapē paliek.`)) return;
+      S.db.documents = S.db.documents.filter(x => x.id !== id); D.audit(d.personId, 'doc-remove', [d.title || d.kind]);
+    } else {
+      const d = (ev.docs || []).find(x => x.id === id); if (!d || !confirm(`Noņemt “${d.title || d.kind}” no pasākuma?\n\nFails mapē paliek.`)) return;
+      ev.docs = ev.docs.filter(x => x.id !== id);
+    }
+    commit(true); CP.store.changed(); renderKeepScroll();
+  };
+  /** Dalībnieka rindā: obligātie pasākuma dokumenti (✓ atvērt / ＋ pievienot) un citi */
+  function personDocChips(ev, p) {
+    const K = evKinds(ev).person, mine = pDocs(ev, p.id);
+    const chip = k => { const d = mine.find(x => x.kind === k); return d ? `<span class="evdoc ok"><button type="button" class="sm" data-act="view" data-arg="main|${esc(d.path)}" title="Atvērt">✓ ${esc(k)}</button><button type="button" class="sm ghost" data-act="evDocDel" data-arg="p|${d.id}" title="Noņemt">✕</button></span>` : `<button type="button" class="sm evdoc miss" data-act="evDocAdd" data-arg="p|${p.id}|${esc(k)}" title="Pievienot skenētu dokumentu">＋ ${esc(k)}</button>`; };
+    const other = mine.filter(d => !K.includes(d.kind));
+    return `<div class="evdocs">${K.map(chip).join('')}${other.map(d => `<span class="evdoc ok"><button type="button" class="sm" data-act="view" data-arg="main|${esc(d.path)}">✓ ${esc((d.title || d.kind).split(' — ')[0])}</button><button type="button" class="sm ghost" data-act="evDocDel" data-arg="p|${d.id}" title="Noņemt">✕</button></span>`).join('')}<button type="button" class="sm ghost" data-act="evDocAdd" data-arg="p|${p.id}|" title="Pievienot citu dokumentu">＋ cits</button></div>`;
+  }
+  function eventDocsCard(ev) {
+    const K = evKinds(ev), own = evPeople(ev).filter(p => !p._ext), docs = ev.docs || [];
+    const per = K.person.map(k => { const n = own.filter(p => pDocs(ev, p.id).some(d => d.kind === k)).length; return `<span class="pill ${own.length && n === own.length ? 'ok' : n < own.length ? 'warn' : ''}">${esc(k)}: ${n}/${own.length}</span>`; }).join(' ');
+    const row = d => `<div class="row"><div class="grow"><b>${esc(d.title || d.kind)}</b><div class="small muted">${esc(U.fmtDate(String(d.at).slice(0, 10)))} · ${esc(d.path)}</div></div><button class="sm mainbtn" data-act="view" data-arg="main|${esc(d.path)}">Atvērt</button><button class="sm ghost danger" data-act="evDocDel" data-arg="e|${d.id}" title="Noņemt no pasākuma (fails paliek)">✕</button></div>`;
+    return `<section class="card" id="evDocsCard"><h3>${ic('files')}Pasākuma dokumenti</h3>
+      ${K.person.length ? `<p class="small" style="margin-top:0">Dalībnieku dokumenti: ${per || '—'} <span class="muted">— pievieno pie katra dalībnieka sarakstā labajā pusē.</span></p>` : ''}
+      ${K.event.map(k => { const have = docs.filter(d => d.kind === k); return `<div class="row ${have.length ? '' : 'evdoc-need'}"><div class="grow"><b>${have.length ? '✓' : '✗'} ${esc(k)}</b>${have.length ? '' : '<div class="small muted">vēl nav pievienots</div>'}</div><button class="sm ${have.length ? '' : 'mainbtn'}" data-act="evDocAdd" data-arg="e||${esc(k)}">＋ ${have.length ? 'Vēl' : 'Pievienot'}</button></div>${have.map(row).join('')}`; }).join('')}
+      ${docs.filter(d => !K.event.includes(d.kind)).map(row).join('')}
+      <div class="actions" style="margin-top:8px"><button class="sm" data-act="evDocAdd" data-arg="e||">＋ Cits dokuments</button></div>
+      <p class="small muted">Faili tiek saglabāti mapē ${esc(evDir(ev).join(' › '))}. Dalībnieku dokumenti redzami arī katra jaunsarga kartītē.</p></section>`;
+  }
+
   /* --- Personas kartītē: dalība pasākumos --- */
   CP.forms = {
     evPeople, evStaff, renderKeepScroll: () => renderKeepScroll(), commit: q => commit(q),
     personCard(p) {
       const evs = (S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id)).sort((a, b) => String(b.dateFrom || b.instrDate).localeCompare(String(a.dateFrom || a.instrDate)));
       if (!evs.length) return '';
-      return `<section class="card"><h3>${ic('clipboard')}Pasākumi</h3>${evs.slice(0, 6).map(e => `<div class="row"><div class="grow"><b>${esc(e.title || TYPES[e.type].short)}</b><div class="small muted">${esc(TYPES[e.type].short)} · ${esc(e.when || U.fmtDate(e.instrDate))}</div></div><button class="sm ghost" data-act="formOpen" data-arg="${e.id}">Atvērt</button></div>`).join('')}${evs.length > 6 ? `<p class="small muted">… un vēl ${evs.length - 6}</p>` : ''}</section>`;
+      return `<section class="card"><h3>${ic('clipboard')}Pasākumi</h3>${evs.slice(0, 6).map(e => `<div class="row"><div class="grow"><b>${esc(e.title || TYPES[e.type].short)}</b><div class="small muted">${esc(TYPES[e.type].short)} · ${esc(e.when || U.fmtDate(e.instrDate))}</div>${(() => { const K = evKinds(e).person, mine = pDocs(e, p.id); return K.length || mine.length ? `<div class="small">${K.map(k => mine.some(d => d.kind === k) ? `<span class="okc">✓ ${esc(k)}</span>` : `<span class="red">✗ ${esc(k)}</span>`).join(' · ')}${mine.filter(d => !K.includes(d.kind)).map(d => ` · <span class="okc">✓ ${esc((d.title || d.kind).split(' — ')[0])}</span>`).join('')}</div>` : ''; })()}</div><button class="sm ghost" data-act="formOpen" data-arg="${e.id}">Atvērt</button></div>`).join('')}${evs.length > 6 ? `<p class="small muted">… un vēl ${evs.length - 6}</p>` : ''}</section>`;
     },
     whenText
   };
