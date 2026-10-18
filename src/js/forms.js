@@ -142,8 +142,8 @@
   };
 
   /* ---------------- Savas Word veidnes ---------------- */
-  /* Jaunais Veidlapu izkārtojums — pagaidām tikai testa kanālā (pēc apstiprināšanas — visiem) */
-  const NEWUI = () => CP.CHANNEL === 'test';
+  /* Veidlapu izkārtojums (1.53): vienādas galvenes pogas, grupētas veidņu pogas, vienāda augstuma kastītes — abos kanālos */
+  const NEWUI = () => true;
   const TPL_KIND = t => t.type === 'contract' ? 'Līguma veidne' : t.type === 'custom' ? `Sava veidlapa · ${t.mode === 'list' ? 'saraksts' : 'katrai personai savs dokuments'}` : t.type === 'camp' ? 'Nometnes žurnāla veidne' : 'Instruktāžas veidne';
   function tplCardNew() {
     const list = st().docTemplates || [];

@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.53.0 — 2026-10-18
+- Veidlapu lapas jaunais izkārtojums (1.52.5 testa kanālā) ieslēgts arī stabilajā versijā (`NEWUI() → true`).
+
 ## 1.52.5 — 2026-10-18
 - **Tikai testa kanālā** (`NEWUI()` forms.js): Veidlapu lapas jaunais izkārtojums — galvenes pogas vienādas (instruktāža vairs nav izcelta); “Savas Word veidnes”: veidņu saraksts ar vienādām darbību pogām, grupas “Ielādēt veidni” (4 pogas režģī) un “Paraugi lejupielādei” (3), “Pieejamās atzīmes” — skaidra poga ar ▾, kas izver sarakstu; kastītes “Darbinieki un audzinātāji” un “Savas Word veidnes” vienāda augstuma (`.forms-eq`, bez mūra izkārtojuma). Stabilajā versijā nekas nemainās.
 
