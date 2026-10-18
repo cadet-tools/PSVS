@@ -838,7 +838,10 @@ details.docsec:not([open]) .docsec-hint{display:inline} details.docsec[open] .do
 .unit-badge{display:flex;align-items:center;gap:8px;min-width:0;max-width:34%;flex:0 1 auto;font-weight:700;font-size:14px;color:var(--txt)}
 .unit-badge img{height:32px;width:auto;max-width:64px;object-fit:contain;flex:none}
 .unit-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (max-width:820px){.unit-badge span{display:none}}
+@media (max-width:820px){.unit-badge{display:none}}   /* vienības logo — tikai kopā ar CADET.LV logo (šaurā logā tas paslēpts) */
+.hdr-logo.with-unit{height:22px;top:40%}
+.hdr-logo.with-unit::after{content:'CADET PERSONĀLS';position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:2px;font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--muted);white-space:nowrap}
+html:not([data-theme="light"]) .hdr-logo{filter:brightness(1.9) saturate(1.15) drop-shadow(0 0 1px #ffffff40)}
 .unit-set{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .unit-prev{width:96px;height:96px;border:1px dashed var(--edge2);border-radius:12px;display:grid;place-items:center;flex:none;background:var(--field,transparent);overflow:hidden}
 .unit-prev img{max-width:88px;max-height:88px;object-fit:contain}

@@ -24,12 +24,13 @@
             ${u.logo ? '<button type="button" class="sm ghost danger" data-act="unitLogoDel">Noņemt logo</button>' : ''}</div>
         </div>
       </div>
-      <p class="small muted">Redzams rīka augšējā joslā un — ja izvēlas — rīka neoficiālajos failos, piemēram, jaunsarga kopsavilkumā (tad tur ir arī CADET.LV logo ar “CADET PERSONĀLS”). Oficiālajās veidlapās (instruktāžas lapas, nometņu žurnāli, līgumi, protokoli) logo netiek likts. Ieteicams PNG ar caurspīdīgu fonu.</p></section>`;
+      <p class="small muted">Redzams rīka augšējā joslā (kopā ar CADET.LV logo un uzrakstu “CADET PERSONĀLS”) un — ja izvēlas — rīka neoficiālajos failos, piemēram, jaunsarga kopsavilkumā (tad tur ir arī CADET.LV logo ar “CADET PERSONĀLS”). Oficiālajās veidlapās (instruktāžas lapas, nometņu žurnāli, līgumi, protokoli) logo netiek likts. Ieteicams PNG ar caurspīdīgu fonu.</p></section>`;
   }
   /** Galvenes josla: logo + nosaukums kreisajā pusē */
   function paint() {
     const bar = document.querySelector('.yearbar'); if (!bar) return;
     let b = U.$('unitBadge'); const u = S.db ? get() : { name: '', logo: '' };
+    bar.querySelector('.hdr-logo')?.classList.toggle('with-unit', !!(u.name || u.logo));   // ar vienības logo — vienmēr arī CADET.LV un “CADET PERSONĀLS”
     if (!u.name && !u.logo) { b?.remove(); return; }
     if (!b) { b = document.createElement('div'); b.id = 'unitBadge'; b.className = 'unit-badge'; bar.insertBefore(b, bar.firstChild); }
     const h = `${u.logo ? `<img src="${u.logo}" alt="">` : ''}${u.name ? `<span>${esc(u.name)}</span>` : ''}`;

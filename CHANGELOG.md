@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.52.3 — 2026-10-18
+- Rīka galvenē: ja ir vienības logo / nosaukums, centrētajam CADET.LV logo apakšā uzraksts “CADET PERSONĀLS” (`.hdr-logo.with-unit`); tumšajā tēmā CADET.LV logo gaišāks. Šaurā logā (≤ 820 px), kur CADET.LV logo paslēpts, paslēpts arī vienības logo — vienības logo nekad nav redzams bez CADET.LV. Kopsavilkuma PDF un savās veidlapās tas jau bija.
+
 ## 1.52.2 — 2026-10-18
 - Savas veidlapas vairs netiek automātiski lejupielādētas: faili vienmēr tiek saglabāti datu mapē (piesaistītie — personas mapē, pārējie un saraksti — `Macibu_gadi/<gads>/Veidlapas/<nosaukums datums>/`), ieraksts `S.db.formDocs` = { id, tid, name, mode, date, at, yearId, files: [{ pid, pids, name, path }] }. Sarakstā “Sagatavotās veidlapas” (filtrs “Savas veidlapas”): Skatīt (vairākiem — saraksts ar katru dokumentu), Lejupielādēt (viens — Word, vairāki — ZIP), noņemt no saraksta (faili paliek). Pēc sagatavošanas pirmais dokuments atveras apskatei. Darbību žurnālā — “Sava veidlapa”. Veidlapu galvenē poga “Sava veidlapa”.
 
