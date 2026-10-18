@@ -165,13 +165,13 @@
     grid._layT = setTimeout(() => { grid._laying = false; }, 150);
   }
   function apply() {
-    document.querySelectorAll('#main .cards2').forEach(g => {
+    document.querySelectorAll('#main .cards2:not(.forms-eq)').forEach(g => {   // forms-eq — vienāda augstuma kastītes, bez mūra izkārtojuma
       if (!g._mas) { g._mas = true; for (const c of g.children) ro?.observe(c); }
       lay(g);
     });
   }
   (CP.afterRender = CP.afterRender || []).push(apply);
-  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2').forEach(lay));
+  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2:not(.forms-eq)').forEach(lay));
   CP.masonry = { apply, lay };
 })(window.CP);
 

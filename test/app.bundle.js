@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.52.4';
+  CP.VERSION = '1.52.5';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -4839,13 +4839,13 @@ window.CP = window.CP || {};
     grid._layT = setTimeout(() => { grid._laying = false; }, 150);
   }
   function apply() {
-    document.querySelectorAll('#main .cards2').forEach(g => {
+    document.querySelectorAll('#main .cards2:not(.forms-eq)').forEach(g => {   // forms-eq — vienāda augstuma kastītes, bez mūra izkārtojuma
       if (!g._mas) { g._mas = true; for (const c of g.children) ro?.observe(c); }
       lay(g);
     });
   }
   (CP.afterRender = CP.afterRender || []).push(apply);
-  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2').forEach(lay));
+  window.addEventListener('resize', () => document.querySelectorAll('#main .cards2:not(.forms-eq)').forEach(lay));
   CP.masonry = { apply, lay };
 })(window.CP);
 
@@ -8101,8 +8101,8 @@ window.CP = window.CP || {};
         <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}${base.some(x => x.kind === 'custom') ? chip('custom', 'Savas veidlapas') : ''}</div>`;
       const body = all.length ? (list.length ? list.slice(0, showN).map(row).join('') + (list.length > showN ? `<div class="actions" style="margin-top:8px"><button class="sm" data-act="ffMore">Rādīt vēl (${list.length - showN})</button></div>` : '') : '<p class="muted pad">Nekas neatbilst filtram.</p>')
         : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa”, “Nometnes žurnāls” vai “Līgums”.');
-      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>${CP.customForms?.tpls().length ? `<button data-act="cfNew">${ic('file', '📄')} Sava veidlapa</button>` : ''}`)}
-        <div class="cards2">
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="${NEWUI() ? '' : 'mainbtn'}" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>${CP.customForms?.tpls().length ? `<button data-act="cfNew">${ic('file', '📄')} Sava veidlapa</button>` : ''}`)}
+        <div class="cards2${NEWUI() ? ' forms-eq' : ''}">
           <section class="card wide"><h3>${ic('clipboard')}Sagatavotās veidlapas <span class="pill">${list.length}${list.length !== all.length ? ' no ' + all.length : ''}</span></h3>${all.length ? filters : ''}<div class="ev-list-all">${body}</div></section>
           <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>
           <section class="card"><h3>${ic('file')}Savas Word veidnes</h3>${tplCard()}</section>
@@ -8148,7 +8148,30 @@ window.CP = window.CP || {};
   };
 
   /* ---------------- Savas Word veidnes ---------------- */
+  /* Jaunais Veidlapu izkārtojums — pagaidām tikai testa kanālā (pēc apstiprināšanas — visiem) */
+  const NEWUI = () => CP.CHANNEL === 'test';
+  const TPL_KIND = t => t.type === 'contract' ? 'Līguma veidne' : t.type === 'custom' ? `Sava veidlapa · ${t.mode === 'list' ? 'saraksts' : 'katrai personai savs dokuments'}` : t.type === 'camp' ? 'Nometnes žurnāla veidne' : 'Instruktāžas veidne';
+  function tplCardNew() {
+    const list = st().docTemplates || [];
+    const help = [...(CP.customForms ? [['Savai veidlapai', [...CP.customForms.PERSON_HELP, ...CP.customForms.GLOBAL_HELP]]] : []), ['Instruktāžai un nometnei', CP.docxFill ? CP.docxFill.FIELDS_HELP : []], ['Līgumam', CP.CONTRACT_FIELDS_HELP || []]];
+    return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{vards}</code>, <code>{datums}</code>. Rīks to aizpildīs no kartīšu datiem. Atzīmes var ielikt arī rīkā ar pogu “Atzīmes”.</p>
+      <div class="tpl-list">${list.map(t => `<div class="tpl-row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(TPL_KIND(t))}</div></div>
+        <div class="tpl-acts">${t.type === 'custom' ? `<button class="sm" data-act="cfNew" data-arg="${t.id}">${ic('file', '📄')} Aizpildīt</button>` : ''}<button class="sm ghost" data-act="tplEdit" data-arg="${t.id}" title="Ielikt vai labot {atzīmes} veidnē tieši rīkā">${ic('edit', '✎')} Atzīmes</button><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt no saraksta">✕</button></div></div>`).join('') || '<p class="muted small">Vēl nav ielādētu veidņu.</p>'}</div>
+      <div class="tpl-group"><div class="tpl-gh">Ielādēt veidni</div><div class="tpl-grid">
+        <button class="sm" data-act="tplDocAdd" data-arg="custom" title="Jebkura cita veidlapa: iesniegums, atļauja, saraksts…">${ic('upload', '⬆')} Sava veidlapa</button>
+        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāža</button>
+        <button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometne</button>
+        <button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līgums</button></div></div>
+      <div class="tpl-group"><div class="tpl-gh">Paraugi lejupielādei</div><div class="tpl-grid three">
+        <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Instruktāža</button>
+        <button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Nometne</button>
+        <button class="sm ghost" data-act="tplDocSample" data-arg="contract">${ic('download', '⬇')} Līgums</button></div></div>
+      <details class="tpl-tags"><summary><span class="tpl-tags-btn">${ic('list', '☰')} Pieejamās atzīmes <span class="tpl-caret">▾</span></span></summary>
+        <p class="small muted">Personas atzīmes tekstā → katrai personai savs dokuments; tabulas rindā → saraksts (rinda katrai personai). Var rakstīt ar garumzīmēm: {Vārds} = {vards}.</p>
+        ${help.map(([h, rows]) => `<p class="small"><b>${esc(h)}</b></p>${ui.dl(rows)}`).join('')}</details>`;
+  }
   function tplCard() {
+    if (NEWUI()) return tplCardNew();
     const list = st().docTemplates || [];
     return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{nosaukums}</code>, <code>{datums}</code>, un tabulas rindu ar <code>{nr}</code> <code>{vards}</code>. Rīks to aizpildīs. Paraugus vari lejupielādēt un pielāgot.</p>
       ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : t.type === 'custom' ? `Sava veidlapa · ${t.mode === 'list' ? 'saraksts' : 'katrai personai savs dokuments'}` : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost" data-act="tplEdit" data-arg="${t.id}" title="Ielikt vai labot {atzīmes} veidnē tieši rīkā">${ic('edit', '✎')} Atzīmes</button>${t.type === 'custom' ? `<button class="sm mainbtn" data-act="cfNew" data-arg="${t.id}">${ic('file', '📄')} Aizpildīt…</button>` : ''}<button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}

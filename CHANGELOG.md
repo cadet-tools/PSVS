@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.52.5 — 2026-10-18
+- **Tikai testa kanālā** (`NEWUI()` forms.js): Veidlapu lapas jaunais izkārtojums — galvenes pogas vienādas (instruktāža vairs nav izcelta); “Savas Word veidnes”: veidņu saraksts ar vienādām darbību pogām, grupas “Ielādēt veidni” (4 pogas režģī) un “Paraugi lejupielādei” (3), “Pieejamās atzīmes” — skaidra poga ar ▾, kas izver sarakstu; kastītes “Darbinieki un audzinātāji” un “Savas Word veidnes” vienāda augstuma (`.forms-eq`, bez mūra izkārtojuma). Stabilajā versijā nekas nemainās.
+
 ## 1.52.4 — 2026-10-18
 - Savas veidlapas ar vienības logo: galvenes tabula 3 kolonnās ar fiksētu platumu (logo · nosaukums · CADET.LV + “CADET PERSONĀLS”). Garš nosaukums līdz 120 zīmēm un ļoti gari vārdi tiek dalīti, tāpēc vairs nepārbīda CADET.LV logo ārpus lapas. Ja CADET.LV logo neizdodas ielādēt, dokuments netiek sagatavots ar vienības logo (paziņojums), — vienības logo nekad nav bez CADET.LV.
 
