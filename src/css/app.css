@@ -878,3 +878,8 @@ html:not([data-theme="light"]) .hdr-logo{filter:brightness(1.9) saturate(1.15) d
 .tpl-tags>summary:hover .tpl-tags-btn{border-color:var(--teal)}.tpl-tags[open] .tpl-caret{transform:rotate(180deg)}.tpl-caret{display:inline-block;transition:transform .15s}
 
 .te-spell{background:var(--field,transparent);border:1px solid var(--edge2);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+
+::highlight(cp-spell){text-decoration:underline wavy #d93025;text-decoration-thickness:1.5px;text-decoration-skip-ink:none;background-color:#d9302514}
+.te-spell-menu{position:fixed;z-index:50;min-width:180px;max-width:280px;background:var(--panel,#16222b);border:1px solid var(--edge2);border-radius:10px;box-shadow:0 6px 24px #0008;padding:4px;display:flex;flex-direction:column}
+.te-spell-menu[hidden]{display:none}.te-spell-menu button{background:none;border:0;text-align:left;justify-content:flex-start;padding:6px 10px;border-radius:6px}.te-spell-menu button:hover{background:var(--edge)}
+.te-spell-menu hr{border:0;border-top:1px solid var(--edge);margin:4px 0}.te-spell-menu .pad{padding:6px 10px}

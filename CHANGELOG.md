@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.55.0 — 2026-10-18
+- Pareizrakstības pārbaude ar **rīka iebūvētu latviešu vārdnīcu** (Hunspell WebAssembly `vendor/spell/hunspell.min.js` — hunspell-asm 4.0.2, MIT; vārdnīca `lv.aff`/`lv.dic` — dictionary-lv 2.0.0, LGPL 2.1, J. Eisaks) atsevišķā pavedienā `vendor/spell/worker.js`. Vairs nav atkarīga no Chrome iestatījumiem; darbojas bezsaistē (faili bezsaistes sarakstā), teksts netiek sūtīts. Pārbauda visu dokumentu ar īstu progresu (vārdi pārbaudīti / kopā), kļūdas iezīmē ar CSS Custom Highlight (`::highlight(cp-spell)` — DOM netiek mainīts), pēc labojuma pārbauda rindkopu vēlreiz. Labā peles poga — ieteikumi (Hunspell suggest), “Ignorēt”, “Pievienot manai vārdnīcai” (`localStorage cp.spellDict`). Izlaiž {atzīmes}, e-pastus, saites, saīsinājumus (Nr.) un īsus lielo burtu vārdus. Pārlūka paša pareizrakstība redaktorā izslēgta.
+
 ## 1.54.3 — 2026-10-18
 - Atzīmju redaktorā virs dokumenta pareizrakstības pārbaudes josla ar procentiem un atlikušo laiku. Chrome neziņo, kad pārbaude beigusies, tāpēc laiks ir aptuvens pēc vārdu skaita (3 s + 1 s uz 25 vārdiem, ne vairāk kā 60 s); beigās “✓ Pareizrakstība pārbaudīta”, josla pazūd.
 

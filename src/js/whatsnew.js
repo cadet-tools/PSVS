@@ -13,7 +13,7 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.54.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+    { v: '1.55.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',
       'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}; **latviešu pareizrakstības pārbaude** pasvītro kļūdas (labā peles poga — ieteikumi). Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
@@ -30,7 +30,7 @@
     ] },
     { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
       'Galvenē statuss **● Tiešsaiste / ○ Bezsaiste** (ar skaitli, ja izmaiņas gaida nosūtīšanu uz Google). Uzspiežot — detaļas un pogas “Sinhronizēt tagad”, “Sagatavot bezsaistei”.',
-      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~18 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
+      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~23 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana, pareizrakstība) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
     ] },
     { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
       'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',

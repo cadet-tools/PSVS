@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.54.3';
+  CP.VERSION = '1.55.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -5728,7 +5728,7 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.54.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+    { v: '1.55.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',
       'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}; **latviešu pareizrakstības pārbaude** pasvītro kļūdas (labā peles poga — ieteikumi). Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
@@ -5745,7 +5745,7 @@ window.CP = window.CP || {};
     ] },
     { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
       'Galvenē statuss **● Tiešsaiste / ○ Bezsaiste** (ar skaitli, ja izmaiņas gaida nosūtīšanu uz Google). Uzspiežot — detaļas un pogas “Sinhronizēt tagad”, “Sagatavot bezsaistei”.',
-      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~18 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
+      'Rīks fonā pats **sagatavojas darbam bezsaistē** (~23 MB: Word un PDF skatīšana, veidlapas, līgumu veidnes, anketu nolasīšana, pareizrakstība) — pēc tam viss strādā arī bez interneta. Stāvoklis redzams arī Iestatījumi → Atļaujas. Kad internets atjaunojas, **šifrētā kopija Google Drive un Google kalendārs sinhronizējas automātiski**; ja jāpieslēdzas Google — parādās paziņojums ar pogu “Pieslēgties”.'
     ] },
     { v: '1.46.0', from: '1.14.1', date: '2026-10-17', title: 'Personas, piezīmes un imports', items: [
       'Kartītē (Pārskats un Visi dati) pie katra aizpildītā lauka ir poga **⧉ — kopēt**: vārds, uzvārds, personas kods (pilnā formā, arī ja ekrānā maskēts), tālrunis, e-pasts, adrese u. c. Ērti, ievadot datus DVS vai e-klasē. Lauki “Foto/video publicēšana” noņemti — piekrišanu dod līgumā.',
@@ -13383,53 +13383,94 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     } catch (e) { ui.toast('Veidni neizdevās atvērt: ' + e.message, 'err', 9000); }
   };
 
-  /* --- Pareizrakstība: pārlūka (Chrome) latviešu vārdnīca, tikai datorā. Atzīmes {…} var tikt pasvītrotas — tās nav kļūdas. --- */
+  /* --- Pareizrakstība: rīka iebūvētā latviešu vārdnīca (Hunspell, vendor/spell — darbojas datorā, arī bezsaistē; teksts netiek sūtīts).
+         Kļūdas iezīmē ar CSS Custom Highlight (dokumenta teksts netiek mainīts); labā peles poga — ieteikumi. Atzīmes {…}, skaitļi un e-pasti netiek pārbaudīti. --- */
   const spellOn = () => { try { return localStorage.getItem('cp.teSpell') !== '0'; } catch (e) { return true; } };
-  /** Viss dokuments ir VIENS rediģējams laukums — Chrome pārbauda visu tekstu, kad tas ir fokusā (ne tikai rindkopu, uz kuras kursors) */
-  function poke() {
-    const host = U.$('teDoc'); if (!host) return; const last = ed?.last || null;
-    host.focus({ preventScroll: true }); progress(host);
-    if (!last) { const r = document.createRange(); r.setStart(host, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
-    if (ed) { ed.last = last; ed.pokeUntil = Date.now() + 300; }
+  const myDict = () => { try { return new Set(JSON.parse(localStorage.getItem('cp.spellDict') || '[]')); } catch (e) { return new Set(); } };
+  const addMyDict = w => { const d = myDict(); d.add(w); try { localStorage.setItem('cp.spellDict', JSON.stringify([...d].slice(-2000))); } catch (e) { } };
+  let SW = null, swSeq = 0; const swWait = new Map(), ignored = new Set(), cache = new Map();   // vārds → true (pareizs) / false
+  function sw(op, data = {}) {
+    if (!SW) { SW = new Worker(CP.VENDOR + 'spell/worker.js'); SW.onmessage = e => { const w = swWait.get(e.data.id); if (w) { swWait.delete(e.data.id); e.data.ok ? w.res(e.data) : w.rej(Error(e.data.error)); } }; SW.onerror = e => { for (const w of swWait.values()) w.rej(Error('pārbaudi neizdevās ielādēt')); swWait.clear(); SW = null; }; }
+    const id = ++swSeq; return new Promise((res, rej) => { swWait.set(id, { res, rej }); SW.postMessage({ id, op, ...data }); });
   }
-  /** Pārbaudes josla. Chrome neziņo, kad pārbaude beigusies, tāpēc laiks ir aptuvens — pēc teksta garuma
-      (Chrome pārbauda pa daļām, kamēr dators ir brīvs); josla aizpildās līdz 100 % un pazūd. */
-  let progT = 0;
-  function progress(host) {
-    const box = U.$('teProg'); if (!box) return;
-    clearInterval(progT);
-    const words = (host.innerText.match(/\S+/g) || []).length, est = Math.min(60, Math.max(4, 3 + words / 25)) * 1000, t0 = Date.now();
-    const bar = box.querySelector('i'), lbl = box.querySelector('span');
-    box.hidden = false;
-    const tick = () => {
-      const k = Math.min(1, (Date.now() - t0) / est), pct = Math.round(100 * (1 - Math.pow(1 - k, 2)));
-      bar.style.width = pct + '%';
-      lbl.textContent = k < 1 ? `Pārlūks pārbauda pareizrakstību… ${pct}% (${words} vārdi, aptuveni ${Math.ceil((est - (Date.now() - t0)) / 1000)} s)` : '✓ Pareizrakstība pārbaudīta — kļūdas pasvītrotas sarkanā krāsā';
-      if (k >= 1) { clearInterval(progT); setTimeout(() => { if (box.isConnected) box.hidden = true; }, 3500); }
+  const WORD = /[\p{L}][\p{L}\p{M}'’-]*[\p{L}]|[\p{L}]/gu;
+  /** Vārdi rindkopā ar pozīcijām; izlaiž {atzīmes}, e-pastus, adreses */
+  function wordsOf(text) {
+    const skip = []; for (const m of text.matchAll(/\{[^{}]*\}|\S+@\S+|https?:\/\/\S+|www\.\S+/g)) skip.push([m.index, m.index + m[0].length]);
+    const out = [];
+    for (const m of text.matchAll(WORD)) {
+      const a = m.index, b = a + m[0].length; if (skip.some(([x, y]) => a < y && b > x)) continue;
+      let w = m[0].replace(/^['’-]+|['’-]+$/g, ''); if (w.length < 2) continue;
+      if (w.length <= 4 && (text[b] === '.' || w === w.toLocaleUpperCase('lv'))) continue;   // saīsinājumi (Nr., piem., u.c.) un īsi lielo burtu vārdi (JC, VFS)
+      out.push({ w, a: a + m[0].indexOf(w) });
+    }
+    return out;
+  }
+  let spellGen = 0, spellBad = [];
+  /** Pārbauda visu dokumentu (vai vienu rindkopu) — ar īstu progresu */
+  async function spellRun(only) {
+    const gen = ++spellGen, box = U.$('teProg'), host = U.$('teDoc'); if (!host) return;
+    if (!spellOn()) { CSS.highlights?.delete('cp-spell'); if (box) box.hidden = true; return; }
+    const els = only ? [only] : U.qsa('#teDoc .te-p'), bar = box?.querySelector('i'), lbl = box?.querySelector('span');
+    const show = (pct, t) => { if (!box || only) return; box.hidden = false; bar.style.width = pct + '%'; lbl.textContent = t; };
+    try {
+      if (!SW || !cache.size) { show(5, 'Ielādē latviešu vārdnīcu…'); await sw('init'); if (gen !== spellGen) return; }
+      const items = els.map(el => ({ el, ws: wordsOf(el.textContent) })), uniq = [...new Set(items.flatMap(x => x.ws.map(o => o.w)))].filter(w => !cache.has(w));
+      const mine = myDict();
+      for (let k = 0; k < uniq.length; k += 150) {
+        const part = uniq.slice(k, k + 150), r = await sw('check', { words: part }); if (gen !== spellGen) return;
+        const bad = new Set(r.bad); part.forEach(w => cache.set(w, !bad.has(w)));
+        show(10 + Math.round(85 * Math.min(1, (k + part.length) / uniq.length)), `Pārbauda pareizrakstību… ${Math.min(uniq.length, k + part.length)} no ${uniq.length} vārdiem`);
+      }
+      // iezīmes
+      if (only) spellBad = spellBad.filter(x => x.el !== only && x.el.isConnected); else spellBad = [];
+      for (const { el, ws } of items) for (const o of ws) if (cache.get(o.w) === false && !ignored.has(o.w) && !mine.has(o.w)) spellBad.push({ el, w: o.w, a: o.a });
+      paintSpell();
+      const n = spellBad.length;
+      if (!only) { show(100, n ? `✓ Pārbaudīts — ${n} ${n === 1 ? 'iespējama kļūda' : 'iespējamas kļūdas'} pasvītrotas sarkanā krāsā (labā peles poga — ieteikumi)` : '✓ Pārbaudīts — kļūdu nav'); setTimeout(() => { if (gen === spellGen && box?.isConnected && !n) box.hidden = true; }, 4000); }
+      else if (box && !box.hidden) lbl.textContent = n ? `${n} ${n === 1 ? 'iespējama kļūda' : 'iespējamas kļūdas'} — labā peles poga uz vārda — ieteikumi` : '✓ Kļūdu nav';
+    } catch (e) { show(100, 'Pareizrakstības pārbaudi neizdevās ielādēt: ' + e.message); }
+  }
+  function rangeOf(el, a, len) {
+    let pos = 0; const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n, r = null;
+    while ((n = tw.nextNode())) { const L = n.textContent.length; if (!r && a < pos + L) { r = document.createRange(); r.setStart(n, a - pos); } if (r && a + len <= pos + L) { r.setEnd(n, a + len - pos); return r; } pos += L; }
+    return null;
+  }
+  function paintSpell() {
+    if (!window.CSS?.highlights || typeof Highlight === 'undefined') return;
+    const rs = []; for (const x of spellBad) { if (!x.el.isConnected) continue; const r = rangeOf(x.el, x.a, x.w.length); if (r) { x.r = r; rs.push(r); } }
+    CSS.highlights.set('cp-spell', new Highlight(...rs));
+  }
+  const spellAgain = U.debounce(el => { if (el?.isConnected) spellRun(el); }, 700);
+  document.addEventListener('input', e => { const el = e.target.closest?.('#teDoc') && pOf(getSelection().anchorNode); if (el && spellOn()) { spellBad = spellBad.filter(x => x.el !== el); paintSpell(); spellAgain(el); } }, true);
+  /* Labā peles poga uz pasvītrota vārda — ieteikumi */
+  document.addEventListener('contextmenu', async e => {
+    if (!e.target.closest?.('#teDoc') || !spellOn()) return;
+    const cp = document.caretRangeFromPoint?.(e.clientX, e.clientY); if (!cp) return;
+    const hit = spellBad.find(x => x.r && x.el.contains(cp.startContainer) && x.r.comparePoint(cp.startContainer, cp.startOffset) === 0);
+    if (!hit) return;
+    e.preventDefault();
+    let m = U.$('teSpellMenu'); if (!m) { m = document.createElement('div'); m.id = 'teSpellMenu'; m.className = 'te-spell-menu'; U.$('tplEditDialog').appendChild(m); }
+    m.style.left = e.clientX + 'px'; m.style.top = e.clientY + 'px'; m.hidden = false;
+    m.innerHTML = `<div class="small muted pad">Meklē ieteikumus…</div>`;
+    const list = await sw('suggest', { word: hit.w }).then(r => r.list).catch(() => []);
+    m.innerHTML = (list.length ? list.map(s => `<button type="button" data-spfix="${esc(s)}"><b>${esc(s)}</b></button>`).join('') : '<div class="small muted pad">Nav ieteikumu</div>')
+      + `<hr><button type="button" data-spign="1">Ignorēt “${esc(hit.w)}”</button><button type="button" data-spadd="1">Pievienot manai vārdnīcai</button>`;
+    m.onclick = ev => {
+      const b = ev.target.closest('button'); if (!b) return; m.hidden = true;
+      if (b.dataset.spfix != null) { const host = U.$('teDoc'); host.focus({ preventScroll: true }); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(hit.r); document.execCommand('insertText', false, b.dataset.spfix); mark(); return; }
+      if (b.dataset.spign) ignored.add(hit.w); else addMyDict(hit.w);
+      spellBad = spellBad.filter(x => x.w !== hit.w); paintSpell();
     };
-    tick(); progT = setInterval(tick, 250);
-  }
+  });
+  document.addEventListener('mousedown', e => { const m = U.$('teSpellMenu'); if (m && !m.hidden && !m.contains(e.target)) m.hidden = true; }, true);
+  function poke() { spellRun(); }
   CP.changeHandlers.push(e => {
     if (e.target.dataset?.te !== 'spell') return false;
     try { localStorage.setItem('cp.teSpell', e.target.checked ? '1' : '0'); } catch (x) { }
-    const host = U.$('teDoc'); if (host) { host.spellcheck = e.target.checked; host.blur(); } if (!e.target.checked) { clearInterval(progT); const b = U.$('teProg'); if (b) b.hidden = true; }
-    if (e.target.checked) poke();
+    spellRun();
     return true;
   });
-  A.tplSpellHelp = () => {
-    let d = U.$('spellHelpDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'spellHelpDialog'; document.body.appendChild(d); }
-    d.innerHTML = `<header class="dlg-head"><h2>Latviešu pareizrakstība Chrome</h2><button type="button" class="ghost" data-close="spellHelpDialog" aria-label="Aizvērt">✕</button></header>
-      <div class="dlg-body"><ol class="small perm-how">
-        <li>Jaunā cilnē atver <code>chrome://settings/languages</code> <button type="button" class="sm" data-act="tplSpellCopy">📋 Kopēt adresi</button> (Edge: <code>edge://settings/languages</code>).</li>
-        <li>Sadaļā “Valodas” pievieno <b>latviešu</b>, ja tās nav.</li>
-        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz slēdzi <b>“Pārbaudīt pareizrakstību, kad tīmekļa lapās rakstāt tekstu”</b> (jābūt zilam). Ja parādās izvēle, izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta (“Uzlabotā” sūta tekstu Google — to neizvēlies).</li>
-        <li>Zem slēdža parādās valodu saraksts — ieslēdz <b>latviešu</b>. Chrome vienreiz lejupielādē vārdnīcu (dažas sekundes).</li>
-        <li>Atgriezies rīkā un atver veidnes atzīmes no jauna.</li></ol>
-        <p class="small muted">Atzīmes, piem. {vards_uzvards}, var būt pasvītrotas — tās nav kļūdas, un tās nav jālabo.</p></div>
-      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="spellHelpDialog">Sapratu</button></footer>`;
-    d.showModal();
-  };
-  A.tplSpellCopy = async () => { const a = /Edg\//.test(navigator.userAgent) ? 'edge://settings/languages' : 'chrome://settings/languages'; try { await navigator.clipboard.writeText(a); ui.toast('Adrese nokopēta — ielīmē to jaunā cilnē', 'ok'); } catch (e) { ui.toast('Ieraksti adreses joslā: ' + a, 'warn', 9000); } };
 
   /* --- Rindkopas izskats redaktorā (tikai attēlošanai — dokumentā nekas netiek mainīts): līdzinājums, treknraksts, slīpraksts, izmērs, saraksts --- */
   const val = (el, tag) => { const x = el?.getElementsByTagNameNS(W, tag)[0]; if (!x) return null; const v = x.getAttributeNS(W, 'val'); return v == null ? true : v; };
@@ -13464,10 +13505,10 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     d.innerHTML = `<header class="dlg-head"><h2>${ic('edit', '✎')} Atzīmes veidnē — ${esc(ed.t.name)}</h2><button type="button" class="ghost" data-act="tplEditClose" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body te-wrap">
         <div class="te-col"><div class="te-prog" id="teProg" hidden><div class="te-bar"><i></i></div><span></span></div>
-        <div class="te-doc" id="teDoc" lang="lv" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div></div>
+        <div class="te-doc" id="teDoc" lang="lv" contenteditable="plaintext-only" spellcheck="false">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div></div>
         <aside class="te-side">
           <div class="te-spell"><label class="check"><input type="checkbox" data-te="spell" ${spellOn() ? 'checked' : ''}> <b>Pārbaudīt pareizrakstību</b> (latviešu)</label>
-            <p class="small muted" style="margin:4px 0 0">Kļūdas tiek pasvītrotas ar sarkanu viļņoto līniju; <b>labā peles poga</b> uz vārda — labojuma ieteikumi. Pārbauda pats Chrome datorā — teksts netiek sūtīts. <a href="#" data-act="tplSpellHelp">Ja nepasvītro…</a></p></div>
+            <p class="small muted" style="margin:4px 0 0">Kļūdas tiek pasvītrotas ar sarkanu viļņoto līniju; <b>labā peles poga</b> uz vārda — labojuma ieteikumi. Rīka vārdnīca darbojas datorā, arī bez interneta — teksts netiek sūtīts. Atzīmes {…} netiek pārbaudītas.</p></div>
           <p class="small" style="margin-top:10px"><b>Kā ielikt atzīmi:</b> noklikšķini tekstā vietā, kur jābūt datiem (vai iezīmē paraugtekstu, piem. “Jānis Paraugs”), un izvēlies atzīmi zemāk.</p>
           <div class="actions" style="margin-bottom:8px"><button type="button" class="sm" data-act="tplEditPara">＋ Rindkopa zemāk</button><button type="button" class="sm" data-act="tplEditRow" title="Tukša tabulas rinda zem izvēlētās šūnas rindas — sarakstam ieliec tajā personas atzīmes">＋ Tabulas rinda</button></div>
           ${ed.t.type === 'custom' ? '<p class="small muted">Personas atzīmes <b>tabulas rindā</b> → saraksts (rinda katrai personai). <b>Tekstā</b> → katrai personai savs dokuments.</p>' : ed.t.type !== 'contract' ? '<p class="small muted">Dalībnieka atzīmes jāliek <b>tabulas rindā</b> — tā atkārtosies katram dalībniekam.</p>' : ''}
@@ -13562,6 +13603,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     } catch (e) { console.error(e); ui.toast('Neizdevās saglabāt: ' + e.message, 'err', 10000); }
   };
   A.tplEditClose = () => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) return; U.$('tplEditDialog')?.close(); ed = null; };
+  document.addEventListener('close', e => { if (e.target.id === 'tplEditDialog') { spellGen++; spellBad = []; window.CSS?.highlights?.delete('cp-spell'); } }, true);
   CP.tplEdit = { applyEdit: (p, o, n) => applyEdit(p, o, n) };
 })(window.CP);
 
@@ -13688,7 +13730,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
         <p style="margin-top:0">${st.online ? 'Ir interneta savienojums.' : 'Nav interneta. <b>Darbs turpinās</b> — personas, dokumenti un izmaiņas glabājas tavā datu mapē datorā. Google kopija un kalendārs tiks atjaunināti, kad savienojums atjaunosies.'}</p>
         <h4>Darbs bezsaistē</h4>
         <p class="small">${st.ready === null ? 'Šajā versijā (atvērts no datora faila) bezsaistes kešs nav vajadzīgs — viss jau ir datorā.' : st.running ? `Sagatavo… ${st.done}/${st.total} (${pct}%)` : st.ready ? '✓ Rīks gatavs darbam bezsaistē: Word un PDF skatīšana, veidlapas, līgumi, anketu nolasīšana, personas lietas paka.' : `⚠ Vēl nav pilnībā sagatavots (${st.done}/${st.total || '?'})${st.error ? ' — ' + esc(st.error) : ''}. Bez tā bezsaistē var nestrādāt Word skatīšana, PDF veidlapas, līgumi un anketu nolasīšana.`}</p>
-        ${st.ready === null ? '' : `<div class="actions"><button type="button" class="sm ${st.ready ? '' : 'mainbtn'}" data-act="netPrepare" ${st.running || !st.online ? 'disabled' : ''}>${st.ready ? 'Pārbaudīt atjauninājumus' : 'Sagatavot bezsaistei'} (~${Math.round(18)} MB)</button></div>`}
+        ${st.ready === null ? '' : `<div class="actions"><button type="button" class="sm ${st.ready ? '' : 'mainbtn'}" data-act="netPrepare" ${st.running || !st.online ? 'disabled' : ''}>${st.ready ? 'Pārbaudīt atjauninājumus' : 'Sagatavot bezsaistei'} (~23 MB)</button></div>`}
         <h4>Sinhronizācija ar Google</h4>
         ${p.length ? `<p class="small">Gaida nosūtīšanu: <b>${esc(p.map(x => x.l).join(', '))}</b>.</p>` : `<p class="small">Viss nosūtīts.${last ? ' Pēdējā kopija: ' + esc(U.fmtDateTime(last)) + '.' : ''}${CP.gcal?.lastSync() ? ' Kalendārs: ' + esc(U.fmtDateTime(CP.gcal.lastSync())) + '.' : ''}</p>`}
         ${p.length ? `<div class="actions"><button type="button" class="sm mainbtn" data-act="netSync" ${st.online ? '' : 'disabled'}>⟳ Sinhronizēt tagad</button></div>` : ''}
