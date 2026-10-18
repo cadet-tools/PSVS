@@ -93,10 +93,11 @@
             <input type="search" data-cf="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="cfAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="cfNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row"><label class="check"><input type="checkbox" data-cfp="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label></div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>
         ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-cf="brand" ${t?.brand ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} dokumenta augšā — kopā ar CADET.LV logo <span class="muted small">(oficiāliem dokumentiem neatzīmē)</span></label>` : '<p class="small muted" style="margin:4px 0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība — tad šeit varēs izvēlēties to ielikt dokumentā.</p>'}
-        <label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> ${t?.mode === 'list' ? 'Saglabāt kopiju mapē “Veidlapas” (mācību gada mapē)' : 'Saglabāt katras personas dokumentu mapē un piesaistīt kartītei'}</label>
+        ${t?.mode === 'each' ? `<label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> Piesaistīt katras personas kartītei (fails — personas dokumentu mapē)</label>` : ''}
+        <p class="small muted" style="margin:4px 0">Sagatavotais dokuments parādīsies sarakstā Veidlapas → “Sagatavotās veidlapas” — tur to var atvērt un lejupielādēt.</p>
         <p class="small muted">Vispirms vari <b>apskatīt</b>, kā izskatās aizpildītais dokuments${t?.mode === 'each' ? ' (pirmajai personai)' : ''}. Atzīmes var rakstīt arī ar garumzīmēm: {Vārds} = {vards}.</p>
       </div>
-      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="cfDialog">Atcelt</button><button type="button" data-act="cfPreview" ${n ? '' : 'disabled'}>${ic('eye', '👁')} Apskatīt</button><button class="mainbtn" type="submit" ${n ? '' : 'disabled'}>${ic('download', '⬇')} Sagatavot${t?.mode === 'each' && n > 1 ? ` (${n})` : ''}</button></footer></form>`;
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="cfDialog">Atcelt</button><button type="button" data-act="cfPreview" ${n ? '' : 'disabled'}>${ic('eye', '👁')} Apskatīt</button><button class="mainbtn" type="submit" ${n ? '' : 'disabled'}>${ic('file', '📄')} Sagatavot${t?.mode === 'each' && n > 1 ? ` (${n})` : ''}</button></footer></form>`;
     d.querySelector('form').onsubmit = e => { e.preventDefault(); run(e.target.querySelector('[type=submit]')); };
   }
   const keep = fn => { const b = U.qs('#cfDialog .sum-list'), top = b?.scrollTop || 0; fn(); const b2 = U.qs('#cfDialog .sum-list'); if (b2) b2.scrollTop = top; };
@@ -169,38 +170,76 @@
       await CP.docs.openFile(new File([blob], name, { type: blob.type }), name);
     } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
   };
+  /* Sagatavotie dokumenti — S.db.formDocs: { id, tid, name, mode, date, at, files: [{ pid, name, path }] }.
+     Faili VIENMĒR tiek saglabāti datu mapē: saraksts un nepiesaistītie — Macibu_gadi/<gads>/Veidlapas/<nosaukums datums>/,
+     piesaistītie — personas mapē (un kartītē kā dokuments). Sarakstā Veidlapas → “Sagatavotās veidlapas”. */
+  const fdocs = () => (S.db.formDocs = S.db.formDocs || []);
   async function run(btn) {
     const t = cur(), ps = people(); if (!t || !ps.length) return;
-    const save = dlg.save && !!S.root, lbl = btn.innerHTML; btn.disabled = true;
+    if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn');
+    const link = t.mode === 'each' && dlg.save, lbl = btn.innerHTML; btn.disabled = true;
     try {
       const buf = await prep(t, await analyse(t)); CP.store.changed({ silent: true });
+      const dir = ['Macibu_gadi', D.activeYear(), 'Veidlapas', `${t.name} ${dlg.date}`.replace(/\s+/g, ' ').slice(0, 80)];
+      const rec = { id: U.uid(), tid: t.id, name: t.name, mode: t.mode, date: dlg.date, at: U.now(), yearId: D.activeYear(), files: [] };
       if (t.mode === 'list') {
         const blob = await buildList(t, buf, ps), name = `${safe(t.name)}_${dlg.date}.docx`;
-        U.download(blob, name);
-        if (save) { const path = await CP.store.saveFile(['Macibu_gadi', D.activeYear(), 'Veidlapas'], name, blob); ui.toast('Kopija saglabāta: ' + path, 'ok', 7000); }
-        U.$('cfDialog').close(); return;
-      }
-      const out = [];
-      for (let i = 0; i < ps.length; i++) {
-        btn.textContent = `Sagatavo ${i + 1}/${ps.length}…`;
-        const p = ps[i], blob = await buildOne(t, buf, p, i, ps.length), name = `${safe(t.name)}_${safe(p.last)}_${safe(p.first)}.docx`;
-        out.push([name, blob]);
-        if (save) {
-          await CP.store.ensurePersonYearFolder(p);
-          const path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
-          if (path) CP.docs.link(p.id, 'Cits', 'pdf', path, 'main', { title: t.name, issued: dlg.date, review: 'received', size: blob.size });
+        rec.files.push({ pid: '', pids: ps.map(p => p.id), name, path: await CP.store.saveFile(dir, name, blob) });
+      } else {
+        for (let i = 0; i < ps.length; i++) {
+          btn.textContent = `Sagatavo ${i + 1}/${ps.length}…`;
+          const p = ps[i], blob = await buildOne(t, buf, p, i, ps.length), name = `${safe(t.name)}_${safe(p.last)}_${safe(p.first)}.docx`;
+          let path;
+          if (link) {
+            await CP.store.ensurePersonYearFolder(p);
+            path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
+            if (path) CP.docs.link(p.id, 'Cits', 'pdf', path, 'main', { title: t.name, issued: dlg.date, review: 'received', size: blob.size });
+          } else path = await CP.store.saveFile(dir, name, blob);
+          rec.files.push({ pid: p.id, name, path });
         }
       }
-      if (save) CP.store.changed();
-      if (out.length === 1) { U.$('cfDialog').close(); await CP.docs.openFile(new File([out[0][1]], out[0][0], { type: out[0][1].type }), out[0][0]); if (save) ui.toast('Saglabāts personas mapē un piesaistīts kartītei', 'ok', 6000); return; }
-      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
-      const zip = new window.JSZip(); out.forEach(([n, b]) => zip.file(n, b));
-      U.download(await zip.generateAsync({ type: 'blob' }), `${safe(t.name)}_${dlg.date}.zip`);
+      fdocs().push(rec); CP.store.changed();
       U.$('cfDialog').close();
-      ui.toast(`Sagatavoti ${out.length} dokumenti (ZIP)${save ? '; katrs saglabāts personas mapē' : ''}.`, 'ok', 8000);
+      if (S.page === 'forms') CP.render();
+      await openFileOf(rec, 0);
+      ui.toast(`${rec.files.length > 1 ? `Sagatavoti ${rec.files.length} dokumenti` : 'Dokuments sagatavots'} — atrodami Veidlapas → “Sagatavotās veidlapas”${link ? ' un personu kartītēs' : ''}. Lejupielādēt var skatītājā vai sarakstā.`, 'ok', 9000);
     } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
     finally { btn.disabled = false; btn.innerHTML = lbl; }
   }
+  async function fileOf(f) { const h = await CP.store.handleFor(f.path, 'main'); if (!h) throw Error(`fails “${f.name}” datu mapē nav atrasts`); return h.getFile(); }
+  async function openFileOf(rec, i) { const f = rec.files[i]; if (!f) return; const file = await fileOf(f); await CP.docs.openFile(new File([file], f.name, { type: file.type }), `${rec.name}${f.pid && D.person(f.pid) ? ' — ' + U.full(D.person(f.pid)) : ''}`); }
+  const recOf = id => fdocs().find(r => r.id === id);
+  A.cfOpen = async arg => {
+    const [id, i] = String(arg).split('|'), r = recOf(id); if (!r) return;
+    try {
+      if (i != null && i !== '') return await openFileOf(r, +i);
+      if (r.files.length === 1) return await openFileOf(r, 0);
+      let d = U.$('cfFilesDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'cfFilesDialog'; document.body.appendChild(d); }
+      d.innerHTML = `<header class="dlg-head"><h2>${esc(r.name)} · ${esc(U.fmtDate(r.date))}</h2><button type="button" class="ghost" data-close="cfFilesDialog" aria-label="Aizvērt">✕</button></header>
+        <div class="dlg-body">${r.files.map((f, k) => `<div class="row"><span class="grow">${esc(f.pid && D.person(f.pid) ? U.sortName(D.person(f.pid)) : f.name)}</span><button class="sm" data-act="cfOpen" data-arg="${r.id}|${k}">${ic('eye', '👁')} Skatīt</button><button class="sm ghost" data-act="cfDlOne" data-arg="${r.id}|${k}">${ic('download', '⬇')}</button></div>`).join('')}</div>
+        <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="cfDownload" data-arg="${r.id}">${ic('download', '⬇')} Lejupielādēt visus (ZIP)</button></footer>`;
+      if (!d.open) d.showModal();
+    } catch (e) { ui.toast(e.message, 'warn', 8000); }
+  };
+  A.cfDlOne = async arg => { const [id, i] = String(arg).split('|'), r = recOf(id), f = r?.files[+i]; if (!f) return; try { U.download(await fileOf(f), f.name); } catch (e) { ui.toast(e.message, 'warn', 8000); } };
+  A.cfDownload = async id => {
+    const r = recOf(id); if (!r) return;
+    try {
+      if (r.files.length === 1) return U.download(await fileOf(r.files[0]), r.files[0].name);
+      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
+      const zip = new window.JSZip(), miss = [];
+      for (const f of r.files) { try { zip.file(f.name, await fileOf(f)); } catch (e) { miss.push(f.name); } }
+      U.download(await zip.generateAsync({ type: 'blob' }), `${safe(r.name)}_${r.date}.zip`);
+      if (miss.length) ui.toast('Nav atrasti: ' + miss.join(', '), 'warn', 9000);
+    } catch (e) { ui.toast(e.message, 'warn', 8000); }
+  };
+  A.cfDel = id => {
+    const r = recOf(id); if (!r || !confirm(`Noņemt “${r.name}” (${U.fmtDate(r.date)}) no saraksta? Faili datu mapē paliek.`)) return;
+    S.db.formDocs = fdocs().filter(x => x.id !== id); CP.store.changed();
+  };
+  /** Ieraksti Veidlapu sarakstam (forms.js allItems) */
+  const listItems = () => fdocs().map(r => { const ps = [...new Set(r.files.flatMap(f => f.pid ? [f.pid] : (f.pids || [])))].map(D.person).filter(Boolean);
+    return { kind: 'custom', id: r.id, date: r.date, title: r.name, rec: r, ps, hay: U.norm([r.name, ...ps.map(U.full)].join(' ')) }; });
 
-  CP.customForms = { added, tpls, PERSON_HELP, GLOBAL_HELP, analyse };
+  CP.customForms = { added, tpls, PERSON_HELP, GLOBAL_HELP, analyse, listItems };
 })(window.CP);

@@ -26,6 +26,7 @@
     years: { l: 'Mācību gads', g: 'settings', name: o => o.label || U.yearLabel?.(o.id) || o.id, skip: [] },
     sources: { l: 'Papildu mape', g: 'settings', name: o => o.name || o.id, skip: [] },
     tasks: { l: 'Uzdevums', g: 'people', pid: o => o.personId, name: o => [String(o.text || o.title || 'uzdevums').slice(0, 60), pName(o.personId)].filter(Boolean).join(' — '), skip: [] },
+    formDocs: { l: 'Sava veidlapa', g: 'events', name: o => [o.name || 'veidlapa', dd(o.date)].filter(Boolean).join(' · '), skip: [] },
     vfsTests: { l: 'VFS tests', g: 'att', name: o => ['VFS tests', dd(o.date), o.title || ''].filter(Boolean).join(' · '), skip: [] },
     relations: { l: 'Saistība', g: 'people', pid: o => o.a, name: o => [pName(o.a), pName(o.b)].filter(Boolean).join(' ↔ '), skip: [] }
   };

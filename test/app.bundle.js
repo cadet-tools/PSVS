@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.52.1';
+  CP.VERSION = '1.52.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -5728,9 +5728,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.52.1', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+    { v: '1.52.2', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem.',
-      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Pirms saglabāšanas dokumentu var **apskatīt rīkā**. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}. Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
+      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}. Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
     ] },
     { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
@@ -8042,7 +8042,7 @@ window.CP = window.CP || {};
   const evStaff = ev => [...staffList(), ...(ev.extStaff || [])];
   { const og = D.groupOf; D.groupOf = (p, y) => p?._ext ? (p._extGroup || '') : og(p, y); }
   /* Visas sagatavotās veidlapas vienā sarakstā: pasākumi (instruktāža, nometne) + līgumi no personu kartītēm */
-  const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' } };
+  const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' }, custom: { l: 'Sava veidlapa', icon: 'file' } };
   const CVAR = { 'jaunietis-papirs': 'ar jaunieti, papīrs', 'parstavis-papirs': 'ar pārstāvi, papīrs', 'jaunietis-edoc': 'ar jaunieti, EDOC', 'parstavis-edoc': 'ar pārstāvi, EDOC' };
   function allItems() {
     const out = [];
@@ -8055,7 +8055,8 @@ window.CP = window.CP || {};
       out.push({ kind: 'contract', id: c.id, date: String(c.date || c.at || '').slice(0, 10), title: `Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}`, p, c,
         hay: U.norm([U.full(p), U.sortName(p), c.no, D.groupOf(p)].join(' ')) });
     }
-    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (CP.customForms) out.push(...CP.customForms.listItems());
+    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.rec?.at || '').localeCompare(String(a.rec?.at || '')));
   }
   let showN = 40;
   CP.pages.forms = {
@@ -8078,6 +8079,13 @@ window.CP = window.CP || {};
             <button class="sm ghost" data-act="contractUpload" data-arg="${p.id}|${c.id}" title="Ielādēt Word programmā labotu līgumu kā jaunu versiju">${ic('upload', '⬆')} Ielādēt labotu</button>
             <button class="sm ghost danger" data-act="contractDel" data-arg="${p.id}|${c.id}" title="Noņemt no saraksta">✕</button></div>`;
         }
+        if (x.kind === 'custom') {
+          const r = x.rec, names = x.ps.map(U.full), who = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} + vēl ${names.length - 3}`;
+          return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
+            <div class="small muted">${esc(U.fmtDate(x.date))} · ${r.mode === 'list' ? 'saraksts' : `${r.files.length} ${r.files.length === 1 ? 'dokuments' : 'dokumenti'}`}${who ? ' · ' + esc(who) : ''}</div></div>
+            <button class="sm" data-act="cfOpen" data-arg="${r.id}">${ic('file', '📄')} Skatīt</button><button class="sm ghost" data-act="cfDownload" data-arg="${r.id}" title="${r.files.length > 1 ? 'Visi vienā ZIP failā' : 'Word fails'}">${ic('download', '⬇')} Lejupielādēt</button>
+            <button class="sm ghost danger" data-act="cfDel" data-arg="${r.id}" title="Noņemt no saraksta (faili paliek)">✕</button></div>`;
+        }
         const ev = x.ev, ps = x.ps, warn = ps.filter(q => D.eventDocIssues(q).length).length;
         return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
           <div class="small muted">${esc(ev.when || U.fmtDate(ev.instrDate) || '')} · ${ps.length} dalībnieki${warn ? ` · <span class="warn">⚠ ${warn} bez dokumentiem</span>` : ''}</div></div>
@@ -8090,10 +8098,10 @@ window.CP = window.CP || {};
           <label class="small muted">No <input type="date" data-ff="from" value="${esc(F.from)}"></label><label class="small muted">Līdz <input type="date" data-ff="to" value="${esc(F.to)}"></label>
           <select data-ff="year"><option value="">Visi mācību gadi</option>${years.map(y => `<option value="${y}" ${F.year === y ? 'selected' : ''}>${esc(U.yearLabel(y))}</option>`).join('')}</select>
           ${filtered ? `<button class="sm ghost" data-act="ffClear">Notīrīt filtrus</button>` : ''}</div>
-        <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}</div>`;
+        <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}${base.some(x => x.kind === 'custom') ? chip('custom', 'Savas veidlapas') : ''}</div>`;
       const body = all.length ? (list.length ? list.slice(0, showN).map(row).join('') + (list.length > showN ? `<div class="actions" style="margin-top:8px"><button class="sm" data-act="ffMore">Rādīt vēl (${list.length - showN})</button></div>` : '') : '<p class="muted pad">Nekas neatbilst filtram.</p>')
         : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa”, “Nometnes žurnāls” vai “Līgums”.');
-      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>`)}
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>${CP.customForms?.tpls().length ? `<button data-act="cfNew">${ic('file', '📄')} Sava veidlapa</button>` : ''}`)}
         <div class="cards2">
           <section class="card wide"><h3>${ic('clipboard')}Sagatavotās veidlapas <span class="pill">${list.length}${list.length !== all.length ? ' no ' + all.length : ''}</span></h3>${all.length ? filters : ''}<div class="ev-list-all">${body}</div></section>
           <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>
@@ -11791,6 +11799,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     years: { l: 'Mācību gads', g: 'settings', name: o => o.label || U.yearLabel?.(o.id) || o.id, skip: [] },
     sources: { l: 'Papildu mape', g: 'settings', name: o => o.name || o.id, skip: [] },
     tasks: { l: 'Uzdevums', g: 'people', pid: o => o.personId, name: o => [String(o.text || o.title || 'uzdevums').slice(0, 60), pName(o.personId)].filter(Boolean).join(' — '), skip: [] },
+    formDocs: { l: 'Sava veidlapa', g: 'events', name: o => [o.name || 'veidlapa', dd(o.date)].filter(Boolean).join(' · '), skip: [] },
     vfsTests: { l: 'VFS tests', g: 'att', name: o => ['VFS tests', dd(o.date), o.title || ''].filter(Boolean).join(' · '), skip: [] },
     relations: { l: 'Saistība', g: 'people', pid: o => o.a, name: o => [pName(o.a), pName(o.b)].filter(Boolean).join(' ↔ '), skip: [] }
   };
@@ -13152,10 +13161,11 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
             <input type="search" data-cf="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="cfAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="cfNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row"><label class="check"><input type="checkbox" data-cfp="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label></div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>
         ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-cf="brand" ${t?.brand ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} dokumenta augšā — kopā ar CADET.LV logo <span class="muted small">(oficiāliem dokumentiem neatzīmē)</span></label>` : '<p class="small muted" style="margin:4px 0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība — tad šeit varēs izvēlēties to ielikt dokumentā.</p>'}
-        <label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> ${t?.mode === 'list' ? 'Saglabāt kopiju mapē “Veidlapas” (mācību gada mapē)' : 'Saglabāt katras personas dokumentu mapē un piesaistīt kartītei'}</label>
+        ${t?.mode === 'each' ? `<label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> Piesaistīt katras personas kartītei (fails — personas dokumentu mapē)</label>` : ''}
+        <p class="small muted" style="margin:4px 0">Sagatavotais dokuments parādīsies sarakstā Veidlapas → “Sagatavotās veidlapas” — tur to var atvērt un lejupielādēt.</p>
         <p class="small muted">Vispirms vari <b>apskatīt</b>, kā izskatās aizpildītais dokuments${t?.mode === 'each' ? ' (pirmajai personai)' : ''}. Atzīmes var rakstīt arī ar garumzīmēm: {Vārds} = {vards}.</p>
       </div>
-      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="cfDialog">Atcelt</button><button type="button" data-act="cfPreview" ${n ? '' : 'disabled'}>${ic('eye', '👁')} Apskatīt</button><button class="mainbtn" type="submit" ${n ? '' : 'disabled'}>${ic('download', '⬇')} Sagatavot${t?.mode === 'each' && n > 1 ? ` (${n})` : ''}</button></footer></form>`;
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="cfDialog">Atcelt</button><button type="button" data-act="cfPreview" ${n ? '' : 'disabled'}>${ic('eye', '👁')} Apskatīt</button><button class="mainbtn" type="submit" ${n ? '' : 'disabled'}>${ic('file', '📄')} Sagatavot${t?.mode === 'each' && n > 1 ? ` (${n})` : ''}</button></footer></form>`;
     d.querySelector('form').onsubmit = e => { e.preventDefault(); run(e.target.querySelector('[type=submit]')); };
   }
   const keep = fn => { const b = U.qs('#cfDialog .sum-list'), top = b?.scrollTop || 0; fn(); const b2 = U.qs('#cfDialog .sum-list'); if (b2) b2.scrollTop = top; };
@@ -13228,40 +13238,78 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       await CP.docs.openFile(new File([blob], name, { type: blob.type }), name);
     } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
   };
+  /* Sagatavotie dokumenti — S.db.formDocs: { id, tid, name, mode, date, at, files: [{ pid, name, path }] }.
+     Faili VIENMĒR tiek saglabāti datu mapē: saraksts un nepiesaistītie — Macibu_gadi/<gads>/Veidlapas/<nosaukums datums>/,
+     piesaistītie — personas mapē (un kartītē kā dokuments). Sarakstā Veidlapas → “Sagatavotās veidlapas”. */
+  const fdocs = () => (S.db.formDocs = S.db.formDocs || []);
   async function run(btn) {
     const t = cur(), ps = people(); if (!t || !ps.length) return;
-    const save = dlg.save && !!S.root, lbl = btn.innerHTML; btn.disabled = true;
+    if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn');
+    const link = t.mode === 'each' && dlg.save, lbl = btn.innerHTML; btn.disabled = true;
     try {
       const buf = await prep(t, await analyse(t)); CP.store.changed({ silent: true });
+      const dir = ['Macibu_gadi', D.activeYear(), 'Veidlapas', `${t.name} ${dlg.date}`.replace(/\s+/g, ' ').slice(0, 80)];
+      const rec = { id: U.uid(), tid: t.id, name: t.name, mode: t.mode, date: dlg.date, at: U.now(), yearId: D.activeYear(), files: [] };
       if (t.mode === 'list') {
         const blob = await buildList(t, buf, ps), name = `${safe(t.name)}_${dlg.date}.docx`;
-        U.download(blob, name);
-        if (save) { const path = await CP.store.saveFile(['Macibu_gadi', D.activeYear(), 'Veidlapas'], name, blob); ui.toast('Kopija saglabāta: ' + path, 'ok', 7000); }
-        U.$('cfDialog').close(); return;
-      }
-      const out = [];
-      for (let i = 0; i < ps.length; i++) {
-        btn.textContent = `Sagatavo ${i + 1}/${ps.length}…`;
-        const p = ps[i], blob = await buildOne(t, buf, p, i, ps.length), name = `${safe(t.name)}_${safe(p.last)}_${safe(p.first)}.docx`;
-        out.push([name, blob]);
-        if (save) {
-          await CP.store.ensurePersonYearFolder(p);
-          const path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
-          if (path) CP.docs.link(p.id, 'Cits', 'pdf', path, 'main', { title: t.name, issued: dlg.date, review: 'received', size: blob.size });
+        rec.files.push({ pid: '', pids: ps.map(p => p.id), name, path: await CP.store.saveFile(dir, name, blob) });
+      } else {
+        for (let i = 0; i < ps.length; i++) {
+          btn.textContent = `Sagatavo ${i + 1}/${ps.length}…`;
+          const p = ps[i], blob = await buildOne(t, buf, p, i, ps.length), name = `${safe(t.name)}_${safe(p.last)}_${safe(p.first)}.docx`;
+          let path;
+          if (link) {
+            await CP.store.ensurePersonYearFolder(p);
+            path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
+            if (path) CP.docs.link(p.id, 'Cits', 'pdf', path, 'main', { title: t.name, issued: dlg.date, review: 'received', size: blob.size });
+          } else path = await CP.store.saveFile(dir, name, blob);
+          rec.files.push({ pid: p.id, name, path });
         }
       }
-      if (save) CP.store.changed();
-      if (out.length === 1) { U.$('cfDialog').close(); await CP.docs.openFile(new File([out[0][1]], out[0][0], { type: out[0][1].type }), out[0][0]); if (save) ui.toast('Saglabāts personas mapē un piesaistīts kartītei', 'ok', 6000); return; }
-      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
-      const zip = new window.JSZip(); out.forEach(([n, b]) => zip.file(n, b));
-      U.download(await zip.generateAsync({ type: 'blob' }), `${safe(t.name)}_${dlg.date}.zip`);
+      fdocs().push(rec); CP.store.changed();
       U.$('cfDialog').close();
-      ui.toast(`Sagatavoti ${out.length} dokumenti (ZIP)${save ? '; katrs saglabāts personas mapē' : ''}.`, 'ok', 8000);
+      if (S.page === 'forms') CP.render();
+      await openFileOf(rec, 0);
+      ui.toast(`${rec.files.length > 1 ? `Sagatavoti ${rec.files.length} dokumenti` : 'Dokuments sagatavots'} — atrodami Veidlapas → “Sagatavotās veidlapas”${link ? ' un personu kartītēs' : ''}. Lejupielādēt var skatītājā vai sarakstā.`, 'ok', 9000);
     } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
     finally { btn.disabled = false; btn.innerHTML = lbl; }
   }
+  async function fileOf(f) { const h = await CP.store.handleFor(f.path, 'main'); if (!h) throw Error(`fails “${f.name}” datu mapē nav atrasts`); return h.getFile(); }
+  async function openFileOf(rec, i) { const f = rec.files[i]; if (!f) return; const file = await fileOf(f); await CP.docs.openFile(new File([file], f.name, { type: file.type }), `${rec.name}${f.pid && D.person(f.pid) ? ' — ' + U.full(D.person(f.pid)) : ''}`); }
+  const recOf = id => fdocs().find(r => r.id === id);
+  A.cfOpen = async arg => {
+    const [id, i] = String(arg).split('|'), r = recOf(id); if (!r) return;
+    try {
+      if (i != null && i !== '') return await openFileOf(r, +i);
+      if (r.files.length === 1) return await openFileOf(r, 0);
+      let d = U.$('cfFilesDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'cfFilesDialog'; document.body.appendChild(d); }
+      d.innerHTML = `<header class="dlg-head"><h2>${esc(r.name)} · ${esc(U.fmtDate(r.date))}</h2><button type="button" class="ghost" data-close="cfFilesDialog" aria-label="Aizvērt">✕</button></header>
+        <div class="dlg-body">${r.files.map((f, k) => `<div class="row"><span class="grow">${esc(f.pid && D.person(f.pid) ? U.sortName(D.person(f.pid)) : f.name)}</span><button class="sm" data-act="cfOpen" data-arg="${r.id}|${k}">${ic('eye', '👁')} Skatīt</button><button class="sm ghost" data-act="cfDlOne" data-arg="${r.id}|${k}">${ic('download', '⬇')}</button></div>`).join('')}</div>
+        <footer class="dlg-foot"><span class="grow"></span><button type="button" data-act="cfDownload" data-arg="${r.id}">${ic('download', '⬇')} Lejupielādēt visus (ZIP)</button></footer>`;
+      if (!d.open) d.showModal();
+    } catch (e) { ui.toast(e.message, 'warn', 8000); }
+  };
+  A.cfDlOne = async arg => { const [id, i] = String(arg).split('|'), r = recOf(id), f = r?.files[+i]; if (!f) return; try { U.download(await fileOf(f), f.name); } catch (e) { ui.toast(e.message, 'warn', 8000); } };
+  A.cfDownload = async id => {
+    const r = recOf(id); if (!r) return;
+    try {
+      if (r.files.length === 1) return U.download(await fileOf(r.files[0]), r.files[0].name);
+      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
+      const zip = new window.JSZip(), miss = [];
+      for (const f of r.files) { try { zip.file(f.name, await fileOf(f)); } catch (e) { miss.push(f.name); } }
+      U.download(await zip.generateAsync({ type: 'blob' }), `${safe(r.name)}_${r.date}.zip`);
+      if (miss.length) ui.toast('Nav atrasti: ' + miss.join(', '), 'warn', 9000);
+    } catch (e) { ui.toast(e.message, 'warn', 8000); }
+  };
+  A.cfDel = id => {
+    const r = recOf(id); if (!r || !confirm(`Noņemt “${r.name}” (${U.fmtDate(r.date)}) no saraksta? Faili datu mapē paliek.`)) return;
+    S.db.formDocs = fdocs().filter(x => x.id !== id); CP.store.changed();
+  };
+  /** Ieraksti Veidlapu sarakstam (forms.js allItems) */
+  const listItems = () => fdocs().map(r => { const ps = [...new Set(r.files.flatMap(f => f.pid ? [f.pid] : (f.pids || [])))].map(D.person).filter(Boolean);
+    return { kind: 'custom', id: r.id, date: r.date, title: r.name, rec: r, ps, hay: U.norm([r.name, ...ps.map(U.full)].join(' ')) }; });
 
-  CP.customForms = { added, tpls, PERSON_HELP, GLOBAL_HELP, analyse };
+  CP.customForms = { added, tpls, PERSON_HELP, GLOBAL_HELP, analyse, listItems };
 })(window.CP);
 
 

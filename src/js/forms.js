@@ -36,7 +36,7 @@
   const evStaff = ev => [...staffList(), ...(ev.extStaff || [])];
   { const og = D.groupOf; D.groupOf = (p, y) => p?._ext ? (p._extGroup || '') : og(p, y); }
   /* Visas sagatavotās veidlapas vienā sarakstā: pasākumi (instruktāža, nometne) + līgumi no personu kartītēm */
-  const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' } };
+  const KIND = { instr: { l: 'Instruktāža', icon: 'clipboard' }, camp: { l: 'Nometne', icon: 'users' }, contract: { l: 'Līgums', icon: 'file' }, custom: { l: 'Sava veidlapa', icon: 'file' } };
   const CVAR = { 'jaunietis-papirs': 'ar jaunieti, papīrs', 'parstavis-papirs': 'ar pārstāvi, papīrs', 'jaunietis-edoc': 'ar jaunieti, EDOC', 'parstavis-edoc': 'ar pārstāvi, EDOC' };
   function allItems() {
     const out = [];
@@ -49,7 +49,8 @@
       out.push({ kind: 'contract', id: c.id, date: String(c.date || c.at || '').slice(0, 10), title: `Līgums ${c.no ? 'Nr. ' + c.no : '(bez numura)'}`, p, c,
         hay: U.norm([U.full(p), U.sortName(p), c.no, D.groupOf(p)].join(' ')) });
     }
-    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (CP.customForms) out.push(...CP.customForms.listItems());
+    return out.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.rec?.at || '').localeCompare(String(a.rec?.at || '')));
   }
   let showN = 40;
   CP.pages.forms = {
@@ -72,6 +73,13 @@
             <button class="sm ghost" data-act="contractUpload" data-arg="${p.id}|${c.id}" title="Ielādēt Word programmā labotu līgumu kā jaunu versiju">${ic('upload', '⬆')} Ielādēt labotu</button>
             <button class="sm ghost danger" data-act="contractDel" data-arg="${p.id}|${c.id}" title="Noņemt no saraksta">✕</button></div>`;
         }
+        if (x.kind === 'custom') {
+          const r = x.rec, names = x.ps.map(U.full), who = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} + vēl ${names.length - 3}`;
+          return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
+            <div class="small muted">${esc(U.fmtDate(x.date))} · ${r.mode === 'list' ? 'saraksts' : `${r.files.length} ${r.files.length === 1 ? 'dokuments' : 'dokumenti'}`}${who ? ' · ' + esc(who) : ''}</div></div>
+            <button class="sm" data-act="cfOpen" data-arg="${r.id}">${ic('file', '📄')} Skatīt</button><button class="sm ghost" data-act="cfDownload" data-arg="${r.id}" title="${r.files.length > 1 ? 'Visi vienā ZIP failā' : 'Word fails'}">${ic('download', '⬇')} Lejupielādēt</button>
+            <button class="sm ghost danger" data-act="cfDel" data-arg="${r.id}" title="Noņemt no saraksta (faili paliek)">✕</button></div>`;
+        }
         const ev = x.ev, ps = x.ps, warn = ps.filter(q => D.eventDocIssues(q).length).length;
         return `<div class="row ev-row"><span class="feat-ic">${ic(K.icon)}</span><div class="grow"><b>${esc(x.title)}</b> <span class="tag">${K.l}</span>
           <div class="small muted">${esc(ev.when || U.fmtDate(ev.instrDate) || '')} · ${ps.length} dalībnieki${warn ? ` · <span class="warn">⚠ ${warn} bez dokumentiem</span>` : ''}</div></div>
@@ -84,10 +92,10 @@
           <label class="small muted">No <input type="date" data-ff="from" value="${esc(F.from)}"></label><label class="small muted">Līdz <input type="date" data-ff="to" value="${esc(F.to)}"></label>
           <select data-ff="year"><option value="">Visi mācību gadi</option>${years.map(y => `<option value="${y}" ${F.year === y ? 'selected' : ''}>${esc(U.yearLabel(y))}</option>`).join('')}</select>
           ${filtered ? `<button class="sm ghost" data-act="ffClear">Notīrīt filtrus</button>` : ''}</div>
-        <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}</div>`;
+        <div class="chips" style="margin:8px 0 4px">${chip('', 'Visi')}${chip('instr', 'Instruktāžas')}${chip('camp', 'Nometnes')}${chip('contract', 'Līgumi')}${base.some(x => x.kind === 'custom') ? chip('custom', 'Savas veidlapas') : ''}</div>`;
       const body = all.length ? (list.length ? list.slice(0, showN).map(row).join('') + (list.length > showN ? `<div class="actions" style="margin-top:8px"><button class="sm" data-act="ffMore">Rādīt vēl (${list.length - showN})</button></div>` : '') : '<p class="muted pad">Nekas neatbilst filtram.</p>')
         : ui.empty('Vēl nav sagatavotu veidlapu. Sāc ar “Instruktāžas lapa”, “Nometnes žurnāls” vai “Līgums”.');
-      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>`)}
+      return `<div class="page">${ui.pageHead('Veidlapas', 'Instruktāžas lapas, nometņu žurnāli, līgumi un jaunsargu kopsavilkumi no kartīšu datiem', `<button class="mainbtn" data-act="formNew" data-arg="instr">${ic('plus', '＋')} Instruktāžas lapa</button><button data-act="formNew" data-arg="camp">${ic('plus', '＋')} Nometnes žurnāls</button><button data-act="contractNew">${ic('plus', '＋')} Līgums</button><button data-act="sumNew">${ic('chart')} Jaunsarga kopsavilkums</button>${CP.customForms?.tpls().length ? `<button data-act="cfNew">${ic('file', '📄')} Sava veidlapa</button>` : ''}`)}
         <div class="cards2">
           <section class="card wide"><h3>${ic('clipboard')}Sagatavotās veidlapas <span class="pill">${list.length}${list.length !== all.length ? ' no ' + all.length : ''}</span></h3>${all.length ? filters : ''}<div class="ev-list-all">${body}</div></section>
           <section class="card"><h3>${ic('users')}Darbinieki un audzinātāji</h3>${staffCard()}</section>

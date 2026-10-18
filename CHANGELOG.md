@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.52.2 — 2026-10-18
+- Savas veidlapas vairs netiek automātiski lejupielādētas: faili vienmēr tiek saglabāti datu mapē (piesaistītie — personas mapē, pārējie un saraksti — `Macibu_gadi/<gads>/Veidlapas/<nosaukums datums>/`), ieraksts `S.db.formDocs` = { id, tid, name, mode, date, at, yearId, files: [{ pid, pids, name, path }] }. Sarakstā “Sagatavotās veidlapas” (filtrs “Savas veidlapas”): Skatīt (vairākiem — saraksts ar katru dokumentu), Lejupielādēt (viens — Word, vairāki — ZIP), noņemt no saraksta (faili paliek). Pēc sagatavošanas pirmais dokuments atveras apskatei. Darbību žurnālā — “Sava veidlapa”. Veidlapu galvenē poga “Sava veidlapa”.
+
 ## 1.52.1 — 2026-10-18
 - Savas veidlapas: izvēle “Ar vienības logo un nosaukumu” (atceras katrai veidnei — `t.brand`, noklusējumā izslēgta). Dokumenta sākumā tiek ielikta tabula bez rāmjiem: vienības logo un nosaukums pa kreisi, CADET.LV logo un “CADET PERSONĀLS” pa labi (attēli `word/media/cp_*.png`, saites `rIdCpUnit`/`rIdCpCadet`). Instruktāžas, nometnes un līgumu veidnēm logo netiek likts.
 
