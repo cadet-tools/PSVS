@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.53.1';
+  CP.VERSION = '1.54.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -5728,9 +5728,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.53.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+    { v: '1.54.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',
-      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}. Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
+      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}; **latviešu pareizrakstības pārbaude** pasvītro kļūdas (labā peles poga — ieteikumi). Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
     ] },
     { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
@@ -13383,6 +13383,38 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     } catch (e) { ui.toast('Veidni neizdevās atvērt: ' + e.message, 'err', 9000); }
   };
 
+  /* --- Pareizrakstība: pārlūka (Chrome) latviešu vārdnīca, tikai datorā. Atzīmes {…} var tikt pasvītrotas — tās nav kļūdas. --- */
+  const spellOn = () => { try { return localStorage.getItem('cp.teSpell') !== '0'; } catch (e) { return true; } };
+  /** Chrome pārbauda rediģējamu tekstu, kad tas bijis fokusā — īsi “pieskaras” katrai rindkopai, lai kļūdas parādās uzreiz */
+  function poke() {
+    const els = U.qsa('#tplEditDialog .te-p'), keep = document.activeElement, last = ed?.last || null;
+    els.forEach(e => e.focus({ preventScroll: true }));   // sinhroni — lietotājs pa vidu nevar noklikšķināt
+    els.forEach(e => e.classList.remove('on'));
+    if (keep && keep !== document.body && keep.isConnected) keep.focus?.({ preventScroll: true }); else document.activeElement?.blur?.();
+    if (ed) { ed.last = last; ed.pokeUntil = Date.now() + 400; }
+  }
+  CP.changeHandlers.push(e => {
+    if (e.target.dataset?.te !== 'spell') return false;
+    try { localStorage.setItem('cp.teSpell', e.target.checked ? '1' : '0'); } catch (x) { }
+    U.qsa('#tplEditDialog .te-p').forEach(el => { el.spellcheck = e.target.checked; });
+    if (e.target.checked) poke();
+    return true;
+  });
+  A.tplSpellHelp = () => {
+    let d = U.$('spellHelpDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'spellHelpDialog'; document.body.appendChild(d); }
+    d.innerHTML = `<header class="dlg-head"><h2>Latviešu pareizrakstība Chrome</h2><button type="button" class="ghost" data-close="spellHelpDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><ol class="small perm-how">
+        <li>Jaunā cilnē atver <code>chrome://settings/languages</code> <button type="button" class="sm" data-act="tplSpellCopy">📋 Kopēt adresi</button> (Edge: <code>edge://settings/languages</code>).</li>
+        <li>Sadaļā “Valodas” pievieno <b>latviešu</b>, ja tās nav.</li>
+        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz to un izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta. (“Uzlabotā” sūta tekstu Google — to neizvēlies.)</li>
+        <li>Pie latviešu valodas ieslēdz pārbaudi. Chrome vienreiz lejupielādē vārdnīcu.</li>
+        <li>Atgriezies rīkā un atver veidnes atzīmes no jauna.</li></ol>
+        <p class="small muted">Atzīmes, piem. {vards_uzvards}, var būt pasvītrotas — tās nav kļūdas, un tās nav jālabo.</p></div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="spellHelpDialog">Sapratu</button></footer>`;
+    d.showModal();
+  };
+  A.tplSpellCopy = async () => { const a = /Edg\//.test(navigator.userAgent) ? 'edge://settings/languages' : 'chrome://settings/languages'; try { await navigator.clipboard.writeText(a); ui.toast('Adrese nokopēta — ielīmē to jaunā cilnē', 'ok'); } catch (e) { ui.toast('Ieraksti adreses joslā: ' + a, 'warn', 9000); } };
+
   /* --- Rindkopas izskats redaktorā (tikai attēlošanai — dokumentā nekas netiek mainīts): līdzinājums, treknraksts, slīpraksts, izmērs, saraksts --- */
   const val = (el, tag) => { const x = el?.getElementsByTagNameNS(W, tag)[0]; if (!x) return null; const v = x.getAttributeNS(W, 'val'); return v == null ? true : v; };
   const on = v => v === true || (v != null && !/^(0|false|off|none)$/i.test(v));
@@ -13404,7 +13436,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     ed.paras = []; ed.orig = [];
     const body = ed.doc.getElementsByTagNameNS(W, 'body')[0];
     const para = p => { const i = ed.paras.push(p) - 1, s = ptext(p); ed.orig[i] = s; const st = p.getElementsByTagNameNS(W, 'pStyle')[0]?.getAttributeNS(W, 'val') || '';
-      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}${look(p).li ? ' li' : ''}" style="${look(p).css}" contenteditable="plaintext-only" spellcheck="false" data-pi="${i}">${esc(s)}</div>`; };
+      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}${look(p).li ? ' li' : ''}" style="${look(p).css}" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}" lang="lv" data-pi="${i}">${esc(s)}</div>`; };
     const block = el => {
       if (el.namespaceURI !== W) return '';
       if (el.localName === 'p') return para(el);
@@ -13415,8 +13447,11 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const html = [...body.childNodes].map(block).join('');
     d.innerHTML = `<header class="dlg-head"><h2>${ic('edit', '✎')} Atzīmes veidnē — ${esc(ed.t.name)}</h2><button type="button" class="ghost" data-act="tplEditClose" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body te-wrap">
-        <div class="te-doc" id="teDoc">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
-        <aside class="te-side"><p class="small" style="margin-top:0"><b>Kā ielikt atzīmi:</b> noklikšķini tekstā vietā, kur jābūt datiem (vai iezīmē paraugtekstu, piem. “Jānis Paraugs”), un izvēlies atzīmi zemāk.</p>
+        <div class="te-doc" id="teDoc" lang="lv">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
+        <aside class="te-side">
+          <div class="te-spell"><label class="check"><input type="checkbox" data-te="spell" ${spellOn() ? 'checked' : ''}> <b>Pārbaudīt pareizrakstību</b> (latviešu)</label>
+            <p class="small muted" style="margin:4px 0 0">Kļūdas tiek pasvītrotas ar sarkanu viļņoto līniju; <b>labā peles poga</b> uz vārda — labojuma ieteikumi. Pārbauda pats Chrome datorā — teksts netiek sūtīts. <a href="#" data-act="tplSpellHelp">Ja nepasvītro…</a></p></div>
+          <p class="small" style="margin-top:10px"><b>Kā ielikt atzīmi:</b> noklikšķini tekstā vietā, kur jābūt datiem (vai iezīmē paraugtekstu, piem. “Jānis Paraugs”), un izvēlies atzīmi zemāk.</p>
           <div class="actions" style="margin-bottom:8px"><button type="button" class="sm" data-act="tplEditPara">＋ Rindkopa zemāk</button><button type="button" class="sm" data-act="tplEditRow" title="Tukša tabulas rinda zem izvēlētās šūnas rindas — sarakstam ieliec tajā personas atzīmes">＋ Tabulas rinda</button></div>
           ${ed.t.type === 'custom' ? '<p class="small muted">Personas atzīmes <b>tabulas rindā</b> → saraksts (rinda katrai personai). <b>Tekstā</b> → katrai personai savs dokuments.</p>' : ed.t.type !== 'contract' ? '<p class="small muted">Dalībnieka atzīmes jāliek <b>tabulas rindā</b> — tā atkārtosies katram dalībniekam.</p>' : ''}
           ${tagsFor(ed.t.type).map(g => `<div class="te-grp"><div class="small muted">${esc(g.label)}</div>${g.tags.map(k => `<button type="button" class="chipbtn te-tag" data-act="tplEditTag" data-arg="${esc(k)}">${esc(k)}</button>`).join('')}</div>`).join('')}
@@ -13424,12 +13459,13 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       </div>
       <footer class="dlg-foot"><span class="small muted grow" id="teState">Nav izmaiņu</span><button type="button" data-act="tplEditClose">Aizvērt</button><button type="button" class="mainbtn" data-act="tplEditSave">${ic('save', '💾')} Saglabāt veidni</button></footer>`;
     if (!d.open) d.showModal();
+    if (spellOn()) poke();
     d.oncancel = e => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) e.preventDefault(); };
   }
   const mark = () => { ed.dirty = true; const s = U.$('teState'); if (s) s.textContent = 'Ir nesaglabātas izmaiņas'; };
   document.addEventListener('focusin', e => { const el = e.target.closest?.('#tplEditDialog .te-p'); if (el && ed) { U.qsa('#tplEditDialog .te-p.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); if (ed.last?.i !== +el.dataset.pi) ed.last = { i: +el.dataset.pi, range: null }; } });
   document.addEventListener('selectionchange', () => {
-    if (!ed) return; const s = getSelection(); if (!s.rangeCount) return; const el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)?.closest?.('#tplEditDialog .te-p');
+    if (!ed || Date.now() < (ed.pokeUntil || 0)) return; const s = getSelection(); if (!s.rangeCount) return; const el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)?.closest?.('#tplEditDialog .te-p');
     if (el) ed.last = { i: +el.dataset.pi, range: s.getRangeAt(0).cloneRange() };
   });
   document.addEventListener('input', e => { if (e.target.closest?.('#tplEditDialog .te-p')) mark(); }, true);

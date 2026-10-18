@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.54.0 — 2026-10-18
+- Atzīmju redaktorā latviešu pareizrakstības pārbaude: rindkopām `spellcheck` + `lang="lv"` (pārlūka vārdnīca datorā, teksts netiek sūtīts), slēdzis “Pārbaudīt pareizrakstību” (`localStorage cp.teSpell`), atverot visas rindkopas īsi fokusē, lai kļūdas parādītos uzreiz. Palīdzības logs, kā Chrome / Edge ieslēgt latviešu vārdnīcu ar “Pamata” pārbaudi.
+
 ## 1.53.1 — 2026-10-18
 - Atzīmju redaktors rāda rindkopas tā, kā tās izskatās Word: līdzinājums (centrā / pa labi / abās malās), treknraksts, slīpraksts, burtu izmērs, atkāpe un numurēti saraksti. Tikai attēlošana — dokumenta formatējums kā līdz šim netiek mainīts.
 
