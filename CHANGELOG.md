@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.52.4 — 2026-10-18
+- Savas veidlapas ar vienības logo: galvenes tabula 3 kolonnās ar fiksētu platumu (logo · nosaukums · CADET.LV + “CADET PERSONĀLS”). Garš nosaukums līdz 120 zīmēm un ļoti gari vārdi tiek dalīti, tāpēc vairs nepārbīda CADET.LV logo ārpus lapas. Ja CADET.LV logo neizdodas ielādēt, dokuments netiek sagatavots ar vienības logo (paziņojums), — vienības logo nekad nav bez CADET.LV.
+
 ## 1.52.3 — 2026-10-18
 - Rīka galvenē: ja ir vienības logo / nosaukums, centrētajam CADET.LV logo apakšā uzraksts “CADET PERSONĀLS” (`.hdr-logo.with-unit`); tumšajā tēmā CADET.LV logo gaišāks. Šaurā logā (≤ 820 px), kur CADET.LV logo paslēpts, paslēpts arī vienības logo — vienības logo nekad nav redzams bez CADET.LV. Kopsavilkuma PDF un savās veidlapās tas jau bija.
 

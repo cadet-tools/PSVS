@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.52.3';
+  CP.VERSION = '1.52.4';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -13161,7 +13161,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
           <div class="sum-bar" style="margin-bottom:6px"><select data-cf="group"><option value="">Visas grupas</option>${D.groups().map(g => `<option ${dlg.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
             <input type="search" data-cf="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="cfAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="cfNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row"><label class="check"><input type="checkbox" data-cfp="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label></div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>
-        ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-cf="brand" ${t?.brand ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} dokumenta augšā — kopā ar CADET.LV logo <span class="muted small">(oficiāliem dokumentiem neatzīmē)</span></label>` : '<p class="small muted" style="margin:4px 0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība — tad šeit varēs izvēlēties to ielikt dokumentā.</p>'}
+        ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-cf="brand" ${t?.brand ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name.length > 50 ? CP.unit.get().name.slice(0, 49) + '…' : CP.unit.get().name)}”)` : ''} dokumenta augšā — kopā ar CADET.LV logo <span class="muted small">(oficiāliem dokumentiem neatzīmē)</span></label>` : '<p class="small muted" style="margin:4px 0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība — tad šeit varēs izvēlēties to ielikt dokumentā.</p>'}
         ${t?.mode === 'each' ? `<label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> Piesaistīt katras personas kartītei (fails — personas dokumentu mapē)</label>` : ''}
         <p class="small muted" style="margin:4px 0">Sagatavotais dokuments parādīsies sarakstā Veidlapas → “Sagatavotās veidlapas” — tur to var atvērt un lejupielādēt.</p>
         <p class="small muted">Vispirms vari <b>apskatīt</b>, kā izskatās aizpildītais dokuments${t?.mode === 'each' ? ' (pirmajai personai)' : ''}. Atzīmes var rakstīt arī ar garumzīmēm: {Vārds} = {vards}.</p>
@@ -13193,25 +13193,32 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   /** Dokumenta sākumā ieliek tabulu bez rāmjiem: pa kreisi vienības logo + nosaukums, pa labi CADET.LV logo un “CADET PERSONĀLS” */
   async function brand(buf) {
     const u = CP.unit?.get() || {}; if (!u.name && !u.logo) return buf;
-    if (!CADET) { try { CADET = new Uint8Array(await (await fetch(CP.VENDOR + 'brand/CADET_pdf.png')).arrayBuffer()); } catch (e) { CADET = null; } }
+    if (!CADET) { try { const r = await fetch(CP.VENDOR + 'brand/CADET_pdf.png'); if (r.ok) CADET = new Uint8Array(await r.arrayBuffer()); } catch (e) { CADET = null; } }
     const files = await U.unzip(buf), m = new Map(), dec = new TextDecoder(), enc = new TextEncoder();
     for (const [n, get] of files) m.set(n, await get());
     const EMU = 360000, uLogo = u.logo ? CP.unit.logoBytes() : null;
-    let left = '', right = '';
-    if (uLogo) { const [w, h] = pngSize(uLogo), cy = Math.round(1.6 * EMU), cx = Math.min(Math.round(3.2 * EMU), Math.round(cy * w / h)), cy2 = Math.round(cx * h / w); left += `<w:r>${drawing('rIdCpUnit', cx, cy2, 9101, 'Vienibas_logo')}</w:r>`; m.set('word/media/cp_unit.png', uLogo); }
-    if (u.name) left += `<w:r><w:t xml:space="preserve">${uLogo ? '   ' : ''}</w:t></w:r><w:r><w:rPr><w:b/>${uLogo ? '<w:position w:val="36"/>' : ''}<w:sz w:val="26"/></w:rPr><w:t xml:space="preserve">${xesc(u.name)}</w:t></w:r>`;   // nosaukums pret logo vidu
-    if (CADET) { const [w, h] = pngSize(CADET), cx = Math.round(3.4 * EMU), cy = Math.round(cx * h / w); right = `<w:r>${drawing('rIdCpCadet', cx, cy, 9102, 'CADET_LV')}</w:r>`; m.set('word/media/cp_cadet.png', CADET); }
+    if (!CADET) throw Error('CADET.LV logo neizdevās ielādēt — vienības logo bez tā netiek likts. Pārbaudi interneta savienojumu vai “Sagatavot bezsaistei”.');
+    // garš nosaukums: līdz 120 zīmēm, ļoti gari vārdi dalāmi (neredzama pārnese ik 14 zīmes), lai nepārbīdītu CADET.LV logo ārpus lapas
+    const name = (u.name.length > 120 ? u.name.slice(0, 119) + '…' : u.name).replace(/\S{15,}/g, w => w.match(/.{1,14}/g).join('​'));
+    const cell = (wdxa, inner, o = '') => `<w:tc><w:tcPr><w:tcW w:w="${wdxa}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
+    const P = (runs, jc) => `<w:p><w:pPr>${jc ? `<w:jc w:val="${jc}"/>` : ''}<w:spacing w:before="0" w:after="0"/></w:pPr>${runs}</w:p>`;
+    let logoCell = '', cols = [];
+    if (uLogo) { const [w, h] = pngSize(uLogo), cy = Math.round(1.5 * EMU), cx = Math.min(Math.round(1.9 * EMU), Math.round(cy * w / h)), cy2 = Math.round(cx * h / w); logoCell = cell(1250, P(`<w:r>${drawing('rIdCpUnit', cx, cy2, 9101, 'Vienibas_logo')}</w:r>`)); cols.push(1250); m.set('word/media/cp_unit.png', uLogo); }
+    const nameW = uLogo ? 5450 : 6700; cols.push(nameW, 2900);
+    const nameCell = cell(nameW, P(name ? `<w:r><w:rPr><w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">${xesc(name)}</w:t></w:r>` : ''));
+    const [cw, chh] = pngSize(CADET), ccx = Math.round(3.2 * EMU), ccy = Math.round(ccx * chh / cw); m.set('word/media/cp_cadet.png', CADET);
+    const right = `<w:r>${drawing('rIdCpCadet', ccx, ccy, 9102, 'CADET_LV')}</w:r>`;
     const none = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(k => `<w:${k} w:val="nil"/>`).join('');
-    const tbl = `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>${none}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="6400"/><w:gridCol w:w="2800"/></w:tblGrid>`
-      + `<w:tr><w:tc><w:tcPr><w:tcW w:w="3450" w:type="pct"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${left}</w:p></w:tc>`
-      + `<w:tc><w:tcPr><w:tcW w:w="1550" w:type="pct"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="0" w:after="0"/></w:pPr>${right}</w:p><w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="5F7180"/><w:sz w:val="14"/></w:rPr><w:t>CADET PERSONĀLS</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="120"/></w:pPr></w:p>`;
+    const tbl = `<w:tbl><w:tblPr><w:tblW w:w="${cols.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblBorders>${none}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${cols.map(c => `<w:gridCol w:w="${c}"/>`).join('')}</w:tblGrid>`
+      + `<w:tr>${logoCell}${nameCell}`
+      + cell(2900, P(right, 'right') + P('<w:r><w:rPr><w:b/><w:color w:val="5F7180"/><w:sz w:val="14"/></w:rPr><w:t>CADET PERSONĀLS</w:t></w:r>', 'right')) + `</w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="120"/></w:pPr></w:p>`;
     let doc = dec.decode(m.get('word/document.xml'));
     doc = doc.replace(/<w:body>/, '<w:body>' + tbl);
     m.set('word/document.xml', enc.encode(doc));
     const relsN = 'word/_rels/document.xml.rels'; let rels = m.has(relsN) ? dec.decode(m.get(relsN)) : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
     const IMG = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
     if (uLogo) rels = rels.replace('</Relationships>', `<Relationship Id="rIdCpUnit" Type="${IMG}" Target="media/cp_unit.png"/></Relationships>`);
-    if (CADET) rels = rels.replace('</Relationships>', `<Relationship Id="rIdCpCadet" Type="${IMG}" Target="media/cp_cadet.png"/></Relationships>`);
+    rels = rels.replace('</Relationships>', `<Relationship Id="rIdCpCadet" Type="${IMG}" Target="media/cp_cadet.png"/></Relationships>`);
     m.set(relsN, enc.encode(rels));
     let ct = dec.decode(m.get('[Content_Types].xml'));
     if (!/Extension="png"/i.test(ct)) ct = ct.replace(/<Types([^>]*)>/, '<Types$1><Default Extension="png" ContentType="image/png"/>');
