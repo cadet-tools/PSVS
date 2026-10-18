@@ -849,6 +849,9 @@ html:not([data-theme="light"]) .hdr-logo{filter:brightness(1.9) saturate(1.15) d
 /* Veidnes atzīmju redaktors */
 #tplEditDialog{width:min(1200px,96vw);max-width:none}
 .te-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;max-height:70vh}
+.te-col{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}.te-col>.te-doc{flex:1;min-height:0}
+.te-prog{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}.te-prog[hidden]{display:none}
+.te-bar{height:6px;border-radius:4px;background:var(--edge);overflow:hidden}.te-bar i{display:block;height:100%;width:0;background:var(--teal);border-radius:4px;transition:width .25s linear}
 .te-doc{outline:none;background:#fff;color:#111;border-radius:8px;padding:28px 34px;overflow:auto;font:14px/1.5 'Times New Roman',Tinos,serif;box-shadow:0 1px 6px #0006}
 .te-p{min-height:1.4em;padding:1px 4px;margin:0 -4px 2px;border-radius:4px;outline:none;white-space:pre-wrap;word-break:break-word}
 .te-p:hover{background:#eef4f8}.te-p:focus,.te-p.on{background:#e3f1ec;box-shadow:inset 0 0 0 1px #55b5a1}

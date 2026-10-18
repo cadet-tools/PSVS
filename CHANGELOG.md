@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.54.3 — 2026-10-18
+- Atzīmju redaktorā virs dokumenta pareizrakstības pārbaudes josla ar procentiem un atlikušo laiku. Chrome neziņo, kad pārbaude beigusies, tāpēc laiks ir aptuvens pēc vārdu skaita (3 s + 1 s uz 25 vārdiem, ne vairāk kā 60 s); beigās “✓ Pareizrakstība pārbaudīta”, josla pazūd.
+
 ## 1.54.2 — 2026-10-18
 - Atzīmju redaktors: viss dokuments ir viens rediģējams laukums (`#teDoc contenteditable`), tāpēc Chrome pareizrakstības pārbaude aptver visu tekstu uzreiz pēc atvēršanas, nevis tikai rindkopu, kurā ir kursors. Rindkopu robežas sargā `beforeinput`: Enter, dzēšana pāri robežai un iezīmējums vairākās rindkopās netiek atļauti; ielīmētais teksts — vienā rindā.
 

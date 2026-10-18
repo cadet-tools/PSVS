@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.54.2';
+  CP.VERSION = '1.54.3';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -13388,14 +13388,31 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   /** Viss dokuments ir VIENS rediģējams laukums — Chrome pārbauda visu tekstu, kad tas ir fokusā (ne tikai rindkopu, uz kuras kursors) */
   function poke() {
     const host = U.$('teDoc'); if (!host) return; const last = ed?.last || null;
-    host.focus({ preventScroll: true });
+    host.focus({ preventScroll: true }); progress(host);
     if (!last) { const r = document.createRange(); r.setStart(host, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
     if (ed) { ed.last = last; ed.pokeUntil = Date.now() + 300; }
+  }
+  /** Pārbaudes josla. Chrome neziņo, kad pārbaude beigusies, tāpēc laiks ir aptuvens — pēc teksta garuma
+      (Chrome pārbauda pa daļām, kamēr dators ir brīvs); josla aizpildās līdz 100 % un pazūd. */
+  let progT = 0;
+  function progress(host) {
+    const box = U.$('teProg'); if (!box) return;
+    clearInterval(progT);
+    const words = (host.innerText.match(/\S+/g) || []).length, est = Math.min(60, Math.max(4, 3 + words / 25)) * 1000, t0 = Date.now();
+    const bar = box.querySelector('i'), lbl = box.querySelector('span');
+    box.hidden = false;
+    const tick = () => {
+      const k = Math.min(1, (Date.now() - t0) / est), pct = Math.round(100 * (1 - Math.pow(1 - k, 2)));
+      bar.style.width = pct + '%';
+      lbl.textContent = k < 1 ? `Pārlūks pārbauda pareizrakstību… ${pct}% (${words} vārdi, aptuveni ${Math.ceil((est - (Date.now() - t0)) / 1000)} s)` : '✓ Pareizrakstība pārbaudīta — kļūdas pasvītrotas sarkanā krāsā';
+      if (k >= 1) { clearInterval(progT); setTimeout(() => { if (box.isConnected) box.hidden = true; }, 3500); }
+    };
+    tick(); progT = setInterval(tick, 250);
   }
   CP.changeHandlers.push(e => {
     if (e.target.dataset?.te !== 'spell') return false;
     try { localStorage.setItem('cp.teSpell', e.target.checked ? '1' : '0'); } catch (x) { }
-    const host = U.$('teDoc'); if (host) { host.spellcheck = e.target.checked; host.blur(); }
+    const host = U.$('teDoc'); if (host) { host.spellcheck = e.target.checked; host.blur(); } if (!e.target.checked) { clearInterval(progT); const b = U.$('teProg'); if (b) b.hidden = true; }
     if (e.target.checked) poke();
     return true;
   });
@@ -13446,7 +13463,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const html = [...body.childNodes].map(block).join('');
     d.innerHTML = `<header class="dlg-head"><h2>${ic('edit', '✎')} Atzīmes veidnē — ${esc(ed.t.name)}</h2><button type="button" class="ghost" data-act="tplEditClose" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body te-wrap">
-        <div class="te-doc" id="teDoc" lang="lv" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
+        <div class="te-col"><div class="te-prog" id="teProg" hidden><div class="te-bar"><i></i></div><span></span></div>
+        <div class="te-doc" id="teDoc" lang="lv" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div></div>
         <aside class="te-side">
           <div class="te-spell"><label class="check"><input type="checkbox" data-te="spell" ${spellOn() ? 'checked' : ''}> <b>Pārbaudīt pareizrakstību</b> (latviešu)</label>
             <p class="small muted" style="margin:4px 0 0">Kļūdas tiek pasvītrotas ar sarkanu viļņoto līniju; <b>labā peles poga</b> uz vārda — labojuma ieteikumi. Pārbauda pats Chrome datorā — teksts netiek sūtīts. <a href="#" data-act="tplSpellHelp">Ja nepasvītro…</a></p></div>
