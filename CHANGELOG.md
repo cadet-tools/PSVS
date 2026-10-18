@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.52.1 — 2026-10-18
+- Savas veidlapas: izvēle “Ar vienības logo un nosaukumu” (atceras katrai veidnei — `t.brand`, noklusējumā izslēgta). Dokumenta sākumā tiek ielikta tabula bez rāmjiem: vienības logo un nosaukums pa kreisi, CADET.LV logo un “CADET PERSONĀLS” pa labi (attēli `word/media/cp_*.png`, saites `rIdCpUnit`/`rIdCpCadet`). Instruktāžas, nometnes un līgumu veidnēm logo netiek likts.
+
 ## 1.52.0 — 2026-10-18
 - `js/customforms.js`: savas veidlapas (`docTemplates` ar `type: 'custom'`). Režīms pēc veidnes: personas atzīmes tabulas rindā → saraksts; citur → katrai personai savs dokuments (ZIP, pēc izvēles saglabā personas mapē un piesaista kartītei kā “Cits” ar veidnes nosaukumu). Logs `A.cfNew('tid|pid')`: veidne, datums, vieta, personas; “Apskatīt” — Word skatītājā rīkā. Personas atzīmes (`PERSON_HELP`) un vispārīgās (`GLOBAL_HELP`) — Veidlapas → Pieejamās atzīmes.
 - `docxfill.js`: atzīmju nosaukumi normalizēti (`{Vārds}` = `{vards}`, atstarpes → `_`); `scan()` atrod visas atzīmes un tās tabulu rindās; `fill()` pieņem `rowKeys`, darbinieku rindas — pēc izvēles.

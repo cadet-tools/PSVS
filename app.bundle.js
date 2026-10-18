@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.52.0';
+  CP.VERSION = '1.52.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -5728,9 +5728,9 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.52.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+    { v: '1.52.1', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem.',
-      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Pirms saglabāšanas dokumentu var **apskatīt rīkā**. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}.',
+      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Pirms saglabāšanas dokumentu var **apskatīt rīkā**. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}. Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
       'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
     ] },
     { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
@@ -13151,6 +13151,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
           <div class="sum-bar" style="margin-bottom:6px"><select data-cf="group"><option value="">Visas grupas</option>${D.groups().map(g => `<option ${dlg.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
             <input type="search" data-cf="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="cfAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="cfNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
           <div class="sum-list">${list.map(p => `<div class="sum-row"><label class="check"><input type="checkbox" data-cfp="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label></div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>
+        ${CP.unit?.has() ? `<label class="check"><input type="checkbox" data-cf="brand" ${t?.brand ? 'checked' : ''}> Ar vienības logo un nosaukumu${CP.unit.get().name ? ` (“${esc(CP.unit.get().name)}”)` : ''} dokumenta augšā — kopā ar CADET.LV logo <span class="muted small">(oficiāliem dokumentiem neatzīmē)</span></label>` : '<p class="small muted" style="margin:4px 0">Vienības logo un nosaukumu var pievienot Iestatījumi → Pamata → Vienība — tad šeit varēs izvēlēties to ielikt dokumentā.</p>'}
         <label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> ${t?.mode === 'list' ? 'Saglabāt kopiju mapē “Veidlapas” (mācību gada mapē)' : 'Saglabāt katras personas dokumentu mapē un piesaistīt kartītei'}</label>
         <p class="small muted">Vispirms vari <b>apskatīt</b>, kā izskatās aizpildītais dokuments${t?.mode === 'each' ? ' (pirmajai personai)' : ''}. Atzīmes var rakstīt arī ar garumzīmēm: {Vārds} = {vards}.</p>
       </div>
@@ -13164,6 +13165,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const t = e.target; if (!t.closest?.('#cfDialog')) return false;
     if (t.dataset.cfp) { if (t.checked) dlg.pids.add(t.dataset.cfp); else dlg.pids.delete(t.dataset.cfp); keep(draw); return true; }
     const k = t.dataset.cf; if (!k) return false;
+    if (k === 'brand') { const tp = cur(); if (tp) { tp.brand = t.checked; CP.store.changed({ silent: true }); } return true; }
     if (k === 'save') dlg.save = t.checked; else if (k === 'tid' || k === 'group') { dlg[k] = t.value; keep(draw); } else dlg[k] = t.value;
     return true;
   });
@@ -13171,6 +13173,41 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const t = e.target; if (!t.closest?.('#cfDialog') || t.dataset.cf !== 'q') return false;
     dlg.q = t.value; const pos = t.selectionStart; keep(draw); const n = U.qs('#cfDialog [data-cf="q"]'); n?.focus(); n?.setSelectionRange(pos, pos); return true;
   });
+
+  /* ---------- Vienības logo un nosaukums (pēc izvēles) + CADET.LV logo ar “CADET PERSONĀLS” ---------- */
+  const pngSize = u => { const v = new DataView(u.buffer, u.byteOffset); return v.getUint32(0) === 0x89504e47 ? [v.getUint32(16), v.getUint32(20)] : [400, 400]; };
+  const xesc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const drawing = (rid, cx, cy, id, name) => `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${name}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="${name}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+  let CADET = null;
+  /** Dokumenta sākumā ieliek tabulu bez rāmjiem: pa kreisi vienības logo + nosaukums, pa labi CADET.LV logo un “CADET PERSONĀLS” */
+  async function brand(buf) {
+    const u = CP.unit?.get() || {}; if (!u.name && !u.logo) return buf;
+    if (!CADET) { try { CADET = new Uint8Array(await (await fetch(CP.VENDOR + 'brand/CADET_pdf.png')).arrayBuffer()); } catch (e) { CADET = null; } }
+    const files = await U.unzip(buf), m = new Map(), dec = new TextDecoder(), enc = new TextEncoder();
+    for (const [n, get] of files) m.set(n, await get());
+    const EMU = 360000, uLogo = u.logo ? CP.unit.logoBytes() : null;
+    let left = '', right = '';
+    if (uLogo) { const [w, h] = pngSize(uLogo), cy = Math.round(1.6 * EMU), cx = Math.min(Math.round(3.2 * EMU), Math.round(cy * w / h)), cy2 = Math.round(cx * h / w); left += `<w:r>${drawing('rIdCpUnit', cx, cy2, 9101, 'Vienibas_logo')}</w:r>`; m.set('word/media/cp_unit.png', uLogo); }
+    if (u.name) left += `<w:r><w:t xml:space="preserve">${uLogo ? '   ' : ''}</w:t></w:r><w:r><w:rPr><w:b/>${uLogo ? '<w:position w:val="36"/>' : ''}<w:sz w:val="26"/></w:rPr><w:t xml:space="preserve">${xesc(u.name)}</w:t></w:r>`;   // nosaukums pret logo vidu
+    if (CADET) { const [w, h] = pngSize(CADET), cx = Math.round(3.4 * EMU), cy = Math.round(cx * h / w); right = `<w:r>${drawing('rIdCpCadet', cx, cy, 9102, 'CADET_LV')}</w:r>`; m.set('word/media/cp_cadet.png', CADET); }
+    const none = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(k => `<w:${k} w:val="nil"/>`).join('');
+    const tbl = `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>${none}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="6400"/><w:gridCol w:w="2800"/></w:tblGrid>`
+      + `<w:tr><w:tc><w:tcPr><w:tcW w:w="3450" w:type="pct"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${left}</w:p></w:tc>`
+      + `<w:tc><w:tcPr><w:tcW w:w="1550" w:type="pct"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="0" w:after="0"/></w:pPr>${right}</w:p><w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="5F7180"/><w:sz w:val="14"/></w:rPr><w:t>CADET PERSONĀLS</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="120"/></w:pPr></w:p>`;
+    let doc = dec.decode(m.get('word/document.xml'));
+    doc = doc.replace(/<w:body>/, '<w:body>' + tbl);
+    m.set('word/document.xml', enc.encode(doc));
+    const relsN = 'word/_rels/document.xml.rels'; let rels = m.has(relsN) ? dec.decode(m.get(relsN)) : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+    const IMG = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+    if (uLogo) rels = rels.replace('</Relationships>', `<Relationship Id="rIdCpUnit" Type="${IMG}" Target="media/cp_unit.png"/></Relationships>`);
+    if (CADET) rels = rels.replace('</Relationships>', `<Relationship Id="rIdCpCadet" Type="${IMG}" Target="media/cp_cadet.png"/></Relationships>`);
+    m.set(relsN, enc.encode(rels));
+    let ct = dec.decode(m.get('[Content_Types].xml'));
+    if (!/Extension="png"/i.test(ct)) ct = ct.replace(/<Types([^>]*)>/, '<Types$1><Default Extension="png" ContentType="image/png"/>');
+    m.set('[Content_Types].xml', enc.encode(ct));
+    return (await CP.docxFill.zip([...m])).arrayBuffer();
+  }
+  const prep = async (t, buf) => (t.brand && CP.unit?.has() ? brand(buf) : buf);
 
   /* ---------- Aizpildīšana ---------- */
   const safe = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '');
@@ -13186,7 +13223,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   A.cfPreview = async () => {
     const t = cur(), ps = people(); if (!t || !ps.length) return;
     try {
-      const buf = await analyse(t), blob = t.mode === 'list' ? await buildList(t, buf, ps) : await buildOne(t, buf, ps[0], 0, ps.length);
+      const buf = await prep(t, await analyse(t)), blob = t.mode === 'list' ? await buildList(t, buf, ps) : await buildOne(t, buf, ps[0], 0, ps.length);
       const name = t.mode === 'list' ? `${t.name}.docx` : `${t.name} - ${U.full(ps[0])}.docx`;
       await CP.docs.openFile(new File([blob], name, { type: blob.type }), name);
     } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
@@ -13195,7 +13232,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const t = cur(), ps = people(); if (!t || !ps.length) return;
     const save = dlg.save && !!S.root, lbl = btn.innerHTML; btn.disabled = true;
     try {
-      const buf = await analyse(t); CP.store.changed({ silent: true });
+      const buf = await prep(t, await analyse(t)); CP.store.changed({ silent: true });
       if (t.mode === 'list') {
         const blob = await buildList(t, buf, ps), name = `${safe(t.name)}_${dlg.date}.docx`;
         U.download(blob, name);
