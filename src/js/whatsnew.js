@@ -13,6 +13,11 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.52.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+      'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem.',
+      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Pirms saglabāšanas dokumentu var **apskatīt rīkā**. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}.',
+      'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
+    ] },
     { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
       'Krāsains PDF ar diagrammām jaunsargam vai vecākiem par **paša izvēlētu periodu**: apmeklējums pa mēnešiem, dalība pasākumos un nometnēs, kvalifikācijas un nozīmītes, VFS rezultāti un dinamika, tavs komentārs. Galvenē tikai vārds un uzvārds. Vienai personai — kartītē (**“Jaunsarga kopsavilkums”** Pārskatā vai ⋯ izvēlnē). Vairākām — **Veidlapas → “Jaunsarga kopsavilkums”**: katrai personai savs PDF, katram var ierakstīt savu komentāru un kopīgu tekstu visiem. PDF saglabājas personas dokumentu mapē (“Kopsavilkums”), vairāki — arī vienā ZIP. **Vienības logo un nosaukums** (Iestatījumi → Pamata → Vienība) redzams rīka augšējā joslā un pēc izvēles kopsavilkumā — kopā ar CADET.LV logo. Oficiālajās veidlapās logo netiek likts.'
     ] },
@@ -113,11 +118,6 @@
     { v: '1.21.1', from: '1.21.0', date: '2026-10-15', title: 'Apmeklējums un kvalifikācijas', items: [
       'Sadaļa **Apmeklējums**: mēneša tabula ar atzīmēm (+, n, k, a, s), ko var likt ar peli vai tastatūru, drukājama veidlapa un apmeklējuma rādītāji ar dinamiku.',
       'Brīdinājums, ja jaunsargs nav bijis **3 nodarbības pēc kārtas**. Kvalifikācijas (piem., Pamatnometne) un uzvedības ieraksti personas kartītē.'
-    ] },
-    { v: '1.18.3', from: '1.14.0', date: '2026-10-15', title: 'Veidlapas un līgumi', items: [
-      'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes.',
-      'Visas veidlapas ir vienā sarakstā ar filtriem. Var izmantot arī savas Word veidnes.',
-      'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',

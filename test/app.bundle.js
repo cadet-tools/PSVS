@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 47 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 49 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.51.1';
+  CP.VERSION = '1.52.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -2661,6 +2661,7 @@ window.CP = window.CP || {};
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
             ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
             ${p.anon ? '' : `<button data-act="sumNew" data-arg="${p.id}">📊 Jaunsarga kopsavilkums (PDF)…</button>`}
+            ${p.anon || !CP.customForms?.tpls().length ? '' : `<button data-act="cfNew" data-arg="|${p.id}">📝 Aizpildīt savu veidlapu…</button>`}
             ${p.anon ? '' : `<button data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>
@@ -5727,6 +5728,11 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.52.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
+      'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem.',
+      'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Pirms saglabāšanas dokumentu var **apskatīt rīkā**. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}.',
+      'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
+    ] },
     { v: '1.51.0', from: '1.50.0', date: '2026-10-18', title: 'Jaunsarga kopsavilkums un vienības logo', items: [
       'Krāsains PDF ar diagrammām jaunsargam vai vecākiem par **paša izvēlētu periodu**: apmeklējums pa mēnešiem, dalība pasākumos un nometnēs, kvalifikācijas un nozīmītes, VFS rezultāti un dinamika, tavs komentārs. Galvenē tikai vārds un uzvārds. Vienai personai — kartītē (**“Jaunsarga kopsavilkums”** Pārskatā vai ⋯ izvēlnē). Vairākām — **Veidlapas → “Jaunsarga kopsavilkums”**: katrai personai savs PDF, katram var ierakstīt savu komentāru un kopīgu tekstu visiem. PDF saglabājas personas dokumentu mapē (“Kopsavilkums”), vairāki — arī vienā ZIP. **Vienības logo un nosaukums** (Iestatījumi → Pamata → Vienība) redzams rīka augšējā joslā un pēc izvēles kopsavilkumā — kopā ar CADET.LV logo. Oficiālajās veidlapās logo netiek likts.'
     ] },
@@ -5827,11 +5833,6 @@ window.CP = window.CP || {};
     { v: '1.21.1', from: '1.21.0', date: '2026-10-15', title: 'Apmeklējums un kvalifikācijas', items: [
       'Sadaļa **Apmeklējums**: mēneša tabula ar atzīmēm (+, n, k, a, s), ko var likt ar peli vai tastatūru, drukājama veidlapa un apmeklējuma rādītāji ar dinamiku.',
       'Brīdinājums, ja jaunsargs nav bijis **3 nodarbības pēc kārtas**. Kvalifikācijas (piem., Pamatnometne) un uzvedības ieraksti personas kartītē.'
-    ] },
-    { v: '1.18.3', from: '1.14.0', date: '2026-10-15', title: 'Veidlapas un līgumi', items: [
-      'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes.',
-      'Visas veidlapas ir vienā sarakstā ar filtriem. Var izmantot arī savas Word veidnes.',
-      'Ja iznāk jauna rīka versija, kamēr strādā, rīks par to paziņo.'
     ] },
     { v: '1.13.0', from: '1.11.0', date: '2026-10-13', title: 'Izskats un pulkstenis', items: [
       'Gaišā un tumšā tēma un akcenta krāsa: Iestatījumi → Izskats.',
@@ -7793,11 +7794,15 @@ window.CP = window.CP || {};
   const ROW_KEYS = ['nr', 'vards', 'vards_uzvards', 'uzvards', 'personas_kods', 'dzimsanas_datums', 'grupa_p', 'adrese', 'talrunis', 'vecaki', 'audzinatajs', 'rindas_datums'];
   const STAFF_KEYS = ['d_nr', 'd_vards', 'd_personas_kods', 'd_amats', 'd_adrese', 'd_talrunis'];
   const tEls = el => [...el.getElementsByTagNameNS(W, 't')];
+  /** Atzīmes nosaukums: {Vārds}, {vārds uzvārds}, {VARDS} → vards / vards_uzvards (bez garumzīmēm, mazie burti) */
+  const normKey = k => String(k).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/[\s.-]+/g, '_');
+  const TAG = /\{([^{}<>\n]{1,40})\}/g, HAS_TAG = /\{[^{}<>\n]{1,40}\}/;
+  const tagsIn = s => [...String(s).matchAll(TAG)].map(m => normKey(m[1]));
   /** Apvieno atzīmes, kas sadalītas pa vairākiem w:t vienā rindkopā */
   function mergeParagraphs(doc) {
     for (const p of doc.getElementsByTagNameNS(W, 'p')) {
       const ts = tEls(p); if (ts.length < 2) continue;
-      if (!/\{[a-z_0-9]+\}/i.test(ts.map(t => t.textContent).join(''))) continue;
+      if (!HAS_TAG.test(ts.map(t => t.textContent).join(''))) continue;
       // apvieno tikai tos gabalus, kas pārdala kādu {atzīmi}
       const open = s => { const i = s.lastIndexOf('{'); return i >= 0 && s.indexOf('}', i) < 0; };
       for (let i = 0; i < ts.length; i++) {
@@ -7811,12 +7816,12 @@ window.CP = window.CP || {};
   function fillText(el, map) {
     for (const t of tEls(el)) {
       const v = t.textContent; if (!v.includes('{')) continue;
-      t.textContent = v.replace(/\{([a-z_0-9]+)\}/gi, (m, k) => (k.toLowerCase() in map ? String(map[k.toLowerCase()] ?? '') : m)).replace(/\s*\n\s*/g, '; ');
+      t.textContent = v.replace(TAG, (m, k) => { k = normKey(k); return k in map ? String(map[k] ?? '').replace(/\s*\n\s*/g, '; ') : m; });
       t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
     }
   }
   function repeatRows(doc, keys, items, blank, nrKey) {
-    const rows = [...doc.getElementsByTagNameNS(W, 'tr')].filter(tr => keys.some(k => tr.textContent.includes('{' + k + '}')));
+    const rows = [...doc.getElementsByTagNameNS(W, 'tr')].filter(tr => tagsIn(tr.textContent).some(k => keys.includes(k)));
     for (const tpl of rows) {
       const parent = tpl.parentNode, list = [...items];
       for (let i = 0; i < blank; i++) list.push({ [nrKey]: `${items.length + i + 1}.` });
@@ -7828,8 +7833,8 @@ window.CP = window.CP || {};
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw Error('Word dokumenta XML nav nolasāms');
     mergeParagraphs(doc);
-    repeatRows(doc, STAFF_KEYS, d.staff, d.staffBlank, 'd_nr');
-    repeatRows(doc, ROW_KEYS, d.rows, d.blankRows, 'nr');
+    if (d.staff) repeatRows(doc, STAFF_KEYS, d.staff, d.staffBlank || 0, 'd_nr');
+    repeatRows(doc, d.rowKeys || ROW_KEYS, d.rows, d.blankRows || 0, 'nr');
     fillText(doc.documentElement, d.global);
     return new XMLSerializer().serializeToString(doc);
   }
@@ -7865,7 +7870,7 @@ window.CP = window.CP || {};
     for (const [name, get] of files) {
       let data = await get();
       if (/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) {
-        const xml = dec.decode(data); if (/\{[a-z_0-9]+\}/i.test(xml.replace(/<[^>]+>/g, ''))) found = true;
+        const xml = dec.decode(data); if (HAS_TAG.test(xml.replace(/<[^>]+>/g, ''))) found = true;
         data = enc.encode(processXml(xml, d));
       }
       out.push([name, data]);
@@ -7874,7 +7879,20 @@ window.CP = window.CP || {};
     return zip(out);
   }
 
-  CP.docxFill = { fill, data, FIELDS_HELP, zip };
+  /** Veidnes analīze: visas atzīmes un tās, kas ir tabulas rindās (saraksta režīmam) */
+  async function scan(buf) {
+    const files = await U.unzip(buf), dec = new TextDecoder(), all = new Set(), inRows = new Set();
+    if (!files.has('word/document.xml')) throw Error('fails nav Word .docx dokuments');
+    for (const [name, get] of files) {
+      if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) continue;
+      const doc = new DOMParser().parseFromString(dec.decode(await get()), 'application/xml');
+      mergeParagraphs(doc);
+      tagsIn(tEls(doc.documentElement).map(t => t.textContent).join('\n')).forEach(k => all.add(k));
+      for (const tr of doc.getElementsByTagNameNS(W, 'tr')) tagsIn(tEls(tr).map(t => t.textContent).join('')).forEach(k => inRows.add(k));
+    }
+    return { all: [...all], inRows: [...inRows] };
+  }
+  CP.docxFill = { fill, data, scan, normKey, FIELDS_HELP, zip };
 })(window.CP);
 
 
@@ -8125,11 +8143,11 @@ window.CP = window.CP || {};
   function tplCard() {
     const list = st().docTemplates || [];
     return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{nosaukums}</code>, <code>{datums}</code>, un tabulas rindu ar <code>{nr}</code> <code>{vards}</code>. Rīks to aizpildīs. Paraugus vari lejupielādēt un pielāgot.</p>
-      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
+      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : t.type === 'custom' ? `Sava veidlapa · ${t.mode === 'list' ? 'saraksts' : 'katrai personai savs dokuments'}` : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost" data-act="tplEdit" data-arg="${t.id}" title="Ielikt vai labot {atzīmes} veidnē tieši rīkā">${ic('edit', '✎')} Atzīmes</button>${t.type === 'custom' ? `<button class="sm mainbtn" data-act="cfNew" data-arg="${t.id}">${ic('file', '📄')} Aizpildīt…</button>` : ''}<button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
       <div class="actions" style="margin-top:10px">
-        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button><button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līguma veidne</button>
+        <button class="sm" data-act="tplDocAdd" data-arg="custom" title="Jebkura cita veidlapa: iesniegums, atļauja, saraksts… ar {atzīmēm}">${ic('upload', '⬆')} Sava veidlapa</button><button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button><button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līguma veidne</button>
         <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Paraugs: instruktāža</button><button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Paraugs: nometne</button><button class="sm ghost" data-act="tplDocSample" data-arg="contract">${ic('download', '⬇')} Paraugs: līgums</button></div>
-      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}<p class="small"><b>Līgumam:</b></p>${ui.dl(CP.CONTRACT_FIELDS_HELP || [])}</details>`;
+      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${CP.customForms ? `<p class="small"><b>Savai veidlapai</b> — personas atzīmes teksta vietās → katrai personai savs dokuments; tabulas rindā → saraksts (rinda katrai personai). Var rakstīt ar garumzīmēm: {Vārds} = {vards}.</p>${ui.dl([...CP.customForms.PERSON_HELP, ...CP.customForms.GLOBAL_HELP])}<p class="small"><b>Instruktāžai un nometnei:</b></p>` : ''}${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}<p class="small"><b>Līgumam:</b></p>${ui.dl(CP.CONTRACT_FIELDS_HELP || [])}</details>`;
   }
   let tplType = 'instr';
   A.tplDocAdd = type => { if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn'); tplType = type; U.$('tplDocFile').click(); };
@@ -8138,8 +8156,10 @@ window.CP = window.CP || {};
     if (!/\.docx$/i.test(f.name)) return ui.toast('Veidnei jābūt Word .docx failam', 'warn');
     try {
       const path = await CP.store.saveFile(['Veidnes'], f.name, f);
-      (st().docTemplates = st().docTemplates || []).push({ id: U.uid(), type: tplType, name: f.name.replace(/\.docx$/i, ''), path });
-      CP.store.changed(); ui.toast('Veidne pievienota: ' + f.name, 'ok');
+      const t = { id: U.uid(), type: tplType, name: f.name.replace(/\.docx$/i, ''), path };
+      (st().docTemplates = st().docTemplates || []).push(t);
+      CP.store.changed();
+      if (tplType === 'custom' && CP.customForms) await CP.customForms.added(t); else ui.toast('Veidne pievienota: ' + f.name, 'ok');
     } catch (err) { ui.toast('Veidni neizdevās saglabāt: ' + err.message, 'err'); }
   });
   A.tplDocDelete = id => {
@@ -8411,7 +8431,7 @@ window.CP = window.CP || {};
       const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
       const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
       const blob = await CP.docxFill.fill(await (await h.getFile()).arrayBuffer(), CP.docxFill.data(ev, people, evStaff(ev), counselorFor(ev)));
-      U.download(blob, `${fileBase(ev)}.docx`);
+      await CP.docs.openFile(new File([blob], `${fileBase(ev)}.docx`, { type: blob.type }), `${fileBase(ev)}.docx`);   // apskate rīkā; lejupielāde — skatītāja pogā
       if (S.root) { const path = await CP.store.saveFile(['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)], `${t.name}.docx`, blob); const x = S.db.events.find(e => e.id === ev.id); if (x) { (x.files = x.files || []).push({ path, at: U.now(), kind: 'docx' }); CP.store.changed({ silent: true }); } }
     } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
   };
@@ -13033,6 +13053,320 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   /** Kartīte personas pārskatā */
   const personCard = p => p.anon ? '' : `<section class="card wide sum-card"><h3>${ic('chart')}Jaunsarga kopsavilkums</h3><div class="row"><p class="small grow" style="margin:0">PDF ar diagrammām jaunsargam vai vecākiem: apmeklējums, pasākumi un nometnes, kvalifikācijas, VFS rezultāti un tavs komentārs — par izvēlētu periodu.${(S.db.documents || []).some(d => d.personId === p.id && d.kind === KIND) ? ' Iepriekšējie kopsavilkumi — cilnē Dokumenti.' : ''}</p><button class="sm mainbtn" data-act="sumNew" data-arg="${p.id}">${ic('file', '📄')} Sagatavot kopsavilkumu…</button></div></section>`;
   CP.summary = { gather, pdf, build, personCard, KIND };
+})(window.CP);
+
+
+/* ==== js/customforms.js ==== */
+/* =====================================================================
+   Savas veidlapas — jebkura lietotāja Word (.docx) veidne ar {atzīmēm}, ne tikai instruktāža / nometne / līgums.
+   • Veidlapas → “Savas Word veidnes” → “⬆ Sava veidlapa”. Glabājas settings.docTemplates (type 'custom').
+   • Režīms nosakās pats:
+       – SARAKSTS: tabulas rindā ir personas atzīmes ({nr} {vards} …) → viens dokuments, rinda katrai personai;
+       – KATRAI PERSONAI SAVS: personas atzīmes teksta vietās → katrai izvēlētajai personai savs dokuments.
+   • Atzīmes var rakstīt ar garumzīmēm un lielajiem burtiem: {Vārds} = {vards}.
+   • Pirms saglabāšanas dokumentu var APSKATĪT rīkā (Word skatītājs), tad lejupielādēt / saglabāt.
+   • Katrai personai savs → pēc izvēles saglabā personas dokumentu mapē un piesaista kartītei.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const st = () => S.db.settings;
+  const tpls = () => (st().docTemplates || []).filter(t => t.type === 'custom');
+  const fmtD = iso => { const s = U.fmtDate(iso); return s ? s + '.' : ''; };
+  const phone = n => n ? (U.prettyPhone ? U.prettyPhone(n) : n) : '';
+  const opt = (k, v) => (CP.FIELDS.find(f => f.k === k)?.opts || []).find(o => o[0] === v)?.[1] || v || '';
+
+  /* ---------- Atzīmes ---------- */
+  const PERSON_HELP = [
+    ['{nr}', 'kārtas numurs sarakstā'], ['{vards} {uzvards} {vards_uzvards} {uzvards_vards}', 'vārds, uzvārds'], ['{personas_kods} {dzimsanas_datums} {vecums} {dzimums}', 'personas dati'],
+    ['{grupa} {statuss} {iestasanas_datums} {apliecibas_nr}', 'dalība'], ['{skola} {klase} {talrunis} {epasts} {adrese} {faktiska_adrese}', 'mācības un kontakti'],
+    ['{vecaks} {vecaka_saistiba} {vecaka_personas_kods} {vecaka_talrunis} {vecaka_epasts} {vecaka_adrese}', 'likumiskais pārstāvis'], ['{vecaks2} {vecaka2_talrunis} {vecaka2_epasts}', 'otrs vecāks'],
+    ['{arkartas_kontakts} {arkartas_talrunis}', 'ārkārtas kontakts']
+  ];
+  const GLOBAL_HELP = [['{datums} {gads} {macibu_gads} {vieta}', 'dokumenta datums (izvēlas logā), vieta'], ['{instruktors} {i_amats} {i_talrunis} {i_epasts} {i_parvalde} {i_nodala}', 'instruktora dati'], ['{vieniba} {dalibnieku_skaits}', 'vienības nosaukums, personu skaits']];
+  const PERSON_KEYS = ['nr', 'vards', 'uzvards', 'vards_uzvards', 'uzvards_vards', 'personas_kods', 'dzimsanas_datums', 'vecums', 'dzimums', 'grupa', 'grupa_p', 'statuss', 'iestasanas_datums', 'apliecibas_nr',
+    'skola', 'klase', 'talrunis', 'epasts', 'adrese', 'faktiska_adrese', 'vecaks', 'vecaki', 'vecaka_saistiba', 'vecaka_personas_kods', 'vecaka_talrunis', 'vecaka_epasts', 'vecaka_adrese',
+    'vecaks2', 'vecaka2_talrunis', 'vecaka2_epasts', 'arkartas_kontakts', 'arkartas_talrunis', 'rindas_datums'];
+  const GLOBAL_KEYS = ['datums', 'gads', 'macibu_gads', 'vieta', 'instruktors', 'i_amats', 'i_talrunis', 'i_epasts', 'i_parvalde', 'i_nodala', 'vieniba', 'dalibnieku_skaits'];
+  function personMap(p, i, o) {
+    const y = D.activeYear();
+    return {
+      nr: `${i + 1}.`, vards: p.first || '', uzvards: p.last || '', vards_uzvards: U.full(p), uzvards_vards: U.sortName(p), personas_kods: p.personalCode || '',
+      dzimsanas_datums: fmtD(p.birth), vecums: p.birth && U.age ? String(U.age(p.birth) ?? '') : '', dzimums: p.gender ? opt('gender', p.gender) : '',
+      grupa: D.groupOf(p, y) || '', grupa_p: D.groupOf(p, y) || '', statuss: opt('status', D.partStatus(p, y) === 'archived' ? '' : D.partStatus(p, y)), iestasanas_datums: fmtD(p.joined), apliecibas_nr: p.idCard?.number || '',
+      skola: p.school || '', klase: p.schoolClass || '', talrunis: phone(p.phone), epasts: p.email || '', adrese: p.addressDeclared || '', faktiska_adrese: p.addressActual || p.addressDeclared || '',
+      vecaks: p.parentName || '', vecaki: [[p.parentName, phone(p.parentPhone)], [p.parent2Name, phone(p.parent2Phone)]].filter(([n, t]) => n || t).map(x => x.filter(Boolean).join(', ')).join('; '),
+      vecaka_saistiba: p.parentRelation || '', vecaka_personas_kods: p.parentCode || '', vecaka_talrunis: phone(p.parentPhone), vecaka_epasts: p.parentEmail || '', vecaka_adrese: p.parentAddressDeclared || '',
+      vecaks2: p.parent2Name || '', vecaka2_talrunis: phone(p.parent2Phone), vecaka2_epasts: p.parent2Email || '', arkartas_kontakts: p.emergencyName || '', arkartas_talrunis: phone(p.emergencyPhone),
+      rindas_datums: fmtD(o.date)
+    };
+  }
+  function globalMap(o, n) {
+    const I = st().instructor || {};
+    return { datums: fmtD(o.date), gads: String(o.date || U.iso()).slice(0, 4), macibu_gads: U.yearLabel(D.activeYear()), vieta: o.place || I.place || '', instruktors: I.name || '', i_amats: I.position || '',
+      i_talrunis: phone(I.phone), i_epasts: I.email || '', i_parvalde: I.parvalde || '', i_nodala: I.nodala || '', vieniba: CP.unit?.get().name || '', dalibnieku_skaits: String(n) };
+  }
+
+  /* ---------- Veidnes pievienošana ---------- */
+  async function analyse(t) {
+    const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
+    const buf = await (await h.getFile()).arrayBuffer(), sc = await CP.docxFill.scan(buf);
+    const known = new Set([...PERSON_KEYS, ...GLOBAL_KEYS]);
+    t.mode = sc.inRows.some(k => PERSON_KEYS.includes(k)) ? 'list' : 'each';
+    t.unknown = sc.all.filter(k => !known.has(k)).slice(0, 20);
+    t.tags = sc.all.length;
+    return buf;
+  }
+  /** forms.js tplDocFile → pēc saglabāšanas izsauc šo veidam 'custom' */
+  async function added(t) {
+    try {
+      await analyse(t); CP.store.changed();
+      ui.toast(!t.tags ? `Veidne “${t.name}” pievienota, bet tajā nav nevienas {atzīmes} — rīks to neaizpildīs. Pieejamās atzīmes: Veidlapas → Savas Word veidnes → “Pieejamās atzīmes”.`
+        : `Veidne “${t.name}” pievienota: ${t.mode === 'list' ? 'saraksts (rinda katrai personai)' : 'katrai personai savs dokuments'}.${t.unknown.length ? ` Nezināmas atzīmes: ${t.unknown.map(k => '{' + k + '}').join(' ')}` : ''}`, t.tags && !t.unknown.length ? 'ok' : 'warn', 12000);
+    } catch (e) { ui.toast('Veidni neizdevās nolasīt: ' + e.message, 'err', 9000); }
+  }
+
+  /* ---------- Aizpildīšanas logs ---------- */
+  let dlg = null;   // { tid, pids:Set, group, q, date, place, save }
+  const roster = () => D.peopleInYear().filter(p => p.status !== 'archived' && !p.anon).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
+  A.cfNew = arg => {
+    const [tid, pid] = String(arg || '').split('|'), list = tpls();
+    if (!list.length) return ui.toast('Vispirms pievieno savu veidlapu: Veidlapas → Savas Word veidnes → “⬆ Sava veidlapa”.', 'warn', 9000);
+    dlg = { tid: tid || dlg?.tid || list[0].id, pids: new Set(pid ? [pid] : []), group: '', q: '', date: U.iso(), place: st().instructor?.place || '', save: !!S.root };
+    if (!list.some(t => t.id === dlg.tid)) dlg.tid = list[0].id;
+    draw(); U.$('cfDialog').showModal();
+  };
+  const cur = () => tpls().find(t => t.id === dlg.tid);
+  function draw() {
+    let d = U.$('cfDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'cfDialog'; d.className = 'wide'; document.body.appendChild(d); }
+    const t = cur(), list = roster().filter(p => (!dlg.group || D.groupOf(p) === dlg.group) && (!dlg.q || U.norm(U.full(p) + ' ' + U.sortName(p)).includes(U.norm(dlg.q)))), n = dlg.pids.size;
+    const modeTxt = !t ? '' : t.mode === 'list' ? 'Saraksts — viens dokuments, tabulā rinda katrai izvēlētajai personai' : 'Katrai izvēlētajai personai savs dokuments';
+    d.innerHTML = `<form><header class="dlg-head"><h2>${ic('file')}Aizpildīt savu veidlapu</h2><button type="button" class="ghost" data-close="cfDialog" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body">
+        <div class="sum-bar"><select data-cf="tid">${tpls().map(x => `<option value="${x.id}" ${x.id === dlg.tid ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+          <label class="small muted">Datums <input type="date" data-cf="date" value="${esc(dlg.date)}"></label><label class="small muted">Vieta <input data-cf="place" value="${esc(dlg.place)}" style="width:140px"></label></div>
+        <p class="small" style="margin:6px 0">${esc(modeTxt)}${t?.unknown?.length ? ` · <span class="warn">nezināmas atzīmes paliks neaizpildītas: ${esc(t.unknown.map(k => '{' + k + '}').join(' '))}</span>` : ''}${t && !t.tags ? ' · <span class="warn">veidnē nav {atzīmju}</span>' : ''}</p>
+        <div class="field"><label>Personas</label>
+          <div class="sum-bar" style="margin-bottom:6px"><select data-cf="group"><option value="">Visas grupas</option>${D.groups().map(g => `<option ${dlg.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+            <input type="search" data-cf="q" placeholder="Meklēt…" value="${esc(dlg.q)}"><button type="button" class="sm ghost" data-act="cfAll">Atzīmēt redzamos</button><button type="button" class="sm ghost" data-act="cfNone">Notīrīt</button><span class="muted small">Atzīmēti: <b>${n}</b></span></div>
+          <div class="sum-list">${list.map(p => `<div class="sum-row"><label class="check"><input type="checkbox" data-cfp="${p.id}" ${dlg.pids.has(p.id) ? 'checked' : ''}> ${esc(U.sortName(p))} <small class="muted">${esc(D.groupOf(p))}</small></label></div>`).join('') || '<p class="muted small">Nav personu.</p>'}</div></div>
+        <label class="check"><input type="checkbox" data-cf="save" ${dlg.save && S.root ? 'checked' : ''} ${S.root ? '' : 'disabled'}> ${t?.mode === 'list' ? 'Saglabāt kopiju mapē “Veidlapas” (mācību gada mapē)' : 'Saglabāt katras personas dokumentu mapē un piesaistīt kartītei'}</label>
+        <p class="small muted">Vispirms vari <b>apskatīt</b>, kā izskatās aizpildītais dokuments${t?.mode === 'each' ? ' (pirmajai personai)' : ''}. Atzīmes var rakstīt arī ar garumzīmēm: {Vārds} = {vards}.</p>
+      </div>
+      <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="cfDialog">Atcelt</button><button type="button" data-act="cfPreview" ${n ? '' : 'disabled'}>${ic('eye', '👁')} Apskatīt</button><button class="mainbtn" type="submit" ${n ? '' : 'disabled'}>${ic('download', '⬇')} Sagatavot${t?.mode === 'each' && n > 1 ? ` (${n})` : ''}</button></footer></form>`;
+    d.querySelector('form').onsubmit = e => { e.preventDefault(); run(e.target.querySelector('[type=submit]')); };
+  }
+  const keep = fn => { const b = U.qs('#cfDialog .sum-list'), top = b?.scrollTop || 0; fn(); const b2 = U.qs('#cfDialog .sum-list'); if (b2) b2.scrollTop = top; };
+  A.cfAll = () => { const q = U.norm(dlg.q); for (const p of roster()) if ((!dlg.group || D.groupOf(p) === dlg.group) && (!q || U.norm(U.full(p) + ' ' + U.sortName(p)).includes(q))) dlg.pids.add(p.id); keep(draw); };
+  A.cfNone = () => { dlg.pids.clear(); keep(draw); };
+  CP.changeHandlers.push(e => {
+    const t = e.target; if (!t.closest?.('#cfDialog')) return false;
+    if (t.dataset.cfp) { if (t.checked) dlg.pids.add(t.dataset.cfp); else dlg.pids.delete(t.dataset.cfp); keep(draw); return true; }
+    const k = t.dataset.cf; if (!k) return false;
+    if (k === 'save') dlg.save = t.checked; else if (k === 'tid' || k === 'group') { dlg[k] = t.value; keep(draw); } else dlg[k] = t.value;
+    return true;
+  });
+  CP.inputHandlers.push(e => {
+    const t = e.target; if (!t.closest?.('#cfDialog') || t.dataset.cf !== 'q') return false;
+    dlg.q = t.value; const pos = t.selectionStart; keep(draw); const n = U.qs('#cfDialog [data-cf="q"]'); n?.focus(); n?.setSelectionRange(pos, pos); return true;
+  });
+
+  /* ---------- Aizpildīšana ---------- */
+  const safe = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '');
+  async function buildList(t, buf, people) {
+    const o = { date: dlg.date, place: dlg.place };
+    return CP.docxFill.fill(buf, { global: globalMap(o, people.length), rows: people.map((p, i) => personMap(p, i, o)), rowKeys: PERSON_KEYS });
+  }
+  async function buildOne(t, buf, p, i, n) {
+    const o = { date: dlg.date, place: dlg.place };
+    return CP.docxFill.fill(buf, { global: { ...globalMap(o, n), ...personMap(p, i, o) }, rows: [], rowKeys: PERSON_KEYS });
+  }
+  const people = () => roster().filter(p => dlg.pids.has(p.id)).concat([...dlg.pids].map(D.person).filter(p => p && !roster().includes(p)));
+  A.cfPreview = async () => {
+    const t = cur(), ps = people(); if (!t || !ps.length) return;
+    try {
+      const buf = await analyse(t), blob = t.mode === 'list' ? await buildList(t, buf, ps) : await buildOne(t, buf, ps[0], 0, ps.length);
+      const name = t.mode === 'list' ? `${t.name}.docx` : `${t.name} - ${U.full(ps[0])}.docx`;
+      await CP.docs.openFile(new File([blob], name, { type: blob.type }), name);
+    } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
+  };
+  async function run(btn) {
+    const t = cur(), ps = people(); if (!t || !ps.length) return;
+    const save = dlg.save && !!S.root, lbl = btn.innerHTML; btn.disabled = true;
+    try {
+      const buf = await analyse(t); CP.store.changed({ silent: true });
+      if (t.mode === 'list') {
+        const blob = await buildList(t, buf, ps), name = `${safe(t.name)}_${dlg.date}.docx`;
+        U.download(blob, name);
+        if (save) { const path = await CP.store.saveFile(['Macibu_gadi', D.activeYear(), 'Veidlapas'], name, blob); ui.toast('Kopija saglabāta: ' + path, 'ok', 7000); }
+        U.$('cfDialog').close(); return;
+      }
+      const out = [];
+      for (let i = 0; i < ps.length; i++) {
+        btn.textContent = `Sagatavo ${i + 1}/${ps.length}…`;
+        const p = ps[i], blob = await buildOne(t, buf, p, i, ps.length), name = `${safe(t.name)}_${safe(p.last)}_${safe(p.first)}.docx`;
+        out.push([name, blob]);
+        if (save) {
+          await CP.store.ensurePersonYearFolder(p);
+          const path = await CP.store.saveFile(CP.store.yearPersonDir(p), name, blob);
+          if (path) CP.docs.link(p.id, 'Cits', 'pdf', path, 'main', { title: t.name, issued: dlg.date, review: 'received', size: blob.size });
+        }
+      }
+      if (save) CP.store.changed();
+      if (out.length === 1) { U.$('cfDialog').close(); await CP.docs.openFile(new File([out[0][1]], out[0][0], { type: out[0][1].type }), out[0][0]); if (save) ui.toast('Saglabāts personas mapē un piesaistīts kartītei', 'ok', 6000); return; }
+      await CP.reader.loadScript(CP.VENDOR + 'docx/jszip.min.js');
+      const zip = new window.JSZip(); out.forEach(([n, b]) => zip.file(n, b));
+      U.download(await zip.generateAsync({ type: 'blob' }), `${safe(t.name)}_${dlg.date}.zip`);
+      U.$('cfDialog').close();
+      ui.toast(`Sagatavoti ${out.length} dokumenti (ZIP)${save ? '; katrs saglabāts personas mapē' : ''}.`, 'ok', 8000);
+    } catch (e) { console.error(e); ui.toast('Neizdevās sagatavot: ' + e.message, 'err', 10000); }
+    finally { btn.disabled = false; btn.innerHTML = lbl; }
+  }
+
+  CP.customForms = { added, tpls, PERSON_HELP, GLOBAL_HELP, analyse };
+})(window.CP);
+
+
+/* ==== js/tpledit.js ==== */
+/* =====================================================================
+   Veidnes atzīmju redaktors rīkā (Word .docx).
+   • Rāda dokumenta tekstu (rindkopas un tabulas) — katru rindkopu var labot; pa labi — atzīmju saraksts,
+     klikšķis ieliek {atzīmi} kursora vietā (vai aizstāj iezīmēto tekstu, piem., “Jānis Paraugs” → {vards_uzvards}).
+   • Formatējums saglabājas: maina tikai mainīto teksta daļu tajā “gabalā” (run), kur tā atrodas.
+   • “＋ Rindkopa” pievieno tukšu rindkopu zem izvēlētās (ar tās pašas rindkopas noformējumu); “＋ Tabulas rinda” — tukšu rindu.
+   • Saglabā kā JAUNU failu mapē Veidnes (“… (labots DD.MM.GGGG).docx”); vecais paliek, veidne norāda uz jauno.
+   • Galvenes un kājenes teksts netiek rādīts (to var labot Word programmā).
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
+  const ic = (n, f = '') => CP.ic(n, f);
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main', XS = 'http://www.w3.org/XML/1998/namespace';
+  const tEls = el => [...el.getElementsByTagNameNS(W, 't')];
+  const ptext = p => tEls(p).map(t => t.textContent).join('');
+  let ed = null;   // { t, files, doc, paras: [w:p], orig: [string], dirty, last: {i, range} }
+
+  const tagsFor = type => {
+    const src = type === 'custom' ? [...(CP.customForms?.PERSON_HELP || []), ...(CP.customForms?.GLOBAL_HELP || [])]
+      : type === 'contract' ? (CP.CONTRACT_FIELDS_HELP || []) : (CP.docxFill?.FIELDS_HELP || []);
+    return src.map(([a, b]) => ({ label: /^\{/.test(b) ? a : b, tags: (`${a} ${/^\{/.test(b) ? b : ''}`.match(/\{[a-z0-9_]+\}/g) || []) })).filter(g => g.tags.length);
+  };
+
+  A.tplEdit = async id => {
+    const t = (S.db.settings.docTemplates || []).find(x => x.id === id); if (!t) return;
+    try {
+      const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
+      const files = await U.unzip(await (await h.getFile()).arrayBuffer()), out = new Map();
+      for (const [n, get] of files) out.set(n, await get());
+      if (!out.has('word/document.xml')) throw Error('fails nav Word .docx dokuments');
+      const doc = new DOMParser().parseFromString(new TextDecoder().decode(out.get('word/document.xml')), 'application/xml');
+      if (doc.getElementsByTagName('parsererror').length) throw Error('Word dokumenta XML nav nolasāms');
+      ed = { t, files: out, doc, paras: [], orig: [], dirty: false, last: null };
+      draw();
+    } catch (e) { ui.toast('Veidni neizdevās atvērt: ' + e.message, 'err', 9000); }
+  };
+
+  /* --- Attēlošana --- */
+  function draw() {
+    let d = U.$('tplEditDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'tplEditDialog'; d.className = 'wide'; document.body.appendChild(d); }
+    ed.paras = []; ed.orig = [];
+    const body = ed.doc.getElementsByTagNameNS(W, 'body')[0];
+    const para = p => { const i = ed.paras.push(p) - 1, s = ptext(p); ed.orig[i] = s; const st = p.getElementsByTagNameNS(W, 'pStyle')[0]?.getAttributeNS(W, 'val') || '';
+      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}" contenteditable="plaintext-only" spellcheck="false" data-pi="${i}">${esc(s)}</div>`; };
+    const block = el => {
+      if (el.namespaceURI !== W) return '';
+      if (el.localName === 'p') return para(el);
+      if (el.localName === 'tbl') return `<table class="te-tbl">${[...el.childNodes].filter(r => r.localName === 'tr').map(tr => `<tr>${[...tr.childNodes].filter(c => c.localName === 'tc').map(tc => `<td>${[...tc.childNodes].map(block).join('')}</td>`).join('')}</tr>`).join('')}</table>`;
+      if (el.localName === 'sdt') return [...(el.getElementsByTagNameNS(W, 'sdtContent')[0]?.childNodes || [])].map(block).join('');
+      return '';
+    };
+    const html = [...body.childNodes].map(block).join('');
+    d.innerHTML = `<header class="dlg-head"><h2>${ic('edit', '✎')} Atzīmes veidnē — ${esc(ed.t.name)}</h2><button type="button" class="ghost" data-act="tplEditClose" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body te-wrap">
+        <div class="te-doc" id="teDoc">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
+        <aside class="te-side"><p class="small" style="margin-top:0"><b>Kā ielikt atzīmi:</b> noklikšķini tekstā vietā, kur jābūt datiem (vai iezīmē paraugtekstu, piem. “Jānis Paraugs”), un izvēlies atzīmi zemāk.</p>
+          <div class="actions" style="margin-bottom:8px"><button type="button" class="sm" data-act="tplEditPara">＋ Rindkopa zemāk</button><button type="button" class="sm" data-act="tplEditRow" title="Tukša tabulas rinda zem izvēlētās šūnas rindas — sarakstam ieliec tajā personas atzīmes">＋ Tabulas rinda</button></div>
+          ${ed.t.type === 'custom' ? '<p class="small muted">Personas atzīmes <b>tabulas rindā</b> → saraksts (rinda katrai personai). <b>Tekstā</b> → katrai personai savs dokuments.</p>' : ed.t.type !== 'contract' ? '<p class="small muted">Dalībnieka atzīmes jāliek <b>tabulas rindā</b> — tā atkārtosies katram dalībniekam.</p>' : ''}
+          ${tagsFor(ed.t.type).map(g => `<div class="te-grp"><div class="small muted">${esc(g.label)}</div>${g.tags.map(k => `<button type="button" class="chipbtn te-tag" data-act="tplEditTag" data-arg="${esc(k)}">${esc(k)}</button>`).join('')}</div>`).join('')}
+          <p class="small muted">Formatējums (fonts, treknraksts) saglabājas. Galvenes un kājenes tekstu var labot Word programmā.</p></aside>
+      </div>
+      <footer class="dlg-foot"><span class="small muted grow" id="teState">Nav izmaiņu</span><button type="button" data-act="tplEditClose">Aizvērt</button><button type="button" class="mainbtn" data-act="tplEditSave">${ic('save', '💾')} Saglabāt veidni</button></footer>`;
+    if (!d.open) d.showModal();
+    d.oncancel = e => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) e.preventDefault(); };
+  }
+  const mark = () => { ed.dirty = true; const s = U.$('teState'); if (s) s.textContent = 'Ir nesaglabātas izmaiņas'; };
+  document.addEventListener('focusin', e => { const el = e.target.closest?.('#tplEditDialog .te-p'); if (el && ed) { U.qsa('#tplEditDialog .te-p.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); if (ed.last?.i !== +el.dataset.pi) ed.last = { i: +el.dataset.pi, range: null }; } });
+  document.addEventListener('selectionchange', () => {
+    if (!ed) return; const s = getSelection(); if (!s.rangeCount) return; const el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)?.closest?.('#tplEditDialog .te-p');
+    if (el) ed.last = { i: +el.dataset.pi, range: s.getRangeAt(0).cloneRange() };
+  });
+  document.addEventListener('input', e => { if (e.target.closest?.('#tplEditDialog .te-p')) mark(); }, true);
+  A.tplEditTag = tag => {
+    if (!ed?.last) return ui.toast('Vispirms noklikšķini tekstā vietā, kur ielikt atzīmi', 'warn');
+    const el = U.qs(`#tplEditDialog .te-p[data-pi="${ed.last.i}"]`); if (!el) return;
+    const rg = ed.last.range, i = ed.last.i; el.focus(); ed.last = { i, range: rg };   // focusin notīra — atjauno
+    if (rg && el.contains(rg.startContainer)) { const s = getSelection(); s.removeAllRanges(); s.addRange(rg); }
+    else { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+    document.execCommand('insertText', false, tag);
+    mark();
+  };
+  A.tplEditPara = () => {
+    if (!ed?.last) return ui.toast('Vispirms noklikšķini rindkopā, zem kuras pievienot jaunu', 'warn');
+    sync(); const p = ed.paras[ed.last.i]; if (!p) return;
+    const np = ed.doc.createElementNS(W, 'w:p'), pPr = p.getElementsByTagNameNS(W, 'pPr')[0], r0 = p.getElementsByTagNameNS(W, 'r')[0]?.getElementsByTagNameNS(W, 'rPr')[0];
+    if (pPr) np.appendChild(pPr.cloneNode(true));
+    const r = ed.doc.createElementNS(W, 'w:r'); if (r0) r.appendChild(r0.cloneNode(true)); const t = ed.doc.createElementNS(W, 'w:t'); t.setAttributeNS(XS, 'xml:space', 'preserve'); r.appendChild(t); np.appendChild(r);
+    p.parentNode.insertBefore(np, p.nextSibling);
+    const i = ed.last.i + 1; mark(); draw(); mark();
+    const el = U.qs(`#tplEditDialog .te-p[data-pi="${i}"]`); el?.focus();
+  };
+
+  A.tplEditRow = () => {
+    const p = ed?.last && ed.paras[ed.last.i], tr = p && (() => { let x = p.parentNode; while (x && !(x.namespaceURI === W && x.localName === 'tr')) x = x.parentNode; return x; })();
+    if (!tr) return ui.toast('Vispirms noklikšķini tabulas šūnā, zem kuras rindas pievienot jaunu', 'warn');
+    sync(); const nr = tr.cloneNode(true);
+    tEls(nr).forEach(t => { t.textContent = ''; });
+    tr.parentNode.insertBefore(nr, tr.nextSibling); mark(); draw(); mark();
+  };
+  /* --- Izmaiņu ierakstīšana XML: tikai mainītā daļa, tajā pašā run --- */
+  function applyEdit(p, oldT, newT) {
+    if (oldT === newT) return;
+    let ts = tEls(p);
+    if (!ts.length) { const r = ed.doc.createElementNS(W, 'w:r'), t = ed.doc.createElementNS(W, 'w:t'); r.appendChild(t); p.appendChild(r); ts = [t]; }
+    let a = 0; while (a < oldT.length && a < newT.length && oldT[a] === newT[a]) a++;
+    let b = 0; while (b < oldT.length - a && b < newT.length - a && oldT[oldT.length - 1 - b] === newT[newT.length - 1 - b]) b++;
+    const from = a, to = oldT.length - b, ins = newT.slice(a, newT.length - b);
+    let pos = 0, done = false;
+    for (const t of ts) {
+      const s = t.textContent, st = pos, en = pos + s.length; pos = en;
+      const keepA = s.slice(0, Math.max(0, Math.min(s.length, from - st))), keepB = s.slice(Math.max(0, Math.min(s.length, to - st)));
+      let mid = ''; if (!done && from >= st && (from < en || (from === en && (to === from || t === ts.at(-1))))) { mid = ins; done = true; }   // aizstājot — tajā run, kur sākas aizstājamais teksts
+      const v = keepA + mid + keepB; if (v !== s) { t.textContent = v; t.setAttributeNS(XS, 'xml:space', 'preserve'); }
+    }
+  }
+  function sync() {
+    U.qsa('#tplEditDialog .te-p').forEach(el => {
+      const i = +el.dataset.pi, nt = el.innerText.replace(/\n+$/, '').replace(/\n+/g, ' ').replace(/ /g, ' ');
+      if (nt !== ed.orig[i]) { applyEdit(ed.paras[i], ed.orig[i], nt); ed.orig[i] = nt; }
+    });
+  }
+  A.tplEditSave = async () => {
+    if (!ed) return; sync();
+    try {
+      ed.files.set('word/document.xml', new TextEncoder().encode(new XMLSerializer().serializeToString(ed.doc)));
+      const blob = await CP.docxFill.zip([...ed.files]);
+      const base = ed.t.name.replace(/ \(labots [\d.]+\)( \(\d+\))?$/, '');
+      const path = await CP.store.saveFile(['Veidnes'], `${base} (labots ${U.fmtDate(U.iso())}).docx`, blob);
+      ed.t.prev = [...(ed.t.prev || []), ed.t.path]; ed.t.path = path; ed.t.editedAt = U.now();
+      if (ed.t.type === 'custom' && CP.customForms) { try { await CP.customForms.analyse(ed.t); } catch (e) { } }
+      CP.store.changed(); ed.dirty = false;
+      ui.toast(`Veidne saglabāta: ${path}. Iepriekšējā versija paliek mapē Veidnes.`, 'ok', 8000);
+      U.$('tplEditDialog').close(); ed = null; CP.render();
+    } catch (e) { console.error(e); ui.toast('Neizdevās saglabāt: ' + e.message, 'err', 10000); }
+  };
+  A.tplEditClose = () => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) return; U.$('tplEditDialog')?.close(); ed = null; };
+  CP.tplEdit = { applyEdit: (p, o, n) => applyEdit(p, o, n) };
 })(window.CP);
 
 

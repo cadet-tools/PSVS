@@ -41,11 +41,15 @@
   const ROW_KEYS = ['nr', 'vards', 'vards_uzvards', 'uzvards', 'personas_kods', 'dzimsanas_datums', 'grupa_p', 'adrese', 'talrunis', 'vecaki', 'audzinatajs', 'rindas_datums'];
   const STAFF_KEYS = ['d_nr', 'd_vards', 'd_personas_kods', 'd_amats', 'd_adrese', 'd_talrunis'];
   const tEls = el => [...el.getElementsByTagNameNS(W, 't')];
+  /** Atzīmes nosaukums: {Vārds}, {vārds uzvārds}, {VARDS} → vards / vards_uzvards (bez garumzīmēm, mazie burti) */
+  const normKey = k => String(k).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/[\s.-]+/g, '_');
+  const TAG = /\{([^{}<>\n]{1,40})\}/g, HAS_TAG = /\{[^{}<>\n]{1,40}\}/;
+  const tagsIn = s => [...String(s).matchAll(TAG)].map(m => normKey(m[1]));
   /** Apvieno atzīmes, kas sadalītas pa vairākiem w:t vienā rindkopā */
   function mergeParagraphs(doc) {
     for (const p of doc.getElementsByTagNameNS(W, 'p')) {
       const ts = tEls(p); if (ts.length < 2) continue;
-      if (!/\{[a-z_0-9]+\}/i.test(ts.map(t => t.textContent).join(''))) continue;
+      if (!HAS_TAG.test(ts.map(t => t.textContent).join(''))) continue;
       // apvieno tikai tos gabalus, kas pārdala kādu {atzīmi}
       const open = s => { const i = s.lastIndexOf('{'); return i >= 0 && s.indexOf('}', i) < 0; };
       for (let i = 0; i < ts.length; i++) {
@@ -59,12 +63,12 @@
   function fillText(el, map) {
     for (const t of tEls(el)) {
       const v = t.textContent; if (!v.includes('{')) continue;
-      t.textContent = v.replace(/\{([a-z_0-9]+)\}/gi, (m, k) => (k.toLowerCase() in map ? String(map[k.toLowerCase()] ?? '') : m)).replace(/\s*\n\s*/g, '; ');
+      t.textContent = v.replace(TAG, (m, k) => { k = normKey(k); return k in map ? String(map[k] ?? '').replace(/\s*\n\s*/g, '; ') : m; });
       t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
     }
   }
   function repeatRows(doc, keys, items, blank, nrKey) {
-    const rows = [...doc.getElementsByTagNameNS(W, 'tr')].filter(tr => keys.some(k => tr.textContent.includes('{' + k + '}')));
+    const rows = [...doc.getElementsByTagNameNS(W, 'tr')].filter(tr => tagsIn(tr.textContent).some(k => keys.includes(k)));
     for (const tpl of rows) {
       const parent = tpl.parentNode, list = [...items];
       for (let i = 0; i < blank; i++) list.push({ [nrKey]: `${items.length + i + 1}.` });
@@ -76,8 +80,8 @@
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw Error('Word dokumenta XML nav nolasāms');
     mergeParagraphs(doc);
-    repeatRows(doc, STAFF_KEYS, d.staff, d.staffBlank, 'd_nr');
-    repeatRows(doc, ROW_KEYS, d.rows, d.blankRows, 'nr');
+    if (d.staff) repeatRows(doc, STAFF_KEYS, d.staff, d.staffBlank || 0, 'd_nr');
+    repeatRows(doc, d.rowKeys || ROW_KEYS, d.rows, d.blankRows || 0, 'nr');
     fillText(doc.documentElement, d.global);
     return new XMLSerializer().serializeToString(doc);
   }
@@ -113,7 +117,7 @@
     for (const [name, get] of files) {
       let data = await get();
       if (/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) {
-        const xml = dec.decode(data); if (/\{[a-z_0-9]+\}/i.test(xml.replace(/<[^>]+>/g, ''))) found = true;
+        const xml = dec.decode(data); if (HAS_TAG.test(xml.replace(/<[^>]+>/g, ''))) found = true;
         data = enc.encode(processXml(xml, d));
       }
       out.push([name, data]);
@@ -122,5 +126,18 @@
     return zip(out);
   }
 
-  CP.docxFill = { fill, data, FIELDS_HELP, zip };
+  /** Veidnes analīze: visas atzīmes un tās, kas ir tabulas rindās (saraksta režīmam) */
+  async function scan(buf) {
+    const files = await U.unzip(buf), dec = new TextDecoder(), all = new Set(), inRows = new Set();
+    if (!files.has('word/document.xml')) throw Error('fails nav Word .docx dokuments');
+    for (const [name, get] of files) {
+      if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(name)) continue;
+      const doc = new DOMParser().parseFromString(dec.decode(await get()), 'application/xml');
+      mergeParagraphs(doc);
+      tagsIn(tEls(doc.documentElement).map(t => t.textContent).join('\n')).forEach(k => all.add(k));
+      for (const tr of doc.getElementsByTagNameNS(W, 'tr')) tagsIn(tEls(tr).map(t => t.textContent).join('')).forEach(k => inRows.add(k));
+    }
+    return { all: [...all], inRows: [...inRows] };
+  }
+  CP.docxFill = { fill, data, scan, normKey, FIELDS_HELP, zip };
 })(window.CP);

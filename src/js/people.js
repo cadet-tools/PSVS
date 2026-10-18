@@ -140,6 +140,7 @@
           <details class="menu"><summary class="btn">⋯</summary><div class="menu-list">
             ${p.anon ? '' : p.status === 'archived' ? `<button data-act="restore" data-arg="${p.id}">Atjaunot no arhīva</button>` : `<button data-act="archive" data-arg="${p.id}">Arhivēt (izstājies)</button>`}
             ${p.anon ? '' : `<button data-act="sumNew" data-arg="${p.id}">📊 Jaunsarga kopsavilkums (PDF)…</button>`}
+            ${p.anon || !CP.customForms?.tpls().length ? '' : `<button data-act="cfNew" data-arg="|${p.id}">📝 Aizpildīt savu veidlapu…</button>`}
             ${p.anon ? '' : `<button data-act="transferOut" data-arg="${p.id}">⇪ Nodot citam instruktoram…</button>`}
             <button data-act="exportPerson" data-arg="${p.id}">Eksportēt personas datus (GDPR)</button>
             <button data-act="print">Drukāt kartiņu</button>

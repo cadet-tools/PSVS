@@ -137,11 +137,11 @@
   function tplCard() {
     const list = st().docTemplates || [];
     return `<p class="small muted" style="margin-top:0">Ielādē savu Word veidni ar atzīmēm, piem. <code>{nosaukums}</code>, <code>{datums}</code>, un tabulas rindu ar <code>{nr}</code> <code>{vards}</code>. Rīks to aizpildīs. Paraugus vari lejupielādēt un pielāgot.</p>
-      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
+      ${list.map(t => `<div class="row"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${esc(t.type === 'contract' ? 'Līgums' : t.type === 'custom' ? `Sava veidlapa · ${t.mode === 'list' ? 'saraksts' : 'katrai personai savs dokuments'}` : TYPES[t.type]?.l || '')}</div></div><button class="sm ghost" data-act="tplEdit" data-arg="${t.id}" title="Ielikt vai labot {atzīmes} veidnē tieši rīkā">${ic('edit', '✎')} Atzīmes</button>${t.type === 'custom' ? `<button class="sm mainbtn" data-act="cfNew" data-arg="${t.id}">${ic('file', '📄')} Aizpildīt…</button>` : ''}<button class="sm ghost danger" data-act="tplDocDelete" data-arg="${t.id}" title="Noņemt">✕</button></div>`).join('')}
       <div class="actions" style="margin-top:10px">
-        <button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button><button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līguma veidne</button>
+        <button class="sm" data-act="tplDocAdd" data-arg="custom" title="Jebkura cita veidlapa: iesniegums, atļauja, saraksts… ar {atzīmēm}">${ic('upload', '⬆')} Sava veidlapa</button><button class="sm" data-act="tplDocAdd" data-arg="instr">${ic('upload', '⬆')} Instruktāžas veidne</button><button class="sm" data-act="tplDocAdd" data-arg="camp">${ic('upload', '⬆')} Nometnes veidne</button><button class="sm" data-act="tplDocAdd" data-arg="contract">${ic('upload', '⬆')} Līguma veidne</button>
         <button class="sm ghost" data-act="tplDocSample" data-arg="instr">${ic('download', '⬇')} Paraugs: instruktāža</button><button class="sm ghost" data-act="tplDocSample" data-arg="camp">${ic('download', '⬇')} Paraugs: nometne</button><button class="sm ghost" data-act="tplDocSample" data-arg="contract">${ic('download', '⬇')} Paraugs: līgums</button></div>
-      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}<p class="small"><b>Līgumam:</b></p>${ui.dl(CP.CONTRACT_FIELDS_HELP || [])}</details>`;
+      <details class="small" style="margin-top:10px"><summary>Pieejamās atzīmes</summary>${CP.customForms ? `<p class="small"><b>Savai veidlapai</b> — personas atzīmes teksta vietās → katrai personai savs dokuments; tabulas rindā → saraksts (rinda katrai personai). Var rakstīt ar garumzīmēm: {Vārds} = {vards}.</p>${ui.dl([...CP.customForms.PERSON_HELP, ...CP.customForms.GLOBAL_HELP])}<p class="small"><b>Instruktāžai un nometnei:</b></p>` : ''}${ui.dl(CP.docxFill ? CP.docxFill.FIELDS_HELP : [])}<p class="small"><b>Līgumam:</b></p>${ui.dl(CP.CONTRACT_FIELDS_HELP || [])}</details>`;
   }
   let tplType = 'instr';
   A.tplDocAdd = type => { if (!S.root) return ui.toast('Vispirms pieslēdz datu mapi', 'warn'); tplType = type; U.$('tplDocFile').click(); };
@@ -150,8 +150,10 @@
     if (!/\.docx$/i.test(f.name)) return ui.toast('Veidnei jābūt Word .docx failam', 'warn');
     try {
       const path = await CP.store.saveFile(['Veidnes'], f.name, f);
-      (st().docTemplates = st().docTemplates || []).push({ id: U.uid(), type: tplType, name: f.name.replace(/\.docx$/i, ''), path });
-      CP.store.changed(); ui.toast('Veidne pievienota: ' + f.name, 'ok');
+      const t = { id: U.uid(), type: tplType, name: f.name.replace(/\.docx$/i, ''), path };
+      (st().docTemplates = st().docTemplates || []).push(t);
+      CP.store.changed();
+      if (tplType === 'custom' && CP.customForms) await CP.customForms.added(t); else ui.toast('Veidne pievienota: ' + f.name, 'ok');
     } catch (err) { ui.toast('Veidni neizdevās saglabāt: ' + err.message, 'err'); }
   });
   A.tplDocDelete = id => {
@@ -423,7 +425,7 @@
       const h = await CP.store.handleFor(t.path, 'main'); if (!h) throw Error('veidnes fails mapē Veidnes nav atrasts');
       const people = evPeople(ev).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
       const blob = await CP.docxFill.fill(await (await h.getFile()).arrayBuffer(), CP.docxFill.data(ev, people, evStaff(ev), counselorFor(ev)));
-      U.download(blob, `${fileBase(ev)}.docx`);
+      await CP.docs.openFile(new File([blob], `${fileBase(ev)}.docx`, { type: blob.type }), `${fileBase(ev)}.docx`);   // apskate rīkā; lejupielāde — skatītāja pogā
       if (S.root) { const path = await CP.store.saveFile(['Macibu_gadi', ev.yearId || D.activeYear(), 'Pasakumi', fileBase(ev)], `${t.name}.docx`, blob); const x = S.db.events.find(e => e.id === ev.id); if (x) { (x.files = x.files || []).push({ path, at: U.now(), kind: 'docx' }); CP.store.changed({ silent: true }); } }
     } catch (e) { console.error(e); ui.toast('Word veidni neizdevās aizpildīt: ' + e.message, 'err', 12000); }
   };

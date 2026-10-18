@@ -1,5 +1,11 @@
 # Izmaiņu vēsture
 
+## 1.52.0 — 2026-10-18
+- `js/customforms.js`: savas veidlapas (`docTemplates` ar `type: 'custom'`). Režīms pēc veidnes: personas atzīmes tabulas rindā → saraksts; citur → katrai personai savs dokuments (ZIP, pēc izvēles saglabā personas mapē un piesaista kartītei kā “Cits” ar veidnes nosaukumu). Logs `A.cfNew('tid|pid')`: veidne, datums, vieta, personas; “Apskatīt” — Word skatītājā rīkā. Personas atzīmes (`PERSON_HELP`) un vispārīgās (`GLOBAL_HELP`) — Veidlapas → Pieejamās atzīmes.
+- `docxfill.js`: atzīmju nosaukumi normalizēti (`{Vārds}` = `{vards}`, atstarpes → `_`); `scan()` atrod visas atzīmes un tās tabulu rindās; `fill()` pieņem `rowKeys`, darbinieku rindas — pēc izvēles.
+- `js/tpledit.js`: atzīmju redaktors rīkā (“✎ Atzīmes” pie katras savas veidnes): rindkopas un tabulas šūnas labojamas, atzīmes ieliek kursora vietā vai aizstāj iezīmēto tekstu; izmaiņa tiek ierakstīta tikai tajā run, kur tā notiek (formatējums saglabājas); “＋ Rindkopa”, “＋ Tabulas rinda”. Saglabā kā jaunu failu “… (labots DD.MM.GGGG).docx” mapē Veidnes, vecais paliek (`t.prev`).
+- Instruktāžas / nometnes Word veidne (`A.formDocx`) tagad atveras apskatei rīkā (lejupielāde — skatītāja pogā), kopija kā līdz šim pasākuma mapē.
+
 ## 1.51.1 — 2026-10-18
 - Kopsavilkuma PDF: CADET.LV logo augstākā izšķirtspējā ar caurspīdīgu malu (`vendor/brand/CADET_pdf.png`, 1200 px) — kreisā mala vairs neizskatās nogriezta. Garš vienības nosaukums tiek lauzts rindās (arī ļoti gari vārdi — pa burtiem), ne vairāk kā 3 rindas ar “…”, un nekad nepārklāj CADET.LV logo.
 
