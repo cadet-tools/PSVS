@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.54.2 — 2026-10-18
+- Atzīmju redaktors: viss dokuments ir viens rediģējams laukums (`#teDoc contenteditable`), tāpēc Chrome pareizrakstības pārbaude aptver visu tekstu uzreiz pēc atvēršanas, nevis tikai rindkopu, kurā ir kursors. Rindkopu robežas sargā `beforeinput`: Enter, dzēšana pāri robežai un iezīmējums vairākās rindkopās netiek atļauti; ielīmētais teksts — vienā rindā.
+
 ## 1.54.1 — 2026-10-18
 - Pareizrakstības palīdzībā precīzs Chrome slēdža nosaukums un latviešu vārdnīcas ieslēgšana.
 

@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.54.1';
+  CP.VERSION = '1.54.2';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -13385,18 +13385,17 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
 
   /* --- Pareizrakstība: pārlūka (Chrome) latviešu vārdnīca, tikai datorā. Atzīmes {…} var tikt pasvītrotas — tās nav kļūdas. --- */
   const spellOn = () => { try { return localStorage.getItem('cp.teSpell') !== '0'; } catch (e) { return true; } };
-  /** Chrome pārbauda rediģējamu tekstu, kad tas bijis fokusā — īsi “pieskaras” katrai rindkopai, lai kļūdas parādās uzreiz */
+  /** Viss dokuments ir VIENS rediģējams laukums — Chrome pārbauda visu tekstu, kad tas ir fokusā (ne tikai rindkopu, uz kuras kursors) */
   function poke() {
-    const els = U.qsa('#tplEditDialog .te-p'), keep = document.activeElement, last = ed?.last || null;
-    els.forEach(e => e.focus({ preventScroll: true }));   // sinhroni — lietotājs pa vidu nevar noklikšķināt
-    els.forEach(e => e.classList.remove('on'));
-    if (keep && keep !== document.body && keep.isConnected) keep.focus?.({ preventScroll: true }); else document.activeElement?.blur?.();
-    if (ed) { ed.last = last; ed.pokeUntil = Date.now() + 400; }
+    const host = U.$('teDoc'); if (!host) return; const last = ed?.last || null;
+    host.focus({ preventScroll: true });
+    if (!last) { const r = document.createRange(); r.setStart(host, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+    if (ed) { ed.last = last; ed.pokeUntil = Date.now() + 300; }
   }
   CP.changeHandlers.push(e => {
     if (e.target.dataset?.te !== 'spell') return false;
     try { localStorage.setItem('cp.teSpell', e.target.checked ? '1' : '0'); } catch (x) { }
-    U.qsa('#tplEditDialog .te-p').forEach(el => { el.spellcheck = e.target.checked; });
+    const host = U.$('teDoc'); if (host) { host.spellcheck = e.target.checked; host.blur(); }
     if (e.target.checked) poke();
     return true;
   });
@@ -13436,7 +13435,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     ed.paras = []; ed.orig = [];
     const body = ed.doc.getElementsByTagNameNS(W, 'body')[0];
     const para = p => { const i = ed.paras.push(p) - 1, s = ptext(p); ed.orig[i] = s; const st = p.getElementsByTagNameNS(W, 'pStyle')[0]?.getAttributeNS(W, 'val') || '';
-      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}${look(p).li ? ' li' : ''}" style="${look(p).css}" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}" lang="lv" data-pi="${i}">${esc(s)}</div>`; };
+      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}${look(p).li ? ' li' : ''}" style="${look(p).css}" data-pi="${i}">${esc(s)}</div>`; };
     const block = el => {
       if (el.namespaceURI !== W) return '';
       if (el.localName === 'p') return para(el);
@@ -13447,7 +13446,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const html = [...body.childNodes].map(block).join('');
     d.innerHTML = `<header class="dlg-head"><h2>${ic('edit', '✎')} Atzīmes veidnē — ${esc(ed.t.name)}</h2><button type="button" class="ghost" data-act="tplEditClose" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body te-wrap">
-        <div class="te-doc" id="teDoc" lang="lv">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
+        <div class="te-doc" id="teDoc" lang="lv" contenteditable="plaintext-only" spellcheck="${spellOn() ? 'true' : 'false'}">${html || '<p class="muted">Dokumentā nav teksta.</p>'}</div>
         <aside class="te-side">
           <div class="te-spell"><label class="check"><input type="checkbox" data-te="spell" ${spellOn() ? 'checked' : ''}> <b>Pārbaudīt pareizrakstību</b> (latviešu)</label>
             <p class="small muted" style="margin:4px 0 0">Kļūdas tiek pasvītrotas ar sarkanu viļņoto līniju; <b>labā peles poga</b> uz vārda — labojuma ieteikumi. Pārbauda pats Chrome datorā — teksts netiek sūtīts. <a href="#" data-act="tplSpellHelp">Ja nepasvītro…</a></p></div>
@@ -13463,16 +13462,28 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     d.oncancel = e => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) e.preventDefault(); };
   }
   const mark = () => { ed.dirty = true; const s = U.$('teState'); if (s) s.textContent = 'Ir nesaglabātas izmaiņas'; };
-  document.addEventListener('focusin', e => { const el = e.target.closest?.('#tplEditDialog .te-p'); if (el && ed) { U.qsa('#tplEditDialog .te-p.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); if (ed.last?.i !== +el.dataset.pi) ed.last = { i: +el.dataset.pi, range: null }; } });
   document.addEventListener('selectionchange', () => {
     if (!ed || Date.now() < (ed.pokeUntil || 0)) return; const s = getSelection(); if (!s.rangeCount) return; const el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)?.closest?.('#tplEditDialog .te-p');
-    if (el) ed.last = { i: +el.dataset.pi, range: s.getRangeAt(0).cloneRange() };
+    if (el) { ed.last = { i: +el.dataset.pi, range: s.getRangeAt(0).cloneRange() }; if (!el.classList.contains('on')) { U.qsa('#tplEditDialog .te-p.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); } }
   });
-  document.addEventListener('input', e => { if (e.target.closest?.('#tplEditDialog .te-p')) mark(); }, true);
+  document.addEventListener('input', e => { if (e.target.closest?.('#teDoc')) mark(); }, true);
+  /* Vienā laukumā nedrīkst sapludināt / sadalīt rindkopas (tās atbilst Word rindkopām) — Enter un dzēšana pāri robežai netiek atļauta */
+  const pOf = n => (n?.nodeType === 1 ? n : n?.parentElement)?.closest?.('#teDoc .te-p');
+  const offIn = (el, node, off) => { const r = document.createRange(); r.selectNodeContents(el); r.setEnd(node, off); return r.toString().length; };
+  document.addEventListener('beforeinput', e => {
+    if (!e.target.closest?.('#teDoc')) return;
+    const t = e.inputType, s = getSelection(); if (!s.rangeCount) return;
+    if (t === 'insertParagraph' || t === 'insertLineBreak') { e.preventDefault(); return; }
+    const r = s.getRangeAt(0), a = pOf(r.startContainer), b = pOf(r.endContainer);
+    if (!a || a !== b) { e.preventDefault(); if (a !== b) ui.toast('Iezīmē tekstu vienas rindkopas robežās', 'warn', 2500); return; }
+    if (r.collapsed && t === 'deleteContentBackward' && offIn(a, r.startContainer, r.startOffset) === 0) { e.preventDefault(); return; }
+    if (r.collapsed && t === 'deleteContentForward' && offIn(a, r.startContainer, r.startOffset) >= a.textContent.length) { e.preventDefault(); return; }
+  }, true);
+  document.addEventListener('paste', e => { if (!e.target.closest?.('#teDoc')) return; e.preventDefault(); const tx = (e.clipboardData?.getData('text/plain') || '').replace(/\s*\n\s*/g, ' '); if (pOf(getSelection().anchorNode)) document.execCommand('insertText', false, tx); }, true);
   A.tplEditTag = tag => {
     if (!ed?.last) return ui.toast('Vispirms noklikšķini tekstā vietā, kur ielikt atzīmi', 'warn');
     const el = U.qs(`#tplEditDialog .te-p[data-pi="${ed.last.i}"]`); if (!el) return;
-    const rg = ed.last.range, i = ed.last.i; el.focus(); ed.last = { i, range: rg };   // focusin notīra — atjauno
+    const rg = ed.last.range, i = ed.last.i; U.$('teDoc').focus({ preventScroll: true }); ed.last = { i, range: rg };
     if (rg && el.contains(rg.startContainer)) { const s = getSelection(); s.removeAllRanges(); s.addRange(rg); }
     else { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
     document.execCommand('insertText', false, tag);
@@ -13486,7 +13497,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const r = ed.doc.createElementNS(W, 'w:r'); if (r0) r.appendChild(r0.cloneNode(true)); const t = ed.doc.createElementNS(W, 'w:t'); t.setAttributeNS(XS, 'xml:space', 'preserve'); r.appendChild(t); np.appendChild(r);
     p.parentNode.insertBefore(np, p.nextSibling);
     const i = ed.last.i + 1; mark(); draw(); mark();
-    const el = U.qs(`#tplEditDialog .te-p[data-pi="${i}"]`); el?.focus();
+    const el = U.qs(`#tplEditDialog .te-p[data-pi="${i}"]`); if (el) { U.$('teDoc').focus({ preventScroll: true }); const r = document.createRange(); r.selectNodeContents(el); r.collapse(true); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); ed.last = { i, range: r.cloneRange() }; }
   };
 
   A.tplEditRow = () => {
