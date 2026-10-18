@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.53.0';
+  CP.VERSION = '1.53.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -13383,13 +13383,28 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     } catch (e) { ui.toast('Veidni neizdevās atvērt: ' + e.message, 'err', 9000); }
   };
 
+  /* --- Rindkopas izskats redaktorā (tikai attēlošanai — dokumentā nekas netiek mainīts): līdzinājums, treknraksts, slīpraksts, izmērs, saraksts --- */
+  const val = (el, tag) => { const x = el?.getElementsByTagNameNS(W, tag)[0]; if (!x) return null; const v = x.getAttributeNS(W, 'val'); return v == null ? true : v; };
+  const on = v => v === true || (v != null && !/^(0|false|off|none)$/i.test(v));
+  function look(p) {
+    const pPr = [...p.childNodes].find(n => n.localName === 'pPr'), css = [];
+    const jc = val(pPr, 'jc'); if (jc) css.push(`text-align:${{ center: 'center', right: 'right', end: 'right', both: 'justify', distribute: 'justify' }[jc] || 'left'}`);
+    const runs = [...p.getElementsByTagNameNS(W, 'r')].filter(r => tEls(r).some(t => t.textContent.trim()));
+    const rp = r => [...r.childNodes].find(n => n.localName === 'rPr');
+    if (runs.length && runs.every(r => on(val(rp(r), 'b')))) css.push('font-weight:700');
+    if (runs.length && runs.every(r => on(val(rp(r), 'i')))) css.push('font-style:italic');
+    const sz = runs.length ? Number(val(rp(runs[0]), 'sz')) : NaN; if (sz > 0) css.push(`font-size:${Math.round(sz / 2 * 1.333)}px`);
+    const ind = Number(pPr?.getElementsByTagNameNS(W, 'ind')[0]?.getAttributeNS(W, 'left') || 0); if (ind > 0) css.push(`padding-left:${Math.min(120, Math.round(ind / 15))}px`);
+    const st = String(val(pPr, 'pStyle') || '');
+    return { css: css.join(';'), li: !!pPr?.getElementsByTagNameNS(W, 'numPr')[0] || /list|saraksts/i.test(st) };
+  }
   /* --- Attēlošana --- */
   function draw() {
     let d = U.$('tplEditDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'tplEditDialog'; d.className = 'wide'; document.body.appendChild(d); }
     ed.paras = []; ed.orig = [];
     const body = ed.doc.getElementsByTagNameNS(W, 'body')[0];
     const para = p => { const i = ed.paras.push(p) - 1, s = ptext(p); ed.orig[i] = s; const st = p.getElementsByTagNameNS(W, 'pStyle')[0]?.getAttributeNS(W, 'val') || '';
-      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}" contenteditable="plaintext-only" spellcheck="false" data-pi="${i}">${esc(s)}</div>`; };
+      return `<div class="te-p ${/heading|virsraksts|title/i.test(st) ? 'h' : ''}${look(p).li ? ' li' : ''}" style="${look(p).css}" contenteditable="plaintext-only" spellcheck="false" data-pi="${i}">${esc(s)}</div>`; };
     const block = el => {
       if (el.namespaceURI !== W) return '';
       if (el.localName === 'p') return para(el);

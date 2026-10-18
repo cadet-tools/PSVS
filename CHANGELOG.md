@@ -1,5 +1,8 @@
 # Izmaiņu vēsture
 
+## 1.53.1 — 2026-10-18
+- Atzīmju redaktors rāda rindkopas tā, kā tās izskatās Word: līdzinājums (centrā / pa labi / abās malās), treknraksts, slīpraksts, burtu izmērs, atkāpe un numurēti saraksti. Tikai attēlošana — dokumenta formatējums kā līdz šim netiek mainīts.
+
 ## 1.53.0 — 2026-10-18
 - Veidlapu lapas jaunais izkārtojums (1.52.5 testa kanālā) ieslēgts arī stabilajā versijā (`NEWUI() → true`).
 
