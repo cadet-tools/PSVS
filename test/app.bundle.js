@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.54.0';
+  CP.VERSION = '1.54.1';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -13406,8 +13406,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       <div class="dlg-body"><ol class="small perm-how">
         <li>Jaunā cilnē atver <code>chrome://settings/languages</code> <button type="button" class="sm" data-act="tplSpellCopy">📋 Kopēt adresi</button> (Edge: <code>edge://settings/languages</code>).</li>
         <li>Sadaļā “Valodas” pievieno <b>latviešu</b>, ja tās nav.</li>
-        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz to un izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta. (“Uzlabotā” sūta tekstu Google — to neizvēlies.)</li>
-        <li>Pie latviešu valodas ieslēdz pārbaudi. Chrome vienreiz lejupielādē vārdnīcu.</li>
+        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz slēdzi <b>“Pārbaudīt pareizrakstību, kad tīmekļa lapās rakstāt tekstu”</b> (jābūt zilam). Ja parādās izvēle, izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta (“Uzlabotā” sūta tekstu Google — to neizvēlies).</li>
+        <li>Zem slēdža parādās valodu saraksts — ieslēdz <b>latviešu</b>. Chrome vienreiz lejupielādē vārdnīcu (dažas sekundes).</li>
         <li>Atgriezies rīkā un atver veidnes atzīmes no jauna.</li></ol>
         <p class="small muted">Atzīmes, piem. {vards_uzvards}, var būt pasvītrotas — tās nav kļūdas, un tās nav jālabo.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="spellHelpDialog">Sapratu</button></footer>`;

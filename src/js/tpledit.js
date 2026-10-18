@@ -59,8 +59,8 @@
       <div class="dlg-body"><ol class="small perm-how">
         <li>Jaunā cilnē atver <code>chrome://settings/languages</code> <button type="button" class="sm" data-act="tplSpellCopy">📋 Kopēt adresi</button> (Edge: <code>edge://settings/languages</code>).</li>
         <li>Sadaļā “Valodas” pievieno <b>latviešu</b>, ja tās nav.</li>
-        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz to un izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta. (“Uzlabotā” sūta tekstu Google — to neizvēlies.)</li>
-        <li>Pie latviešu valodas ieslēdz pārbaudi. Chrome vienreiz lejupielādē vārdnīcu.</li>
+        <li>Sadaļā “Pareizrakstības pārbaude” ieslēdz slēdzi <b>“Pārbaudīt pareizrakstību, kad tīmekļa lapās rakstāt tekstu”</b> (jābūt zilam). Ja parādās izvēle, izvēlies <b>“Pamata pareizrakstības pārbaude”</b> — tā strādā datorā un tekstu nekur nesūta (“Uzlabotā” sūta tekstu Google — to neizvēlies).</li>
+        <li>Zem slēdža parādās valodu saraksts — ieslēdz <b>latviešu</b>. Chrome vienreiz lejupielādē vārdnīcu (dažas sekundes).</li>
         <li>Atgriezies rīkā un atver veidnes atzīmes no jauna.</li></ol>
         <p class="small muted">Atzīmes, piem. {vards_uzvards}, var būt pasvītrotas — tās nav kļūdas, un tās nav jālabo.</p></div>
       <footer class="dlg-foot"><span class="grow"></span><button type="button" data-close="spellHelpDialog">Sapratu</button></footer>`;
