@@ -14,7 +14,7 @@
   - Labojums: atkārtoti atverot meklēšanas logu, iepriekšējā MI saruna un tukšā josla vairs nepaliek redzamas (`.mi-pane[hidden]`, `.mi-bar[hidden]` — `display:flex` pārrakstīja `hidden`).
   - Kopīgais MI pieslēgts: `MI_URL` — Apps Script tīmekļa lietotne “CADET PERSONALS GROCK MI” (adrese nav slepena; Groq atslēga tikai skripta rekvizītos).
   - “Kas tu esi”, “ko vari”, “sveiks” — iepazīšanās atbilde uzreiz rīkā, bez sūtīšanas un netērējot limitu (`ABOUT_Q`).
-  - Tonis: uz rīka jautājumiem atbild pēc būtības; jokam/sveicienam — īsa, pieklājīga atbilde un novirze uz rīku, nevis “es varu palīdzēt tikai…”. “offtopic” paliek tikai apietiem noteikumiem. Fakti: Uzdevumi, pārlūka atļaujas, “kopsavilkums” ≠ “Pārskats”. Pēc `Kods.gs` jāielīmē Apps Script (jauna versija, adrese paliek).
+  - Sarunas logā slēdzis **Kopīgais / Sava atslēga** un atlikuma josla (kopīgais: palikuši / 20; sava: Groq tokeni vai minūtes limits). Ja sava atslēga 429 — paziņojums un pārslēgšanās uz kopīgo. Jokam īsāks kb; svešu jautājumu nesasaista ar tuvāko pamācību.
   - Izstrādei `docs/mi/mimock.js` — vietējais serveris, kas izpilda īsto `Kods.gs` (`/__mi/dev` ieslēdz testa versiju ar vietējo starpnieku).
 - Būvēšana: `src/_buvesana/build_test.py` pārbūvē tikai `test/`; `build_web.py` — `CSP_TEST` un `tools/mi` → `docs/mi`. Pārbaude: `node docs/mi/mi_test.mjs`. Apraksts: `docs/MI.md`.
 
