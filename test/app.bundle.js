@@ -14763,6 +14763,9 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     if (/\bdvs\b/i.test(q)) {
       return { t: '**DVS** (https://dvs.mod.gov.lv/) ir Aizsardzības ministrijas dokumentu sistēma — CADET PERSONĀLS to **neaizstāj**. Rīkā atzīmē, kuri obligātie dokumenti jau ir reģistrēti DVS: personas kartīte → **Dokumenti**, vai Personas sarakstā masveidā **“✓ DVS (visi dok.)”**. Obligātos dokumentus nosaka Iestatījumi → Dokumenti. DVS saīsne ir rīku joslā.', page: 'documents' };
     }
+    if (/jaunsargs iet|iet uz mež|klauvē pie/i.test(q)) {
+      return { t: 'Jaunsargs iet uz mežu… un paņem līdzi **kārtošanas plānu** — lai apmeklējums Pārskatā paliek zaļš.\n\nJa gribi citu joku, raksti “pajoko”. Ja vajag palīdzību ar rīku (personas, dokumenti, VFS, DVS), droši jautā.', page: '' };
+    }
     if (/(kopsavilkum|apkopoj|rezum).{0,48}(audit|šo |visu jautāj|sarun)|audit.{0,24}(kopsavil|jautāj)/i.test(q)) {
       const qs = M.conv.filter(m => m.r === 'u');
       const list = qs.length ? qs.map((m, i) => `${i + 1}. ${m.raw}`).join('\n') : 'Šajā sarunā vēl nav jautājumu.';
