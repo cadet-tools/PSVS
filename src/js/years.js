@@ -14,6 +14,7 @@
     const years = [...(S.db.years || [])].sort((a, b) => b.start - a.start);
     menu.innerHTML = years.map(y => `<button type="button" data-act="setYear" data-arg="${esc(y.id)}" class="${y.id === id ? 'on' : ''}">${esc(U.yearSlash(y.id))}${y.id === id ? ' · izvēlēts' : ''}${y.id === U.schoolYear() ? ' · pašreizējais' : ''}</button>`).join('')
       + `<button type="button" data-act="openAddYear">＋ Pievienot mācību gadu</button>`
+      + (CP.yearEnd ? `<button type="button" data-act="yearEnd">✓ Noslēgt mācību gadu…</button>` : '')
       + `<button type="button" data-act="goSetCard" data-arg="yearsCard">Pārvaldīt mācību gadus</button>`;
   }
   /* --- Mācību gada dzēšana: tukšu — pēc apstiprinājuma; ar datiem — vispirms pārceļ uz citu gadu --- */

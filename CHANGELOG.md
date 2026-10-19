@@ -1,5 +1,14 @@
 # Izmaiņu vēsture
 
+## 1.56.0 — 2026-10-19
+- **Tikai testa kanālā** (`CP.CHANNEL === 'test'`):
+  - `js/assist.js` — meklēšana pa visu rīku un palīgs: Ctrl+K (agrāk fokusēja sānjoslas meklēšanu; “/” to dara joprojām) vai poga `#cmdkBtn` augšējā joslā. Meklē personas (vārds, grupa, vecāku vārdi), dokumentu ierakstus, pasākumus, sagatavotās veidlapas (`formDocs`), sadaļas, iestatījumu kartītes un darbības; bez garumzīmēm (`U.norm`), pēc vārda sākuma. Palīgs: ~30 iepriekš uzrakstītas atbildes ar atslēgvārdiem un pogu “Aiziet” — nav mākslīgais intelekts, nekas netiek sūtīts.
+  - `js/yearend.js` — mācību gada noslēguma vednis (gada izvēlne, Iestatījumi → Mācību gadi, palīgs): 6 soļi ar esošajām funkcijām (`D.missingDocs`, `A.remindDocs`, ekipējums, `A.sumNew('*')` — visi gada jaunsargi, nākamā gada izveide, `A.openMove(no, uz)`, `store.backupNow` + atjaunošanas pārbaude, `A.setYear`). Progress `settings.yearEnd[gads].done`.
+  - `js/health.js` — datu veselības pārbaude pēc datu mapes atvēršanas un kartītē Iestatījumi → Drošība (`#healthCard`): dublēti/trūkstoši ID, dalības, saistības, apmeklējuma atzīmes un pasākumu dalībnieki ar neesošām personām, dokumenti/ekipējums/uzdevumi/VFS bez personas (tikai parāda), neesoši mācību gadi. “Izlabot drošās kļūdas” — vispirms JSON kopija; dokumenti, ekipējums un personas netiek dzēsti.
+  - Atjaunošanas pārbaude `store.testRestore(name)`: nolasa jaunāko kopiju no `_rezerves`, `validateDb` + `CP.migrate` atmiņā, salīdzina skaitus ar pašreizējiem datiem; dati netiek mainīti. `settings.restoreCheckAt`; pēc 30 dienām atgādinājums Uzdevumos (brīdinājumiem jauns lauks `act`/`actLabel` — poga ar darbību) un vienreiz sesijā paziņojums.
+- Personas dzēšana (`eraseRecord`) dzēš arī tās dalības ierakstus mācību gados (agrāk palika nesaistīti).
+- Jaunumi: bloki “Signal” un “Ziņot” apvienoti; “Dalībnieki no citām vienībām” iekļauts blokā “Pasākumi”.
+
 ## 1.55.0 — 2026-10-18
 - Pareizrakstības pārbaude ar **rīka iebūvētu latviešu vārdnīcu** (Hunspell WebAssembly `vendor/spell/hunspell.min.js` — hunspell-asm 4.0.2, MIT; vārdnīca `lv.aff`/`lv.dic` — dictionary-lv 2.0.0, LGPL 2.1, J. Eisaks) atsevišķā pavedienā `vendor/spell/worker.js`. Vairs nav atkarīga no Chrome iestatījumiem; darbojas bezsaistē (faili bezsaistes sarakstā), teksts netiek sūtīts. Pārbauda visu dokumentu ar īstu progresu (vārdi pārbaudīti / kopā), kļūdas iezīmē ar CSS Custom Highlight (`::highlight(cp-spell)` — DOM netiek mainīts), pēc labojuma pārbauda rindkopu vēlreiz. Labā peles poga — ieteikumi (Hunspell suggest), “Ignorēt”, “Pievienot manai vārdnīcai” (`localStorage cp.spellDict`). Izlaiž {atzīmes}, e-pastus, saites, saīsinājumus (Nr.) un īsus lielo burtu vārdus. Pārlūka paša pareizrakstība redaktorā izslēgta.
 

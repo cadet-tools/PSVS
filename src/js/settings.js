@@ -19,7 +19,7 @@
   };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
-    const tabOf = { watchCard: 'base', instCard: 'base', unitCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
+    const tabOf = { watchCard: 'base', instCard: 'base', unitCard: 'base', lockCard: 'sec', encCard: 'sec', healthCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
     setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
@@ -47,7 +47,7 @@
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button>${y.id === S.db.settings.activeYear || y.id === U.schoolYear() ? '' : `<button class="sm ghost danger" data-act="yearDelete" data-arg="${esc(y.id)}" title="Dzēst mācību gadu">✕ Dzēst</button>`}</div>`).join('')}
-        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">⇄ Pārcelt dalībniekus uz citu gadu</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
+        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">⇄ Pārcelt dalībniekus uz citu gadu</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button>${CP.yearEnd ? '<button class="sm" data-act="yearEnd">✓ Mācību gada noslēgums…</button>' : ''}</div>
         <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
       </div>${T('sec')}
       <section class="card" id="dataCard"><h3>Datu glabāšana</h3>
@@ -70,6 +70,7 @@
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
+      ${CP.health ? CP.health.card() : ''}
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>

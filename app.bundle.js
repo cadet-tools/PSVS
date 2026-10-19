@@ -1,4 +1,4 @@
-/* CADET PERSONĀLS — apvienots no 49 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
+/* CADET PERSONĀLS — apvienots no 52 failiem (avots: mape js/). Nelabo šo failu — labo js/ un būvē no jauna. */
 
 /* ==== js/core.js ==== */
 /* =====================================================================
@@ -11,7 +11,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.55.0';
+  CP.VERSION = '1.56.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.
@@ -753,7 +753,9 @@ window.CP = window.CP || {};
     award: '<circle cx="12" cy="9" r="5.5"/><path d="m8.5 13.5-1.5 7 5-2.5 5 2.5-1.5-7"/>',
     user: '<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>',
     lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
-    shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>'
+    shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.5 4.4-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/>',
+    heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20z"/>'
   };
   CP.ICON_NAMES = Object.keys(P);
   CP.D2 = ((document.querySelector('meta[name="cp-design"]') || {}).content || '') === 'v2';
@@ -1078,6 +1080,19 @@ window.CP = window.CP || {};
     } catch (e) {
       return { ok: false, error: e.message || String(e) };
     }
+  };
+  /** Atjaunošanas mēģinājums atmiņā: nolasa, pārbauda, migrē kā atjaunojot. Pašreizējie dati netiek mainīti. */
+  store.testRestore = async name => {
+    const text = await readBackup(name);
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (e) { return { ok: false, error: 'kopija nav nolasāms JSON (' + e.message + ')' }; }
+    try {
+      CP.validateDb(parsed);
+      const version = parsed.version, m = CP.migrate(parsed);
+      CP.validateDb(m);
+      const n = k => (m[k] || []).length;
+      return { ok: true, version, bytes: text.length, counts: { people: n('people'), documents: n('documents'), events: n('events'), sessions: n('sessions'), equipment: n('equipment') } };
+    } catch (e) { return { ok: false, error: e.message || String(e) }; }
   };
   async function readBackup(name) {
     if (!S.root) throw Error('nav datu mapes');
@@ -2997,6 +3012,7 @@ window.CP = window.CP || {};
     db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
     db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
     db.audit = db.audit.filter(x => x.personId !== pid);
+    db.enrollments = (db.enrollments || []).filter(x => x.personId !== pid);
     for (const ev of db.events || []) if (Array.isArray(ev.participants)) ev.participants = ev.participants.filter(x => (x?.pid ?? x) !== pid);
     for (const s of db.sessions || []) if (s.att && pid in s.att) delete s.att[pid];
     for (const t of db.vfsTests || []) if (t.res && pid in t.res) delete t.res[pid];
@@ -4681,7 +4697,7 @@ window.CP = window.CP || {};
   const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🎓'), adult18: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
-    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
+    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}${a.act ? `<button class="sm" data-act="${esc(a.act)}" data-arg="${esc(a.arg || '')}">${esc(a.actLabel || 'Atvērt')}</button>` : ''}</div>`;
 
   CP.pages.dashboard = {
     after() { CP.watch?.paint(); },
@@ -4747,11 +4763,11 @@ window.CP = window.CP || {};
     }
     // 18 / 21 gadu brīdinājumi uznirstošajā logā — ne vairāk kā 3 reizes katram (kartītē un Uzdevumos paliek, līdz atrisināts)
     let seenN = {}; try { seenN = JSON.parse(localStorage.getItem('cp-notice-count') || '{}') || {}; } catch (e) { seenN = {}; }
-    const al = D.alerts().filter(a => !a.nkey || (seenN[a.nkey] || 0) < 3), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
+    const al = D.alerts().filter(a => !a.quiet && (!a.nkey || (seenN[a.nkey] || 0) < 3)), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
     const shownKeys = al.filter(a => a.nkey).map(a => a.nkey);
     try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
-    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}</div>`;
+    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}${a.act ? `<button class="sm" data-act="${esc(a.act)}" data-arg="${esc(a.arg || '')}">${esc(a.actLabel || 'Atvērt')}</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =
       (ages.length ? `<h4 style="margin-top:0">🎂 Vecuma izmaiņas kopš ${U.fmtDate(last)}</h4>${ages.map(x => `<div class="row"><div class="grow"><b>${esc(U.full(x.p))}</b> — tagad <b>${x.age} g.</b>${x.age === 18 ? ' <span class="pill warn">pilngadīgs — jānoslēdz jauns līgums ar jaunsargu (vecāku dati kartītē paliek)</span>' : ''}</div><button class="sm" data-person="${x.p.id}" data-close="noticeDialog">Atvērt</button></div>`).join('')}` : '')
       + (urgent.length ? `<h4>⚠ Jāpievērš uzmanība (${urgent.length})</h4>${urgent.slice(0, 25).map(row).join('')}${urgent.length > 25 ? `<p class="muted small">… un vēl ${urgent.length - 25}</p>` : ''}` : '')
@@ -5412,7 +5428,7 @@ window.CP = window.CP || {};
   };
   /** Atver Iestatījumus pie konkrētas kartītes (pareizajā cilnē), ritina un iezīmē */
   ui.goSettingsCard = id => {
-    const tabOf = { watchCard: 'base', instCard: 'base', unitCard: 'base', lockCard: 'sec', encCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
+    const tabOf = { watchCard: 'base', instCard: 'base', unitCard: 'base', lockCard: 'sec', encCard: 'sec', healthCard: 'sec', retCard: 'sec', dataCard: 'sec', docsCard: 'docs', commsCard: 'comms', permsCard: 'perm', yearsCard: 'base' };
     if (tabOf[id]) S.setTab = tabOf[id];
     ui.go('settings');
     setTimeout(() => { const c = U.$(id); if (!c) return; const t = c.closest('[data-stab]'); if (t?.hidden) A.setTab(t.dataset.stab); ui.scrollToCard(c); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); }, 80);
@@ -5440,7 +5456,7 @@ window.CP = window.CP || {};
       <section class="card" id="yearsCard"><h3>Mācību gadi</h3>
         <p class="small">Aktīvais gads: <b>${esc(U.yearLabel(S.db.settings.activeYear))}</b>. Gadu maiņa nepārvieto personas, dokumentus un ekipējumu. Viena persona ir viens profils, un katram gadam ir savs dalības ieraksts.</p>
         ${(S.db.years || []).map(y => `<div class="row"><div class="grow"><b>${esc(U.yearLabel(y.id))}</b> <small class="muted">${(S.db.enrollments || []).filter(e => e.yearId === y.id).length} dalības</small>${y.id === S.db.settings.activeYear ? ' <span class="tag">izvēlēts</span>' : ''}${y.id === U.schoolYear() ? ' <span class="tag">pašreizējais</span>' : ''}</div><button class="sm" data-act="setYear" data-arg="${esc(y.id)}">Atvērt</button>${y.id === S.db.settings.activeYear || y.id === U.schoolYear() ? '' : `<button class="sm ghost danger" data-act="yearDelete" data-arg="${esc(y.id)}" title="Dzēst mācību gadu">✕ Dzēst</button>`}</div>`).join('')}
-        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">⇄ Pārcelt dalībniekus uz citu gadu</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button></div>
+        <div class="actions" style="margin-top:10px"><button class="mainbtn sm" data-act="openAddYear">＋ Pievienot mācību gadu</button><button class="sm" data-act="openMove">⇄ Pārcelt dalībniekus uz citu gadu</button><button class="sm" data-act="ensureFolders">Izveidot gada mapes</button>${CP.yearEnd ? '<button class="sm" data-act="yearEnd">✓ Mācību gada noslēgums…</button>' : ''}</div>
         <p class="muted small">Mapē Macibu_gadi katram gadam ir Dokumenti, Pasakumi un Atskaites. Esošie personu dokumenti netiek pārvietoti.</p></section>
       </div>${T('sec')}
       <section class="card" id="dataCard"><h3>Datu glabāšana</h3>
@@ -5463,6 +5479,7 @@ window.CP = window.CP || {};
 
       ${CP.lock ? CP.lock.card() : ''}
       ${CP.encBackup ? CP.encBackup.card() : ''}
+      ${CP.health ? CP.health.card() : ''}
 
       <section class="card"><h3>Datu aizsardzība</h3>
         <p class="small">Dati glabājas tikai šajā datorā, vienkāršā JSON failā <b>bez šifrēšanas</b>. Aizsardzību nodrošina datora lietotāja konts un mapes tiesības — neglabā datu mapi publiski koplietotā vietā. Personas kodi saskarnē tiek maskēti, CSV eksportā netiek iekļauti, un saitēs uz ārējiem rīkiem netiek nodoti.</p>
@@ -5728,6 +5745,10 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.56.0', ch: 'test', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
+      '**Meklēšana pa visu rīku**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas, iestatījumi un darbības. Var arī **uzdot jautājumu** (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs atbild no rīka pamācības un ar pogu aizved uz īsto vietu. Darbojas bez interneta.',
+      '**Mācību gada noslēguma vednis** (gada izvēlnē “Noslēgt mācību gadu…”): trūkstošie dokumenti → neatdotais ekipējums → kopsavilkumi visiem → kas turpina nākamajā gadā → rezerves kopija → pāreja uz jauno gadu. Rīks arī pats **pārbauda datu faila veselību** un reizi mēnesī atgādina **pārbaudīt, vai rezerves kopiju var atjaunot** (Iestatījumi → Drošība).'
+    ] },
     { v: '1.55.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',
       'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}; **latviešu pareizrakstības pārbaude** pasvītro kļūdas (labā peles poga — ieteikumi). Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
@@ -5740,7 +5761,7 @@ window.CP = window.CP || {};
       'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠. Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
     ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
-      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
+      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi. Instruktāžas lapā un nometnes žurnālā var iekļaut arī **jaunsargus no citām vienībām** (otra instruktora atsūtītais fails vai Excel veidne).',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja). Kategorija “Vecāku piekrišana” noņemta — tāda dokumenta nav; esošie ieraksti kļuvuši par “Vecāku atļauja”.'
     ] },
     { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
@@ -5768,8 +5789,8 @@ window.CP = window.CP || {};
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē. Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz. Dokuments, kas vēl **nav saņemts**, sadaļā “Reģistrācija un arhīvs” ir **sarkans** ar pogu “＋ Fails”, un, mēģinot to atzīmēt DVS vai arhīvā, rīks brīdina.'
     ] },
-    { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
-      'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
+    { v: '1.40.0', from: '1.30.0', date: '2026-10-17', title: 'Signal un ziņošana izstrādātājam', items: [
+      'Ziņu var sūtīt arī ar **Signal** (kartītē pie kontakta, ziņas logā, grupas ziņā) — teksts tiek **nokopēts**, sarakstē to ielīmē ar Ctrl+V. Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu, personu datus attēlā **aizklājot**.'
     ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
@@ -5814,12 +5835,6 @@ window.CP = window.CP || {};
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       'Ja rīku nelieto (noklusēti 5 min), ekrānu aizsedz lielais pulkstenis, un jaunsargu dati nav redzami. Ar **PIN kodu** to atbloķē tikai tu; PIN prasa arī, atverot rīku.',
       'Bloķēt uzreiz: poga **“🔒 Bloķēt rīku”** Pārskatā vai **Ctrl+Shift+L**. Aizmirstot PIN, kodu var saņemt e-pastā.'
-    ] },
-    { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Sadaļa “Ziņot”', items: [
-      'Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu. Personu datus attēlā var **aizklāt** pirms sūtīšanas.'
-    ] },
-    { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
-      'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**: ievelc otra instruktora atsūtīto failu vai aizpildītu Excel veidni. Viņi glabājas tikai šajā pasākumā.'
     ] },
     { v: '1.26.3', from: '1.24.0', date: '2026-10-16', title: 'Grupas un pārskats', items: [
       'Pārskata kartītē **Grupas** var izveidot, pārdēvēt un dzēst grupas (personas netiek dzēstas). Personas formā grupu izvēlas no saraksta vai izveido jaunu.',
@@ -5901,6 +5916,7 @@ window.CP = window.CP || {};
     const years = [...(S.db.years || [])].sort((a, b) => b.start - a.start);
     menu.innerHTML = years.map(y => `<button type="button" data-act="setYear" data-arg="${esc(y.id)}" class="${y.id === id ? 'on' : ''}">${esc(U.yearSlash(y.id))}${y.id === id ? ' · izvēlēts' : ''}${y.id === U.schoolYear() ? ' · pašreizējais' : ''}</button>`).join('')
       + `<button type="button" data-act="openAddYear">＋ Pievienot mācību gadu</button>`
+      + (CP.yearEnd ? `<button type="button" data-act="yearEnd">✓ Noslēgt mācību gadu…</button>` : '')
       + `<button type="button" data-act="goSetCard" data-arg="yearsCard">Pārvaldīt mācību gadus</button>`;
   }
   /* --- Mācību gada dzēšana: tukšu — pēc apstiprinājuma; ar datiem — vispirms pārceļ uz citu gadu --- */
@@ -12988,7 +13004,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   A.sumNew = pid => {
     if (!S.db) return;
     const [f, t] = spanOf('cur');
-    dlg = { pids: new Set(pid ? [pid] : []), single: pid || null, group: '', q: '', from: dlg?.from || f, to: dlg?.to || t };
+    const all = pid === '*';   // '*' — visiem šī gada jaunsargiem (mācību gada noslēguma vednis)
+    dlg = { pids: new Set(all ? roster().map(p => p.id) : pid ? [pid] : []), single: all ? null : pid || null, group: '', q: '', from: all ? f : dlg?.from || f, to: all ? t : dlg?.to || t };
     draw(); U.$('sumDialog').showModal();
   };
   function draw() {
@@ -13605,6 +13622,545 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   A.tplEditClose = () => { if (ed?.dirty && !confirm('Aizvērt bez saglabāšanas? Izmaiņas tiks zaudētas.')) return; U.$('tplEditDialog')?.close(); ed = null; };
   document.addEventListener('close', e => { if (e.target.id === 'tplEditDialog') { spellGen++; spellBad = []; window.CSS?.highlights?.delete('cp-spell'); } }, true);
   CP.tplEdit = { applyEdit: (p, o, n) => applyEdit(p, o, n) };
+})(window.CP);
+
+
+/* ==== js/health.js ==== */
+/* =====================================================================
+   Datu faila veselība un rezerves kopijas atjaunošanas pārbaude (TESTA KANĀLS).
+   • Veselības pārbaude: dublēti identifikatori, ieraksti, kas norāda uz neesošām personām vai mācību gadiem.
+     Notiek automātiski pēc datu mapes atvēršanas un ar pogu (Iestatījumi → Drošība → “Datu veselība”).
+     Labo tikai drošās lietas (lieki atsauces ieraksti, trūkstoši gadi, dublēti ID) — pirms tam JSON kopija.
+     Dokumentu un ekipējuma ierakstus bez personas netiek dzēsti — tie tiek tikai parādīti.
+   • Atjaunošanas pārbaude: reizi mēnesī atgādinājums; pārbaude nolasa jaunāko kopiju no _rezerves,
+     pārbauda struktūru, migrē to atmiņā (kā atjaunojot) un salīdzina ar pašreizējiem datiem.
+     Pašreizējie dati netiek mainīti. Datums: settings.restoreCheckAt.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  if (CP.CHANNEL !== 'test') return;
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, ic = (n, f = '') => CP.ic(n, f);
+  const plural = (n, a, b) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? a : b}`;
+  const RESTORE_DAYS = 30;
+
+  /* ---------------- Veselības pārbaude ---------------- */
+  const LISTS = [['people', 'personām'], ['documents', 'dokumentiem'], ['equipment', 'ekipējumam'], ['enrollments', 'dalības ierakstiem'], ['events', 'pasākumiem'], ['sessions', 'nodarbībām'], ['tasks', 'uzdevumiem'], ['relations', 'saistībām'], ['vfsTests', 'VFS testiem'], ['formDocs', 'sagatavotajām veidlapām']];
+  const pidOf = x => (x && typeof x === 'object' ? x.pid : x);
+  /** Atgriež problēmu sarakstu: { k, sev: 0|1|2, msg, n, fix?: true, list?: [] } */
+  function check(db = S.db) {
+    const out = [];
+    try { CP.validateDb(db); } catch (e) { out.push({ k: 'struct', sev: 2, msg: 'Datu faila struktūra nav derīga: ' + e.message, n: 1 }); return out; }
+    const people = new Set(db.people.map(p => p.id)), years = new Set((db.years || []).map(y => y.id));
+    // 1) dublēti identifikatori
+    for (const [k, l] of LISTS) {
+      if (k === 'people') continue;   // personām to jau pārbauda validateDb
+      const seen = new Map(); let n = 0;
+      for (const x of db[k] || []) { if (!x || typeof x !== 'object') continue; if (!x.id) { n++; continue; } if (seen.has(x.id)) n++; else seen.set(x.id, x); }
+      if (n) out.push({ k: 'dup:' + k, sev: 1, msg: `${plural(n, 'ierakstam', 'ierakstiem')} ${l} ir dublēts vai trūkstošs identifikators`, n, fix: true });
+    }
+    // 2) atsauces uz neesošām personām
+    const miss = id => id && !people.has(id);
+    const cnt = (k, f) => (db[k] || []).filter(f).length;
+    const nEn = cnt('enrollments', e => miss(e.personId));
+    if (nEn) out.push({ k: 'orph:enrollments', sev: 1, msg: `${plural(nEn, 'dalības ieraksts', 'dalības ieraksti')} mācību gadā norāda uz personu, kuras vairs nav`, n: nEn, fix: true });
+    const nRel = cnt('relations', r => miss(r.a) || miss(r.b));
+    if (nRel) out.push({ k: 'orph:relations', sev: 1, msg: `${plural(nRel, 'saistība', 'saistības')} starp personām norāda uz neesošu personu`, n: nRel, fix: true });
+    let nAtt = 0; for (const s of db.sessions || []) for (const pid of Object.keys(s.att || {})) if (miss(pid)) nAtt++;
+    if (nAtt) out.push({ k: 'orph:att', sev: 0, msg: `${plural(nAtt, 'apmeklējuma atzīme', 'apmeklējuma atzīmes')} nodarbībās pieder personām, kuru vairs nav`, n: nAtt, fix: true });
+    let nPart = 0; for (const ev of db.events || []) for (const x of ev.participants || []) if (miss(pidOf(x))) nPart++;
+    if (nPart) out.push({ k: 'orph:part', sev: 0, msg: `${plural(nPart, 'pasākuma dalībnieks', 'pasākumu dalībnieki')} norāda uz personu, kuras vairs nav`, n: nPart, fix: true });
+    const keep = (k, l, f, sev = 1) => { const xs = (db[k] || []).filter(f); if (xs.length) out.push({ k: 'keep:' + k, sev, msg: l(xs.length), n: xs.length, list: xs.slice(0, 20).map(x => x.title || x.kind || x.item || x.text || x.name || x.id) }); };
+    keep('documents', n => `${plural(n, 'dokumenta ieraksts', 'dokumentu ieraksti')} bez esošas personas (netiek dzēsti — pārbaudi Dokumentu sadaļā)`, d => miss(d.personId));
+    keep('equipment', n => `${plural(n, 'ekipējuma ieraksts', 'ekipējuma ieraksti')} bez esošas personas (netiek dzēsti)`, e => miss(e.personId));
+    keep('tasks', n => `${plural(n, 'uzdevums', 'uzdevumi')} piesaistīti neesošai personai (netiek dzēsti)`, t => miss(t.personId), 0);
+    let nVfs = 0; for (const t of db.vfsTests || []) for (const pid of Object.keys(t.res || {})) if (miss(pid)) nVfs++;
+    if (nVfs) out.push({ k: 'keep:vfs', sev: 0, msg: `${plural(nVfs, 'VFS rezultāts', 'VFS rezultāti')} pieder personām, kuru vairs nav (netiek dzēsti)`, n: nVfs });
+    // 3) atsauces uz neesošiem mācību gadiem
+    const yMiss = new Set();
+    for (const k of ['enrollments', 'events', 'sessions', 'vfsTests', 'documents', 'equipment', 'formDocs']) for (const x of db[k] || []) if (x?.yearId && !years.has(x.yearId) && /^\d{4}-\d{4}$/.test(x.yearId)) yMiss.add(x.yearId);
+    if (yMiss.size) out.push({ k: 'years', sev: 1, msg: `Ieraksti norāda uz mācību gadiem, kuru nav gadu sarakstā: ${[...yMiss].sort().map(U.yearSlash).join(', ')}`, n: yMiss.size, fix: true, years: [...yMiss] });
+    // 4) personas bez vārda
+    const noName = db.people.filter(p => !String(p.first || '').trim() && !String(p.last || '').trim() && !p.anon);
+    if (noName.length) out.push({ k: 'noname', sev: 0, msg: `${plural(noName.length, 'personai', 'personām')} nav ne vārda, ne uzvārda`, n: noName.length, people: noName.map(p => p.id) });
+    // 5) skaitītāji
+    if (typeof db.revision !== 'number' || !Number.isFinite(db.revision)) out.push({ k: 'rev', sev: 1, msg: 'Datu faila versijas skaitītājs nav derīgs', n: 1, fix: true });
+    return out.sort((a, b) => b.sev - a.sev);
+  }
+  /** Drošie labojumi (tikai atsauces un ID) — atgriež izdarīto aprakstu */
+  function fix(db = S.db) {
+    const people = new Set(db.people.map(p => p.id)), done = [];
+    const miss = id => id && !people.has(id);
+    for (const [k] of LISTS) {
+      if (k === 'people' || !Array.isArray(db[k])) continue;
+      const seen = new Map(), keepArr = []; let re = 0, drop = 0;
+      for (const x of db[k]) {
+        if (!x || typeof x !== 'object') { keepArr.push(x); continue; }
+        if (x.id && seen.has(x.id)) {
+          if (JSON.stringify(seen.get(x.id)) === JSON.stringify(x)) { drop++; continue; }   // pilnīgi vienāda kopija
+          x.id = U.uid(); re++;
+        } else if (!x.id) { x.id = U.uid(); re++; }
+        seen.set(x.id, x); keepArr.push(x);
+      }
+      db[k] = keepArr;
+      if (re) done.push(`${k}: ${re} jauni identifikatori`); if (drop) done.push(`${k}: ${drop} identiskas kopijas noņemtas`);
+    }
+    const n0 = db.enrollments.length; db.enrollments = db.enrollments.filter(e => !miss(e.personId)); if (n0 - db.enrollments.length) done.push(`${n0 - db.enrollments.length} lieki dalības ieraksti`);
+    const r0 = db.relations.length; db.relations = db.relations.filter(r => !miss(r.a) && !miss(r.b)); if (r0 - db.relations.length) done.push(`${r0 - db.relations.length} saistības`);
+    let a = 0; for (const s of db.sessions || []) for (const pid of Object.keys(s.att || {})) if (miss(pid)) { delete s.att[pid]; a++; }
+    if (a) done.push(`${a} apmeklējuma atzīmes`);
+    let pp = 0; for (const ev of db.events || []) if (Array.isArray(ev.participants)) { const l = ev.participants.length; ev.participants = ev.participants.filter(x => !miss(pidOf(x))); pp += l - ev.participants.length; }
+    if (pp) done.push(`${pp} pasākumu dalībnieki`);
+    const years = new Set(db.years.map(y => y.id)); let ny = 0;
+    for (const k of ['enrollments', 'events', 'sessions', 'vfsTests', 'documents', 'equipment', 'formDocs']) for (const x of db[k] || []) {
+      const y = x?.yearId; if (!y || years.has(y) || !/^(\d{4})-(\d{4})$/.test(y) || Number(y.slice(5)) !== Number(y.slice(0, 4)) + 1) continue;
+      db.years.push({ id: y, start: Number(y.slice(0, 4)), createdAt: U.now() }); years.add(y); ny++;
+      db.settings.yearsDeleted = (db.settings.yearsDeleted || []).filter(z => z !== y);
+    }
+    if (ny) { db.years.sort((p, q) => p.start - q.start); done.push(`${ny} mācību gadi atjaunoti sarakstā`); }
+    if (typeof db.revision !== 'number' || !Number.isFinite(db.revision)) { db.revision = 0; done.push('versijas skaitītājs'); }
+    return done;
+  }
+  let last = null;   // { at, issues }
+  const run = () => { last = { at: U.now(), issues: S.db ? check() : [] }; return last; };
+  const healthHtml = () => {
+    const r = last || run(), xs = r.issues, fixable = xs.some(x => x.fix);
+    return `${xs.length ? `<div class="hc-list">${xs.map(x => `<div class="row alert ${['info', 'warn', 'bad'][x.sev]}"><span class="al-ic">${x.sev ? ic('alert', '⚠') : ic('info', 'ⓘ')}</span><div class="grow">${esc(x.msg)}${x.fix ? ' <span class="tag">var droši izlabot</span>' : ''}
+        ${x.list?.length ? `<div class="small muted">${x.list.map(esc).join(', ')}${x.n > x.list.length ? ' …' : ''}</div>` : ''}</div>
+        ${x.k === 'keep:documents' ? '<button class="sm" data-page="documents">Dokumenti</button>' : x.k === 'keep:equipment' ? '<button class="sm" data-page="equipment">Ekipējums</button>' : x.k === 'noname' ? `<button class="sm" data-person="${x.people[0]}">Atvērt</button>` : ''}</div>`).join('')}</div>`
+      : `<p class="okc"><b>✓ Datu fails ir kārtībā.</b> Dublēti identifikatori un nesaistīti ieraksti nav atrasti.</p>`}
+      <div class="actions" style="margin-top:10px"><button class="sm" data-act="healthRun">${ic('refresh')}Pārbaudīt vēlreiz</button>${fixable ? `<button class="sm mainbtn" data-act="healthFix">${ic('check')}Izlabot drošās kļūdas</button>` : ''}
+        <span class="small muted">Pārbaudīts ${esc(U.fmtDateTime(r.at))}</span></div>`;
+  };
+  function card() {
+    const at = S.db?.settings?.restoreCheckAt, days = at ? Math.floor((Date.now() - new Date(at)) / 864e5) : null;
+    return `<section class="card" id="healthCard"><h3>${ic('shield')}Datu veselība un kopiju pārbaude</h3>
+      <p class="small">Rīks, atverot datu mapi, pats pārbauda datu failu: vai nav dublētu identifikatoru un ierakstu, kas norāda uz izdzēstām personām vai neesošiem gadiem. Labošana maina tikai šīs atsauces — pirms tam tiek izveidota JSON kopija.</p>
+      <div id="healthBox">${healthHtml()}</div>
+      <h4>Vai rezerves kopiju var atjaunot?</h4>
+      <p class="small">Pēdējā pārbaude: <b>${at ? `${esc(U.fmtDate(at))} (${days ? 'pirms ' + plural(days, 'dienas', 'dienām') : 'šodien'})` : 'vēl nav veikta'}</b>. Reizi mēnesī rīks atgādina pārbaudīt jaunāko kopiju — tā tiek nolasīta un sagatavota tāpat kā atjaunojot, bet tavi dati netiek mainīti.</p>
+      <div class="actions"><button class="sm" data-act="restoreCheck">${ic('refresh')}Pārbaudīt jaunāko kopiju</button></div></section>`;
+  }
+  const repaint = () => { const b = U.$('healthBox'); if (b) b.innerHTML = healthHtml(); };
+  A.healthRun = () => { run(); repaint(); ui.toast(last.issues.length ? `Atrastas ${plural(last.issues.length, 'piezīme', 'piezīmes')}` : '✓ Datu fails ir kārtībā', last.issues.some(x => x.sev) ? 'warn' : 'ok'); };
+  const closeNotice = () => { const n = U.$('noticeDialog'); if (n?.open) n.close(); };
+  A.healthOpen = () => { closeNotice(); run(); ui.goSettingsCard('healthCard'); };
+  A.rcBackup = () => { U.$('restoreDialog')?.close(); return A.backupNow(); };
+  A.healthFix = async () => {
+    const xs = check().filter(x => x.fix); if (!xs.length) return ui.toast('Nav ko labot', 'ok');
+    if (!confirm(`Izlabot:\n• ${xs.map(x => x.msg).join('\n• ')}\n\nPirms tam tiks izveidota JSON rezerves kopija. Dokumenti, ekipējums un personas netiek dzēsti.`)) return;
+    const b = await CP.store.backupNow(); if (!b?.ok) return ui.toast('Kopiju neizdevās izveidot — labošana netika veikta', 'err');
+    const done = fix(); S.db.audit.push({ id: U.uid(), personId: null, at: U.now(), action: 'health-fix', fields: done }); CP.store.changed();
+    run(); repaint(); ui.toast('Izlabots: ' + (done.join('; ') || 'nekas'), 'ok', 9000);
+  };
+  CP.noRootOk && (() => { const o = CP.noRootOk; CP.noRootOk = a => a === 'healthOpen' || a === 'healthRun' || o(a); })();
+
+  /* ---------------- Atjaunošanas pārbaude ---------------- */
+  A.restoreCheck = async () => {
+    closeNotice();
+    if (!S.root) return CP.needRoot?.();
+    let list = await CP.store.listBackups();
+    if (!list.length) {
+      if (!confirm('Datu mapē vēl nav nevienas JSON rezerves kopijas. Izveidot to tagad un pārbaudīt?')) return;
+      const b = await CP.store.backupNow(); if (!b?.ok) return;
+      list = await CP.store.listBackups(); if (!list.length) return ui.toast('Kopija netika atrasta', 'err');
+    }
+    const name = list[0].name;
+    let r; try { r = await CP.store.testRestore(name); } catch (e) { r = { ok: false, error: e.message }; }
+    if (r.ok) { S.db.settings.restoreCheckAt = U.now(); CP.store.changed({ silent: true }); }
+    showRestore(name, list[0], r);
+    if (S.page === 'settings') { const c = U.$('healthCard'); if (c) c.outerHTML = card(); }
+  };
+  function showRestore(name, meta, r) {
+    let d = U.$('restoreDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'restoreDialog'; document.body.appendChild(d); }
+    const cur = S.db, cnt = db => ({ people: db.people.length, documents: (db.documents || []).length, events: (db.events || []).length, sessions: (db.sessions || []).length, equipment: (db.equipment || []).length });
+    const now = cnt(cur), age = Math.floor((Date.now() - meta.modified) / 864e5);
+    const rows = r.ok ? [['Personas', 'people'], ['Dokumentu ieraksti', 'documents'], ['Pasākumi', 'events'], ['Nodarbības', 'sessions'], ['Ekipējums', 'equipment']].map(([l, k]) => `<tr><td>${l}</td><td>${r.counts[k]}</td><td>${now[k]}</td></tr>`).join('') : '';
+    const behind = r.ok && (r.counts.people < now.people || age > 7);
+    d.innerHTML = `<form method="dialog"><header class="dlg-head"><h2>${ic(r.ok ? 'check' : 'alert')}${r.ok ? 'Kopiju var atjaunot' : 'Kopiju NEVAR atjaunot'}</h2><button class="ghost" value="x" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body"><p class="small">Pārbaudīta jaunākā kopija <b>${esc(name)}</b> (${esc(U.fmtDateTime(new Date(meta.modified).toISOString()))}, ${Math.round(meta.size / 1024)} KB).</p>
+      ${r.ok ? `<p class="okc"><b>✓ Kopija ir nolasāma un derīga.</b> Tā tika sagatavota tāpat kā atjaunojot (datu versija ${esc(r.version)} → ${esc(CP.SCHEMA)}). Tavi pašreizējie dati netika mainīti.</p>
+        <table class="table small"><thead><tr><th></th><th>Kopijā</th><th>Tagad</th></tr></thead><tbody>${rows}</tbody></table>
+        ${behind ? `<p class="hint warn" style="margin-top:8px">Kopija ir ${age ? `${plural(age, 'dienu', 'dienas')} veca` : 'veca'}${r.counts.people < now.people ? ' un tajā ir mazāk personu nekā tagad' : ''} — ieteicams izveidot jaunu kopiju.</p>` : ''}`
+      : `<p class="hint warn"><b>Kļūda:</b> ${esc(r.error || 'nezināma')}</p><p class="small">Izveido jaunu kopiju tagad. Ja kļūda atkārtojas, ziņo izstrādātājam (sadaļa “Ziņot”) — kopijas saturu nesūti.</p>`}</div>
+      <footer class="dlg-foot"><span class="grow"></span>${!r.ok || behind ? '<button type="button" data-act="rcBackup">Izveidot jaunu kopiju</button>' : ''}<button class="mainbtn" value="ok">Labi</button></footer></form>`;
+    if (!d.open) d.showModal();
+  }
+  // Ikmēneša atgādinājums: brīdinājumu sarakstā un vienreiz sesijā — paziņojums
+  { const orig = D.alerts; D.alerts = () => { const out = orig(); if (S.root && S.db) { const at = S.db.settings.restoreCheckAt, days = at ? (Date.now() - new Date(at)) / 864e5 : Infinity; if (days > RESTORE_DAYS) out.push({ kind: 'backup', sev: 0, msg: at ? `Rezerves kopijas atjaunošana pārbaudīta pirms ${Math.floor(days)} dienām — pārbaudi, vai jaunāko kopiju var atjaunot` : 'Pārbaudi, vai rezerves kopiju var atjaunot (ieteicams reizi mēnesī)', act: 'restoreCheck', actLabel: 'Pārbaudīt', quiet: true }); }
+    const h = last?.issues?.filter(x => x.sev) || []; if (h.length) out.push({ kind: 'backup', sev: 1, msg: `Datu veselības pārbaude: ${h[0].msg}${h.length > 1 ? ` (+${h.length - 1})` : ''}`, act: 'healthOpen', actLabel: 'Skatīt', quiet: true });
+    return out; }; }
+  CP.afterRootLoad = CP.afterRootLoad || []; CP.afterRootLoad.push(() => setTimeout(() => {
+    if (!S.db) return;
+    run(); const bad = last.issues.filter(x => x.sev);
+    if (bad.length) ui.toast(`Datu veselības pārbaude atrada ${plural(bad.length, 'problēmu', 'problēmas')}`, 'warn', 12000, { act: 'healthOpen', label: 'Skatīt' });
+    const at = S.db.settings.restoreCheckAt;
+    if (!bad.length && (!at || Date.now() - new Date(at) > RESTORE_DAYS * 864e5) && !sessionStorage.getItem('cp.rcTold')) {
+      try { sessionStorage.setItem('cp.rcTold', '1'); } catch (e) { /* */ }
+      ui.toast('Reizi mēnesī ieteicams pārbaudīt, vai rezerves kopiju var atjaunot', 'info', 12000, { act: 'restoreCheck', label: 'Pārbaudīt tagad' });
+    }
+    if (S.page === 'alerts' || S.page === 'dashboard') CP.render();
+  }, 2500));
+  CP.health = { check, fix, run, card, last: () => last };
+})(window.CP);
+
+
+/* ==== js/yearend.js ==== */
+/* =====================================================================
+   Mācību gada noslēguma vednis (TESTA KANĀLS).
+   Atver: gada izvēlne → “Noslēgt mācību gadu…”, Iestatījumi → Mācību gadi, meklēšana/palīgs.
+   Soļi: 1) trūkstošie dokumenti → 2) neatdotais ekipējums → 3) kopsavilkumi visiem →
+         4) nākamais gads un kas turpina → 5) rezerves kopija → 6) pāreja uz jauno gadu.
+   Nekas netiek darīts automātiski — katrs solis izmanto esošās rīka funkcijas.
+   Progress: settings.yearEnd[gadaId] = { done: { solis: laiks }, at }.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  if (CP.CHANNEL !== 'test') return;
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, ic = (n, f = '') => CP.ic(n, f);
+  const plural = (n, a, b) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? a : b}`;
+  let step = 0, Y = '';
+  const nextOf = y => { const m = /^(\d{4})-\d{4}$/.exec(y); return m ? U.yearId(+m[1] + 1) : ''; };
+  const st = () => { const s = S.db.settings; s.yearEnd = s.yearEnd || {}; return (s.yearEnd[Y] = s.yearEnd[Y] || { done: {} }); };
+  const roster = () => D.peopleInYear(Y).filter(p => p.status !== 'archived' && !p.anon).sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
+
+  /* --- Soļu dati --- */
+  const missing = () => roster().map(p => ({ p, m: D.missingDocs(p) })).filter(x => x.m.length);
+  const openEq = () => (S.db.equipment || []).filter(e => !e.returned && !e.keep && D.inYear(D.person(e.personId), Y));
+  const STEPS = [
+    { k: 'docs', t: 'Trūkstošie dokumenti', i: 'file', auto: () => !missing().length },
+    { k: 'eq', t: 'Neatdotais ekipējums', i: 'backpack', auto: () => !openEq().length },
+    { k: 'sum', t: 'Kopsavilkumi', i: 'chart', auto: () => false },
+    { k: 'move', t: 'Nākamais gads', i: 'users', auto: () => !!D.yearById(nextOf(Y)) && D.peopleInYear(nextOf(Y)).length > 0 },
+    { k: 'backup', t: 'Rezerves kopija', i: 'save', auto: () => false },
+    { k: 'finish', t: 'Pāreja uz jauno gadu', i: 'check', auto: () => D.activeYear() !== Y },
+  ];
+  const isDone = s => !!st().done[s.k] || s.auto();
+
+  function body(s) {
+    const nx = nextOf(Y), hasNx = !!D.yearById(nx);
+    const mark = `<label class="check ye-mark"><input type="checkbox" data-yemark="${s.k}" ${st().done[s.k] ? 'checked' : ''}> Atzīmēt šo soli kā izdarītu</label>`;
+    const pRow = (p, txt, tab) => `<div class="row"><div class="grow"><b>${esc(U.sortName(p))}</b> <small class="muted">${esc(D.groupOf(p, Y) || '')}</small><div class="small">${esc(txt)}</div></div><button type="button" class="sm" data-act="yeRun" data-arg="@person|${p.id}|${tab}">Atvērt</button></div>`;
+    if (s.k === 'docs') {
+      const xs = missing();
+      return `<p>Pārbaudi, vai visiem šī gada jaunsargiem ir obligātie dokumenti (${esc((S.db.settings.requiredDocs || []).join(', ') || 'nav norādīti')}). Gada beigās tas ir vienkāršāk nekā rudenī.</p>
+        ${xs.length ? `<p class="hint warn">${plural(xs.length, 'personai', 'personām')} trūkst dokumentu.</p><div class="ye-list">${xs.map(x => pRow(x.p, 'Trūkst: ' + x.m.join(', '), 'docs').replace('</div><button', `</div><button type="button" class="sm ghost" data-act="yeRun" data-arg="remindDocs|${x.p.id}" title="Sagatavot atgādinājumu vecākiem">Atgādināt</button><button`)).join('')}</div>`
+        : '<p class="okc"><b>✓ Visiem ir obligātie dokumenti.</b></p>'}
+        <div class="actions"><button type="button" class="sm" data-act="yeRun" data-arg="@page|documents">Atvērt Dokumentus</button></div>${mark}`;
+    }
+    if (s.k === 'eq') {
+      const xs = openEq(), by = new Map(); for (const e of xs) { if (!by.has(e.personId)) by.set(e.personId, []); by.get(e.personId).push(e); }
+      return `<p>Ekipējums, kas izsniegts šī gada dalībniekiem un vēl nav atdots. Ja jaunsargs turpina un patur ekipējumu, ierakstā atzīmē “Patur”.</p>
+        ${xs.length ? `<p class="hint warn">${plural(xs.length, 'priekšmets', 'priekšmeti')} pie ${plural(by.size, 'personas', 'personām')}.</p><div class="ye-list">${[...by].map(([pid, es]) => pRow(D.person(pid), es.map(e => e.item + (Number(e.qty) > 1 ? ' ×' + e.qty : '')).join(', '), 'equipment')).join('')}</div>`
+        : '<p class="okc"><b>✓ Viss ekipējums ir atdots vai atzīmēts kā paturēts.</b></p>'}
+        <div class="actions"><button type="button" class="sm" data-act="yeRun" data-arg="@page|equipment">Atvērt Ekipējumu</button></div>${mark}`;
+    }
+    if (s.k === 'sum') {
+      const n = roster().length, have = (S.db.documents || []).filter(d => d.kind === 'Kopsavilkums' && d.yearId === Y).length;
+      return `<p>Jaunsarga kopsavilkums ir PDF ar gada rādītājiem (apmeklējums, pasākumi, kvalifikācijas, VFS) un tavu komentāru. Katrai personai tiek izveidots savs fails un saglabāts viņa dokumentu mapē; visi kopā — ZIP failā.</p>
+        <p class="small muted">Šajā gadā jau ${plural(have, 'saglabāts kopsavilkums', 'saglabāti kopsavilkumi')}.</p>
+        <div class="actions"><button type="button" class="mainbtn" data-act="yeRun" data-arg="sumNew|*" ${n ? '' : 'disabled'}>${ic('chart')}Izveidot kopsavilkumus visiem (${n})</button></div>${mark}`;
+    }
+    if (s.k === 'move') {
+      const nIn = hasNx ? D.peopleInYear(nx).length : 0;
+      return `<p>Nākamais mācību gads ir <b>${esc(U.yearLabel(nx))}</b>. ${hasNx ? `Tas jau ir izveidots; tajā ir ${plural(nIn, 'dalībnieks', 'dalībnieki')}.` : 'Tas vēl nav izveidots.'}</p>
+        <p class="small">Pārcelšanas logā atzīmē, kuri jaunsargi turpina. Pārējos var uzreiz pārvietot uz arhīvu — viņu dati paliek un tos var atjaunot. Profili, dokumenti un ekipējums netiek pārvietoti — mainās tikai dalība gadā.</p>
+        <div class="actions">${hasNx ? '' : `<button type="button" class="mainbtn" data-act="yeAddNext">${ic('plus')}Izveidot ${esc(U.yearSlash(nx))}</button>`}
+          <button type="button" class="${hasNx ? 'mainbtn' : ''}" data-act="yeRun" data-arg="@move" ${hasNx ? '' : 'disabled'}>${ic('users')}Izvēlēties, kas turpina</button></div>${mark}`;
+    }
+    if (s.k === 'backup') {
+      const e = CP.encBackup?.card ? '<p class="small muted">Ja ir iestatīta šifrētā kopija (Google Drive vai cita mape), to var atjaunot Iestatījumos → Drošība.</p>' : '';
+      return `<p>Pirms pārejas uz jauno gadu izveido rezerves kopiju — tā saglabā gada beigu stāvokli. Pēc tam rīks pārbauda, vai kopiju var atjaunot.</p>${e}
+        <div class="actions"><button type="button" class="mainbtn" data-act="yeBackup">${ic('save')}Izveidot un pārbaudīt kopiju</button></div>${mark}`;
+    }
+    const left = STEPS.slice(0, 5).filter(x => !isDone(x));
+    return `<p>${D.activeYear() !== Y ? `✓ Rīkā jau izvēlēts ${esc(U.yearLabel(D.activeYear()))}.` : `Pārslēdzot uz <b>${esc(U.yearLabel(nx))}</b>, sarakstos būs redzami nākamā gada dalībnieki. Iepriekšējā gada dati paliek — tos var atvērt gada izvēlnē jebkurā laikā.`}</p>
+      ${left.length ? `<p class="hint warn">Vēl nav izdarīts: ${left.map(x => esc(x.t)).join(', ')}. To var izdarīt arī vēlāk.</p>` : '<p class="okc"><b>✓ Visi soļi izdarīti.</b></p>'}
+      <div class="actions"><button type="button" class="mainbtn" data-act="yeFinish" ${hasNx && D.activeYear() === Y ? '' : 'disabled'}>${ic('check')}Pārslēgties uz ${esc(U.yearSlash(nx))}</button></div>`;
+  }
+  function draw() {
+    let d = U.$('yeDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'yeDialog'; d.className = 'wide'; document.body.appendChild(d); }
+    const s = STEPS[step], nDone = STEPS.filter(isDone).length;
+    d.innerHTML = `<form method="dialog"><header class="dlg-head"><h2>${ic('calendar')}Mācību gada noslēgums — ${esc(U.yearSlash(Y))}</h2><button class="ghost" value="x" aria-label="Aizvērt">✕</button></header>
+      <div class="dlg-body ye">
+        <ol class="ye-steps">${STEPS.map((x, i) => `<li><button type="button" class="${i === step ? 'on' : ''} ${isDone(x) ? 'done' : ''}" data-act="yeStep" data-arg="${i}"><span class="ye-n">${isDone(x) ? '✓' : i + 1}</span>${esc(x.t)}</button></li>`).join('')}</ol>
+        <div class="ye-body"><h3>${ic(s.i)}${step + 1}. ${esc(s.t)}</h3>${body(s)}</div>
+      </div>
+      <footer class="dlg-foot"><span class="small muted">Izdarīti ${nDone} no ${STEPS.length} soļiem · progress tiek saglabāts</span><span class="grow"></span>
+        <button type="button" data-act="yeStep" data-arg="${step - 1}" ${step ? '' : 'disabled'}>← Atpakaļ</button>
+        ${step < STEPS.length - 1 ? `<button type="button" class="mainbtn" data-act="yeStep" data-arg="${step + 1}">Tālāk →</button>` : '<button class="mainbtn" value="ok">Aizvērt</button>'}</footer></form>`;
+    if (!d.open) d.showModal();
+  }
+  A.yearEnd = arg => {
+    U.$('yearMenu')?.classList.add('hidden');
+    if (!S.db) return;
+    const ny = /^\d{4}-\d{4}$/.test(arg || '') && D.yearById(arg) ? arg : D.activeYear();
+    if (ny !== Y) { Y = ny; const i = STEPS.findIndex(x => !isDone(x)); step = i < 0 ? STEPS.length - 1 : i; }   // tas pats gads — paliek tajā pašā solī
+    st().at = st().at || U.now();
+    draw();
+  };
+  A.yeStep = i => { step = Math.max(0, Math.min(STEPS.length - 1, Number(i) || 0)); draw(); };
+  const save = () => CP.store.changed({ silent: true });
+  CP.changeHandlers.push(e => {
+    const k = e.target.dataset?.yemark; if (!k) return false;
+    if (e.target.checked) st().done[k] = U.now(); else delete st().done[k];
+    save(); draw(); return true;
+  });
+  /** Iziet no vedņa uz rīka funkciju; paziņojumā — poga atgriezties */
+  A.yeRun = arg => {
+    const [a, x, y] = String(arg || '').split('|');
+    U.$('yeDialog')?.close();
+    if (a === '@person') ui.go('person', { person: x, tab: y || 'overview' });
+    else if (a === '@page') ui.go(x);
+    else if (a === '@move') { A.openMove(Y, nextOf(Y)); }
+    else if (A[a]) { if (a === 'sumNew') { st().done.sum = U.now(); save(); } A[a](x); }
+    ui.toast('Gada noslēguma vednis ir aizvērts', 'info', 15000, { act: 'yearEnd', arg: Y + '', label: 'Atpakaļ uz vedni' });
+  };
+  A.yeAddNext = async () => {
+    const nx = nextOf(Y); if (!nx || D.yearById(nx)) return draw();
+    S.db.years.push({ id: nx, start: Number(nx.slice(0, 4)), createdAt: U.now() });
+    S.db.years.sort((a, b) => a.start - b.start);
+    S.db.settings.yearsDeleted = (S.db.settings.yearsDeleted || []).filter(z => z !== nx);
+    CP.store.changed({ silent: true });
+    if (S.root) { try { await CP.store.ensureYearFolders(); } catch (e) { ui.toast('Gada mapes neizdevās izveidot: ' + e.message, 'warn'); } }
+    ui.toast(`${U.yearLabel(nx)} ir izveidots`, 'ok'); draw();
+  };
+  A.yeBackup = async () => {
+    const r = await CP.store.backupNow(); if (!r?.ok) return;
+    let t = null; try { const list = await CP.store.listBackups(); if (list[0]) t = await CP.store.testRestore(list[0].name); } catch (e) { t = { ok: false, error: e.message }; }
+    if (t?.ok) { st().done.backup = U.now(); S.db.settings.restoreCheckAt = U.now(); save(); ui.toast('✓ Kopija izveidota un pārbaudīta — to var atjaunot', 'ok', 8000); }
+    else ui.toast('Kopija izveidota, bet pārbaude neizdevās: ' + (t?.error || 'nav atrasta'), 'err', 12000);
+    draw();
+  };
+  A.yeFinish = () => {
+    const nx = nextOf(Y); if (!D.yearById(nx)) return;
+    st().done.finish = U.now(); A.setYear(nx); draw();
+  };
+  CP.yearEnd = { open: A.yearEnd, STEPS, state: () => st() };
+})(window.CP);
+
+
+/* ==== js/assist.js ==== */
+/* =====================================================================
+   Meklēšana pa visu rīku un palīgs (TESTA KANĀLS).
+   • Ctrl+K vai poga “Meklēt” augšējā joslā atver meklēšanas logu.
+   • Atrod personas, dokumentus, pasākumus, sagatavotās veidlapas, sadaļas, iestatījumus un darbības.
+   • Palīgs: jautājumi brīvā tekstā (“kā pievienot personu?”) — atbilde no rīka iebūvētās pamācības
+     un poga “Aiziet”, kas aizved uz īsto vietu. Darbojas bez interneta, nekas netiek sūtīts.
+     Tas NAV mākslīgais intelekts: atbildes ir iepriekš uzrakstītas, meklēšana — pēc atslēgvārdiem.
+   ===================================================================== */
+(function (CP) {
+  'use strict';
+  if (CP.CHANNEL !== 'test') return;
+  const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, ic = (n, f = '') => CP.ic(n, f);
+
+  /* --- Darbības palaišana tāpat kā pogām (data-act) --- */
+  const act = (name, arg) => () => {
+    const fn = A[name]; if (!fn) return;
+    if (!S.root && !CP.noRootOk(name)) { CP.needRoot(); return; }
+    CP.analytics?.act(name);
+    Promise.resolve().then(() => fn(arg)).catch(err => { console.error(err); ui.toast('Kļūda: ' + err.message, 'err'); });
+  };
+  const page = p => () => { if (p === 'people' && S.list?.status === 'archived') S.list.status = 'current'; ui.go(p); };
+  const card = id => () => ui.goSettingsCard(id);
+  const person = (id, tab) => () => ui.go('person', { person: id, tab: tab || 'overview' });
+
+  /* --- Sadaļas un iestatījumi --- */
+  const PAGES = [
+    ['dashboard', 'Pārskats', 'grid', 'sakums galvenais kopskats statistika'],
+    ['people', 'Personas', 'users', 'jaunsargi saraksts kandidati'],
+    ['comms', 'Saziņa', 'message', 'whatsapp sms epasts zinas vecakiem nosutit'],
+    ['schedule', 'Grafiks', 'calendar', 'kalendars nodarbibu laiki google kalendars'],
+    ['attendance', 'Apmeklējums', 'userCheck', 'nodarbibas zurnals apmekletiba kvalifikacijas'],
+    ['vfs', 'VFS testi', 'award', 'fiziska sagatavotiba normativi nozimites sports'],
+    ['forms', 'Veidlapas', 'clipboard', 'instruktaza nometne zurnals veidne pasakums'],
+    ['documents', 'Dokumenti', 'file', 'faili mapes anketas ligumi'],
+    ['equipment', 'Ekipējums', 'backpack', 'formastērps izsniegt atdot inventars'],
+    ['alerts', 'Uzdevumi un brīdinājumi', 'bell', 'termini atgadinajumi dzimsanas dienas'],
+    ['archive', 'Arhīvs', 'archive', 'arhivetie bijusie'],
+    ['quality', 'Datu kvalitāte', 'check', 'trukstosi dati labot papildinat'],
+    ['changes', 'Darbību žurnāls', 'list', 'izmainas vesture kas mainits atsaukt'],
+    ['retention', 'Glabāšanas termiņi', 'archive', 'dzest vecus datus glabasana'],
+    ['feedback', 'Ziņot izstrādātājam', 'flag', 'kluda ieteikums atsauksme'],
+    ['about', 'Par rīku', 'info', 'pamaciba ka sakt versija privatums'],
+    ['settings', 'Iestatījumi', 'sliders', 'iestatijumi konfiguracija'],
+  ].map(([p, l, i, kw]) => ({ g: 'Sadaļas', l, i, kw, run: page(p) }));
+  const CARDS = [
+    ['unitCard', 'Vienības nosaukums un logo', 'flag', 'logo vienibas nosaukums'],
+    ['yearsCard', 'Mācību gadi', 'calendar', 'gads jauns macibu gads parcelt'],
+    ['dataCard', 'Datu glabāšana un rezerves kopijas', 'save', 'rezerves kopija backup json datu mape arhivs'],
+    ['encCard', 'Šifrētā rezerves kopija', 'lock', 'sifreta kopija google drive parole'],
+    ['lockCard', 'Ekrāna bloķēšana ar PIN', 'lock', 'pin bloket parole aizslegt'],
+    ['healthCard', 'Datu veselības pārbaude', 'shield', 'veseliba parbaude bojati dati integritate'],
+    ['docsCard', 'Dokumentu kategorijas un obligātie dokumenti', 'file', 'obligatie dokumenti kategorijas derigums'],
+    ['commsCard', 'Saziņas iestatījumi', 'message', 'whatsapp valsts kods sablons'],
+    ['permsCard', 'Atļaujas un statistika', 'shield', 'atlaujas sikdatnes statistika analitika'],
+  ].map(([id, l, i, kw]) => ({ g: 'Iestatījumi', l, i, kw, run: card(id) }));
+  const ACTIONS = [
+    ['Pievienot personu', 'userPlus', 'jauns jaunsargs pievienot cilveku kandidats', 'addPerson'],
+    ['Ievadīt anketu (nolasīt no attēla vai faila)', 'scan', 'anketa skenet nolasit ocr', 'scan'],
+    ['Imports no Excel / CSV', 'upload', 'imports excel csv e klase saraksts', 'import'],
+    ['Jaunsarga kopsavilkums (PDF)', 'chart', 'kopsavilkums atskaite pdf raksturojums', 'sumNew'],
+    ['Sava veidlapa (aizpildīt no Word veidnes)', 'clipboard', 'veidlapa word docx aizpildit veidne', 'cfNew'],
+    ['Jauna drošības instruktāža', 'clipboard', 'instruktaza drosiba pasakums', 'formNew', 'instr'],
+    ['Jauns nometnes žurnāls', 'clipboard', 'nometne zurnals', 'formNew', 'camp'],
+    ['Jauna nodarbība (apmeklējums)', 'userCheck', 'nodarbiba apmekletiba atzimet', 'sessNew'],
+    ['Izsniegt ekipējumu', 'backpack', 'izsniegt ekipejums forma', 'addEq'],
+    ['Jauns VFS tests', 'award', 'vfs tests normativi', 'vfsNew'],
+    ['Izveidot JSON rezerves kopiju tagad', 'save', 'rezerves kopija backup saglabat', 'backupNow'],
+    ['Pārbaudīt, vai rezerves kopiju var atjaunot', 'refresh', 'atjaunot kopiju parbaudit restore', 'restoreCheck'],
+    ['Pārbaudīt datu veselību', 'shield', 'veseliba parbaude datu fails bojats', 'healthOpen'],
+    ['Mācību gada noslēgums (vednis)', 'calendar', 'gada nosleguma vednis beigas noslegt gadu jauns gads', 'yearEnd'],
+    ['Pievienot mācību gadu', 'calendar', 'jauns macibu gads', 'openAddYear'],
+    ['Pārcelt dalībniekus uz citu gadu', 'calendar', 'parcelt nakamais gads', 'openMove'],
+    ['Bloķēt ekrānu', 'lock', 'bloket aizslegt pin', 'lockNow'],
+    ['Saglabāt', 'save', 'saglabat', 'save'],
+  ].map(([l, i, kw, a, arg]) => ({ g: 'Darbības', l, i, kw, run: act(a, arg), need: a }));
+
+  /* --- Palīga zināšanu bāze: jautājums → īsa atbilde + kur aiziet --- */
+  const HELP = [
+    { t: 'Kā pievienot jaunu personu?', kw: 'pievienot jauns persona jaunsargs kandidats cilveks izveidot ievadit', a: 'Sānjoslā spied “＋ Persona” (vai Personas → “＋ Pievienot”). Var ievadīt ar roku, nolasīt anketu no attēla/faila vai pārņemt no citas vienības faila.', go: ['Pievienot personu', act('addPerson')] },
+    { t: 'Kā nolasīt anketu no attēla vai Word faila?', kw: 'anketa nolasit skenet foto attels ocr word pdf atpazit', a: 'Sānjoslā “Ievadīt anketu”: ievelc anketas failu vai fotogrāfiju. Atpazītie lauki parādās pārbaudes logā — kartītē nonāk tikai tas, ko apstiprini.', go: ['Atvērt anketu ievadi', act('scan')] },
+    { t: 'Kā importēt sarakstu no Excel vai e-klases?', kw: 'imports excel csv eklase saraksts ielādēt daudz personu tabula', a: 'Sānjoslā “Imports”: izvēlies Excel/CSV failu, piesaisti kolonnas laukiem un pārbaudi priekšskatījumu. Esošās personas tiek atpazītas un netiek dublētas.', go: ['Atvērt importu', act('import')] },
+    { t: 'Kā pievienot personai dokumentu?', kw: 'dokuments pievienot fails pieteikums ligums atlauja augšupielādēt piesaistit', a: 'Atver personas kartiņu → cilne “Dokumenti” → ievelc failu vai spied “＋ Pievienot”. Fails tiek nokopēts personas mapē datu mapē, oriģināls netiek mainīts.', go: ['Atvērt Dokumentus', page('documents')] },
+    { t: 'Kur redzēt, kam trūkst dokumentu?', kw: 'trukst dokumenti trukstosi obligatie nav iesniegts', a: 'Pārskatā ir kartīte “Trūkst dokumentu”, bet Dokumentu sadaļā — pilns saraksts. Kuri dokumenti ir obligāti, nosaka Iestatījumi → Dokumenti.', go: ['Atvērt Dokumentus', page('documents')] },
+    { t: 'Kā atzīmēt nodarbības apmeklējumu?', kw: 'apmeklejums atzimet nodarbiba klatbutne kavejums zurnals', a: 'Apmeklējums → izvēlies grupu un mēnesi, spied uz šūnas (+ ir klāt, n — nav, a — attaisnots). Jaunu nodarbību pievieno ar “＋ Nodarbība”.', go: ['Atvērt Apmeklējumu', page('attendance')] },
+    { t: 'Kā sagatavot drošības instruktāžu pasākumam?', kw: 'instruktaza drosiba pasakums parakstu lapa sagatavot', a: 'Veidlapas → “Instruktāža”: izvēlies dalībniekus, datumu un vadītāju — rīks sagatavo parakstu lapu PDF formātā. Var izmantot arī savu Word veidni.', go: ['Jauna instruktāža', act('formNew', 'instr')] },
+    { t: 'Kā sagatavot nometnes žurnālu?', kw: 'nometne zurnals sagatavot nometnes', a: 'Veidlapas → “Nometnes žurnāls”: dalībnieki, audzinātāji, datumi. Rīks aizpilda žurnālu un saglabā to datu mapē.', go: ['Jauns nometnes žurnāls', act('formNew', 'camp')] },
+    { t: 'Kā izmantot savu Word veidlapu?', kw: 'sava veidlapa word docx veidne atzimes vietturi aizpildit', a: 'Veidlapas → “Ielādēt veidni” → “Sava veidlapa”. Veidnē ieraksti atzīmes, piemēram, {Vārds} {Uzvārds} — sarakstu redzi pogā “Pieejamās atzīmes”. Atzīmes var ielikt arī rīka redaktorā (poga “Rediģēt”).', go: ['Sava veidlapa', act('cfNew')] },
+    { t: 'Kā izveidot jaunsarga kopsavilkumu?', kw: 'kopsavilkums raksturojums atskaite pdf jaunsargs gads', a: 'Personas kartiņā ⋯ → “Kopsavilkums” vienai personai, vai Veidlapās vairākām uzreiz — katrai personai savs PDF (vairākām — ZIP failā).', go: ['Izveidot kopsavilkumu', act('sumNew')] },
+    { t: 'Kā nosūtīt ziņu vecākiem vai grupai?', kw: 'zina nosutit vecakiem whatsapp sms epasts grupa sazina', a: 'Saziņa → izvēlies personas vai grupu un veidni. Rīks atver WhatsApp/e-pastu ar sagatavotu tekstu — nosūti pats.', go: ['Atvērt Saziņu', page('comms')] },
+    { t: 'Kā izsniegt vai saņemt atpakaļ ekipējumu?', kw: 'ekipejums izsniegt atdot sanemt formasterps inventars', a: 'Ekipējums → “＋ Izsniegt” (persona, priekšmets, daudzums). Kad atdod, ierakstā spied “Atdots”.', go: ['Atvērt Ekipējumu', page('equipment')] },
+    { t: 'Kā pārcelt jaunsargus uz nākamo mācību gadu?', kw: 'parcelt nakamais macibu gads jauns gads turpina', a: 'Labākais ceļš — mācību gada noslēguma vednis: tas palīdz pārbaudīt dokumentus un ekipējumu, izveidot kopsavilkumus, pārcelt dalībniekus un izveidot rezerves kopiju.', go: ['Atvērt vedni', act('yearEnd')] },
+    { t: 'Kā noslēgt mācību gadu?', kw: 'nosleguma vednis noslegt gadu beigas gada beigas vasara', a: 'Mācību gada noslēguma vednis soli pa solim: trūkstošie dokumenti → neatdotais ekipējums → kopsavilkumi → kas turpina nākamajā gadā → rezerves kopija → pārslēgšanās uz jauno gadu.', go: ['Atvērt vedni', act('yearEnd')] },
+    { t: 'Kā izveidot rezerves kopiju?', kw: 'rezerves kopija backup saglabat kopija json', a: 'Iestatījumi → Drošība → “Izveidot JSON kopiju”. Kopijas glabājas datu mapes apakšmapē _rezerves. Šifrētu kopiju var glabāt arī Google Drive.', go: ['Atvērt datu glabāšanu', card('dataCard')] },
+    { t: 'Kā pārbaudīt, vai rezerves kopiju var atjaunot?', kw: 'parbaudit kopiju atjaunot restore vai strada kopija derīga', a: 'Rīks reizi mēnesī atgādina to pārbaudīt. Pārbaude atver jaunāko kopiju, pārbauda to un salīdzina ar pašreizējiem datiem — tavi dati netiek mainīti.', go: ['Pārbaudīt tagad', act('restoreCheck')] },
+    { t: 'Kā atjaunot datus no rezerves kopijas?', kw: 'atjaunot datus no kopijas pazudusi dati restore atgriezt', a: 'Iestatījumi → Drošība → “Rezerves kopijas” → pie vajadzīgās kopijas “Atjaunot”. Pirms atjaunošanas rīks pats saglabā arī pašreizējo stāvokli.', go: ['Atvērt rezerves kopijas', card('dataCard')] },
+    { t: 'Kā pārbaudīt, vai datu fails nav bojāts?', kw: 'datu veseliba bojats fails parbaude kludas integritate', a: 'Datu veselības pārbaude meklē dublētus identifikatorus un ierakstus, kas norāda uz neesošām personām vai gadiem. Tā notiek automātiski, atverot datu mapi; drošos labojumus var izdarīt ar vienu pogu (pirms tam tiek izveidota kopija).', go: ['Atvērt pārbaudi', act('healthOpen')] },
+    { t: 'Kā mainīt datu mapi vai pārnest datus uz citu datoru?', kw: 'datu mape mainit cits dators parnest usb kopēt', a: 'Iestatījumi → Drošība → “Mainīt datu mapi”. Uz citu datoru pārnes visu datu mapi (piem., ar USB) un tur to izvēlies rīkā.', go: ['Atvērt datu glabāšanu', card('dataCard')] },
+    { t: 'Kā ielikt vienības logo un nosaukumu?', kw: 'logo vienibas nosaukums ielikt galvene', a: 'Iestatījumi → Pamata → “Vienība”. Logo redzams rīka augšējā joslā un — pēc izvēles — neoficiālos rīka failos (kopā ar CADET.LV logo). Oficiālajās veidlapās logo netiek likts.', go: ['Atvērt vienības iestatījumus', card('unitCard')] },
+    { t: 'Kā aizsargāt rīku ar PIN kodu?', kw: 'pin parole bloket aizsargat ekrans aizslegt', a: 'Iestatījumi → Drošība → “Ekrāna bloķēšana”: iestati PIN. Rīks bloķējas pēc neaktivitātes vai ar pogu.', go: ['Atvērt bloķēšanu', card('lockCard')] },
+    { t: 'Kur ir arhivētās personas?', kw: 'arhivs arhivetie bijusie izstajusies atjaunot personu', a: 'Sadaļa “Arhīvs”. Arhivētu personu var atjaunot ar pogu “Atjaunot” kartiņā.', go: ['Atvērt Arhīvu', page('archive')] },
+    { t: 'Kā izdzēst personu?', kw: 'dzest izdzest personu nonemt', a: 'Parasti personu pārvieto uz arhīvu (kartiņā ⋯ → “Arhivēt”). Pilnīga dzēšana ir kartiņā ⋯ → “Dzēst” un pēc glabāšanas termiņiem sadaļā “Glabāšanas termiņi”.', go: ['Glabāšanas termiņi', page('retention')] },
+    { t: 'Kā atsaukt kļūdainu izmaiņu?', kw: 'atsaukt kluda izmaina atpakal vesture kas mainits', a: 'Darbību žurnālā redzams, kas un kad mainīts, un daudzas izmaiņas tur var atsaukt.', go: ['Atvērt Darbību žurnālu', page('changes')] },
+    { t: 'Kā ievadīt VFS testa rezultātus?', kw: 'vfs fiziska sagatavotiba rezultati normativi nozime', a: 'VFS testi → “＋ Jauns tests”, ievadi rezultātus — punkti un līmenis tiek aprēķināti automātiski; var izdrukāt protokolu.', go: ['Jauns VFS tests', act('vfsNew')] },
+    { t: 'Kā pievienot nodarbības grafikā vai Google kalendārā?', kw: 'grafiks kalendars google nodarbibu laiks plāns', a: 'Grafiks → “＋ Ieraksts”. Grafiku var sinhronizēt ar Google kalendāru (pieslēgšanās grafika lapā).', go: ['Atvērt Grafiku', page('schedule')] },
+    { t: 'Kur redzēt termiņus un atgādinājumus?', kw: 'termini atgadinajumi bridinajumi uzdevumi dzimsanas dienas', a: 'Sadaļa “Uzdevumi” apkopo termiņus, trūkstošos dokumentus, ekipējumu, dzimšanas dienas un 18/21 gadu brīdinājumus.', go: ['Atvērt Uzdevumus', page('alerts')] },
+    { t: 'Kā ziņot par kļūdu vai ieteikt uzlabojumu?', kw: 'zinot kluda ieteikums atsauksme izstradatajs problema', a: 'Sadaļa “Ziņot”: apraksti, kas notika. Personu dati netiek pievienoti.', go: ['Atvērt Ziņot', page('feedback')] },
+    { t: 'Vai mani dati tiek sūtīti internetā?', kw: 'privatums dati internets droši serveris sūtīti', a: 'Nē. Personu dati glabājas tikai tavā datu mapē datorā. Internetā tiek sūtīta tikai anonīma lietošanas statistika (to var izslēgt Iestatījumos → Atļaujas) un tas, ko pats izvēlies (piem., šifrēta kopija Google Drive).', go: ['Par rīku', page('about')] },
+    { t: 'Kā mainīt tēmu vai krāsu?', kw: 'tema tumsa gaisa krasa izskats akcents', a: 'Iestatījumi → Pamata → “Izskats”.', go: ['Atvērt Iestatījumus', page('settings')] },
+  ].map(h => ({ ...h, n: U.norm(h.t + ' ' + h.kw) }));
+
+  /* --- Teksta salīdzināšana --- */
+  const STOP = new Set('ka kur ko kas kad es man mans mana manu var varu lai ir uz un vai to tas ta ar no pie par ja jā ne nav kapec kadu kada kadi kuru kura sis si so sim tagad vajag gribu ludzu jalieto'.split(' '));
+  const stem = w => w.length > 6 ? w.slice(0, w.length - 2) : w.length > 4 ? w.slice(0, w.length - 1) : w;
+  const toks = q => U.norm(q).split(' ').filter(w => w.length > 1 && !STOP.has(w));
+  /** Cik vaicājuma vārdu atrodas tekstā (pēc vārda sākuma) */
+  function score(qt, text) {
+    if (!qt.length) return 0;
+    const words = text.split(' ');
+    let s = 0;
+    for (const t of qt) {
+      const st = stem(t);
+      if (words.some(w => w === t)) s += 2;
+      else if (words.some(w => w.startsWith(st) || (w.length > 3 && st.startsWith(stem(w))))) s += 1.4;
+      else if (t.length > 2 && text.includes(t)) s += 0.6;
+    }
+    return s / qt.length;
+  }
+  const isQuestion = q => /\?$/.test(q.trim()) || /^(ka|kur|ko|kas|kapec|vai|kad|kuru|kura|palidz)\b/.test(U.norm(q));
+
+  /* --- Meklēšana datos --- */
+  function search(q) {
+    const qt = toks(q), out = [];
+    if (!qt.length) return out;
+    const all = qt.join(' ');
+    const help = HELP.map(h => ({ h, s: score(qt, h.n) })).filter(x => x.s >= (isQuestion(q) ? 0.5 : 0.9)).sort((a, b) => b.s - a.s).slice(0, isQuestion(q) ? 3 : 2);
+    help.forEach((x, i) => out.push({ g: 'Palīgs', i: 'chat', l: x.h.t, help: x.h, open: i === 0, s: 10 + x.s, run: x.h.go[1] }));
+    if (S.db) {
+      const pp = S.db.people.map(p => {
+        const text = U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name].filter(Boolean).join(' '));
+        return { p, s: score(qt, text) + (U.norm(U.full(p)).startsWith(all) ? 1 : 0) };
+      }).filter(x => x.s >= 1).sort((a, b) => b.s - a.s || U.cmp(U.sortName(a.p), U.sortName(b.p))).slice(0, 8);
+      for (const { p, s } of pp) out.push({ g: 'Personas', i: 'user', l: U.full(p) || 'Persona', sub: [D.groupOf(p), p.status === 'archived' ? 'arhīvā' : '', !D.inYear(p) ? 'nav šajā gadā' : ''].filter(Boolean).join(' · '), s: 5 + s, run: person(p.id) });
+      const dd = (S.db.documents || []).map(d => { const p = D.person(d.personId); return { d, p, s: score(qt, U.norm([d.kind, d.title, d.path?.split('/').pop(), p && U.full(p)].filter(Boolean).join(' '))) }; })
+        .filter(x => x.s >= 1).sort((a, b) => b.s - a.s || String(b.d.addedAt).localeCompare(String(a.d.addedAt))).slice(0, 6);
+      for (const { d, p, s } of dd) out.push({ g: 'Dokumenti', i: 'file', l: (d.title || d.kind || 'Dokuments'), sub: [p && U.full(p), U.fmtDate(D.docDate(d))].filter(Boolean).join(' · '), s: 3 + s, run: p ? person(p.id, 'docs') : page('documents') });
+      const ee = (S.db.events || []).map(e => ({ e, s: score(qt, U.norm([e.title, e.place, e.type === 'camp' ? 'nometne' : 'instruktaza pasakums'].filter(Boolean).join(' '))) }))
+        .filter(x => x.s >= 1).sort((a, b) => b.s - a.s || String(b.e.dateFrom || b.e.instrDate).localeCompare(String(a.e.dateFrom || a.e.instrDate))).slice(0, 5);
+      for (const { e, s } of ee) out.push({ g: 'Pasākumi', i: 'clipboard', l: e.title || (e.type === 'camp' ? 'Nometne' : 'Instruktāža'), sub: [e.type === 'camp' ? 'nometnes žurnāls' : 'instruktāža', U.fmtDate(e.dateFrom || e.instrDate)].filter(Boolean).join(' · '), s: 3 + s, run: act('formOpen', e.id) });
+      const ff = (S.db.formDocs || []).map(f => ({ f, s: score(qt, U.norm(f.name || '')) })).filter(x => x.s >= 1).sort((a, b) => b.s - a.s).slice(0, 4);
+      for (const { f, s } of ff) out.push({ g: 'Sagatavotās veidlapas', i: 'clipboard', l: f.name, sub: U.fmtDate(f.date), s: 2.5 + s, run: act('cfOpen', f.id) });
+    }
+    for (const it of [...ACTIONS, ...PAGES, ...CARDS]) { const s = score(qt, U.norm(it.l + ' ' + it.kw)); if (s >= 0.9) out.push({ ...it, s: (it.g === 'Darbības' ? 4 : 3.5) + s }); }
+    const ORDER = ['Palīgs', 'Personas', 'Darbības', 'Sadaļas', 'Iestatījumi', 'Dokumenti', 'Pasākumi', 'Sagatavotās veidlapas'];
+    // grupu secība: palīgs, ja jautājums; citādi pēc labākā rezultāta grupā
+    const best = {}; for (const r of out) best[r.g] = Math.max(best[r.g] || 0, r.s);
+    return out.sort((a, b) => (a.g === b.g ? b.s - a.s : (best[b.g] - best[a.g]) || ORDER.indexOf(a.g) - ORDER.indexOf(b.g)));
+  }
+
+  /* --- Logs --- */
+  let items = [], sel = 0;
+  const SUGGEST = () => [
+    { g: 'Ieteikumi', i: 'chat', l: 'Uzdod jautājumu, piem., “kā pārcelt jaunsargus uz nākamo gadu?”', note: true },
+    ...['Pievienot personu', 'Ievadīt anketu (nolasīt no attēla vai faila)', 'Jaunsarga kopsavilkums (PDF)', 'Mācību gada noslēgums (vednis)', 'Pārbaudīt datu veselību'].map(l => ({ ...ACTIONS.find(a => a.l === l), g: 'Ieteikumi' })),
+  ];
+  function dlg() {
+    let d = U.$('cmdkDialog'); if (d) return d;
+    d = document.createElement('dialog'); d.id = 'cmdkDialog'; d.className = 'cmdk';
+    d.innerHTML = `<div class="cmdk-box"><div class="cmdk-top">${ic('search', '🔍')}<input id="cmdkQ" type="search" placeholder="Meklē personu, dokumentu, sadaļu… vai uzdod jautājumu" autocomplete="off" spellcheck="false" aria-label="Meklēt"><kbd>Esc</kbd></div>
+      <div id="cmdkList" class="cmdk-list" role="listbox"></div>
+      <div class="cmdk-foot small muted"><span>↑ ↓ izvēlēties · Enter atvērt</span><span class="grow"></span><span title="Atbildes ir iepriekš uzrakstītas rīka pamācībā; meklēšana notiek šajā datorā, nekas netiek sūtīts">Palīgs darbojas bez interneta · nav mākslīgais intelekts</span></div></div>`;
+    document.body.appendChild(d);
+    d.addEventListener('click', e => { if (e.target === d) { d.close(); return; } const b = e.target.closest('[data-cmdk]'); if (!b) return; e.stopPropagation(); e.preventDefault(); choose(Number(b.dataset.cmdk)); });
+    d.querySelector('#cmdkQ').addEventListener('input', () => { sel = 0; paint(); });
+    d.querySelector('#cmdkQ').addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = items.length; if (!n) return; let i = sel; do { i = (i + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; } while (items[i].note && i !== sel); sel = i; mark(); }
+      else if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); choose(sel); }
+    });
+    return d;
+  }
+  function paint() {
+    const q = U.$('cmdkQ').value; items = q.trim() ? search(q) : SUGGEST();
+    if (items[sel]?.note) sel = items.findIndex(x => !x.note);
+    let g = '', h = '';
+    items.forEach((it, i) => {
+      if (it.g !== g) { g = it.g; h += `<div class="cmdk-g">${esc(g)}</div>`; }
+      if (it.note) { h += `<div class="cmdk-note small muted">${ic(it.i)}${esc(it.l)}</div>`; return; }
+      h += `<button type="button" class="cmdk-it ${it.help ? 'help' : ''}" data-cmdk="${i}" role="option">${ic(it.i, '•')}<span class="grow"><b>${esc(it.l)}</b>${it.sub ? `<small class="muted"> · ${esc(it.sub)}</small>` : ''}
+        ${it.help && it.open ? `<span class="cmdk-ans">${esc(it.help.a)}</span>` : ''}</span>${it.help ? `<span class="cmdk-go">${esc(it.help.go[0])} →</span>` : '<span class="cmdk-go">↵</span>'}</button>`;
+    });
+    if (q.trim() && !items.length) h = `<div class="cmdk-empty"><p><b>Nekas netika atrasts.</b></p><p class="small muted">Pamēģini citu vārdu (piem., personas uzvārdu, “instruktāža”, “rezerves kopija”) vai uzdod jautājumu, sākot ar “kā” vai “kur”.</p></div>`;
+    U.$('cmdkList').innerHTML = h; mark();
+  }
+  function mark() {
+    U.qsa('#cmdkList .cmdk-it').forEach(b => { const on = Number(b.dataset.cmdk) === sel; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); if (on) b.scrollIntoView({ block: 'nearest' }); });
+  }
+  function choose(i) {
+    const it = items[i]; if (!it || it.note || !it.run) return;
+    U.$('cmdkDialog').close();
+    U.qsa('dialog[open]').forEach(d => { if (d.id !== 'cmdkDialog') try { d.close(); } catch (e) { /* */ } });
+    it.run();
+  }
+  A.cmdk = q => {
+    const d = dlg(); if (!d.open) d.showModal();
+    const inp = U.$('cmdkQ'); inp.value = typeof q === 'string' ? q : ''; sel = 0; paint(); inp.focus();
+  };
+  CP.noRootOk && (() => { const o = CP.noRootOk; CP.noRootOk = a => a === 'cmdk' || o(a); })();
+  // Ctrl+K atver meklēšanu (agrāk — sānjoslas meklēšanas lauku; “/” to joprojām dara)
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); e.stopImmediatePropagation(); const d = U.$('cmdkDialog'); if (d?.open) d.close(); else A.cmdk(); }
+  }, true);
+  /* Poga augšējā joslā */
+  function paintBtn() {
+    const sb = U.$('search'); if (sb && sb.placeholder.includes('Ctrl+K')) sb.placeholder = sb.placeholder.replace('Ctrl+K', '/');   // Ctrl+K tagad — meklēšana pa visu rīku
+    const bar = document.querySelector('.yearbar'); if (!bar || U.$('cmdkBtn')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'cmdkBtn'; b.className = 'cmdk-btn'; b.dataset.act = 'cmdk';
+    b.title = 'Meklēt pa visu rīku un uzdot jautājumu palīgam (Ctrl+K)';
+    b.innerHTML = `${ic('search', '🔍')}<span>Meklēt vai jautāt</span><kbd>Ctrl K</kbd>`;
+    bar.insertBefore(b, U.$('yearPick'));
+  }
+  CP.afterRender = CP.afterRender || []; CP.afterRender.push(paintBtn);
+  CP.assist = { search, HELP, open: A.cmdk };
 })(window.CP);
 
 

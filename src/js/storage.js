@@ -251,6 +251,19 @@
       return { ok: false, error: e.message || String(e) };
     }
   };
+  /** Atjaunošanas mēģinājums atmiņā: nolasa, pārbauda, migrē kā atjaunojot. Pašreizējie dati netiek mainīti. */
+  store.testRestore = async name => {
+    const text = await readBackup(name);
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (e) { return { ok: false, error: 'kopija nav nolasāms JSON (' + e.message + ')' }; }
+    try {
+      CP.validateDb(parsed);
+      const version = parsed.version, m = CP.migrate(parsed);
+      CP.validateDb(m);
+      const n = k => (m[k] || []).length;
+      return { ok: true, version, bytes: text.length, counts: { people: n('people'), documents: n('documents'), events: n('events'), sessions: n('sessions'), equipment: n('equipment') } };
+    } catch (e) { return { ok: false, error: e.message || String(e) }; }
+  };
   async function readBackup(name) {
     if (!S.root) throw Error('nav datu mapes');
     if (!/^[\w.\-]+\.json$/.test(name)) throw Error('nederīgs kopijas nosaukums');

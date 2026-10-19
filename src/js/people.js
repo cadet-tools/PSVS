@@ -476,6 +476,7 @@
     db.equipment = db.equipment.filter(x => x.personId !== pid); db.log = db.log.filter(x => x.personId !== pid);
     db.tasks = db.tasks.filter(x => x.personId !== pid); db.relations = db.relations.filter(r => r.a !== pid && r.b !== pid);
     db.audit = db.audit.filter(x => x.personId !== pid);
+    db.enrollments = (db.enrollments || []).filter(x => x.personId !== pid);
     for (const ev of db.events || []) if (Array.isArray(ev.participants)) ev.participants = ev.participants.filter(x => (x?.pid ?? x) !== pid);
     for (const s of db.sessions || []) if (s.att && pid in s.att) delete s.att[pid];
     for (const t of db.vfsTests || []) if (t.res && pid in t.res) delete t.res[pid];

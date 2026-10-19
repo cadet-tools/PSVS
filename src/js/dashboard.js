@@ -7,7 +7,7 @@
   const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🎓'), adult18: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
-    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}</div>`;
+    ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}${a.act ? `<button class="sm" data-act="${esc(a.act)}" data-arg="${esc(a.arg || '')}">${esc(a.actLabel || 'Atvērt')}</button>` : ''}</div>`;
 
   CP.pages.dashboard = {
     after() { CP.watch?.paint(); },
@@ -73,11 +73,11 @@
     }
     // 18 / 21 gadu brīdinājumi uznirstošajā logā — ne vairāk kā 3 reizes katram (kartītē un Uzdevumos paliek, līdz atrisināts)
     let seenN = {}; try { seenN = JSON.parse(localStorage.getItem('cp-notice-count') || '{}') || {}; } catch (e) { seenN = {}; }
-    const al = D.alerts().filter(a => !a.nkey || (seenN[a.nkey] || 0) < 3), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
+    const al = D.alerts().filter(a => !a.quiet && (!a.nkey || (seenN[a.nkey] || 0) < 3)), urgent = al.filter(a => a.sev >= 1), soon = al.filter(a => a.sev === 0);
     const shownKeys = al.filter(a => a.nkey).map(a => a.nkey);
     try { await CP.store.idbSet(key, today); } catch (e) { /* tikai ērtībai */ }
     if (!ages.length && !urgent.length && !soon.length) return;
-    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}</div>`;
+    const row = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>${a.personId ? `<button class="sm" data-person="${a.personId}" data-close="noticeDialog" data-goto="${a.kind === 'mtl' ? 'equipment' : a.kind === 'document' ? 'docs' : 'overview'}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}" data-close="noticeDialog">Pārskatīt</button>` : ''}${a.act ? `<button class="sm" data-act="${esc(a.act)}" data-arg="${esc(a.arg || '')}">${esc(a.actLabel || 'Atvērt')}</button>` : ''}</div>`;
     U.$('noticeBody').innerHTML =
       (ages.length ? `<h4 style="margin-top:0">🎂 Vecuma izmaiņas kopš ${U.fmtDate(last)}</h4>${ages.map(x => `<div class="row"><div class="grow"><b>${esc(U.full(x.p))}</b> — tagad <b>${x.age} g.</b>${x.age === 18 ? ' <span class="pill warn">pilngadīgs — jānoslēdz jauns līgums ar jaunsargu (vecāku dati kartītē paliek)</span>' : ''}</div><button class="sm" data-person="${x.p.id}" data-close="noticeDialog">Atvērt</button></div>`).join('')}` : '')
       + (urgent.length ? `<h4>⚠ Jāpievērš uzmanība (${urgent.length})</h4>${urgent.slice(0, 25).map(row).join('')}${urgent.length > 25 ? `<p class="muted small">… un vēl ${urgent.length - 25}</p>` : ''}` : '')

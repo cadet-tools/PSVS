@@ -307,7 +307,8 @@
   A.sumNew = pid => {
     if (!S.db) return;
     const [f, t] = spanOf('cur');
-    dlg = { pids: new Set(pid ? [pid] : []), single: pid || null, group: '', q: '', from: dlg?.from || f, to: dlg?.to || t };
+    const all = pid === '*';   // '*' — visiem šī gada jaunsargiem (mācību gada noslēguma vednis)
+    dlg = { pids: new Set(all ? roster().map(p => p.id) : pid ? [pid] : []), single: all ? null : pid || null, group: '', q: '', from: all ? f : dlg?.from || f, to: all ? t : dlg?.to || t };
     draw(); U.$('sumDialog').showModal();
   };
   function draw() {

@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.56.0', ch: 'test', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
+      '**Meklēšana pa visu rīku**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas, iestatījumi un darbības. Var arī **uzdot jautājumu** (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs atbild no rīka pamācības un ar pogu aizved uz īsto vietu. Darbojas bez interneta.',
+      '**Mācību gada noslēguma vednis** (gada izvēlnē “Noslēgt mācību gadu…”): trūkstošie dokumenti → neatdotais ekipējums → kopsavilkumi visiem → kas turpina nākamajā gadā → rezerves kopija → pāreja uz jauno gadu. Rīks arī pats **pārbauda datu faila veselību** un reizi mēnesī atgādina **pārbaudīt, vai rezerves kopiju var atjaunot** (Iestatījumi → Drošība).'
+    ] },
     { v: '1.55.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',
       'Var ielikt **pilnībā savu veidlapu** (iesniegums, atļauja, saraksts…): Veidlapas → Savas Word veidnes → **“⬆ Sava veidlapa”**, tad **“Aizpildīt…”** (arī personas kartītes ⋯ izvēlnē). Atzīmes tekstā — katrai personai savs dokuments; tabulas rindā — saraksts. Sagatavotie dokumenti saglabājas datu mapē un ir sarakstā **“Sagatavotās veidlapas”** — tur tos var atvērt un lejupielādēt. Atzīmes var ielikt **tieši rīkā** ar pogu **“✎ Atzīmes”** — formatējums saglabājas, rakstīt var arī {Vārds}; **latviešu pareizrakstības pārbaude** pasvītro kļūdas (labā peles poga — ieteikumi). Pēc izvēles dokumenta augšā — **vienības logo un nosaukums** kopā ar CADET.LV logo.',
@@ -25,7 +29,7 @@
       'Iestatījumos jauna cilne **“Atļaujas”**: datu mape, papildu dokumentu mapes, kopijas mape, Google konts, uznirstošie logi un paziņojumi — katram redzams stāvoklis un kas bez tā nestrādās. Trūkstošu atļauju var **atļaut ar pogu**; Google kontu var **atvienot**. Kā atņemt vai atjaunot pārlūkā bloķētu atļauju — aprakstīts turpat. Ja kādas vajadzīgas atļaujas nav, cilnē redzams ⚠. Rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta **anonīmu lietošanas statistiku**: cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. **Personu dati, dokumenti un failu nosaukumi netiek sūtīti.** Bezsaistē statistika uzkrājas un tiek nosūtīta vēlāk. Izslēgt var **Iestatījumi → Atļaujas**.'
     ] },
     { v: '1.47.1', from: '1.43.0', date: '2026-10-17', title: 'Pasākumi un to dokumenti', items: [
-      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi.',
+      'Apmeklējumā blakus “＋ Nodarbība” ir **“＋ Pasākums”** (pasākums, nometne, sacensības) ar nosaukumu, datumiem no–līdz un grupu. Atzīmē, kuri **piedalījās**, un turpat pie katra pievieno **Vecāku atļauju**, nometnei **Dalībnieka aptaujas lapu** vai citu dokumentu. Kopīgie — **Kopējā parakstu lapa**, **aizpildīts nometnes žurnāls**, citi. Instruktāžas lapā un nometnes žurnālā var iekļaut arī **jaunsargus no citām vienībām** (otra instruktora atsūtītais fails vai Excel veidne).',
       'Pasākumi nav nodarbības: tie **neietekmē apmeklējuma %**, ir atsevišķā cilnē **“Pasākumi”** (ar trūkstošo dokumentu skaitu), mēneša tabulā pasākuma datums ir **kolonna ar ★** arī tad, ja rādītas tikai nodarbību dienas — tajā atzīmē, kas piedalījās. Pievienojot dalībniekam vecāku atļauju vai citu dokumentu, viņš pasākumā **atzīmējas automātiski** (atzīmi var mainīt). No pasākuma ar vienu pogu var sagatavot **instruktāžas lapu vai nometnes žurnālu** ar tiem pašiem dalībniekiem. Dokumenti redzami arī jaunsarga kartītē un Dokumentu lapā — filtrā ir arī pasākumu dokumentu veidi (piem., Vecāku atļauja). Kategorija “Vecāku piekrišana” noņemta — tāda dokumenta nav; esošie ieraksti kļuvuši par “Vecāku atļauja”.'
     ] },
     { v: '1.47.0', date: '2026-10-17', title: 'Darbs bezsaistē', items: [
@@ -53,8 +57,8 @@
       'Ārsta izziņai rīks aprēķina **derīgumu** un laikus atgādina. Dokumentus var atvērt, labot, aizstāt un dzēst tieši kartītē. Obligātajiem dokumentiem jābūt **skenētiem failiem** (tos liek arī DVS) — dokuments “tikai papīrā” netiek uzskatīts par iesniegtu. Pie agrāk reģistrētajiem papīra dokumentiem ir poga **“＋ Fails”** skenējuma pievienošanai. Pēc faila pievienošanas uzreiz atveras dokumenta dati, kur var ierakstīt piezīmi (piem., kur glabājas ārsta izziņas papīrs).',
       '**DVS reģistrāciju** atzīmē pa dokumentiem ar datumu; ir arī atzīme “ievadīts e-klasē”. Personu sarakstā to var atzīmēt vairākiem uzreiz. Dokuments, kas vēl **nav saņemts**, sadaļā “Reģistrācija un arhīvs” ir **sarkans** ar pogu “＋ Fails”, un, mēģinot to atzīmēt DVS vai arhīvā, rīks brīdina.'
     ] },
-    { v: '1.40.0', date: '2026-10-17', title: 'Signal', items: [
-      'Ziņu var sūtīt arī ar **Signal** — kartītē pie kontakta poga “Signal”, ziņas logā un grupas ziņā kanāls “Signal”. Signal neļauj saitē ielikt tekstu, tāpēc rīks to **nokopē**: sarakstē to ielīmē ar Ctrl+V. Iestatījumos (Saziņa) var izvēlēties, vai atvērt Signal Desktop lietotni tieši.'
+    { v: '1.40.0', from: '1.30.0', date: '2026-10-17', title: 'Signal un ziņošana izstrādātājam', items: [
+      'Ziņu var sūtīt arī ar **Signal** (kartītē pie kontakta, ziņas logā, grupas ziņā) — teksts tiek **nokopēts**, sarakstē to ielīmē ar Ctrl+V. Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu, personu datus attēlā **aizklājot**.'
     ] },
     { v: '1.38.7', from: '1.28.0', date: '2026-10-17', title: 'Šifrētā rezerves kopija', items: [
       'Viss datu mapes saturs tiek **šifrēts** un saglabāts **tieši Google Drive** (mapē CADET_PERSONĀLS_ATJAUNOŠANA) vai citā mapē. Kopija papildinās automātiski, kamēr rīks ir atvērts.',
@@ -99,12 +103,6 @@
     { v: '1.31.3', from: '1.31.0', date: '2026-10-16', title: 'Ekrāna bloķēšana ar PIN kodu', items: [
       'Ja rīku nelieto (noklusēti 5 min), ekrānu aizsedz lielais pulkstenis, un jaunsargu dati nav redzami. Ar **PIN kodu** to atbloķē tikai tu; PIN prasa arī, atverot rīku.',
       'Bloķēt uzreiz: poga **“🔒 Bloķēt rīku”** Pārskatā vai **Ctrl+Shift+L**. Aizmirstot PIN, kodu var saņemt e-pastā.'
-    ] },
-    { v: '1.30.1', from: '1.30.0', date: '2026-10-16', title: 'Sadaļa “Ziņot”', items: [
-      'Sadaļā **“⚑ Ziņot”** var nosūtīt izstrādātājam kļūdu, ieteikumu vai jautājumu ar ekrānuzņēmumu. Personu datus attēlā var **aizklāt** pirms sūtīšanas.'
-    ] },
-    { v: '1.27.1', from: '1.27.0', date: '2026-10-16', title: 'Dalībnieki no citām vienībām', items: [
-      'Instruktāžas lapā un nometnes žurnālā var iekļaut **jaunsargus no citām vienībām**: ievelc otra instruktora atsūtīto failu vai aizpildītu Excel veidni. Viņi glabājas tikai šajā pasākumā.'
     ] },
     { v: '1.26.3', from: '1.24.0', date: '2026-10-16', title: 'Grupas un pārskats', items: [
       'Pārskata kartītē **Grupas** var izveidot, pārdēvēt un dzēst grupas (personas netiek dzēstas). Personas formā grupu izvēlas no saraksta vai izveido jaunu.',
