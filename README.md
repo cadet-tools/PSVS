@@ -11,7 +11,7 @@ Jaunsardzes instruktora rīks jauniešu uzskaitei. Tajā ir personu kartītes, d
 
 **Lietošanas statistika:** rīks izmanto sīkdatnes (pārlūka atmiņu) un izstrādātājam sūta anonīmu statistiku — cik bieži rīks tiek lietots, kuras sadaļas un pogas, versiju, kļūdu veidus un novada pārvaldes / nodaļas numuru. Bez vārdiem, dokumentiem un failu nosaukumiem. Izslēgt: Iestatījumi → Atļaujas. Sīkāk: [docs/ANALYTICS.md](docs/ANALYTICS.md).
 
-**MI palīgs** (meklēšanas logs, Ctrl+K → “Jautāt MI”) sūta tikai jautājuma tekstu (vārdi, kodi un tālruņi aizstāti) uz Groq; personu kartītes un dokumenti netiek sūtīti. Kopīgais MI — bez savas atslēgas; var pievienot savu Groq atslēgu Iestatījumi → Atļaujas. Bez interneta paliek iebūvētais palīgs. Sīkāk: [docs/MI.md](docs/MI.md).
+**MI palīgs** (meklēšanas logs, Ctrl+K → “Jautāt MI”) sūta tikai jautājuma tekstu (vārdi, kodi un tālruņi aizstāti) uz Groq; personu kartītes un dokumenti netiek sūtīti. Kopīgais MI — bez savas atslēgas; var pievienot savu Groq atslēgu Iestatījumi → Atļaujas. Bez interneta paliek iebūvētais palīgs. Izstrādātājam: [docs/MI.md](docs/MI.md).
 
 Vienīgais izņēmums anketām ir **Google Vision** rokraksta atpazīšana. Tā pēc noklusējuma ir izslēgta, un to ieslēdz tikai ar savu API atslēgu Iestatījumos. Tad anketas attēls tiek nosūtīts Google.
 
@@ -44,7 +44,7 @@ Jauna versija ielādējas automātiski. Kad tā pienāk, programma parāda **↻
 - `index.html`, `app.bundle.js`, `sw.js` — stabilā versija. `test/` — testa kanāls. `vendor/` — bibliotēkas (pdf.js, Tesseract, QR).
 - **Analītika ir pastāvīga rīka daļa** — `src/js/analytics.js`, saņēmējs un panelis `docs/analitika/` (Google Apps Script). Pārbūvējot to nedzēš; apraksts un pārbaude: [docs/ANALYTICS.md](docs/ANALYTICS.md).
 - `src/` — avota kods (moduļi `src/js`, `src/css`). Būvēšana: `python3 src/_buvesana/build_web.py <avots> <repo> <node_modules>` (iztīra repo). Bez tīrīšanas: `python3 src/_buvesana/build_stable.py` (sakne), `python3 src/_buvesana/build_test.py` (`test/`).
-- **MI palīgs** (no 1.58.0 abos kanālos) — `src/js/ai.js`, starpnieks `docs/mi/` (Google Apps Script → Groq). Uzstādīšana un kas tiek sūtīts: [docs/MI.md](docs/MI.md).
+- **MI palīgs** (no 1.58.0 abos kanālos). Izstrādātājam — sāc ar **[docs/MI.md](docs/MI.md)** (ko neskart, atslēgas, būvēšana, starpnieks, testi). Kods: `src/js/ai.js`, `src/css/ai.css`, starpnieks `docs/mi/`. `assist.js` un `settings.js` nemaina. Ikdienā `build_test.py` / `build_stable.py`; `build_web.py` iztīra repo.
 - Jaunu versiju vispirms ieliek `test/`, pārbauda, un tikai tad saknē (`build_stable.py`).
 - **Datu saglabāšanas noteikumi atjauninot:** datu shēmu (`CP.SCHEMA`) palielina tikai tad, kad mainās datu struktūra; `CP.migrate()` drīkst laukus tikai pievienot vai pārveidot, nekad nedzēst; nezināmi lauki paliek neskarti. Pirms migrācijas rīks pats saglabā kopiju `_rezerves`. Vecāka versija jaunāka faila datus neatļauj saglabāt.
 - Organizācijas `cadet-tools` GitHub Pages lapām ir kopīga adrese (`cadet-tools.github.io`), tātad arī kopīga pārlūka atmiņa. Citas, neuzticamas lapas šajā organizācijā nepublicē. GitHub kontam ieslēdz divpakāpju pieteikšanos.

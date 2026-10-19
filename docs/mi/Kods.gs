@@ -1,6 +1,7 @@
 /**
  * CADET PERSONĀLS — MI palīga starpniekserveris (Google Apps Script, bezmaksas) → Groq API.
- * Uzstādīšana: docs/MI.md. Īsumā:
+ * Rokasgrāmata: docs/MI.md (ko neskart, atslēgas, limiti, RULES sinhronizācija).
+ * Uzstādīšana īsumā:
  *   1. script.google.com → Jauns projekts “CADET MI”. Ielīmē šo failu (Kods.gs).
  *   2. Projekta iestatījumi (⚙) → Skripta rekvizīti → GROQ_KEY = tava Groq atslēga (gsk_…).
  *   3. Palaid funkciju uzstadit (▶ Run) → atļauj → žurnālā redzams, vai viss kārtībā.

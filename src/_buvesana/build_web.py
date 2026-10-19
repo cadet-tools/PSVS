@@ -94,7 +94,7 @@ for d in ['js', 'css']: shutil.copytree(f'{src}/{d}', f'{repo}/src/{d}')
 shutil.copy(f'{src}/index.html', f'{repo}/src/index.html')
 shutil.copy(f'{src}/PS_LOGO.png', f'{repo}/src/PS_LOGO.png')
 os.makedirs(f'{repo}/src/_buvesana')
-for f in ['build.py', 'build_web.py', 'sw.template.js', 'README.repo.md']: shutil.copy(os.path.join(here, f), f'{repo}/src/_buvesana/')
+for f in ['build.py', 'build_web.py', 'build_test.py', 'build_stable.py', 'sw.template.js', 'README.repo.md']: shutil.copy(os.path.join(here, f), f'{repo}/src/_buvesana/')
 for f in ['CHANGELOG.md']: shutil.copy(f'{src}/{f}', repo)
 # dokumentācija un analītikas saņēmējs (Apps Script) — docs/ANALYTICS.md: analītika ir pastāvīga rīka daļa
 shutil.copytree(f'{src}/docs', f'{repo}/docs')

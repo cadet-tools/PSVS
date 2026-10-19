@@ -14382,7 +14382,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
      “MI palīgs”); tad pieprasījumi iet tieši uz api.groq.com. Atslēga glabājas tikai šajā pārlūkā (localStorage cp.miKey).
    • Tiek sūtīts tikai jautājums (personu vārdi, personas kodi, tālruņi, e-pasti aizstāti), īsa sarunas vēsture,
      pašreizējās sadaļas nosaukums un atbilstošās rīka pamācības. Personu dati, dokumenti un datu fails — nekad.
-   • No 1.58.0 darbojas arī stabilajā kanālā (MI_STABLE = true).
+   • No 1.58.0 darbojas arī stabilajā kanālā (MI_STABLE = true). Rokasgrāmata: docs/MI.md.
    ===================================================================== */
 (function (CP) {
   'use strict';
