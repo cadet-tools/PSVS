@@ -15,6 +15,8 @@ for n in os.listdir(repo):
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; "
        "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; frame-src 'self' blob:; "
        "object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'")
+# MI palīgs ar lietotāja paša Groq atslēgu (js/ai.js) — pagaidām tikai testa kanālā (docs/MI.md)
+CSP_TEST = CSP.replace('https://script.googleusercontent.com;', 'https://script.googleusercontent.com https://api.groq.com;')
 
 def build(channel, out, vendor_rel, design=''):
     tmp = out + '.__tmp'
@@ -22,7 +24,7 @@ def build(channel, out, vendor_rel, design=''):
     os.makedirs(out, exist_ok=True)
     for f in ['app.bundle.js', 'PS_LOGO.png']: shutil.move(f'{tmp}/{f}', f'{out}/{f}')
     html = open(f'{tmp}/index.html', encoding='utf-8').read()
-    head = (f'<meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
+    head = (f'<meta http-equiv="Content-Security-Policy" content="{CSP_TEST if channel == "test" else CSP}">\n'
             f'<meta name="cp-channel" content="{channel}">\n<meta name="cp-vendor" content="{vendor_rel}">\n'
             '<meta name="theme-color" content="#0b1219">\n<link rel="manifest" href="manifest.webmanifest">\n'
             '<link rel="icon" href="icons/icon-192.png">\n<link rel="apple-touch-icon" href="icons/icon-192.png">\n')
@@ -97,6 +99,7 @@ for f in ['CHANGELOG.md']: shutil.copy(f'{src}/{f}', repo)
 # dokumentācija un analītikas saņēmējs (Apps Script) — docs/ANALYTICS.md: analītika ir pastāvīga rīka daļa
 shutil.copytree(f'{src}/docs', f'{repo}/docs')
 shutil.copytree(f'{src}/tools/analitika', f'{repo}/docs/analitika')
+if os.path.isdir(f'{src}/tools/mi'): shutil.copytree(f'{src}/tools/mi', f'{repo}/docs/mi')   # MI starpnieks (docs/MI.md)
 shutil.copy(os.path.join(here, 'README.repo.md'), f'{repo}/README.md')
 open(f'{repo}/.nojekyll', 'w').close()
 open(f'{repo}/.gitignore', 'w').write('# Personu dati NEKAD nenonāk repozitorijā\nCADET_PERSONALS_DATI*.json\n*.raksta\n_rezerves/\n_arhivi/\nRezerves_kopijas/\nMacibu_gadi/\nDokumenti/\n!src/**\n')

@@ -13,6 +13,9 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.58.0', from: '1.58.0', date: '2026-10-19', ch: 'test', title: 'MI palīgs (testa versija)', items: [
+      'Meklēšanas logā (**Ctrl+K**) poga **“Jautāt MI”** (vai **Ctrl+Enter**): jautā brīvā valodā par rīka lietošanu — MI atbild latviski, īsi un ar pogu **“Parādīt, kur”**, kas atver vietu un iezīmē pogas. MI atbild tikai par CADET PERSONĀLS. Vajag internetu; bez tā strādā iebūvētais palīgs. Personu vārdi, personas kodi un tālruņi jautājumā tiek aizstāti pirms sūtīšanas; personu dati un dokumenti netiek sūtīti. Ja kopīgais limits sasniegts, var pievienot **savu bezmaksas Groq atslēgu**: Iestatījumi → Atļaujas → **MI palīgs**.'
+    ] },
     { v: '1.57.0', from: '1.56.0', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
       '**Meklēšana pa visu rīku un palīgs**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas un darbības. Uzdod jautājumu (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs parāda soļus, pats atver vajadzīgo vietu un **iezīmē pogu, uz kuras jāspiež**. Ar vārdu — darbības ar konkrēto personu (“Annai pievienot dokumentu”, “Kalniņa ekipējums”). Darbojas bez interneta.',
       '**Mācību gada noslēguma vednis** (gada izvēlnē “Noslēgt mācību gadu…”): trūkstošie dokumenti → ekipējums → kopsavilkumi → kas turpina → rezerves kopija → jaunais gads. **Datu veselības pārbaude** ar skaidrojumu katrai piezīmei un ikmēneša atgādinājums **pārbaudīt, vai rezerves kopiju var atjaunot** (Iestatījumi → Drošība).'

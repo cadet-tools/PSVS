@@ -1,5 +1,16 @@
 # Izmaiņu vēsture
 
+## 1.58.0 — 2026-10-19
+- **Tikai testa kanālā** (`js/ai.js`: `CP.CHANNEL === 'test'`, `MI_STABLE = false`; stabilā versija saknē netiek pārbūvēta):
+  - MI palīgs meklēšanas logā: poga `#miBtn` “Jautāt MI”, josla `#miBar` (Ctrl+Enter), sarunas panelis `#miPane` (MI režīmā Enter sūta, “← Meklēšana” atgriež iebūvēto palīgu). `assist.js` netiek mainīts — `A.cmdk` tiek papildināts, vadītais palīgs — `CP.assist.guide`.
+  - Atbilde JSON `{ answer, guide: [HELP indeksi], page, offtopic }` → pogas “Parādīt, kur → …” (iebūvētā palīga soļi) un “Atvērt: sadaļa”. Noteikumi (`RULES`): tikai par rīku, tikai no padotajām zināšanām, latviski, īsi; ārpus tēmas — atteikums.
+  - Zināšanas katram jautājumam: sadaļu saraksts, 16 fakti (6 atbilstošākie), visu pamācību virsraksti un 4 atbilstošākās pamācības ar soļiem (~2000 tokenu).
+  - Pirms sūtīšanas `CP.ai.redact`: personas kodi → [kods], tālruņi → [tālrunis], e-pasti → [e-pasts], datu failā esošie personu, vecāku, darbinieku un instruktora vārdi (arī locījumos) → [persona]. Nosūtītais teksts redzams zem jautājuma.
+  - Kopīgais MI caur Apps Script starpnieku `docs/mi/Kods.gs` (`MI_URL`; testam `localStorage cp.miUrl`): Groq atslēga tikai skripta rekvizītos, jautājumi netiek saglabāti, limiti — lietotājam 20 / 6 h (`cp.miId`), kopā 2500 dienā un 15 minūtē; modeļi pēc kārtas `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b` (ja 429 — nākamais).
+  - Sava Groq atslēga: kartīte Iestatījumi → Atļaujas → “MI palīgs” (`#miCard`, pievienota ar `CP.afterRender`, `settings.js` netiek mainīts) — `localStorage cp.miKey`, pārbaude ar `GET /models`; tad pieprasījumi tieši uz `api.groq.com` (testa CSP `connect-src` papildināta). Slēdzis “Rādīt MI palīgu” (`cp.miOff`), šodienas skaits (`cp.miUse`).
+  - Statistikā tikai darbību nosaukumi `miAsk`, `miErr:<kods>`.
+- Būvēšana: `src/_buvesana/build_test.py` pārbūvē tikai `test/`; `build_web.py` — `CSP_TEST` un `tools/mi` → `docs/mi`. Pārbaude: `node docs/mi/mi_test.mjs`. Apraksts: `docs/MI.md`.
+
 ## 1.57.0 — 2026-10-19
 - Meklēšana un palīgs, gada noslēguma vednis, datu veselība un atjaunošanas pārbaude (1.56.0 testa kanālā) — **ieslēgti arī stabilajā versijā** (`CHANNEL` pārbaudes noņemtas `assist.js`, `health.js`, `yearend.js`).
 - Palīgs vada pa soļiem: atbildē redzami numurēti soļi; izvēloties atbildi, atveras panelis `#cpGuide` (pārvietojas atvērtajā dialogā, lai būtu lietojams), palīgs pats atver lapu/iestatījumu kartīti/dialogu un iezīmē vietu (`.cp-guide-hl`); uzspiežot uz iezīmētās pogas — nākamais solis; “Atpakaļ”, “Parādīt vēlreiz”, “Gatavs”. Soļi, kas jau izpildīti (persona jau atvērta), tiek izlaisti. 31 jautājums; tests t128 pārbauda, ka katra soļa vieta tiek atrasta.

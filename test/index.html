@@ -2,7 +2,7 @@
 <html lang="lv">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com https://api.groq.com; worker-src 'self' blob:; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
 <meta name="cp-channel" content="test">
 <meta name="cp-vendor" content="../vendor/">
 <meta name="theme-color" content="#0b1219">
@@ -1159,6 +1159,42 @@ html.d2 .dash-top .stat > .ic { order: 0; margin-bottom: 12px }
 html.d2 .dash-top .stat strong { order: 1; margin-top: auto; font-size: 34px }
 html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color: var(--muted) }
 
+/* MI palīgs meklēšanas logā (js/ai.js) */
+.mi-btn{flex:none;gap:6px;border-radius:999px;border-color:color-mix(in srgb,var(--acc,var(--teal)) 55%,transparent);color:var(--txt)}
+.mi-btn .ic,.mi-bar .ic,.mi-head .ic,.mi-meta .ic,#miCard h3 .ic{width:16px;height:16px;color:var(--acc,var(--teal));flex:none}
+.mi-btn:disabled .ic{color:var(--muted)}
+.mi-bar{display:flex;align-items:center;gap:10px;width:100%;border:0;border-bottom:1px solid var(--edge);border-radius:0;background:color-mix(in srgb,var(--acc,var(--teal)) 9%,transparent);padding:9px 16px;text-align:left;white-space:normal;color:var(--txt);font-size:13px}
+.mi-bar:hover{background:color-mix(in srgb,var(--acc,var(--teal)) 16%,transparent)}
+.mi-bar kbd{font:600 11px/1 inherit;padding:3px 5px;border-radius:5px;border:1px solid var(--edge);color:var(--muted);flex:none}
+.mi-bar:disabled{color:var(--muted);cursor:default}
+.cmdk.mi-on .cmdk-list{display:none}
+.mi-pane{overflow:auto;flex:1;padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px;min-height:180px}
+.mi-head{display:flex;align-items:center;gap:8px}
+.mi-intro{margin:0}
+.mi-msg{display:flex;flex-direction:column;gap:4px;max-width:92%}
+.mi-msg.u{align-self:flex-end;align-items:flex-end}
+.mi-msg.a{align-self:flex-start}
+.mi-bub{padding:9px 12px;border-radius:12px;line-height:1.5;font-size:14px}
+.mi-msg.u .mi-bub{background:color-mix(in srgb,var(--acc,var(--teal)) 22%,var(--panel2,var(--panel)));white-space:pre-wrap}
+.mi-msg.a .mi-bub{background:var(--panel2,var(--panel));border:1px solid var(--edge)}
+.mi-msg.a.err .mi-bub{border-color:color-mix(in srgb,var(--amber) 60%,transparent)}
+.mi-msg.a.off .mi-bub{opacity:.85}
+.mi-bub p{margin:0 0 6px}.mi-bub p:last-child{margin-bottom:0}
+.mi-bub ol,.mi-bub ul{margin:4px 0 6px;padding-left:22px}.mi-bub li{margin:2px 0}
+.mi-bub .actions{margin-top:8px}
+.mi-bub .actions button{white-space:normal;text-align:left}
+.mi-wait{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.mi-meta{display:flex;align-items:center;gap:5px}
+.mi-meta .ic{width:12px;height:12px}
+.mi-sent{max-width:100%;overflow-wrap:anywhere}
+.mi-priv{margin:auto 0 0;padding-top:6px;border-top:1px dashed var(--edge)}
+.mi-foot{display:none}
+.cmdk.mi-on .cmdk-foot>span:not(#miFoot){display:none}
+.cmdk.mi-on .mi-foot{display:inline}
+.mi-keyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mi-keyrow input{flex:1;min-width:220px}
+@media (max-width:640px){.mi-btn span{display:none}.mi-msg{max-width:100%}.mi-bar kbd{display:none}}
+
 </style>
 </head>
 <body>
@@ -1562,5 +1598,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.57.0"></script></body>
+<script src="app.bundle.js?v=1.58.0"></script></body>
 </html>
