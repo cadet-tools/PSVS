@@ -12,6 +12,8 @@
   - Noteikumu precizējumi: šaubu gadījumā jautājums par jaunsargiem, dokumentiem, nodarbībām u. tml. ir par rīku (nevis ārpus tēmas); sadaļas atbildē sauc latviski — `parse()` aizstāj sadaļu atslēgas (`forms` → “Veidlapas”). Fakts par līgumu 18 gados: brīdinājums personas kartītes galvenē ar pogām “📄 Sagatavot līgumu ar jaunsargu” un “✓ Līgums noslēgts”.
   - Kļūdu ziņas latviski ar darbībām: “Pievienot savu Groq atslēgu”, “↻ Mēģināt vēlreiz”, “Iebūvētais palīgs”; 429 ar `retry-after` ≤ 120 s — “aizņemts”, citādi — dienas limits.
   - Labojums: atkārtoti atverot meklēšanas logu, iepriekšējā MI saruna un tukšā josla vairs nepaliek redzamas (`.mi-pane[hidden]`, `.mi-bar[hidden]` — `display:flex` pārrakstīja `hidden`).
+  - Kopīgais MI pieslēgts: `MI_URL` — Apps Script tīmekļa lietotne “CADET PERSONALS GROCK MI” (adrese nav slepena; Groq atslēga tikai skripta rekvizītos).
+  - “Kas tu esi”, “ko vari”, “sveiks” — iepazīšanās atbilde uzreiz rīkā, bez sūtīšanas un netērējot limitu (`ABOUT_Q`).
   - Izstrādei `docs/mi/mimock.js` — vietējais serveris, kas izpilda īsto `Kods.gs` (`/__mi/dev` ieslēdz testa versiju ar vietējo starpnieku).
 - Būvēšana: `src/_buvesana/build_test.py` pārbūvē tikai `test/`; `build_web.py` — `CSP_TEST` un `tools/mi` → `docs/mi`. Pārbaude: `node docs/mi/mi_test.mjs`. Apraksts: `docs/MI.md`.
 

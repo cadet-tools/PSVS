@@ -14391,7 +14391,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
   /** Kopīgā MI starpnieka adrese (Apps Script …/exec). Testam: localStorage['cp.miUrl'] = JSON.stringify('…'). */
-  const MI_URL = '';
+  const MI_URL = 'https://script.google.com/macros/s/AKfycbzk3IFUpvMRZSF8RxagcE-FRIGQTjFmdsx7Oo5CHqsYKxcDXlf4W6LlPR_hTljWaTJj/exec';
   const FORMAT = 'cadet-mi-v1';
   const GROQ = 'https://api.groq.com/openai/v1';
   const OWN_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
@@ -14631,7 +14631,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       const acts = [...m.guide.map(g => H[g] ? `<button type="button" class="sm mainbtn" data-mi="g" data-i="${g}">Parādīt, kur → ${esc(H[g].t.replace(/\?$/, ''))}</button>` : ''),
         m.page ? `<button type="button" class="sm" data-mi="p" data-i="${esc(m.page)}">Atvērt: ${esc(PAGES[m.page].split(' — ')[0])}</button>` : ''].join('');
       return `<div class="mi-msg a ${m.offtopic ? 'off' : ''}"><div class="mi-bub">${md(m.t)}${acts ? `<div class="actions">${acts}</div>` : ''}</div>
-        <div class="mi-meta small muted">${SPARK}MI atbilde${m.own ? ' · sava atslēga' : m.left != null ? ` · atlikuši ${m.left} jautājumi` : ''} — var kļūdīties, pārbaudi rīkā</div></div>`;
+        <div class="mi-meta small muted">${SPARK}${m.local ? 'MI palīgs · bez sūtīšanas' : `MI atbilde${m.own ? ' · sava atslēga' : m.left != null ? ` · atlikuši ${m.left} jautājumi` : ''} — var kļūdīties, pārbaudi rīkā`}</div></div>`;
     }).join('');
     p.innerHTML = `<div class="mi-head">${SPARK}<b class="grow">MI palīgs</b>
         ${M.conv.length ? '<button type="button" class="sm ghost" data-mi="new">Jauna saruna</button>' : ''}<button type="button" class="sm ghost" data-mi="local">← Meklēšana</button></div>
@@ -14640,6 +14640,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       <p class="mi-priv small muted">Jautājums tiek nosūtīts MI pakalpojumam Groq. Personu dati, dokumenti un datu fails netiek sūtīti; vārdi, personas kodi un tālruņi jautājumā tiek aizstāti.</p>`;
     const last = [...p.querySelectorAll('.mi-msg')].at(-1); if (last) last.scrollIntoView({ block: 'nearest' });
   }
+  const ABOUT_Q = /^(sveiks|sveiki|čau|labdien|hei|hi|hello)?[\s,!.]*(kas (tu|jūs) (esi|esat)|ko (tu |jūs )?(vari|varat|proti|māki|dari)|kā (tu |jūs )?(vari |varat )?(man )?palīdz\w*|ar ko (tu |jūs )?(vari |varat )?palīdz\w*|ko (tev|jums) var jautāt|kas ir mi palīgs)\b|^(sveiks|sveiki|čau|labdien|hei|hi|hello)[\s!.?]*$/i;
+  const ABOUT_A = 'Esmu **CADET PERSONĀLS MI palīgs**. Palīdzu ar rīka lietošanu: kā pievienot jaunsargu vai kandidātu, ievadīt anketu, pievienot dokumentus (līgums, ārsta izziņa, atļauja), atzīmēt apmeklējumu, plānot nodarbības un pasākumus, sagatavot veidlapas, uzskaitīt ekipējumu, sūtīt ziņas un veidot rezerves kopijas.\n\nJautā, piem., “kā pārcelt jaunsargus uz nākamo gadu?” — atbildēšu pa soļiem un parādīšu, kur jāspiež. Tavus datus un dokumentus es neredzu.';
   async function askNow(retryText) {
     if (!on() || M.busy) return;
     const inp = $('cmdkQ'), raw = String(retryText ?? inp.value).trim();
@@ -14649,6 +14651,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     const hist = M.conv.filter(m => m.r === 'u' || m.r === 'a').slice(-6).map(m => ({ r: m.r, t: m.r === 'u' ? m.t : m.t.slice(0, 1500) }));
     const um = { r: 'u', raw, t: redact(raw) }; M.conv.push(um);
     if (retryText == null) inp.value = '';
+    if (ABOUT_Q.test(raw)) { M.conv.push({ r: 'a', t: ABOUT_A, guide: [], page: '', local: true }); paintPane(); paintBar(); inp.focus(); return; }
     M.busy = true; paintPane(); paintBar();
     try {
       const r = await ask(raw, hist);
