@@ -9,6 +9,9 @@
   - Kopīgais MI caur Apps Script starpnieku `docs/mi/Kods.gs` (`MI_URL`; testam `localStorage cp.miUrl`): Groq atslēga tikai skripta rekvizītos, jautājumi netiek saglabāti, limiti — lietotājam 20 / 6 h (`cp.miId`), kopā 2500 dienā un 15 minūtē; modeļi pēc kārtas `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b` (ja 429 — nākamais).
   - Sava Groq atslēga: kartīte Iestatījumi → Atļaujas → “MI palīgs” (`#miCard`, pievienota ar `CP.afterRender`, `settings.js` netiek mainīts) — `localStorage cp.miKey`, pārbaude ar `GET /models`; tad pieprasījumi tieši uz `api.groq.com` (testa CSP `connect-src` papildināta). Slēdzis “Rādīt MI palīgu” (`cp.miOff`), šodienas skaits (`cp.miUse`).
   - Statistikā tikai darbību nosaukumi `miAsk`, `miErr:<kods>`.
+  - Noteikumu precizējumi: šaubu gadījumā jautājums par jaunsargiem, dokumentiem, nodarbībām u. tml. ir par rīku (nevis ārpus tēmas); sadaļas atbildē sauc latviski — `parse()` aizstāj sadaļu atslēgas (`forms` → “Veidlapas”). Fakts par līgumu 18 gados: brīdinājums personas kartītes galvenē ar pogām “📄 Sagatavot līgumu ar jaunsargu” un “✓ Līgums noslēgts”.
+  - Kļūdu ziņas latviski ar darbībām: “Pievienot savu Groq atslēgu”, “↻ Mēģināt vēlreiz”, “Iebūvētais palīgs”; 429 ar `retry-after` ≤ 120 s — “aizņemts”, citādi — dienas limits.
+  - Izstrādei `docs/mi/mimock.js` — vietējais serveris, kas izpilda īsto `Kods.gs` (`/__mi/dev` ieslēdz testa versiju ar vietējo starpnieku).
 - Būvēšana: `src/_buvesana/build_test.py` pārbūvē tikai `test/`; `build_web.py` — `CSP_TEST` un `tools/mi` → `docs/mi`. Pārbaude: `node docs/mi/mi_test.mjs`. Apraksts: `docs/MI.md`.
 
 ## 1.57.0 — 2026-10-19
