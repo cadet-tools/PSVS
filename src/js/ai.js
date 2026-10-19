@@ -150,7 +150,13 @@
     if (s === 'shared' && hasSh) return 'shared';
     return hasOwn ? 'own' : hasSh ? 'shared' : '';
   };
-  const setSrc = v => ls.set('cp.miSrc', v);
+  const setSrc = (v, why) => { ls.set('cp.miSrc', v); if (why) ls.set('cp.miSrcWhy', why); };
+  const ownLocked = () => { const o = ls.get('cp.miOwnQ', null); return !!(o && o.until > Date.now()); };
+  const ownLeftSec = () => { const o = ls.get('cp.miOwnQ', null); return o && o.until > Date.now() ? Math.max(1, Math.ceil((o.until - Date.now()) / 1000)) : 0; };
+  /** Pēc automātiskas 429→kopīgais atgriežas uz savu atslēgu, kad minūtes locks beidzies. */
+  function preferOwn() {
+    if (ownKey() && !ownLocked() && ls.get('cp.miSrcWhy', '') === 'auto' && src() === 'shared') setSrc('own', 'auto');
+  }
   function saveShareQ(left, resetMin) {
     ls.set('cp.miShareQ', { left, resetMin: resetMin || 0, at: Date.now() });
   }
@@ -233,26 +239,33 @@
     if (!navigator.onLine) throw err('offline');
     const q = redact(raw), page = PAGES[S.page] || S.page === 'person' ? S.page : '';
     const kb = knowledge(q);
+    preferOwn();
     const want = src();
     if (!want) throw err('none');
-    let r, switched = false;
+    let r, switched = '';
+    const takeOwn = () => viaOwn(ownKey(), q, hist, kb, page);
+    const takeSh = () => viaShared(q, hist, kb, page);
     if (want === 'own') {
-      try { r = await viaOwn(ownKey(), q, hist, kb, page); }
+      try { r = await takeOwn(); }
       catch (e) {
         if (e.code === 'own_limit' && url()) {
-          try {
-            r = await viaShared(q, hist, kb, page);
-            switched = true; setSrc('shared');
-          } catch (e2) {
-            if (e2.code === 'limit' || e2.code === 'limit_all' || e2.code === 'busy') {
-              const left = Math.max(1, Math.ceil(((ls.get('cp.miOwnQ', null) || {}).until - Date.now()) / 1000) || 60);
-              throw err('own_limit', { resetSec: left });
-            }
+          try { r = await takeSh(); switched = 'shared'; setSrc('shared', 'auto'); }
+          catch (e2) {
+            if (e2.code === 'limit' || e2.code === 'limit_all' || e2.code === 'busy') throw err('own_limit', { resetSec: ownLeftSec() || 60 });
             throw e2;
           }
         } else throw e;
       }
-    } else r = await viaShared(q, hist, kb, page);
+    } else {
+      try { r = await takeSh(); }
+      catch (e) {
+        if ((e.code === 'limit' || e.code === 'limit_all' || e.code === 'busy' || e.code === 'setup') && ownKey() && !ownLocked()) {
+          r = await takeOwn(); switched = 'own'; setSrc('own', 'auto');
+        } else if ((e.code === 'limit' || e.code === 'limit_all' || e.code === 'busy') && ownKey() && ownLocked()) {
+          throw err('own_limit', { resetSec: ownLeftSec() || 60, resetMin: e.resetMin });
+        } else throw e;
+      }
+    }
     countUse(r.own);
     return { ...parse(r.text, q), sent: q, model: r.model, own: r.own, left: r.left, switched };
   }
@@ -395,7 +408,13 @@
     const msgs = M.conv.map((m, i) => {
       if (m.r === 'n') return `<div class="mi-note">${esc(m.t)}</div>`;
       if (m.r === 'u') return `<div class="mi-msg u"><div class="mi-bub">${esc(m.raw)}</div>${m.t !== m.raw ? `<div class="mi-sent small muted" title="Tieši šis teksts tika nosūtīts MI">Nosūtīts: ${esc(m.t)}</div>` : ''}</div>`;
-      if (m.r === 'e') return `<div class="mi-msg a err"><div class="mi-bub"><p>${esc(m.t)}</p><div class="actions">${['limit', 'limit_all', 'none', 'setup', 'badkey', 'own_limit'].includes(m.code) ? `<button type="button" class="sm mainbtn" data-mi="set">${m.code === 'badkey' || m.code === 'own_limit' ? 'Atvērt MI iestatījumus' : 'Pievienot savu Groq atslēgu'}</button>` : ''}${['busy', 'timeout', 'error', 'offline', 'own_limit'].includes(m.code) ? `<button type="button" class="sm" data-mi="retry" data-i="${i}">↻ Mēģināt vēlreiz</button>` : ''}<button type="button" class="sm ghost" data-mi="local">Iebūvētais palīgs</button></div></div></div>`;
+      if (m.r === 'e') {
+        const hasK = !!ownKey();
+        const main = m.code === 'badkey' || m.code === 'own_limit' ? `<button type="button" class="sm mainbtn" data-mi="set">Atvērt MI iestatījumus</button>`
+          : ['limit', 'limit_all', 'busy'].includes(m.code) && hasK ? `<button type="button" class="sm mainbtn" data-mi="useown" data-i="${i}">Jautāt ar savu atslēgu</button>`
+          : ['limit', 'limit_all', 'none', 'setup'].includes(m.code) ? `<button type="button" class="sm mainbtn" data-mi="set">Pievienot savu Groq atslēgu</button>` : '';
+        return `<div class="mi-msg a err"><div class="mi-bub"><p>${esc(m.t)}</p><div class="actions">${main}${['busy', 'timeout', 'error', 'offline', 'own_limit', 'limit', 'limit_all'].includes(m.code) ? `<button type="button" class="sm" data-mi="retry" data-i="${i}">↻ Mēģināt vēlreiz</button>` : ''}<button type="button" class="sm ghost" data-mi="local">Iebūvētais palīgs</button></div></div></div>`;
+      }
       const acts = [...m.guide.map(g => H[g] ? `<button type="button" class="sm mainbtn" data-mi="g" data-i="${g}">Parādīt, kur → ${esc(H[g].t.replace(/\?$/, ''))}</button>` : ''),
         m.page ? `<button type="button" class="sm" data-mi="p" data-i="${esc(m.page)}">Atvērt: ${esc(PAGES[m.page].split(' — ')[0])}</button>` : ''].join('');
       return `<div class="mi-msg a ${m.offtopic ? 'off' : ''}"><div class="mi-bub">${md(m.t)}${acts ? `<div class="actions">${acts}</div>` : ''}</div>
@@ -465,13 +484,17 @@
     try {
       const r = await ask(raw, hist.slice(-6));
       um.t = r.sent;
-      if (r.switched) M.conv.push({ r: 'n', t: 'Sava Groq atslēga sasniedza minūtes limitu — šo atbildi devu ar kopīgo MI. Pēc minūtes vari atkal ieslēgt “Sava atslēga”.' });
+      if (r.switched === 'shared') M.conv.push({ r: 'n', t: 'Sava Groq atslēga sasniedza minūtes limitu — šo atbildi devu ar kopīgo MI. Kad atskaite beigsies, rīks pats atgriezīsies pie savas atslēgas.' });
+      if (r.switched === 'own') M.conv.push({ r: 'n', t: 'Kopīgais MI limits ir izsmelts — šo atbildi devu ar savu Groq atslēgu.' });
       M.conv.push({ r: 'a', t: r.answer, guide: r.guide, page: r.page, offtopic: r.offtopic, own: r.own, left: r.left });
     } catch (e) {
       const code = ERR[e.code] ? e.code : 'error';
       CP.analytics?.act('miErr:' + code);
-      const wait = e.resetSec || (code === 'own_limit' && (ls.get('cp.miOwnQ', null) || {}).until > Date.now() ? Math.max(1, Math.ceil(((ls.get('cp.miOwnQ', null).until) - Date.now()) / 1000)) : 0);
-      M.conv.push({ r: 'e', code, raw, t: ERR[code].replace('{reset}', e.resetMin ? ` — atjaunosies pēc ~${e.resetMin > 90 ? Math.round(e.resetMin / 60) + ' h' : e.resetMin + ' min'}` : wait ? ` — pēc ${wait} s` : '') });
+      const wait = e.resetSec || (code === 'own_limit' ? ownLeftSec() : 0);
+      const reset = e.resetMin ? ` — atjaunosies pēc ~${e.resetMin > 90 ? Math.round(e.resetMin / 60) + ' h' : e.resetMin + ' min'}` : wait ? ` — pēc ${wait} s` : '';
+      let t = ERR[code].replace('{reset}', reset);
+      if ((code === 'limit' || code === 'limit_all') && ownKey()) t = `Kopīgais MI limits ir izsmelts${reset}. Tev jau ir sava Groq atslēga — spied “Jautāt ar savu atslēgu”, nav jāpievieno jauna.`;
+      M.conv.push({ r: 'e', code, raw, t });
     } finally {
       M.busy = false; paintPane(); paintBar(); if ($('cmdkDialog')?.open) inp.focus();
     }
@@ -480,9 +503,13 @@
     const b = e.target.closest('[data-mi]'); if (!b) return; e.preventDefault(); e.stopPropagation();
     const k = b.dataset.mi, i = b.dataset.i;
     if (k === 'local') { setMode(false); $('cmdkQ').focus(); return; }
-    if (k === 'src') { if (b.disabled) return; setSrc(i); paintPane(); const f = $('miFoot'); if (f) f.textContent = quotaLine(); return; }
+    if (k === 'src') { if (b.disabled) return; setSrc(i, 'user'); paintPane(); const f = $('miFoot'); if (f) f.textContent = quotaLine(); return; }
     if (k === 'new') { M.conv = []; paintPane(); $('cmdkQ').focus(); return; }
-    if (k === 'retry') { const m = M.conv[Number(i)]; if (!m) return; M.conv.splice(Number(i) - 1, 2); askNow(m.raw); return; }
+    if (k === 'retry' || k === 'useown') {
+      const m = M.conv[Number(i)]; if (!m) return;
+      if (k === 'useown') setSrc('own', 'user');
+      M.conv.splice(Number(i) - 1, 2); askNow(m.raw); return;
+    }
     const close = () => { $('cmdkDialog').close(); U.qsa('dialog[open]').forEach(d => { try { d.close(); } catch (x) { /* */ } }); };
     if (k === 'g') { const h = help()[Number(i)]; if (!h) return; close(); CP.assist.guide(h); return; }
     if (k === 'p') { if (!PAGES[i]) return; close(); ui.go(i); return; }
@@ -527,10 +554,10 @@
     if (!/^gsk_[A-Za-z0-9]{20,}$/.test(v)) { msg('Atslēgai jāsākas ar gsk_ un jābūt nokopētai pilnībā.', 'red'); return; }
     msg('Pārbauda…'); const r = await testKey(v);
     if (r.bad) { msg(r.t, 'red'); return; }
-    ls.set('cp.miKey', v); setSrc('own'); paintCard(); msg(r.t, r.ok ? 'good' : 'warn');
+    ls.set('cp.miKey', v); setSrc('own', 'user'); paintCard(); msg(r.t, r.ok ? 'good' : 'warn');
   };
   A.miKeyTest = async () => { const k = ownKey(); if (!k) return; msg('Pārbauda…'); const r = await testKey(k); msg(r.t, r.ok ? 'good' : 'red'); };
-  A.miKeyDel = () => { if (!confirm('Noņemt savu Groq atslēgu no šī pārlūka?')) return; ls.set('cp.miKey', null); setSrc('shared'); paintCard(); ui.toast('Groq atslēga noņemta — lieto kopīgo MI.', 'ok'); };
+  A.miKeyDel = () => { if (!confirm('Noņemt savu Groq atslēgu no šī pārlūka?')) return; ls.set('cp.miKey', null); setSrc('shared', 'user'); paintCard(); ui.toast('Groq atslēga noņemta — lieto kopīgo MI.', 'ok'); };
   A.miSettings = () => { S.setTab = 'perm'; ui.goSettingsCard('miCard'); };
   CP.changeHandlers.push(e => { if (e.target.dataset?.miset !== 'on') return false; ls.set('cp.miOff', e.target.checked ? null : true); paintBar(); return true; });
   { const o = CP.noRootOk; CP.noRootOk = a => /^mi[A-Z]/.test(a) || o(a); }
