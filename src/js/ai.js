@@ -89,7 +89,7 @@
   const help = () => CP.assist?.HELP || [];
   const helpBlob = h => U.norm(h.t + ' ' + (h.kw || '') + ' ' + (h.a || ''));
   const hitsHelp = (qt, h) => qt.some(t => { const st = stem(t), blob = helpBlob(h); return blob.split(' ').some(w => w === t || (st.length >= 4 && (w.startsWith(st) || st.startsWith(stem(w))))); });
-  const isJoke = q => /(?:^|\b)(pajoko|pastāsti jok|uzsāc jok|joku?\b)|jaunsargs iet|iet uz mež|klauvē pie/i.test(q);
+  const isJoke = q => /(?:^|\b)(pajoko|pastāsti jok|uzsāc jok|dienas jok|joku?\b)|jaunsargs iet|iet uz mež|klauvē pie/i.test(q);
   const SLIM = 'CADET PERSONĀLS — instruktora rīks jaunsargu uzskaitei. PAMĀCĪBAS: neviena nav par šo jautājumu. guide: [] un page: "". Nesasaisti ar tuvāko virsrakstu. Ja tas ir joks vai jokā sākums — pastāsti īsu pieklājīgu joku par jaunsargiem un piedāvā palīdzību ar rīku. Citādi īsi atbildi (ja tas nav par rīku — pasaki to) un piedāvā palīdzību ar rīku.';
   /** Zināšanas jautājumam: sadaļas, fakti; pamācības sīkāk — tikai ja ir kopīgs saturīgs vārds */
   function knowledge(q) {
@@ -185,7 +185,7 @@
     limit: 'Tavs kopīgā MI jautājumu limits ir izsmelts{reset}. Lai turpinātu uzreiz, pievieno savu bezmaksas Groq atslēgu.',
     limit_all: 'Kopīgais MI šodien ir sasniedzis limitu visiem lietotājiem. Pievieno savu bezmaksas Groq atslēgu vai mēģini rīt.',
     busy: 'Šobrīd MI jautā daudzi — pamēģini vēlreiz pēc minūtes.',
-    own_limit: 'Tavas Groq atslēgas minūtes limits (tokeni) šobrīd sasniegts. Pamēģini pēc minūtes vai noņem atslēgu Iestatījumos, lai lietotu kopīgo MI.',
+    own_limit: 'Tavas Groq atslēgas minūtes limits (tokeni) šobrīd sasniegts{reset}. Pagaidi atskaiti joslā — pēc tam vari jautāt atkal ar savu atslēgu.',
     badkey: 'Groq atslēga nav derīga. Pārbaudi to Iestatījumos (MI palīgs).',
     setup: 'Kopīgais MI šobrīd nav pieejams (starpnieks nav iestatīts). Vari pievienot savu Groq atslēgu.',
     timeout: 'MI neatbildēja laikā. Pamēģini vēlreiz.',
@@ -240,8 +240,16 @@
       try { r = await viaOwn(ownKey(), q, hist, kb, page); }
       catch (e) {
         if (e.code === 'own_limit' && url()) {
-          r = await viaShared(q, hist, kb, page);
-          switched = true; setSrc('shared');
+          try {
+            r = await viaShared(q, hist, kb, page);
+            switched = true; setSrc('shared');
+          } catch (e2) {
+            if (e2.code === 'limit' || e2.code === 'limit_all' || e2.code === 'busy') {
+              const left = Math.max(1, Math.ceil(((ls.get('cp.miOwnQ', null) || {}).until - Date.now()) / 1000) || 60);
+              throw err('own_limit', { resetSec: left });
+            }
+            throw e2;
+          }
         } else throw e;
       }
     } else r = await viaShared(q, hist, kb, page);
@@ -307,7 +315,7 @@
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || M.mode)) { e.preventDefault(); e.stopPropagation(); askNow(); }
       else if (M.mode && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) e.stopPropagation();
     }, true);
-    d.addEventListener('close', () => { if (!M.busy) setMode(false); });
+    d.addEventListener('close', () => { stopTick(); if (!M.busy) setMode(false); });
     return d;
   }
   function paintBar() {
@@ -322,9 +330,10 @@
     M.mode = !!v; const d = $('cmdkDialog'); if (!d) return;
     d.classList.toggle('mi-on', M.mode); $('miPane').hidden = !M.mode;
     $('cmdkQ').placeholder = M.mode ? 'Jautā MI vēl ko… (Enter — sūtīt)' : 'Meklē personu, dokumentu, sadaļu… vai uzdod jautājumu';
-    if (!M.mode) $('cmdkQ').dispatchEvent(new Event('input'));
+    if (!M.mode) { stopTick(); $('cmdkQ').dispatchEvent(new Event('input')); }
     paintBar();
     const f = $('miFoot'); if (f) f.textContent = quotaLine();
+    if (M.mode) tickQuota();
   }
   function quotaLine() {
     const s = src(), ownN = ownKey() ? (use().own || 0) : null, o = ls.get('cp.miOwnQ', null);
@@ -364,13 +373,29 @@
     }
     return bits.length ? `<div class="mi-qs">${bits.join('')}</div>` : '';
   }
+  let qTick = 0;
+  function stopTick() { if (qTick) { clearInterval(qTick); qTick = 0; } }
+  function paintQuota() {
+    const box = $('miPane')?.querySelector('.mi-qs');
+    if (box) box.outerHTML = quotaHtml();
+    const f = $('miFoot'); if (f) f.textContent = quotaLine();
+  }
+  function tickQuota() {
+    const waiting = () => { const o = ls.get('cp.miOwnQ', null); return o && o.until > Date.now(); };
+    if (qTick || !waiting() || !M.mode) return;
+    qTick = setInterval(() => {
+      if (!M.mode || !$('cmdkDialog')?.open) { stopTick(); return; }
+      if (!waiting()) { stopTick(); paintQuota(); return; }
+      paintQuota();
+    }, 400);
+  }
   function paintPane() {
     const p = $('miPane'); if (!p) return;
     const H = help();
     const msgs = M.conv.map((m, i) => {
       if (m.r === 'n') return `<div class="mi-note">${esc(m.t)}</div>`;
       if (m.r === 'u') return `<div class="mi-msg u"><div class="mi-bub">${esc(m.raw)}</div>${m.t !== m.raw ? `<div class="mi-sent small muted" title="Tieši šis teksts tika nosūtīts MI">Nosūtīts: ${esc(m.t)}</div>` : ''}</div>`;
-      if (m.r === 'e') return `<div class="mi-msg a err"><div class="mi-bub"><p>${esc(m.t)}</p><div class="actions">${['limit', 'limit_all', 'none', 'setup', 'badkey', 'own_limit'].includes(m.code) ? `<button type="button" class="sm mainbtn" data-mi="set">${m.code === 'badkey' || m.code === 'own_limit' ? 'Atvērt MI iestatījumus' : 'Pievienot savu Groq atslēgu'}</button>` : ''}${['busy', 'timeout', 'error', 'offline'].includes(m.code) ? `<button type="button" class="sm" data-mi="retry" data-i="${i}">↻ Mēģināt vēlreiz</button>` : ''}<button type="button" class="sm ghost" data-mi="local">Iebūvētais palīgs</button></div></div></div>`;
+      if (m.r === 'e') return `<div class="mi-msg a err"><div class="mi-bub"><p>${esc(m.t)}</p><div class="actions">${['limit', 'limit_all', 'none', 'setup', 'badkey', 'own_limit'].includes(m.code) ? `<button type="button" class="sm mainbtn" data-mi="set">${m.code === 'badkey' || m.code === 'own_limit' ? 'Atvērt MI iestatījumus' : 'Pievienot savu Groq atslēgu'}</button>` : ''}${['busy', 'timeout', 'error', 'offline', 'own_limit'].includes(m.code) ? `<button type="button" class="sm" data-mi="retry" data-i="${i}">↻ Mēģināt vēlreiz</button>` : ''}<button type="button" class="sm ghost" data-mi="local">Iebūvētais palīgs</button></div></div></div>`;
       const acts = [...m.guide.map(g => H[g] ? `<button type="button" class="sm mainbtn" data-mi="g" data-i="${g}">Parādīt, kur → ${esc(H[g].t.replace(/\?$/, ''))}</button>` : ''),
         m.page ? `<button type="button" class="sm" data-mi="p" data-i="${esc(m.page)}">Atvērt: ${esc(PAGES[m.page].split(' — ')[0])}</button>` : ''].join('');
       return `<div class="mi-msg a ${m.offtopic ? 'off' : ''}"><div class="mi-bub">${md(m.t)}${acts ? `<div class="actions">${acts}</div>` : ''}</div>
@@ -391,6 +416,7 @@
       <p class="mi-priv small muted">Jautājums tiek nosūtīts MI pakalpojumam Groq. Personu dati, dokumenti un datu fails netiek sūtīti; vārdi, personas kodi un tālruņi jautājumā tiek aizstāti.</p>`;
     const last = [...p.querySelectorAll('.mi-msg')].at(-1); if (last) last.scrollIntoView({ block: 'nearest' });
     const f = $('miFoot'); if (f) f.textContent = quotaLine();
+    tickQuota();
   }
   const ABOUT_Q = /^(sveiks|sveiki|čau|labdien|hei|hi|hello)?[\s,!.]*(kas (tu|jūs) (esi|esat)|ko (tu |jūs )?(vari|varat|proti|māki|dari)|kā (tu |jūs )?(vari |varat )?(man )?palīdz\w*|ar ko (tu |jūs )?(vari |varat )?palīdz\w*|ko (tev|jums) var jautāt|kas ir mi palīgs|kam rīks domāts)\b|^(sveiks|sveiki|čau|labdien|hei|hi|hello)[\s!.?]*$/i;
   const ABOUT_A = 'Esmu **CADET PERSONĀLS MI palīgs**. Palīdzu ar rīka lietošanu: kā pievienot jaunsargu vai kandidātu, ievadīt anketu, pievienot dokumentus (līgums, ārsta izziņa, atļauja), atzīmēt apmeklējumu, plānot nodarbības un pasākumus, sagatavot veidlapas, uzskaitīt ekipējumu, sūtīt ziņas un veidot rezerves kopijas.\n\nJautā, piem., “kā pārcelt jaunsargus uz nākamo gadu?” — atbildēšu pa soļiem un parādīšu, kur jāspiež. Tavus datus un dokumentus es neredzu.';
@@ -401,7 +427,7 @@
     if (/(kur|kā|ka).{0,48}(api|groq|atslēg|mi palīg)|(api|groq).{0,24}(konfigur|iestat|atslēg|main)|mainīt api/i.test(q)) {
       return { t: 'MI palīga atslēgu un slēdzi maina **Iestatījumi → Atļaujas → kartīte “MI palīgs”**. Tur ieslēdz palīgu, ielīmē savu Groq atslēgu (`gsk_…`) vai noņem to. Meklēšanas logā (Ctrl+K) to pašu dara josla **Kopīgais / Sava atslēga**. Rīkā **nav** sadaļas “API konfigurācija”.', page: 'settings' };
     }
-    if (/^(cik (ir )?pulksten(is)?|kāds (ir )?(tagad )?laiks)[\s?.!]*$/i.test(q)) {
+    if (/^cik (ir )?(pulksten|pulks\w{2,12})\b|kāds (ir )?(tagad )?laiks/i.test(q) && !/dizain|ciparn|izskat/i.test(q)) {
       return { t: 'Pašreizējo laiku es neredzu — pulkstenis ir **Pārskatā**. Ciparnīcu (Taktiskā, Analogā, Lielie cipari, Nakts) maina Iestatījumi → Pamata → “Pulkstenis un pauzes” → “Ciparnīca”, vai uz paša pulksteņa ar “UP · MENU”. Režīmi Laiks / Hronometrs / Taimeris — poga “DOWN”.', page: 'dashboard' };
     }
     if (/cik dien.{0,24}gad/i.test(q)) {
@@ -444,7 +470,8 @@
     } catch (e) {
       const code = ERR[e.code] ? e.code : 'error';
       CP.analytics?.act('miErr:' + code);
-      M.conv.push({ r: 'e', code, raw, t: ERR[code].replace('{reset}', e.resetMin ? ` — atjaunosies pēc ~${e.resetMin > 90 ? Math.round(e.resetMin / 60) + ' h' : e.resetMin + ' min'}` : '') });
+      const wait = e.resetSec || (code === 'own_limit' && (ls.get('cp.miOwnQ', null) || {}).until > Date.now() ? Math.max(1, Math.ceil(((ls.get('cp.miOwnQ', null).until) - Date.now()) / 1000)) : 0);
+      M.conv.push({ r: 'e', code, raw, t: ERR[code].replace('{reset}', e.resetMin ? ` — atjaunosies pēc ~${e.resetMin > 90 ? Math.round(e.resetMin / 60) + ' h' : e.resetMin + ' min'}` : wait ? ` — pēc ${wait} s` : '') });
     } finally {
       M.busy = false; paintPane(); paintBar(); if ($('cmdkDialog')?.open) inp.focus();
     }
