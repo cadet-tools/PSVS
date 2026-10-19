@@ -56,6 +56,7 @@ http.createServer((req, res) => {
       if (u.pathname === '/__mi/reset') { for (const k of Object.keys(cache)) delete cache[k]; for (const k of Object.keys(props)) if (k.startsWith('day:')) delete props[k]; fake429 = new Set(JSON.parse(b || '[]')); fakeCalls = 0; return json({ ok: true }); }
       if (u.pathname === '/__mi/stats') return json({ fakeCalls, fake: FAKE, props: Object.keys(props).filter(k => k !== 'GROQ_KEY') });
       if (u.pathname === '/__mi/rules') return json({ rules: ctx.__f.RULES });
+      if (u.pathname === '/__mi/dev') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end('<!doctype html><meta charset="utf-8"><script>localStorage.setItem("cp.miUrl", JSON.stringify("/__mi"));location.replace("/test/");</script>'); }
       if (req.method === 'POST') return json(ctx.__f.doPost({ postData: { contents: b } }).s);
       json(ctx.__f.doGet({ parameter: Object.fromEntries(u.searchParams) }).s);
     });

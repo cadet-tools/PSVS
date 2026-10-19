@@ -41,7 +41,8 @@ Jauna versija ielādējas automātiski. Kad tā pienāk, programma parāda **↻
 
 - `index.html`, `app.bundle.js`, `sw.js` — stabilā versija. `test/` — testa kanāls. `vendor/` — bibliotēkas (pdf.js, Tesseract, QR).
 - **Analītika ir pastāvīga rīka daļa** — `src/js/analytics.js`, saņēmējs un panelis `docs/analitika/` (Google Apps Script). Pārbūvējot to nedzēš; apraksts un pārbaude: [docs/ANALYTICS.md](docs/ANALYTICS.md).
-- `src/` — avota kods (moduļi `src/js`, `src/css`). Būvēšana: `python3 src/_buvesana/build_web.py <avots> <repo> <node_modules>`.
+- `src/` — avota kods (moduļi `src/js`, `src/css`). Būvēšana: `python3 src/_buvesana/build_web.py <avots> <repo> <node_modules>`. Tikai testa kanāls no repozitorija `src/`: `python3 src/_buvesana/build_test.py`.
+- **MI palīgs** (tikai testa kanālā) — `src/js/ai.js`, starpnieks `docs/mi/` (Google Apps Script → Groq). Uzstādīšana un kas tiek sūtīts: [docs/MI.md](docs/MI.md).
 - Jaunu versiju vispirms ieliek `test/`, pārbauda, un tikai tad saknē.
 - **Datu saglabāšanas noteikumi atjauninot:** datu shēmu (`CP.SCHEMA`) palielina tikai tad, kad mainās datu struktūra; `CP.migrate()` drīkst laukus tikai pievienot vai pārveidot, nekad nedzēst; nezināmi lauki paliek neskarti. Pirms migrācijas rīks pats saglabā kopiju `_rezerves`. Vecāka versija jaunāka faila datus neatļauj saglabāt.
 - Organizācijas `cadet-tools` GitHub Pages lapām ir kopīga adrese (`cadet-tools.github.io`), tātad arī kopīga pārlūka atmiņa. Citas, neuzticamas lapas šajā organizācijā nepublicē. GitHub kontam ieslēdz divpakāpju pieteikšanos.
