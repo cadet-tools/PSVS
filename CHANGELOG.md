@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 1.57.0 — 2026-10-19
+- Meklēšana un palīgs, gada noslēguma vednis, datu veselība un atjaunošanas pārbaude (1.56.0 testa kanālā) — **ieslēgti arī stabilajā versijā** (`CHANNEL` pārbaudes noņemtas `assist.js`, `health.js`, `yearend.js`).
+- Palīgs vada pa soļiem: atbildē redzami numurēti soļi; izvēloties atbildi, atveras panelis `#cpGuide` (pārvietojas atvērtajā dialogā, lai būtu lietojams), palīgs pats atver lapu/iestatījumu kartīti/dialogu un iezīmē vietu (`.cp-guide-hl`); uzspiežot uz iezīmētās pogas — nākamais solis; “Atpakaļ”, “Parādīt vēlreiz”, “Gatavs”. Soļi, kas jau izpildīti (persona jau atvērta), tiek izlaisti. 31 jautājums; tests t128 pārbauda, ka katra soļa vieta tiek atrasta.
+- Darbības ar personu no meklēšanas: vārds jebkurā locījumā + nodoms (“Annai pievienot dokumentu”, “Kalniņa ekipējums”, “Laurai kopsavilkums”) → tieši personas cilne ar iezīmētu pogu vai attiecīgais logs; tikai vārds — ātrās darbības.
+- Datu veselība: katrai piezīmei “Ko tas nozīmē?” — kāpēc rodas, ko darīs labojums vai ko darīt pašam, konkrētie atrastie ieraksti (dokuments + datums + fails, gads + grupa, nodarbības datums…); atzīme “izlabojams automātiski” / “jāpārskata pašam”; saraksts “Kas tiek pārbaudīts” ar ✓ vai skaitu.
+- Tests t54 pārrakstīts: vecās piezīmes (`p.notes`, `enrollment.note`) migrācijā pāriet uz žurnālu ar sākotnējo datumu; žurnāla pievienošana, labošana, Esc, dzēšana, gada piezīmes, saglabāšana pēc pārlādes — abos kanālos.
+
 ## 1.56.0 — 2026-10-19
 - **Tikai testa kanālā** (`CP.CHANNEL === 'test'`):
   - `js/assist.js` — meklēšana pa visu rīku un palīgs: Ctrl+K (agrāk fokusēja sānjoslas meklēšanu; “/” to dara joprojām) vai poga `#cmdkBtn` augšējā joslā. Meklē personas (vārds, grupa, vecāku vārdi), dokumentu ierakstus, pasākumus, sagatavotās veidlapas (`formDocs`), sadaļas, iestatījumu kartītes un darbības; bez garumzīmēm (`U.norm`), pēc vārda sākuma. Palīgs: ~30 iepriekš uzrakstītas atbildes ar atslēgvārdiem un pogu “Aiziet” — nav mākslīgais intelekts, nekas netiek sūtīts.

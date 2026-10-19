@@ -13,9 +13,9 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.56.0', ch: 'test', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
-      '**Meklēšana pa visu rīku**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas, iestatījumi un darbības. Var arī **uzdot jautājumu** (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs atbild no rīka pamācības un ar pogu aizved uz īsto vietu. Darbojas bez interneta.',
-      '**Mācību gada noslēguma vednis** (gada izvēlnē “Noslēgt mācību gadu…”): trūkstošie dokumenti → neatdotais ekipējums → kopsavilkumi visiem → kas turpina nākamajā gadā → rezerves kopija → pāreja uz jauno gadu. Rīks arī pats **pārbauda datu faila veselību** un reizi mēnesī atgādina **pārbaudīt, vai rezerves kopiju var atjaunot** (Iestatījumi → Drošība).'
+    { v: '1.57.0', from: '1.56.0', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
+      '**Meklēšana pa visu rīku un palīgs**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas un darbības. Uzdod jautājumu (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs parāda soļus, pats atver vajadzīgo vietu un **iezīmē pogu, uz kuras jāspiež**. Ar vārdu — darbības ar konkrēto personu (“Annai pievienot dokumentu”, “Kalniņa ekipējums”). Darbojas bez interneta.',
+      '**Mācību gada noslēguma vednis** (gada izvēlnē “Noslēgt mācību gadu…”): trūkstošie dokumenti → ekipējums → kopsavilkumi → kas turpina → rezerves kopija → jaunais gads. **Datu veselības pārbaude** ar skaidrojumu katrai piezīmei un ikmēneša atgādinājums **pārbaudīt, vai rezerves kopiju var atjaunot** (Iestatījumi → Drošība).'
     ] },
     { v: '1.55.0', from: '1.14.0', date: '2026-10-18', title: 'Veidlapas, līgumi un savas veidlapas', items: [
       'Sadaļā **Veidlapas** sagatavo **instruktāžas lapu** un **nometnes žurnālu** drukāšanai un **līgumu par dalību Jaunsardzē** Word formātā — dati aizpildās no kartītes. Visas veidlapas ir vienā sarakstā ar filtriem; veidņu pogas sakārtotas grupās “Ielādēt veidni” un “Paraugi”, atzīmju saraksts — ar pogu **“Pieejamās atzīmes”**.',

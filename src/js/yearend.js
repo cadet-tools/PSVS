@@ -1,5 +1,5 @@
 /* =====================================================================
-   Mācību gada noslēguma vednis (TESTA KANĀLS).
+   Mācību gada noslēguma vednis.
    Atver: gada izvēlne → “Noslēgt mācību gadu…”, Iestatījumi → Mācību gadi, meklēšana/palīgs.
    Soļi: 1) trūkstošie dokumenti → 2) neatdotais ekipējums → 3) kopsavilkumi visiem →
          4) nākamais gads un kas turpina → 5) rezerves kopija → 6) pāreja uz jauno gadu.
@@ -8,7 +8,6 @@
    ===================================================================== */
 (function (CP) {
   'use strict';
-  if (CP.CHANNEL !== 'test') return;
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, ic = (n, f = '') => CP.ic(n, f);
   const plural = (n, a, b) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? a : b}`;
   let step = 0, Y = '';

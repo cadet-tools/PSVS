@@ -8,7 +8,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
 
-  CP.VERSION = '1.56.0';
+  CP.VERSION = '1.57.0';
   /** “Ziņot” sūtīšanas adrese: izstrādātāja Google Apps Script tīmekļa lietotne (…/exec). Tukša → tikai “Saglabāt failā”. */
   CP.FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbyzvkwL6wk-0agFYpD2fqAy8JQdNUjpDyk31xEvqCkmh5HJAKeUVbWnVp_psljGpCUr/exec';
   /* Lietošanas analītika (docs/ANALYTICS.md): Apps Script tīmekļa lietotnes adrese (…/exec). Tukša = nekas netiek sūtīts.

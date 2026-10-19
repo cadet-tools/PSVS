@@ -941,6 +941,35 @@ dialog.cmdk{width:min(720px,calc(100vw - 32px));max-height:min(640px,calc(100vh 
 .ye-mark{margin-top:14px}
 @media (max-width:760px){.dlg-body.ye{grid-template-columns:1fr}.ye-steps{flex-direction:row;flex-wrap:wrap}.ye-steps button{width:auto}}
 .hc-list .row{align-items:flex-start}
+.cmdk-steps{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.45}
+.cmdk-steps li{margin:2px 0}
+/* Vadītais palīgs */
+.cp-guide{position:fixed;left:84px;bottom:16px;z-index:2000;width:min(360px,calc(100vw - 32px));background:var(--panel);color:var(--txt);border:1px solid var(--acc,var(--teal));border-radius:var(--r);box-shadow:var(--shadow);padding:12px 14px;font-size:14px}
+.cpg-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cpg-head .ic{width:18px;height:18px;color:var(--acc,var(--teal))}
+.cpg-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cpg-steps li{display:flex;gap:8px;align-items:flex-start;color:var(--muted);line-height:1.4}
+.cpg-steps li.on{color:var(--txt);font-weight:600}
+.cpg-n{display:inline-grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;border:1px solid var(--edge2);font-size:12px}
+.cpg-steps li.on .cpg-n{background:var(--acc,var(--teal));border-color:var(--acc,var(--teal));color:#fff}
+.cpg-steps li.done .cpg-n{border-color:var(--acc,var(--teal));color:var(--acc,var(--teal))}
+.cpg-miss{margin-top:8px}
+.cpg-foot{display:flex;align-items:center;gap:6px;margin-top:10px}
+.cp-guide-hl{outline:3px solid var(--acc,var(--teal)) !important;outline-offset:3px;border-radius:8px;animation:cpgPulse 1.4s ease-in-out infinite;position:relative;z-index:1}
+@keyframes cpgPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc,var(--teal)) 55%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--acc,var(--teal)) 0%,transparent)}}
+@media (prefers-reduced-motion:reduce){.cp-guide-hl{animation:none}}
+@media (max-width:760px){.cp-guide{left:16px}}
+.hc-item .grow>div:first-child{line-height:1.45}
+.hc-why{margin-top:4px}
+.hc-why summary{cursor:pointer;font-size:13px;color:var(--acc,var(--teal))}
+.hc-why p{margin:6px 0}
+.hc-ul{margin:4px 0 6px;padding-left:20px;max-height:180px;overflow:auto}
+.hc-checks{margin-top:10px}
+.hc-checks summary{cursor:pointer}
+.hc-checks ul{list-style:none;padding:0;margin:8px 0}
+.hc-checks li{padding:2px 0}
+.okc2{color:var(--green)} .warnc{color:var(--amber)}
+.tag.ok{border-color:var(--teal-b);color:var(--green)}
 
 /* =====================================================================
    Dizains v2 — darbojas tikai ar <html class="d2"> (meta cp-design=v2).
@@ -1533,5 +1562,5 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.56.0"></script></body>
+<script src="app.bundle.js?v=1.57.0"></script></body>
 </html>
