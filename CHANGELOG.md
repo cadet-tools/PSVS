@@ -1,7 +1,9 @@
 # Izmaiņu vēsture
 
 ## 1.58.0 — 2026-10-19
-- **Tikai testa kanālā** (`js/ai.js`: `CP.CHANNEL === 'test'`, `MI_STABLE = false`; stabilā versija saknē netiek pārbūvēta):
+- **MI palīgs ieslēgts arī stabilajā versijā** (`MI_STABLE = true`, saknes `index.html` / `app.bundle.js` 1.58.0, CSP `connect-src` ietver `api.groq.com`). Jaunumu logs lietotājiem no 1.57.0. Testa kanāls paliek ar to pašu MI.
+- Būvēšana bez visa repo tīrīšanas: `src/_buvesana/build_stable.py` (sakne), `build_test.py` (`test/`).
+- Sākotnēji testa kanālā (`js/ai.js`, `MI_STABLE` bija `false`):
   - MI palīgs meklēšanas logā: poga `#miBtn` “Jautāt MI”, josla `#miBar` (Ctrl+Enter), sarunas panelis `#miPane` (MI režīmā Enter sūta, “← Meklēšana” atgriež iebūvēto palīgu). `assist.js` netiek mainīts — `A.cmdk` tiek papildināts, vadītais palīgs — `CP.assist.guide`.
   - Atbilde JSON `{ answer, guide: [HELP indeksi], page, offtopic }` → pogas “Parādīt, kur → …” (iebūvētā palīga soļi) un “Atvērt: sadaļa”. Noteikumi (`RULES`): tikai par rīku, tikai no padotajām zināšanām, latviski, īsi; ārpus tēmas — atteikums.
   - Zināšanas katram jautājumam: sadaļu saraksts, 16 fakti (6 atbilstošākie), visu pamācību virsraksti un 4 atbilstošākās pamācības ar soļiem (~2000 tokenu).

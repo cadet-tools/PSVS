@@ -1,6 +1,6 @@
 # MI palīgs (mākslīgais intelekts)
 
-> **Statuss: tikai testa kanālā** (`test/`, versija 1.58.0). Stabilā versija saknē nav pārbūvēta un MI tajā nav.
+> **Statuss: stabilajā un testa kanālā** (versija 1.58.0). `MI_STABLE = true`.
 > Kods: `src/js/ai.js`, `src/css/ai.css`. Iebūvētais palīgs (`src/js/assist.js`) un iestatījumi (`settings.js`) **netiek mainīti** — MI tos papildina no ārpuses.
 
 Meklēšanas logā (**Ctrl+K** vai “Meklēt vai jautāt”) ir poga **“Jautāt MI”** un josla “Jautāt MI palīgam: …” (**Ctrl+Enter**). MI atbild latviski un tikai par rīka lietošanu; atbildē var būt pogas **“Parādīt, kur → …”** (iebūvētā palīga soļi, kas iezīmē pogas) un **“Atvērt: sadaļa”**. Bez interneta poga ir atslēgta, un strādā iebūvētais palīgs.
@@ -23,6 +23,7 @@ Rīks (pārlūks, js/ai.js)
 | `docs/mi/mimock.js` | Lokāla imitācija: izpilda īsto `Kods.gs` + pasniedz rīku (`http://127.0.0.1:47613/test/`) |
 | `docs/mi/mi_test.mjs` | Pārbaude: `node docs/mi/mi_test.mjs` |
 | `src/_buvesana/build_test.py` | Pārbūvē **tikai** `test/` no `src/` |
+| `src/_buvesana/build_stable.py` | Pārbūvē **tikai** sakni (stabilo) no `src/` |
 
 ## Kas tiek sūtīts
 
@@ -50,7 +51,7 @@ Groq bezmaksas plāns (pārbaudīts 2026-10-19): **katram modelim 1000 pieprasī
 | `MINUTE_LIMIT` | 15 | jautājumi kopā minūtē (tokenu limits) |
 | `MODELS` | kā augstāk | modeļi pēc kārtas, ar komatu |
 
-Kad lietotāja vai kopējais limits sasniegts, rīks to paskaidro un piedāvā **pievienot savu bezmaksas Groq atslēgu** (Iestatījumi → Atļaujas → MI palīgs; [console.groq.com/keys](https://console.groq.com/keys)). Ar savu atslēgu pieprasījumi iet tieši uz `api.groq.com` (testa kanāla CSP `connect-src` to atļauj) un kopīgo limitu neietekmē.
+Kad lietotāja vai kopējais limits sasniegts, rīks to paskaidro un piedāvā **pievienot savu bezmaksas Groq atslēgu** (Iestatījumi → Atļaujas → MI palīgs; [console.groq.com/keys](https://console.groq.com/keys)). Ar savu atslēgu pieprasījumi iet tieši uz `api.groq.com` (CSP `connect-src` to atļauj abos kanālos) un kopīgo limitu neietekmē. Ja viena puse ir izsmelta, rīks pats mēģina otru.
 
 ## Uzstādīšana (vienreiz)
 
@@ -68,16 +69,18 @@ Atjauninot `Kods.gs`: **Izvietot → Pārvaldīt izvietojumus → ✏ → Versij
 ## Izstrāde un pārbaude
 
 ```bash
+python3 src/_buvesana/build_stable.py               # pārbūvē tikai sakni (stabilo)
 python3 src/_buvesana/build_test.py                 # pārbūvē tikai test/
 node docs/mi/mi_test.mjs                            # starpnieks + RULES (bez atslēgas, imitēts modelis)
 GROQ_KEY=gsk_… node docs/mi/mimock.js 47613         # īsts Groq caur īsto Kods.gs
 # → atver http://127.0.0.1:47613/__mi/dev  (iestata cp.miUrl = "/__mi" un atver testa versiju)
+# → stabilā: http://127.0.0.1:47613/
 ```
 
 Bez `GROQ_KEY` imitācija atbild ar imitētu modeli (limitu un kļūdu pārbaudēm).
 
-## Ieslēgšana stabilajā versijā (vēlāk)
+## Ieslēgšana stabilajā versijā (no 1.58.0)
 
-1. Pārbaudi testa kanālā ar īsto starpnieku (`MI_URL`).
-2. `src/js/ai.js` → `MI_STABLE = true`; `src/_buvesana/build_web.py` → stabilajai `CSP` pievieno `https://api.groq.com` (vai lieto `CSP_TEST` abiem); `whatsnew.js` blokam noņem `ch: 'test'`.
-3. Pilnais būvējums ar `build_web.py`. **Svarīgi:** `build_web.py` būvē no ārējas avota mapes — tajā jāiekopē `src/js/ai.js`, `src/css/ai.css`, izmaiņas `src/index.html`, `src/js/core.js`, `src/js/whatsnew.js`, `src/_buvesana/*` un `docs/mi/*` → `tools/mi/`, `docs/MI.md` → `docs/`.
+1. `src/js/ai.js` → `MI_STABLE = true`; `src/_buvesana/build_web.py` → CSP abiem kanāliem ietver `https://api.groq.com`; `whatsnew.js` 1.58.0 blokam nav `ch: 'test'`.
+2. Sakni pārbūvē ar `python3 src/_buvesana/build_stable.py` (neizdzēš repo). Testu — `python3 src/_buvesana/build_test.py`.
+3. Pilnais `build_web.py` joprojām tīra repo. Pirms nākamā pilnā būvējuma ārējā avota mapē jāiekopē `src/js/ai.js`, `src/css/ai.css`, `src/index.html`, `src/js/core.js`, `src/js/whatsnew.js`, `src/_buvesana/*` un `docs/mi/*` → `tools/mi/`, `docs/MI.md` → `docs/`.

@@ -13,10 +13,10 @@ for n in os.listdir(repo):
     p = os.path.join(repo, n); shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; "
-       "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; frame-src 'self' blob:; "
+       "connect-src 'self' blob: data: https://vision.googleapis.com https://www.googleapis.com https://script.google.com https://script.googleusercontent.com https://api.groq.com; worker-src 'self' blob:; frame-src 'self' blob:; "
        "object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'")
-# MI palīgs ar lietotāja paša Groq atslēgu (js/ai.js) — pagaidām tikai testa kanālā (docs/MI.md)
-CSP_TEST = CSP.replace('https://script.googleusercontent.com;', 'https://script.googleusercontent.com https://api.groq.com;')
+# MI palīgs: kopīgais caur Apps Script; sava atslēga — api.groq.com (abos kanālos no 1.58.0)
+CSP_TEST = CSP
 
 def build(channel, out, vendor_rel, design=''):
     tmp = out + '.__tmp'

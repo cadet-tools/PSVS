@@ -8,11 +8,11 @@
      “MI palīgs”); tad pieprasījumi iet tieši uz api.groq.com. Atslēga glabājas tikai šajā pārlūkā (localStorage cp.miKey).
    • Tiek sūtīts tikai jautājums (personu vārdi, personas kodi, tālruņi, e-pasti aizstāti), īsa sarunas vēsture,
      pašreizējās sadaļas nosaukums un atbilstošās rīka pamācības. Personu dati, dokumenti un datu fails — nekad.
-   • Darbojas tikai testa kanālā, kamēr MI_STABLE = false (docs/MI.md).
+   • No 1.58.0 darbojas arī stabilajā kanālā (MI_STABLE = true).
    ===================================================================== */
 (function (CP) {
   'use strict';
-  const MI_STABLE = false;
+  const MI_STABLE = true;
   if (!CP.WEB || (CP.CHANNEL !== 'test' && !MI_STABLE)) return;
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
@@ -522,7 +522,7 @@
   /* --- Iestatījumi → Atļaujas → “MI palīgs” (kartīte tiek pievienota cilnei, settings.js netiek mainīts) --- */
   function card() {
     const key = ownKey(), u = use(), shared = !!url();
-    return `<section class="card" id="miCard"><h3>${SPARK}MI palīgs <span class="tag">testa versija</span></h3>
+    return `<section class="card" id="miCard"><h3>${SPARK}MI palīgs</h3>
       <p class="small">Meklēšanas logā (<b>Ctrl+K</b>) poga <b>“Jautāt MI”</b> — atbildes brīvā valodā par rīka lietošanu, ar pogu “Parādīt, kur”. Vajag internetu; bez tā strādā iebūvētais palīgs.</p>
       ${ui.dl([['Tagad lieto', src() === 'own' ? 'savu Groq atslēgu' : src() === 'shared' ? 'kopīgo MI' : '—'], ['Kopīgais MI', shared ? 'pieejams (līdz 20 jautājumiem 6 stundās)' : 'vēl nav pieslēgts'], ['Sava Groq atslēga', key ? `pievienota (…${key.slice(-4)})` : 'nav'], ['Šodien jautāts', `${u.n}${u.own ? ` (ar savu atslēgu ${u.own})` : ''}`]])}
       <p class="small muted">Pārslēgt kopīgo / savu var arī meklēšanas logā. Joslā redzams šodienas jautājumu skaits ar savu atslēgu un aptuvenie tokeni minūtē (pārlūks neredz Groq atlikuma galvenes). Precīzs patēriņš: <a href="https://console.groq.com/settings/usage" target="_blank" rel="noopener noreferrer">console.groq.com</a>. Ja sava atslēga sasniedz minūtes limitu, rīks pats pārslēdzas uz kopīgo.</p>

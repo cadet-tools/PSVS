@@ -5745,12 +5745,12 @@ window.CP = window.CP || {};
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
-    { v: '1.58.0', date: '2026-10-19', ch: 'test', title: 'MI palīgs (testa versija)', items: [
-      '**MI palīgs meklēšanas logā**: atver “Meklēt vai jautāt” (**Ctrl+K**), uzraksti jautājumu un spied **“Jautāt MI”** vai **Ctrl+Enter**. Jautā brīvā valodā (“kā sagatavot līgumu jaunsargam, kuram paliek 18?”) — MI atbild latviski, īsi un pa soļiem. Var turpināt sarunu ar papildu jautājumiem; **“Jauna saruna”** sāk no sākuma, **“← Meklēšana”** atgriež parasto meklēšanu.',
-      'Atbildē pogas **“Parādīt, kur → …”** — iebūvētais palīgs pats atver vajadzīgo vietu un iezīmē pogu, uz kuras jāspiež, un **“Atvērt: sadaļa”**. MI atbild **tikai par CADET PERSONĀLS** lietošanu un tikai no rīka pamācībām; uz citiem jautājumiem tas pieklājīgi atsaka.',
-      '**Dati paliek tavā datorā**: MI nav piekļuves datu mapei, personu kartītēm un dokumentiem — tiek nosūtīts tikai jautājuma teksts. Personu vārdi (arī locījumos), personas kodi, tālruņi un e-pasti jautājumā pirms sūtīšanas tiek aizstāti ar [persona], [kods], [tālrunis], [e-pasts]; nosūtītais teksts redzams zem jautājuma. Rīks un kopīgā MI starpnieks jautājumus nesaglabā.',
-      '**Bez maksas un bez savas atslēgas**: pēc noklusējuma lieto kopīgo MI (katram lietotājam līdz 20 jautājumiem 6 stundās). Ja limits sasniegts, var pievienot **savu bezmaksas Groq atslēgu** — arī jebkurā laikā: Iestatījumi → Atļaujas → **MI palīgs** (“Saglabāt un pārbaudīt”, “Noņemt”). Atslēga glabājas tikai šajā pārlūkā. Turpat var MI palīgu izslēgt.',
-      'MI vajag internetu. Bez interneta, kā līdz šim, strādā **iebūvētais palīgs** — tas nav mainīts un ir pieejams vienmēr.'
+    { v: '1.58.0', date: '2026-10-19', title: 'MI palīgs', items: [
+      '**MI palīgs meklēšanas logā**: atver “Meklēt vai jautāt” (**Ctrl+K**), uzraksti jautājumu un spied **“Jautāt MI”** vai **Ctrl+Enter**. Jautā brīvā valodā (“kā sagatavot līgumu jaunsargam, kuram paliek 18?”) — MI atbild latviski, īsi un pa soļiem. Var turpināt sarunu; **“Jauna saruna”** sāk no sākuma, **“← Meklēšana”** atgriež parasto meklēšanu.',
+      'Atbildē pogas **“Parādīt, kur → …”** — iebūvētais palīgs pats atver vietu un iezīmē pogu — un **“Atvērt: sadaļa”**. MI palīdz **tikai ar CADET PERSONĀLS** lietošanu; jokam atbild īsi, uz svešu tēmu pieklājīgi atsaka. Tavus datus un dokumentus tas neredz.',
+      '**Dati paliek tavā datorā**: tiek nosūtīts tikai jautājuma teksts. Personu vārdi (arī locījumos), personas kodi, tālruņi un e-pasti pirms sūtīšanas kļūst par [persona], [kods], [tālrunis], [e-pasts]. Rīks un kopīgā MI starpnieks jautājumus nesaglabā.',
+      '**Bez maksas un bez savas atslēgas**: kopīgais MI — līdz 20 jautājumiem 6 stundās. Limits sasniegts? Pievieno **savu bezmaksas Groq atslēgu** Iestatījumi → Atļaujas → **MI palīgs**, vai sarunā slēdzī **Kopīgais / Sava atslēga**. Atslēga paliek tikai šajā pārlūkā. Joslā redzams atlikums; ja viena puse izsmelta, rīks pats pārslēdzas uz otru.',
+      'MI vajag internetu. Bez interneta, kā līdz šim, strādā **iebūvētais palīgs** — tas nav mainīts.'
     ] },
     { v: '1.57.0', from: '1.56.0', date: '2026-10-19', title: 'Meklēšana, palīgs un gada noslēgums', items: [
       '**Meklēšana pa visu rīku un palīgs**: augšējā joslā “Meklēt vai jautāt” vai **Ctrl+K** — personas, dokumenti, pasākumi, veidlapas, sadaļas un darbības. Uzdod jautājumu (“kā pārcelt jaunsargus uz nākamo gadu?”) — palīgs parāda soļus, pats atver vajadzīgo vietu un **iezīmē pogu, uz kuras jāspiež**. Ar vārdu — darbības ar konkrēto personu (“Annai pievienot dokumentu”, “Kalniņa ekipējums”). Darbojas bez interneta.',
@@ -14382,11 +14382,11 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
      “MI palīgs”); tad pieprasījumi iet tieši uz api.groq.com. Atslēga glabājas tikai šajā pārlūkā (localStorage cp.miKey).
    • Tiek sūtīts tikai jautājums (personu vārdi, personas kodi, tālruņi, e-pasti aizstāti), īsa sarunas vēsture,
      pašreizējās sadaļas nosaukums un atbilstošās rīka pamācības. Personu dati, dokumenti un datu fails — nekad.
-   • Darbojas tikai testa kanālā, kamēr MI_STABLE = false (docs/MI.md).
+   • No 1.58.0 darbojas arī stabilajā kanālā (MI_STABLE = true).
    ===================================================================== */
 (function (CP) {
   'use strict';
-  const MI_STABLE = false;
+  const MI_STABLE = true;
   if (!CP.WEB || (CP.CHANNEL !== 'test' && !MI_STABLE)) return;
   const U = CP.util, S = CP.state, ui = CP.ui, A = CP.actions, esc = U.esc;
 
@@ -14896,7 +14896,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   /* --- Iestatījumi → Atļaujas → “MI palīgs” (kartīte tiek pievienota cilnei, settings.js netiek mainīts) --- */
   function card() {
     const key = ownKey(), u = use(), shared = !!url();
-    return `<section class="card" id="miCard"><h3>${SPARK}MI palīgs <span class="tag">testa versija</span></h3>
+    return `<section class="card" id="miCard"><h3>${SPARK}MI palīgs</h3>
       <p class="small">Meklēšanas logā (<b>Ctrl+K</b>) poga <b>“Jautāt MI”</b> — atbildes brīvā valodā par rīka lietošanu, ar pogu “Parādīt, kur”. Vajag internetu; bez tā strādā iebūvētais palīgs.</p>
       ${ui.dl([['Tagad lieto', src() === 'own' ? 'savu Groq atslēgu' : src() === 'shared' ? 'kopīgo MI' : '—'], ['Kopīgais MI', shared ? 'pieejams (līdz 20 jautājumiem 6 stundās)' : 'vēl nav pieslēgts'], ['Sava Groq atslēga', key ? `pievienota (…${key.slice(-4)})` : 'nav'], ['Šodien jautāts', `${u.n}${u.own ? ` (ar savu atslēgu ${u.own})` : ''}`]])}
       <p class="small muted">Pārslēgt kopīgo / savu var arī meklēšanas logā. Joslā redzams šodienas jautājumu skaits ar savu atslēgu un aptuvenie tokeni minūtē (pārlūks neredz Groq atlikuma galvenes). Precīzs patēriņš: <a href="https://console.groq.com/settings/usage" target="_blank" rel="noopener noreferrer">console.groq.com</a>. Ja sava atslēga sasniedz minūtes limitu, rīks pats pārslēdzas uz kopīgo.</p>
