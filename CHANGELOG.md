@@ -1,7 +1,7 @@
 # Izmaiņu vēsture
 
 ## 1.58.0 — 2026-10-19
-- **MI palīgs ieslēgts arī stabilajā versijā** (`MI_STABLE = true`, saknes `index.html` / `app.bundle.js` 1.58.0, CSP `connect-src` ietver `api.groq.com`). Jaunumu logs lietotājiem no 1.57.0. Testa kanāls paliek ar to pašu MI. Izstrādātāja rokasgrāmata: `docs/MI.md`.
+- **MI palīgs ieslēgts arī stabilajā versijā** (`MI_STABLE = true`, saknes `index.html` / `app.bundle.js` 1.58.0, CSP `connect-src` ietver `api.groq.com`). Jaunumu logs lietotājiem no 1.57.0. Testa kanāls paliek ar to pašu MI. Izstrādātāja rokasgrāmata: `docs/MI.md`. Iestatījumi → Atļaujas → MI palīgs: “Kas tiek sūtīts MI?” ir poga kā Veidlapās “Pieejamās atzīmes”.
 - Būvēšana bez visa repo tīrīšanas: `src/_buvesana/build_stable.py` (sakne), `build_test.py` (`test/`).
 - Sākotnēji testa kanālā (`js/ai.js`, `MI_STABLE` bija `false`):
   - MI palīgs meklēšanas logā: poga `#miBtn` “Jautāt MI”, josla `#miBar` (Ctrl+Enter), sarunas panelis `#miPane` (MI režīmā Enter sūta, “← Meklēšana” atgriež iebūvēto palīgu). `assist.js` netiek mainīts — `A.cmdk` tiek papildināts, vadītais palīgs — `CP.assist.guide`.

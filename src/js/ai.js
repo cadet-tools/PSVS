@@ -532,7 +532,10 @@
       <div class="mi-keyrow"><input id="miKeyIn" type="text" class="pw-mask" autocomplete="off" spellcheck="false" placeholder="${key ? 'Ievadi jaunu atslēgu, lai nomainītu' : 'gsk_…'}" aria-label="Groq API atslēga">
         <button type="button" class="sm mainbtn" data-act="miKeySave">Saglabāt un pārbaudīt</button>${key ? '<button type="button" class="sm" data-act="miKeyTest">Pārbaudīt</button><button type="button" class="sm ghost danger" data-act="miKeyDel">Noņemt</button>' : ''}</div>
       <p class="small muted" id="miKeyMsg"></p>
-      <details class="small"><summary>Kas tiek sūtīts MI?</summary><p>Tikai tavs jautājums (personu vārdi un uzvārdi no datu faila, personas kodi, tālruņi un e-pasti tiek aizstāti ar [persona], [kods]…), pēdējie sarunas jautājumi un atbildes, pašreizējās sadaļas nosaukums un rīka pamācības teksts. <b>Netiek sūtīti</b> personu dati, dokumenti, faili, datu fails un iestatījumi. Kopīgais MI iet caur izstrādātāja Google Apps Script starpnieku, kas jautājumus nesaglabā. MI atbildes var būt kļūdainas — pārbaudi rīkā.</p></details></section>`;
+      <details class="tpl-tags"><summary><span class="tpl-tags-btn">${CP.ic('list', '☰')} Kas tiek sūtīts MI? <span class="tpl-caret">▾</span></span></summary>
+        <p class="small muted">Tikai tavs jautājums (personu vārdi un uzvārdi no datu faila, personas kodi, tālruņi un e-pasti tiek aizstāti ar [persona], [kods]…), pēdējie sarunas jautājumi un atbildes, pašreizējās sadaļas nosaukums un rīka pamācības teksts.</p>
+        <p class="small muted"><b>Netiek sūtīti</b> personu dati, dokumenti, faili, datu fails un iestatījumi. Kopīgais MI iet caur izstrādātāja Google Apps Script starpnieku, kas jautājumus nesaglabā. MI atbildes var būt kļūdainas — pārbaudi rīkā.</p>
+      </details></section>`;
   }
   function paintCard() {
     if (S.page !== 'settings') return;
