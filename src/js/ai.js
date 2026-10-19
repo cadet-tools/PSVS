@@ -154,10 +154,25 @@
   function saveShareQ(left, resetMin) {
     ls.set('cp.miShareQ', { left, resetMin: resetMin || 0, at: Date.now() });
   }
-  function saveOwnQ(r, retrySec) {
-    const n = k => { const v = r.headers.get(k); return v != null && v !== '' && !Number.isNaN(+v) ? +v : null; };
-    const until = retrySec > 0 ? Date.now() + retrySec * 1000 : 0;
-    ls.set('cp.miOwnQ', { req: n('x-ratelimit-remaining-requests'), reqMax: n('x-ratelimit-limit-requests'), tok: n('x-ratelimit-remaining-tokens'), tokMax: n('x-ratelimit-limit-tokens'), until, at: Date.now() });
+  const estTok = s => Math.max(1, Math.ceil(String(s || '').length / 3));
+  function hdrNum(r, k) {
+    const m = String(r.headers.get(k) || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Math.round(+m[1]) : null;
+  }
+  /** Groq pārlūkam parasti neatklāj x-ratelimit-* (CORS), tāpēc skaitām arī paši. */
+  function saveOwnQ(r, retrySec, prompt, completion) {
+    const now = Date.now(), prev = ls.get('cp.miOwnQ', null) || {};
+    const add = (prompt || completion) ? estTok(prompt) + estTok(completion) : 0;
+    const win = (Array.isArray(prev.win) ? prev.win : []).filter(x => now - x.t < 60000);
+    if (add) win.push({ t: now, tok: add });
+    ls.set('cp.miOwnQ', {
+      req: hdrNum(r, 'x-ratelimit-remaining-requests'),
+      reqMax: hdrNum(r, 'x-ratelimit-limit-requests') || prev.reqMax || 1000,
+      tok: hdrNum(r, 'x-ratelimit-remaining-tokens'),
+      tokMax: hdrNum(r, 'x-ratelimit-limit-tokens') || prev.tokMax || 8000,
+      tokEst: win.reduce((s, x) => s + x.tok, 0), win,
+      until: retrySec > 0 ? now + retrySec * 1000 : 0, at: now
+    });
   }
   const uid = () => { let id = ls.get('cp.miId', ''); if (!/^[0-9a-f]{24}$/.test(id)) { id = [...crypto.getRandomValues(new Uint8Array(12))].map(b => b.toString(16).padStart(2, '0')).join(''); ls.set('cp.miId', id); } return id; };
   const use = () => { const u = ls.get('cp.miUse', null); return u && u.d === U.iso() ? u : { d: U.iso(), n: 0, own: 0 }; };
@@ -193,15 +208,15 @@
       const body = { model, messages: messages(q, hist, kb, page), temperature: 0.2, max_tokens: 900, response_format: { type: 'json_object' } };
       if (/gpt-oss/.test(model)) body.reasoning_effort = 'low';
       const r = await post(GROQ + '/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const prompt = JSON.stringify(body.messages);
       if (r.status === 401 || r.status === 403) throw err('badkey');
       if (r.status === 429) {
-        saveOwnQ(r, +r.headers.get('retry-after') || 60);
+        saveOwnQ(r, +r.headers.get('retry-after') || 60, prompt, '');
         last = 'own_limit'; continue;
       }
       if (!r.ok) { last = 'error'; continue; }
-      saveOwnQ(r, 0);
       const j = await r.json().catch(() => null), text = j?.choices?.[0]?.message?.content;
-      if (text) return { text, model, own: true };
+      if (text) { saveOwnQ(r, 0, prompt, text); return { text, model, own: true }; }
     }
     throw err(last);
   }
@@ -312,36 +327,42 @@
     const f = $('miFoot'); if (f) f.textContent = quotaLine();
   }
   function quotaLine() {
-    const s = src();
+    const s = src(), ownN = ownKey() ? (use().own || 0) : null, o = ls.get('cp.miOwnQ', null);
+    const ownBit = ownN == null ? '' : ` · sava atslēga šodien ${ownN}`;
     if (s === 'shared') {
       const q = ls.get('cp.miShareQ', null);
-      if (q && q.left != null) return `Kopīgais MI · palikuši ${q.left} no ${SHARED_CAP} jautājumiem (6 h) · personu dati netiek sūtīti`;
-      return 'Kopīgais MI · līdz 20 jautājumiem 6 stundās · personu dati netiek sūtīti';
+      if (q && q.left != null) return `Kopīgais MI · palikuši ${q.left} no ${SHARED_CAP} jautājumiem (6 h)${ownBit} · personu dati netiek sūtīti`;
+      return `Kopīgais MI · līdz 20 jautājumiem 6 stundās${ownBit} · personu dati netiek sūtīti`;
     }
     if (s === 'own') {
-      const o = ls.get('cp.miOwnQ', null);
       if (o && o.until > Date.now()) return `Sava atslēga · minūtes limits, pēc ${Math.max(1, Math.ceil((o.until - Date.now()) / 1000))} s · personu dati netiek sūtīti`;
-      if (o && o.tok != null && o.tokMax) return `Sava atslēga · palikuši ${o.tok} no ${o.tokMax} tokeniem šajā minūtē · personu dati netiek sūtīti`;
-      if (o && o.req != null && o.reqMax) return `Sava atslēga · palikuši ${o.req} no ${o.reqMax} pieprasījumiem · personu dati netiek sūtīti`;
-      return 'Sava Groq atslēga · limits rādīsies pēc jautājuma · personu dati netiek sūtīti';
+      if (o && o.tok != null && o.tokMax) return `Sava atslēga · palikuši ${o.tok} no ${o.tokMax} tokeniem šajā minūtē${ownBit} · personu dati netiek sūtīti`;
+      if (o && o.tokEst) return `Sava atslēga · šodien ${ownN || 0} jaut. · ~${o.tokEst}/${o.tokMax || 8000} tokeni šajā minūtē · personu dati netiek sūtīti`;
+      return `Sava Groq atslēga · šodien ${ownN || 0} jautājumi · personu dati netiek sūtīti`;
     }
     return 'MI palīgs (Groq) · personu vārdi, kodi un tālruņi tiek aizstāti pirms sūtīšanas';
   }
   function quotaHtml() {
-    const s = src(), bar = (pct, lab, val) => `<div class="mi-q"><span class="mi-q-lab">${lab}</span><span class="mi-q-bar" title="${val}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></span><span class="mi-q-val">${val}</span></div>`;
-    if (s === 'shared') {
+    const s = src(), bits = [];
+    const bar = (pct, lab, val, dim) => `<div class="mi-q${dim ? ' dim' : ''}"><span class="mi-q-lab">${lab}</span><span class="mi-q-bar" title="${esc(val)}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></span><span class="mi-q-val">${esc(val)}</span></div>`;
+    if (url()) {
       const q = ls.get('cp.miShareQ', null), left = q && q.left != null ? q.left : null;
       const used = left == null ? 0 : SHARED_CAP - left;
-      return bar(left == null ? 0 : used / SHARED_CAP * 100, '6 h', left == null ? `— / ${SHARED_CAP}` : `${left} palikuši / ${SHARED_CAP}`);
+      bits.push(bar(left == null ? 0 : used / SHARED_CAP * 100, 'Kopīgais', left == null ? `— / ${SHARED_CAP} (6 h)` : `${left} palikuši / ${SHARED_CAP}`, s !== 'shared'));
     }
-    const o = ls.get('cp.miOwnQ', null);
-    if (o && o.until > Date.now()) {
-      const sec = Math.max(1, Math.ceil((o.until - Date.now()) / 1000));
-      return bar(100, 'min', `limits · pēc ${sec < 90 ? sec + ' s' : Math.round(sec / 60) + ' min'}`);
+    if (ownKey()) {
+      const o = ls.get('cp.miOwnQ', null) || {}, u = use(), dim = s !== 'own';
+      if (o.until > Date.now()) {
+        const sec = Math.max(1, Math.ceil((o.until - Date.now()) / 1000));
+        bits.push(bar(100, 'Sava', `limits · pēc ${sec < 90 ? sec + ' s' : Math.round(sec / 60) + ' min'}`, dim));
+      } else if (o.tok != null && o.tokMax) {
+        bits.push(bar((o.tokMax - o.tok) / o.tokMax * 100, 'Sava', `${u.own || 0} jaut. šodien · ${o.tok}/${o.tokMax} tok`, dim));
+      } else {
+        const max = o.tokMax || 8000, est = o.tokEst || 0, day = `${u.own || 0} jaut. šodien`;
+        bits.push(bar(est / max * 100, 'Sava', est ? `${day} · ~${est}/${max} tok/min` : day, dim));
+      }
     }
-    if (o && o.tok != null && o.tokMax) return bar((o.tokMax - o.tok) / o.tokMax * 100, 'min', `${o.tok} / ${o.tokMax} tokeni`);
-    if (o && o.req != null && o.reqMax) return bar((o.reqMax - o.req) / o.reqMax * 100, 'diena', `${o.req} / ${o.reqMax} piepr.`);
-    return `<div class="mi-q muted">Sava atslēga · atlikums pēc pirmā jautājuma</div>`;
+    return bits.length ? `<div class="mi-qs">${bits.join('')}</div>` : '';
   }
   function paintPane() {
     const p = $('miPane'); if (!p) return;
@@ -450,7 +471,7 @@
     return `<section class="card" id="miCard"><h3>${SPARK}MI palīgs <span class="tag">testa versija</span></h3>
       <p class="small">Meklēšanas logā (<b>Ctrl+K</b>) poga <b>“Jautāt MI”</b> — atbildes brīvā valodā par rīka lietošanu, ar pogu “Parādīt, kur”. Vajag internetu; bez tā strādā iebūvētais palīgs.</p>
       ${ui.dl([['Tagad lieto', src() === 'own' ? 'savu Groq atslēgu' : src() === 'shared' ? 'kopīgo MI' : '—'], ['Kopīgais MI', shared ? 'pieejams (līdz 20 jautājumiem 6 stundās)' : 'vēl nav pieslēgts'], ['Sava Groq atslēga', key ? `pievienota (…${key.slice(-4)})` : 'nav'], ['Šodien jautāts', `${u.n}${u.own ? ` (ar savu atslēgu ${u.own})` : ''}`]])}
-      <p class="small muted">Pārslēgt kopīgo / savu var arī meklēšanas logā, MI palīga joslā. Ja sava atslēga sasniedz minūtes limitu, rīks pats pārslēdzas uz kopīgo un par to paziņo.</p>
+      <p class="small muted">Pārslēgt kopīgo / savu var arī meklēšanas logā. Joslā redzams šodienas jautājumu skaits ar savu atslēgu un aptuvenie tokeni minūtē (pārlūks neredz Groq atlikuma galvenes). Precīzs patēriņš: <a href="https://console.groq.com/settings/usage" target="_blank" rel="noopener noreferrer">console.groq.com</a>. Ja sava atslēga sasniedz minūtes limitu, rīks pats pārslēdzas uz kopīgo.</p>
       <label class="check" style="margin-top:10px"><input type="checkbox" data-miset="on" ${on() ? 'checked' : ''}> Rādīt MI palīgu meklēšanas logā</label>
       <h4>Sava Groq atslēga (nav obligāta)</h4>
       <p class="small muted">Vajadzīga, ja kopīgais limits ir sasniegts vai gribi jautāt vairāk. Bezmaksas: <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a> → “Create API Key” → nokopē atslēgu (sākas ar <code>gsk_</code>). Atslēga glabājas <b>tikai šajā pārlūkā</b> (nav datu failā un kopijās) un tiek sūtīta tikai uz api.groq.com.</p>
