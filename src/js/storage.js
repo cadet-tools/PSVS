@@ -865,13 +865,36 @@
     if (occupied && opts.confirmConflict && !confirm(`“${clean}” jau ir šajā mapē. Saglabāt kā jaunu kopiju ar citu nosaukumu? Esošais fails netiks pārrakstīts.`)) return null;
     let name = clean, i = 2;
     for (;;) { try { await dir.getFileHandle(name); name = `${base} (${i++})${ext}`; } catch (e) { if (e.name === 'NotFoundError') break; throw e; } }
-    const fh = await dir.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close();
+    if (opts.signal?.aborted) throw Object.assign(Error('atcelts'), { name: 'AbortError' });
+    const fh = await dir.getFileHandle(name, { create: true }); const w = await fh.createWritable();
+    try { await writeBlob(w, blob, opts.onProgress, opts.signal); await w.close(); }
+    catch (e) { try { await w.abort(); } catch (e2) { /* jau aizvērts */ } throw e; }
     const written = await fh.getFile();
     if (blob.size != null && written.size !== blob.size) throw Error('ierakstītais fails nav pilnīgs');
     const path = [...dirParts.map(d => d.replace(/[\\/:*?"<>|]/g, '_')), name].join('/');
     S.index.push({ sourceId: 'main', sourceName: S.rootName, path, name, handle: fh, ext: ext.slice(1).toLowerCase(), n: U.norm(path) });
     return path;
   };
+  /** Raksta pa daļām, lai var rādīt progresu un pārtraukt. */
+  async function writeBlob(w, blob, onProgress, signal) {
+    const total = blob.size || 0;
+    const bump = n => { try { onProgress?.(n, total); } catch (e) { /* */ } };
+    if (signal?.aborted) throw Object.assign(Error('atcelts'), { name: 'AbortError' });
+    if (!blob.stream || total < 64 * 1024) { await w.write(blob); bump(total); return; }
+    const reader = blob.stream().getReader();
+    let done = 0;
+    try {
+      for (;;) {
+        if (signal?.aborted) { await reader.cancel(); throw Object.assign(Error('atcelts'), { name: 'AbortError' }); }
+        const r = await reader.read();
+        if (r.done) break;
+        await w.write(r.value);
+        done += r.value.byteLength || r.value.length || 0;
+        bump(done);
+      }
+    } catch (e) { try { await reader.cancel(); } catch (e2) { /* */ } throw e; }
+    bump(total || done);
+  }
   function pathSegments(rel) {
     const parts = String(rel || '').split('/').filter(Boolean);
     if (parts.some(p => p === '.' || p === '..' || /[\\:*?"<>|]/.test(p))) throw Error('nederīgs ceļš');

@@ -219,6 +219,12 @@ dialog.full { width: 98vw; height: 96vh; max-width: none; max-height: none }
 .scan-msg { display: flex; align-items: center; gap: 12px; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid var(--edge); min-height: 38px }
 .scan-msg.info { background: #142530; color: #cfe3ee } .scan-msg.ok { background: #15342c; color: #a9ecd2 } .scan-msg.warn { background: #3a2f18; color: #f6d6a0 } .scan-msg.err { background: #43201f; color: #ffc2c2 } .scan-msg.busy { background: #142a36; color: #cfe3ee }
 .scan-msg .txt { flex: 1 } .scan-msg .bar { width: 200px; height: 6px; background: #ffffff1a; border-radius: 4px; overflow: hidden } .scan-msg .bar i { display: block; height: 100%; width: 0; background: var(--teal); transition: width .2s }
+.doc-copy{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--teal) 12%,transparent)}
+.doc-copy .bar,.file-job .bar{flex:1;height:8px;min-width:80px;border-radius:99px;background:var(--edge);overflow:hidden}
+.doc-copy .bar i,.file-job .bar i{display:block;height:100%;width:0;background:var(--teal);transition:width .15s}
+.doc-copy.done{background:color-mix(in srgb,#3d9a6a 16%,transparent)}.doc-copy.bad{background:color-mix(in srgb,var(--amber,#c47b2b) 18%,transparent)}
+.file-job{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:12px;min-width:min(420px,92vw);max-width:92vw;padding:10px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--edge);box-shadow:0 8px 28px #0006}
+.file-job[hidden]{display:none}
 .scan-body { display: grid; grid-template-columns: minmax(0, 1fr) 460px; min-height: 0 }
 .scan-body > .viewer { background: transparent; border-radius: 0; display: flex; flex-direction: column; min-height: 0 }
 .scan-side { overflow-y: auto; padding: 14px 16px; border-left: 1px solid var(--edge); background: #15232e }
@@ -1339,9 +1345,12 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 <dialog id="documentDialog">
   <form id="documentForm">
     <header class="dlg-head"><h2 id="docTitle">Dokuments</h2><button type="button" class="ghost" data-close="documentDialog" aria-label="Aizvērt">✕</button></header>
-    <div class="dlg-body"><div class="fieldgrid">
+    <div class="dlg-body">
+      <div id="docCopy" class="doc-copy hidden" role="status" aria-live="polite"><span id="docCopyTxt" class="small"></span><span class="bar"><i id="docCopyBar"></i></span></div>
+      <div class="fieldgrid">
       <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
       <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
+      <div class="field wide hidden" id="docNoWrap"><label for="docNo">Līguma numurs <b class="red">*</b></label><input name="contractNo" id="docNo" autocomplete="off" placeholder="numurs no DVS vai līguma"><small class="muted">Līguma numuru piešķir cita sistēma. Ievietojot līgumu, numurs ir obligāts.</small></div>
       <div class="field wide hidden" id="docTitleWrap"><label for="docTitleIn">Dokumenta nosaukums <b class="red">*</b></label><input name="title" id="docTitleIn" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
       <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
       <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
@@ -1504,6 +1513,7 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
   <div class="dlg-body"><p id="associateName" class="small"></p><div class="fieldgrid">
     <div class="field wide"><label>Persona</label><select id="associatePerson"></select></div>
     <div class="field"><label>Kategorija</label><select id="associateKind"></select></div>
+    <div class="field wide hidden" id="associateNoWrap"><label for="associateNo">Līguma numurs <b class="red">*</b></label><input id="associateNo" autocomplete="off" placeholder="numurs no DVS vai līguma"><small class="muted">Līgumam numurs ir obligāts.</small></div>
     <div class="field"><label>Forma</label><select id="associateFormat"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks fails</option></select></div>
     <div class="field wide hidden" id="associateTitleWrap"><label>Dokumenta nosaukums <b class="red">*</b></label><input id="associateTitle" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
   </div><p class="small muted">Tiek saglabāts ceļš un apraksts. Fails netiek pārvietots.</p></div>
@@ -1611,5 +1621,6 @@ html.d2 .dash-top .stat span { order: 2; margin-top: 4px; font-size: 13px; color
 </dialog>
 
 <!-- Moduļi (secība ir svarīga). Darbojas arī, atverot index.html tieši no datora. -->
-<script src="app.bundle.js?v=1.58.0"></script></body>
+<script src="app.bundle.js?v=1.59.0"></script><div id="fileJob" class="file-job" hidden role="status" aria-live="polite"><span id="fileJobTxt"></span><span class="bar"><i id="fileJobBar"></i></span></div>
+</body>
 </html>

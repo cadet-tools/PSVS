@@ -13,6 +13,10 @@
      Sīkus labojumus un atkārtotus tās pašas lietas labojumus NEraksta atsevišķi — papildina esošo
      bloku (palielina v) vai neraksta vispār. Tehniskās detaļas — tikai CHANGELOG.md. */
   const ALL = [
+    { v: '1.59.0', date: '2026-10-20', title: 'Līguma numurs un faila kopēšana', items: [
+      '**Līguma numurs ir obligāts**, kad ievieto vai labo dokumentu “Līgums”. Logs to prasa uzreiz; bez numura saglabāt nevar. Numurs redzams arī pie obligātā dokumenta kartītē.',
+      '**Faila kopēšana vairs neizskatās kā uzkāršanās.** Tiklīdz izvēlies failu, atveras dokumenta logs un rāda, cik tālu fails ir iekopēts. Datus (arī līguma numuru) var rakstīt jau kamēr kopēšana notiek. “Saglabāt” ieslēdzas, kad fails ir mapē.'
+    ] },
     { v: '1.58.0', date: '2026-10-19', title: 'MI palīgs', items: [
       '**MI palīgs meklēšanas logā**: atver “Meklēt vai jautāt” (**Ctrl+K**), uzraksti jautājumu un spied **“Jautāt MI”** vai **Ctrl+Enter**. Jautā brīvā valodā (“kā sagatavot līgumu jaunsargam, kuram paliek 18?”) — MI atbild latviski, īsi un pa soļiem. Var turpināt sarunu; **“Jauna saruna”** sāk no sākuma, **“← Meklēšana”** atgriež parasto meklēšanu.',
       'Atbildē pogas **“Parādīt, kur → …”** — iebūvētais palīgs pats atver vietu un iezīmē pogu — un **“Atvērt: sadaļa”**. MI palīdz **tikai ar CADET PERSONĀLS** lietošanu; jokam atbild īsi, uz svešu tēmu pieklājīgi atsaka. Tavus datus un dokumentus tas neredz.',

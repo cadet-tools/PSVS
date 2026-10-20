@@ -138,9 +138,12 @@
 <dialog id="documentDialog">
   <form id="documentForm">
     <header class="dlg-head"><h2 id="docTitle">Dokuments</h2><button type="button" class="ghost" data-close="documentDialog" aria-label="Aizvērt">✕</button></header>
-    <div class="dlg-body"><div class="fieldgrid">
+    <div class="dlg-body">
+      <div id="docCopy" class="doc-copy hidden" role="status" aria-live="polite"><span id="docCopyTxt" class="small"></span><span class="bar"><i id="docCopyBar"></i></span></div>
+      <div class="fieldgrid">
       <div class="field wide"><label for="docPerson">Persona</label><select name="personId" id="docPerson" required></select></div>
       <div class="field"><label for="docKind">Kategorija</label><select name="kind" id="docKind"></select></div>
+      <div class="field wide hidden" id="docNoWrap"><label for="docNo">Līguma numurs <b class="red">*</b></label><input name="contractNo" id="docNo" autocomplete="off" placeholder="numurs no DVS vai līguma"><small class="muted">Līguma numuru piešķir cita sistēma. Ievietojot līgumu, numurs ir obligāts.</small></div>
       <div class="field wide hidden" id="docTitleWrap"><label for="docTitleIn">Dokumenta nosaukums <b class="red">*</b></label><input name="title" id="docTitleIn" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
       <div class="field"><label>Iesniegšanas forma</label><select name="format"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks dokuments</option></select></div>
       <div class="field"><label>Statuss</label><select name="review"><option value="">—</option><option value="received">Saņemts</option><option value="checked">Pārbaudīts</option><option value="clarify">Jāprecizē</option><option value="missing">Trūkst</option></select></div>
@@ -303,6 +306,7 @@
   <div class="dlg-body"><p id="associateName" class="small"></p><div class="fieldgrid">
     <div class="field wide"><label>Persona</label><select id="associatePerson"></select></div>
     <div class="field"><label>Kategorija</label><select id="associateKind"></select></div>
+    <div class="field wide hidden" id="associateNoWrap"><label for="associateNo">Līguma numurs <b class="red">*</b></label><input id="associateNo" autocomplete="off" placeholder="numurs no DVS vai līguma"><small class="muted">Līgumam numurs ir obligāts.</small></div>
     <div class="field"><label>Forma</label><select id="associateFormat"><option value="paper">Papīrs (skenēts)</option><option value="edoc">eDoc</option><option value="pdf">Elektronisks fails</option></select></div>
     <div class="field wide hidden" id="associateTitleWrap"><label>Dokumenta nosaukums <b class="red">*</b></label><input id="associateTitle" placeholder="piem., Paskaidrojums par kavējumu, Vecāku iesniegums"><small class="muted">Kategorijai “Cits” jānorāda, kas tas par dokumentu — tā tas redzams kartītē.</small></div>
   </div><p class="small muted">Tiek saglabāts ceļš un apraksts. Fails netiek pārvietots.</p></div>
@@ -447,6 +451,7 @@
 <script src="js/vfs.js"></script>
 <script src="js/schedule.js"></script>
 <script src="js/schedimport.js"></script>
+<div id="fileJob" class="file-job" hidden role="status" aria-live="polite"><span id="fileJobTxt"></span><span class="bar"><i id="fileJobBar"></i></span></div>
 <script src="js/changelog.js"></script>
 <script src="js/retention.js"></script>
 <script src="js/transfer.js"></script>

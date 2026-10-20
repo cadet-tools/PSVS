@@ -1,5 +1,9 @@
 # Izmaiņu vēsture
 
+## 1.59.0 — 2026-10-20
+- Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
+- Faila pievienošana: viens fails — dokumenta logs atveras uzreiz, josla rāda kopēšanas progresu, “Saglabāt” gaida, līdz fails ir mapē; aizverot logu kopēšana tiek pārtraukta. Vairāki faili un “Aizstāt failu” — apakšā josla ar progresu. `store.saveFile` raksta pa daļām un pieņem `onProgress` / `signal`.
+
 ## 1.58.0 — 2026-10-19
 - **MI palīgs ieslēgts arī stabilajā versijā** (`MI_STABLE = true`, saknes `index.html` / `app.bundle.js` 1.58.0, CSP `connect-src` ietver `api.groq.com`). Jaunumu logs lietotājiem no 1.57.0. Testa kanāls paliek ar to pašu MI. Izstrādātāja rokasgrāmata: `docs/MI.md`. Iestatījumi → Atļaujas → MI palīgs: “Kas tiek sūtīts MI?” ir poga kā Veidlapās “Pieejamās atzīmes”.
 - Būvēšana bez visa repo tīrīšanas: `src/_buvesana/build_stable.py` (sakne), `build_test.py` (`test/`).
