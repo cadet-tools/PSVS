@@ -1,11 +1,11 @@
 # Izmaiņu vēsture
 
 ## 2026-10-21 — līguma veidnes
-- Četras standarta līguma veidnes (`vendor/templates/ligums-*.docx`) aizstātas ar `JAUNAS_VEIDLAPAS`. Aizpildāmās atzīmes paliek tajās pašās vietās, ko rīks jau raksta no kartītes.
-- Veidlapā jaunā centra adrese K. Valdemāra iela 10/12, Rīgā, LV-1473 un e-pasts jc@jc.gov.lv.
-- Ievadrindā paliek viens numurs (`{i_parvalde}` pirms “novada nodaļas”). Nodaļas numuram (`{i_nodala}`) jaunajā teikumā vietas nav.
-- Rīkojuma datums un numurs paliek tukši — jaunajā veidnē vairs nav 2021. gada 14. septembra rīkojuma Nr. 418, un rīkā šiem laukiem datu nav.
-- EDOC veidnēs vieta un datums vairs nav iesaldēti kā “Rīga, 2021”; rīks raksta instruktora vietu un izvēlēto datumu. Līguma numurs ir rindā “Līguma reģistrācijas Nr.”.
+- Četras standarta līguma veidnes (`vendor/templates/ligums-*.docx`) aizstātas ar `JAUNAS_VEIDLAPAS`. Aizpildāmās atzīmes ir tajās pašās šūnās, kur iepriekšējās veidnēs, Times New Roman: līguma numurs 14 pt, pārējie lauki 12,5 pt. Paraksta datums ir atsevišķā rindā zem “(paraksts)”, nevis paraksta piezīmes izmērā.
+- Veidlapā jaunā centra adrese K. Valdemāra iela 10/12, Rīgā, LV-1473 un e-pasts jc@jc.gov.lv. Ievadrindā atkal abi numuri: `{i_parvalde}.novada pārvaldes {i_nodala}.nodaļas`.
+- Instruktors rīkojas saskaņā ar Jaunsardzes centra direktora 2021. gada 14. septembra rīkojumu Nr. 418 “Par pilnvarojumu jaunsargu instruktoriem slēgt līgumus”. Galvenē pievienota norāde no 2026. gada 15. oktobra grozījumiem Nr. 7-NOT.
+- 2.1.3., 3.2.2.4. un 4.4.2. punktā ģimenes ārsta izziņa ir derīga 12 mēnešus no izsniegšanas dienas (Nr. 7-NOT).
+- EDOC veidnēs numurs ir rindā “Nr. {liguma_nr}” (14 pt, pa labi); vieta un datums vairs nav iesaldēti kā “Rīga, 2021”.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
