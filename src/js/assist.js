@@ -103,7 +103,7 @@
       ['Pie personas spied “Atvērt”, lai pievienotu dokumentu, vai sagatavo atgādinājumu vecākiem kartītē (“Atgādināt pārstāvim par trūkstošajiem”).', null, null] ] },
     { t: 'Kā atzīmēt nodarbības apmeklējumu?', kw: 'apmeklejums atzimet nodarbiba klatbutne kavejums zurnals klat nav', a: 'Apmeklējumā katrai grupai ir mēneša tabula. Jaunu nodarbību pievieno ar “＋ Nodarbība”, tad atzīmē klātesošos.', steps: [
       ['Atver Apmeklējumu un spied “＋ Nodarbība”.', page('attendance'), '[data-act=sessNew]'],
-      ['Izvēlies grupu un datumu, atzīmē, kas bija (+ klāt, n — nav, a — attaisnots). Ar “Visi klāt” atzīmē visus uzreiz.', null, '[data-act=sessFill][data-arg=all]'],
+      ['Izvēlies grupu un datumu, atzīmē, kas bija (+ klāt, n — nav, a — attaisnots, statistikā tas pats kas n). Ar “Visi klāt” atzīmē visus uzreiz.', null, '[data-act=sessFill][data-arg=all]'],
       ['Saglabā. Tabulā vēlāk var labot jebkuru šūnu, uzspiežot uz tās.', null, null] ] },
     { t: 'Kā sagatavot drošības instruktāžu pasākumam?', kw: 'instruktaza drosiba pasakums parakstu lapa sagatavot', a: 'Veidlapās izveido instruktāžu: dalībnieki, datums, vieta, vadītājs — rīks sagatavo parakstu lapu PDF formātā.', steps: [
       ['Atver Veidlapas un spied “Instruktāža”.', page('forms'), '[data-act=formNew][data-arg=instr]'],

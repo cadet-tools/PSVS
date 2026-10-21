@@ -10371,22 +10371,22 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
    settings.absenceStreak = 3
    settings.quals = [{ id, name, note }]           p.quals = [{ qid, date, note, src }]
    settings.incidentTypes = [...]                   p.incidents = [{ id, date, type, severity, text, action, at }]
-   Kodi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots, s slimības dēļ
+   Kodi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots (statistikā kā n — nebija), s slimības dēļ (procentos neskaita)
    ===================================================================== */
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const CODES = [['+', 'Bija', 'ok'], ['n', 'Nebija', 'bad'], ['k', 'Kavēja (ieradās vēlāk)', 'warn'], ['a', 'Attaisnots', 'exc'], ['s', 'Slimības dēļ', 'exc']];
+  const CODES = [['+', 'Bija', 'ok'], ['n', 'Nebija', 'bad'], ['k', 'Kavēja (ieradās vēlāk)', 'warn'], ['a', 'Attaisnots (skaitās nebija)', 'bad'], ['s', 'Slimības dēļ', 'exc']];
   const CYCLE = ['', '+', 'n', 'k', 'a', 's'];
-  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
+  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n', 'a']), EXCUSED = new Set(['s']);
   const TYPES = ['Nodarbība', 'Pasākums', 'Nometne', 'Sacensības', 'Cits'];
   const EVT = TYPES.slice(1);   // pasākumi — nav kontaktstundas, apmeklējuma % neskaitās
   const isLesson = s => !s.type || s.type === 'Nodarbība';
   const WD = ['P', 'O', 'T', 'C', 'Pk', 'S', 'Sv'], WDL = ['pirmdiena', 'otrdiena', 'trešdiena', 'ceturtdiena', 'piektdiena', 'sestdiena', 'svētdiena'];
   const MON = ['janvāris', 'februāris', 'marts', 'aprīlis', 'maijs', 'jūnijs', 'jūlijs', 'augusts', 'septembris', 'oktobris', 'novembris', 'decembris'];
   const MON_LOC = ['Janvārī', 'Februārī', 'Martā', 'Aprīlī', 'Maijā', 'Jūnijā', 'Jūlijā', 'Augustā', 'Septembrī', 'Oktobrī', 'Novembrī', 'Decembrī'];
-  const LEGEND = 'Apzīmējumi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots, s slimības dēļ';
+  const LEGEND = 'Apzīmējumi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots (skaitās nebija), s slimības dēļ';
   CP.ATT_CODES = CODES;
 
   const st = () => S.db.settings;
@@ -10410,12 +10410,12 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
 
   /* --- Rādītāji --- */
   function rateOf(pid, list) {
-    let pr = 0, ab = 0, ex = 0;
-    for (const s of list) { const c = s.att?.[pid] || ''; if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) ab++; else if (EXCUSED.has(c)) ex++; }
-    return { present: pr, absent: ab, excused: ex, marked: pr + ab + ex, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null };
+    let pr = 0, ab = 0, ex = 0, jus = 0;
+    for (const s of list) { const c = s.att?.[pid] || ''; if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) { ab++; if (c === 'a') jus++; } else if (EXCUSED.has(c)) ex++; }
+    return { present: pr, absent: ab, excused: ex, justified: jus, marked: pr + ab + ex, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null };
   }
   const sessionPct = s => { let pr = 0, ab = 0; for (const c of Object.values(s.att || {})) { if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) ab++; } return pr + ab ? Math.round(pr / (pr + ab) * 100) : null; };
-  /** Kavējumi pēc kārtas (attaisnotie un neatzīmētie neskaitās un nepārtrauc) */
+  /** Kavējumi pēc kārtas (slimības dēļ un neatzīmētie neskaitās un nepārtrauc; a skaitās kā n) */
   function streak(p) {
     const list = personSessions(p).reverse(); let n = 0, last = '';
     for (const s of list) { const c = s.att?.[p.id] || ''; if (ABSENT.has(c)) { n++; if (!last) last = s.date; } else if (PRESENT.has(c)) break; }
@@ -10527,14 +10527,14 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         <span class="grow"></span>
         <button class="sm" data-act="attPdf" data-arg="blank">${ic('file', '📄')} Tukša veidlapa</button><button class="sm" data-act="attPdf" data-arg="filled">${ic('file', '📄')} Ar atzīmēm</button></div>
       <div class="att-days">${daysPick}${!days.length && v.group !== '*' && !v.all ? ' <span class="warn small">— atzīmē grupas nodarbību dienas, vai izvēlies “Visas mēneša dienas”.</span>' : ''}</div>
-      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
+      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots (skaitās nebija) → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
       <div class="att-keys" id="attKeyHint"><span class="small"><b>Ar tastatūru:</b> uzklikšķini uz rūtiņas un raksti <kbd>+</kbd> (vai <kbd>B</kbd>) <kbd>N</kbd> <kbd>K</kbd> <kbd>A</kbd> <kbd>S</kbd> — atzīme tiek ierakstīta un fokuss pāriet tālāk. <kbd>Del</kbd> notīra, <kbd>Atstarpe</kbd> = klikšķis, bultiņas pārvietojas, <kbd>Esc</kbd> beidz.</span>
         <span class="seg"><span class="small muted" style="padding:0 6px">Pēc atzīmes:</span><button class="sm ${(v.dir || 'down') === 'down' ? 'on' : ''}" data-act="attDir" data-arg="down" title="Nākamā persona tajā pašā datumā (atzīmē vienu nodarbību)">↓ nākamā persona</button><button class="sm ${v.dir === 'right' ? 'on' : ''}" data-act="attDir" data-arg="right" title="Nākamais datums tai pašai personai">→ nākamais datums</button></span></div>
       ${(() => { const [mf, mt] = [v.month + '-01', monthDates(v.month).at(-1)], list = events().filter(e => (e.group === '*' || e.group === v.group || v.group === '*') && e.date <= mt && (e.dateTo || e.date) >= mf).sort((a, b) => a.date.localeCompare(b.date));
         return list.length ? `<div class="att-evstrip"><span class="small muted">Pasākumi šajā mēnesī:</span>${list.map(e => `<button type="button" class="sm" data-act="attEvOpen" data-arg="${e.id}" title="Atvērt pasākumu — dalībnieki un dokumenti">★ ${esc(U.fmtDate(e.date).slice(0, 5))}${e.dateTo && e.dateTo !== e.date ? '–' + esc(U.fmtDate(e.dateTo).slice(0, 5)) : ''} · ${esc(e.type)}: <b>${esc(e.topic || '')}</b> <span class="muted">(${evPresent(e).length})</span></button>`).join('')}</div>` : ''; })()}
       ${ppl.length ? `<div class="att-wrap"><table class="att-grid"><thead><tr><th class="ad-n">N.p.k.</th><th class="ad-name">Vārds, uzvārds</th>${head}<th class="ad-pct">Mēn.</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr><td></td><td class="small muted">Klātesošie</td>${foot}<td></td></tr></tfoot></table></div>` : ui.empty('Šajā grupā nav personu.')}
-      <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s). <span class="ad-ev ad-ev-legend">★</span> virs datuma — <b>pasākums</b> (nometne, sacensības u. c.): tā kolonnā atzīmē, kas piedalījās; pasākumi apmeklējuma procentos netiek skaitīti. Klikšķis uz datuma atver pasākumu ar dokumentiem.</p></section>`;
+      <p class="small muted">${esc(LEGEND)}. Atzīme <b>a</b> statistikā ir tas pats, kas <b>n</b>: persona nav bijusi, nodarbība ietilpst “no cik”. Procentos neskaita tikai slimības dēļ (s). <span class="ad-ev ad-ev-legend">★</span> virs datuma — <b>pasākums</b> (nometne, sacensības u. c.): tā kolonnā atzīmē, kas piedalījās; pasākumi apmeklējuma procentos netiek skaitīti. Klikšķis uz datuma atver pasākumu ar dokumentiem.</p></section>`;
   }
   A.attMonth = d => { const v = view(); v.month = shiftMonth(v.month, Number(d)); CP.render(); };
   A.attAll = x => { view().all = x === '1'; CP.render(); };
@@ -10624,7 +10624,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
         <div class="field wide"><label>Tēma</label><input name="topic" value="${esc(s.topic || '')}" list="dl_topics" placeholder="piem., Orientēšanās ar karti"><datalist id="dl_topics">${topics.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" data-autogrow>${esc(s.notes || '')}</textarea></div>
       </div>
-      ${s.id ? `<p class="small">Atzīmes: <b>${cnt('+') + cnt('k')}</b> klātesoši · <b>${cnt('n')}</b> nebija · <b>${cnt('a') + cnt('s')}</b> attaisnoti · ${ppl.length - Object.keys(s.att || {}).filter(k => ppl.some(p => p.id === k)).length} neatzīmēti</p>` : ''}
+      ${s.id ? `<p class="small">Atzīmes: <b>${cnt('+') + cnt('k')}</b> klātesoši · <b>${cnt('n') + cnt('a')}</b> nebija${cnt('a') ? ` (t. sk. ${cnt('a')} attaisnoti)` : ''} · <b>${cnt('s')}</b> slimības dēļ · ${ppl.length - Object.keys(s.att || {}).filter(k => ppl.some(p => p.id === k)).length} neatzīmēti</p>` : ''}
       <div class="actions"><button type="button" class="sm" data-act="sessFill" data-arg="all">Visi bija (+)</button><button type="button" class="sm" data-act="sessFill" data-arg="rest">Neatzīmētie — nebija (n)</button><button type="button" class="sm ghost" data-act="sessFill" data-arg="clear">Notīrīt atzīmes</button></div></div>
       <footer class="dlg-foot">${s.id ? `<button type="button" class="ghost danger" data-act="sessDel">Dzēst nodarbību</button>` : ''}<span class="grow"></span><button type="button" data-close="sessDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`;
     d.querySelector('form').onsubmit = e => {
@@ -10820,7 +10820,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const vfs = CP.vfs?.personSummary(p) || '';
     if (!personSessions(p).length) return vfs ? `<section class="card"><h3>${ic('award')}VFS testi</h3>${vfs}</section>` : '';
     return `<section class="card"><h3>${ic('calendar')}Apmeklējums</h3>
-      <div class="att-mini"><div>${pctTag(r.pct)} <small class="muted">mācību gadā · ${r.present} no ${r.present + r.absent}${r.excused ? ` · ${r.excused} attaisnoti` : ''}</small></div>${spark(ser.map(x => x.y), 110, 26)}</div>
+      <div class="att-mini"><div>${pctTag(r.pct)} <small class="muted">mācību gadā · ${r.present} no ${r.present + r.absent}${r.justified ? ` · ${r.justified} attaisnoti (skaitās nebija)` : ''}${r.excused ? ` · ${r.excused} slimības dēļ` : ''}</small></div>${spark(ser.map(x => x.y), 110, 26)}</div>
       <div style="margin:6px 0">${dots(p, 12)}</div>
       ${sk.n >= lim ? `<p class="small warn" style="margin:0">⚠ Nav apmeklējis ${sk.n} nodarbības pēc kārtas</p>` : ''}
       ${vfs ? `<div class="small" style="margin-top:6px"><b>VFS testi:</b>${vfs}</div>` : ''}
@@ -12791,7 +12791,7 @@ ${SEC.map(([k, l]) => rows(k) ? `<h2>${e(l)}</h2><table>${rows(k)}</table>` : ''
 <h2>Dokumenti</h2>${tbl(['Dokuments', 'Saņemts', 'Derīgs līdz', 'Fails'], o.documents, d => `<tr><td>${e(d.title || d.kind)}${d.notes ? `<div class="m">${e(d.notes)}</div>` : ''}</td><td>${dt(d.received)}</td><td>${dt(d.expires)}</td><td>${d.file ? `<a href="${e(encodeURI(d.file))}">atvērt</a>` : '<span class="m">nav pievienots</span>'}</td></tr>`)}
 ${o.quals.length || o.participation.length || o.attendance ? `<h2>Kvalifikācijas</h2>${tbl(['Kvalifikācija', 'Datums', 'Piezīme'], o.quals, q => `<tr><td>${e(q.name)}</td><td>${dt(q.date)}</td><td>${e(q.note)}</td></tr>`)}
 <h2>Dalība pasākumos</h2>${tbl(['Datums', 'Veids', 'Nosaukums'], o.participation, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.title)}</td></tr>`)}
-${o.attendance ? `<p>Nodarbību apmeklējums šajā mācību gadā: <b>${o.attendance.pct ?? '—'}${o.attendance.pct != null ? '%' : ''}</b> (bija ${o.attendance.present}, nebija ${o.attendance.absent}, attaisnoti ${o.attendance.excused}).</p>` : ''}` : ''}
+${o.attendance ? `<p>Nodarbību apmeklējums šajā mācību gadā: <b>${o.attendance.pct ?? '—'}${o.attendance.pct != null ? '%' : ''}</b> (bija ${o.attendance.present}, nebija ${o.attendance.absent}${o.attendance.justified ? `, t. sk. attaisnoti ${o.attendance.justified}` : ''}${o.attendance.excused ? `, slimības dēļ ${o.attendance.excused}` : ''}).</p>` : ''}` : ''}
 ${o.equipment.length ? `<h2>${o.equipmentHandover ? 'Ekipējums — nodots jaunajam instruktoram (MTL pārņem)' : 'Neatdotais ekipējums (informācijai)'}</h2>${tbl(['Priekšmets', 'Daudz.', 'Izmērs', 'Inv. nr.', 'Izsniegts'], o.equipment, x => `<tr><td>${e(x.item)}${x.gift ? ' <span class="m">(dāvinājums)</span>' : ''}</td><td>${e(x.qty)}</td><td>${e(x.size)}</td><td>${e(x.inventory)}</td><td>${dt(x.issued)}</td></tr>`)}` : ''}
 ${o.notes.length ? `<h2>Piezīmes</h2>${o.notes.map(n => `<p><span class="m">${dt(n.at)}</span> ${e(n.text)}</p>`).join('')}` : ''}
 ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids', 'Apraksts', 'Rīcība'], o.incidents, x => `<tr><td>${dt(x.date)}</td><td>${e(x.type)}</td><td>${e(x.text)}</td><td>${e(x.action)}</td></tr>`)}` : ''}
@@ -13012,7 +13012,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   const ic = (n, f = '') => CP.ic(n, f);
   const KIND = 'Kopsavilkums';
   const SECS = [['att', 'Nodarbību apmeklējums (diagramma pa mēnešiem)'], ['events', 'Dalība pasākumos un nometnēs'], ['quals', 'Kvalifikācijas un nozīmītes'], ['vfs', 'VFS testu rezultāti un dinamika'], ['comment', 'Instruktora komentārs']];
-  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
+  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n', 'a']), EXCUSED = new Set(['s']);
   const MON = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
   const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; if (c.unit == null) c.unit = true; return c; };
   const isLesson = s => !s.type || s.type === 'Nodarbība';
@@ -13024,12 +13024,12 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     // nodarbības: personas grupa attiecīgajā mācību gadā (vai visa vienība)
     const lessons = (S.db.sessions || []).filter(s => isLesson(s) && s.date >= from && s.date <= end && (s.group === '*' || s.group === D.groupOf(p, s.yearId || U.schoolYear(s.date + 'T12:00:00'))))
       .sort((a, b) => a.date.localeCompare(b.date));
-    let pr = 0, ab = 0, ex = 0; const months = new Map();
+    let pr = 0, ab = 0, ex = 0, jus = 0; const months = new Map();
     for (const s of lessons) {
       const c = s.att?.[p.id] || '', k = s.date.slice(0, 7);
       if (!months.has(k)) months.set(k, { k, pr: 0, ab: 0, ex: 0, n: 0 });
       const m = months.get(k); m.n++;
-      if (PRESENT.has(c)) { pr++; m.pr++; } else if (ABSENT.has(c)) { ab++; m.ab++; } else if (EXCUSED.has(c)) { ex++; m.ex++; }
+      if (PRESENT.has(c)) { pr++; m.pr++; } else if (ABSENT.has(c)) { ab++; m.ab++; if (c === 'a') jus++; } else if (EXCUSED.has(c)) { ex++; m.ex++; }
     }
     // mēneši bez nodarbībām perioda iekšienē arī redzami (tukši)
     const mlist = [];
@@ -13037,7 +13037,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       let [y, m] = lessons[0].date.slice(0, 7).split('-').map(Number); const [y2, m2] = lessons.at(-1).date.slice(0, 7).split('-').map(Number);
       while (y < y2 || (y === y2 && m <= m2)) { const k = `${y}-${String(m).padStart(2, '0')}`; mlist.push(months.get(k) || { k, pr: 0, ab: 0, ex: 0, n: 0 }); if (++m > 12) { m = 1; y++; } }
     }
-    const att = { present: pr, absent: ab, excused: ex, total: lessons.length, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null, months: mlist.map(x => ({ ...x, label: MON[+x.k.slice(5) - 1], pct: x.pr + x.ab ? Math.round(x.pr / (x.pr + x.ab) * 100) : null })) };
+    const att = { present: pr, absent: ab, excused: ex, justified: jus, total: lessons.length, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null, months: mlist.map(x => ({ ...x, label: MON[+x.k.slice(5) - 1], pct: x.pr + x.ab ? Math.round(x.pr / (x.pr + x.ab) * 100) : null })) };
     // pasākumi un nometnes (Apmeklējums + Veidlapas; viens pasākums — vienreiz)
     const events = [
       ...(S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id) && inR(e.dateFrom || e.instrDate)).map(e => ({ date: String(e.dateFrom || e.instrDate).slice(0, 10), to: String(e.dateTo || '').slice(0, 10), type: e.type === 'camp' ? 'Nometne' : 'Pasākums', title: e.title || '' })),
@@ -13162,7 +13162,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
 
     /* --- Apmeklējums --- */
     if (o.inc.att) {
-      section('Nodarbību apmeklējums', d.att.total ? `bija ${d.att.present} · nebija ${d.att.absent}${d.att.excused ? ` · attaisnoti ${d.att.excused}` : ''}` : '', d.att.months.length ? 200 : 56);
+      section('Nodarbību apmeklējums', d.att.total ? `bija ${d.att.present} · nebija ${d.att.absent}${d.att.justified ? ` (t. sk. ${d.att.justified} attaisnoti)` : ''}${d.att.excused ? ` · slimības dēļ ${d.att.excused}` : ''}` : '', d.att.months.length ? 200 : 56);
       if (!d.att.months.length) para('Periodā nodarbību apmeklējums nav atzīmēts.', { c: C.mut });
       else {
         const ch = 120, x0 = M + 26, cw = CW - 26, ms = d.att.months, bw = Math.min(34, cw / ms.length * 0.62);
@@ -13182,7 +13182,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
           }
         });
         y = base - 32;
-        text(pg, 'Stabiņš — apmeklēto nodarbību % mēnesī (attaisnotie kavējumi netiek ieskaitīti); zem tā — bija / atzīmētas nodarbības.', M, y, { s: 7.5, c: C.mut }); y -= 10;
+        text(pg, 'Stabiņš — apmeklēto nodarbību % mēnesī. Atzīme a (attaisnots) skaitās kā nebija. Slimības dēļ (s) procentos neskaita. Zem stabiņa — bija / nodarbības, kurās skaita apmeklējumu.', M, y, { s: 7.5, c: C.mut }); y -= 10;
       }
     }
 
@@ -14379,7 +14379,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
       ['Pie personas spied “Atvērt”, lai pievienotu dokumentu, vai sagatavo atgādinājumu vecākiem kartītē (“Atgādināt pārstāvim par trūkstošajiem”).', null, null] ] },
     { t: 'Kā atzīmēt nodarbības apmeklējumu?', kw: 'apmeklejums atzimet nodarbiba klatbutne kavejums zurnals klat nav', a: 'Apmeklējumā katrai grupai ir mēneša tabula. Jaunu nodarbību pievieno ar “＋ Nodarbība”, tad atzīmē klātesošos.', steps: [
       ['Atver Apmeklējumu un spied “＋ Nodarbība”.', page('attendance'), '[data-act=sessNew]'],
-      ['Izvēlies grupu un datumu, atzīmē, kas bija (+ klāt, n — nav, a — attaisnots). Ar “Visi klāt” atzīmē visus uzreiz.', null, '[data-act=sessFill][data-arg=all]'],
+      ['Izvēlies grupu un datumu, atzīmē, kas bija (+ klāt, n — nav, a — attaisnots, statistikā tas pats kas n). Ar “Visi klāt” atzīmē visus uzreiz.', null, '[data-act=sessFill][data-arg=all]'],
       ['Saglabā. Tabulā vēlāk var labot jebkuru šūnu, uzspiežot uz tās.', null, null] ] },
     { t: 'Kā sagatavot drošības instruktāžu pasākumam?', kw: 'instruktaza drosiba pasakums parakstu lapa sagatavot', a: 'Veidlapās izveido instruktāžu: dalībnieki, datums, vieta, vadītājs — rīks sagatavo parakstu lapu PDF formātā.', steps: [
       ['Atver Veidlapas un spied “Instruktāža”.', page('forms'), '[data-act=formNew][data-arg=instr]'],

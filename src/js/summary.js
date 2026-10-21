@@ -15,7 +15,7 @@
   const ic = (n, f = '') => CP.ic(n, f);
   const KIND = 'Kopsavilkums';
   const SECS = [['att', 'Nodarbību apmeklējums (diagramma pa mēnešiem)'], ['events', 'Dalība pasākumos un nometnēs'], ['quals', 'Kvalifikācijas un nozīmītes'], ['vfs', 'VFS testu rezultāti un dinamika'], ['comment', 'Instruktora komentārs']];
-  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
+  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n', 'a']), EXCUSED = new Set(['s']);
   const MON = ['janv.', 'febr.', 'marts', 'apr.', 'maijs', 'jūn.', 'jūl.', 'aug.', 'sept.', 'okt.', 'nov.', 'dec.'];
   const cfg = () => { const s = S.db.settings; s.summary = s.summary || {}; const c = s.summary; c.inc = c.inc || { att: true, events: true, quals: true, vfs: true, comment: true }; c.intro = c.intro ?? ''; if (c.unit == null) c.unit = true; return c; };
   const isLesson = s => !s.type || s.type === 'Nodarbība';
@@ -27,12 +27,12 @@
     // nodarbības: personas grupa attiecīgajā mācību gadā (vai visa vienība)
     const lessons = (S.db.sessions || []).filter(s => isLesson(s) && s.date >= from && s.date <= end && (s.group === '*' || s.group === D.groupOf(p, s.yearId || U.schoolYear(s.date + 'T12:00:00'))))
       .sort((a, b) => a.date.localeCompare(b.date));
-    let pr = 0, ab = 0, ex = 0; const months = new Map();
+    let pr = 0, ab = 0, ex = 0, jus = 0; const months = new Map();
     for (const s of lessons) {
       const c = s.att?.[p.id] || '', k = s.date.slice(0, 7);
       if (!months.has(k)) months.set(k, { k, pr: 0, ab: 0, ex: 0, n: 0 });
       const m = months.get(k); m.n++;
-      if (PRESENT.has(c)) { pr++; m.pr++; } else if (ABSENT.has(c)) { ab++; m.ab++; } else if (EXCUSED.has(c)) { ex++; m.ex++; }
+      if (PRESENT.has(c)) { pr++; m.pr++; } else if (ABSENT.has(c)) { ab++; m.ab++; if (c === 'a') jus++; } else if (EXCUSED.has(c)) { ex++; m.ex++; }
     }
     // mēneši bez nodarbībām perioda iekšienē arī redzami (tukši)
     const mlist = [];
@@ -40,7 +40,7 @@
       let [y, m] = lessons[0].date.slice(0, 7).split('-').map(Number); const [y2, m2] = lessons.at(-1).date.slice(0, 7).split('-').map(Number);
       while (y < y2 || (y === y2 && m <= m2)) { const k = `${y}-${String(m).padStart(2, '0')}`; mlist.push(months.get(k) || { k, pr: 0, ab: 0, ex: 0, n: 0 }); if (++m > 12) { m = 1; y++; } }
     }
-    const att = { present: pr, absent: ab, excused: ex, total: lessons.length, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null, months: mlist.map(x => ({ ...x, label: MON[+x.k.slice(5) - 1], pct: x.pr + x.ab ? Math.round(x.pr / (x.pr + x.ab) * 100) : null })) };
+    const att = { present: pr, absent: ab, excused: ex, justified: jus, total: lessons.length, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null, months: mlist.map(x => ({ ...x, label: MON[+x.k.slice(5) - 1], pct: x.pr + x.ab ? Math.round(x.pr / (x.pr + x.ab) * 100) : null })) };
     // pasākumi un nometnes (Apmeklējums + Veidlapas; viens pasākums — vienreiz)
     const events = [
       ...(S.db.events || []).filter(e => (e.participants || []).some(x => x.pid === p.id) && inR(e.dateFrom || e.instrDate)).map(e => ({ date: String(e.dateFrom || e.instrDate).slice(0, 10), to: String(e.dateTo || '').slice(0, 10), type: e.type === 'camp' ? 'Nometne' : 'Pasākums', title: e.title || '' })),
@@ -165,7 +165,7 @@
 
     /* --- Apmeklējums --- */
     if (o.inc.att) {
-      section('Nodarbību apmeklējums', d.att.total ? `bija ${d.att.present} · nebija ${d.att.absent}${d.att.excused ? ` · attaisnoti ${d.att.excused}` : ''}` : '', d.att.months.length ? 200 : 56);
+      section('Nodarbību apmeklējums', d.att.total ? `bija ${d.att.present} · nebija ${d.att.absent}${d.att.justified ? ` (t. sk. ${d.att.justified} attaisnoti)` : ''}${d.att.excused ? ` · slimības dēļ ${d.att.excused}` : ''}` : '', d.att.months.length ? 200 : 56);
       if (!d.att.months.length) para('Periodā nodarbību apmeklējums nav atzīmēts.', { c: C.mut });
       else {
         const ch = 120, x0 = M + 26, cw = CW - 26, ms = d.att.months, bw = Math.min(34, cw / ms.length * 0.62);
@@ -185,7 +185,7 @@
           }
         });
         y = base - 32;
-        text(pg, 'Stabiņš — apmeklēto nodarbību % mēnesī (attaisnotie kavējumi netiek ieskaitīti); zem tā — bija / atzīmētas nodarbības.', M, y, { s: 7.5, c: C.mut }); y -= 10;
+        text(pg, 'Stabiņš — apmeklēto nodarbību % mēnesī. Atzīme a (attaisnots) skaitās kā nebija. Slimības dēļ (s) procentos neskaita. Zem stabiņa — bija / nodarbības, kurās skaita apmeklējumu.', M, y, { s: 7.5, c: C.mut }); y -= 10;
       }
     }
 

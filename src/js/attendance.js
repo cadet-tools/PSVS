@@ -8,22 +8,22 @@
    settings.absenceStreak = 3
    settings.quals = [{ id, name, note }]           p.quals = [{ qid, date, note, src }]
    settings.incidentTypes = [...]                   p.incidents = [{ id, date, type, severity, text, action, at }]
-   Kodi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots, s slimības dēļ
+   Kodi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots (statistikā kā n — nebija), s slimības dēļ (procentos neskaita)
    ===================================================================== */
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
   const ic = (n, f = '') => CP.ic(n, f);
-  const CODES = [['+', 'Bija', 'ok'], ['n', 'Nebija', 'bad'], ['k', 'Kavēja (ieradās vēlāk)', 'warn'], ['a', 'Attaisnots', 'exc'], ['s', 'Slimības dēļ', 'exc']];
+  const CODES = [['+', 'Bija', 'ok'], ['n', 'Nebija', 'bad'], ['k', 'Kavēja (ieradās vēlāk)', 'warn'], ['a', 'Attaisnots (skaitās nebija)', 'bad'], ['s', 'Slimības dēļ', 'exc']];
   const CYCLE = ['', '+', 'n', 'k', 'a', 's'];
-  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n']), EXCUSED = new Set(['a', 's']);
+  const PRESENT = new Set(['+', 'k']), ABSENT = new Set(['n', 'a']), EXCUSED = new Set(['s']);
   const TYPES = ['Nodarbība', 'Pasākums', 'Nometne', 'Sacensības', 'Cits'];
   const EVT = TYPES.slice(1);   // pasākumi — nav kontaktstundas, apmeklējuma % neskaitās
   const isLesson = s => !s.type || s.type === 'Nodarbība';
   const WD = ['P', 'O', 'T', 'C', 'Pk', 'S', 'Sv'], WDL = ['pirmdiena', 'otrdiena', 'trešdiena', 'ceturtdiena', 'piektdiena', 'sestdiena', 'svētdiena'];
   const MON = ['janvāris', 'februāris', 'marts', 'aprīlis', 'maijs', 'jūnijs', 'jūlijs', 'augusts', 'septembris', 'oktobris', 'novembris', 'decembris'];
   const MON_LOC = ['Janvārī', 'Februārī', 'Martā', 'Aprīlī', 'Maijā', 'Jūnijā', 'Jūlijā', 'Augustā', 'Septembrī', 'Oktobrī', 'Novembrī', 'Decembrī'];
-  const LEGEND = 'Apzīmējumi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots, s slimības dēļ';
+  const LEGEND = 'Apzīmējumi: + bija, n nebija, k kavēja (ieradās vēlāk), a attaisnots (skaitās nebija), s slimības dēļ';
   CP.ATT_CODES = CODES;
 
   const st = () => S.db.settings;
@@ -47,12 +47,12 @@
 
   /* --- Rādītāji --- */
   function rateOf(pid, list) {
-    let pr = 0, ab = 0, ex = 0;
-    for (const s of list) { const c = s.att?.[pid] || ''; if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) ab++; else if (EXCUSED.has(c)) ex++; }
-    return { present: pr, absent: ab, excused: ex, marked: pr + ab + ex, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null };
+    let pr = 0, ab = 0, ex = 0, jus = 0;
+    for (const s of list) { const c = s.att?.[pid] || ''; if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) { ab++; if (c === 'a') jus++; } else if (EXCUSED.has(c)) ex++; }
+    return { present: pr, absent: ab, excused: ex, justified: jus, marked: pr + ab + ex, pct: pr + ab ? Math.round(pr / (pr + ab) * 100) : null };
   }
   const sessionPct = s => { let pr = 0, ab = 0; for (const c of Object.values(s.att || {})) { if (PRESENT.has(c)) pr++; else if (ABSENT.has(c)) ab++; } return pr + ab ? Math.round(pr / (pr + ab) * 100) : null; };
-  /** Kavējumi pēc kārtas (attaisnotie un neatzīmētie neskaitās un nepārtrauc) */
+  /** Kavējumi pēc kārtas (slimības dēļ un neatzīmētie neskaitās un nepārtrauc; a skaitās kā n) */
   function streak(p) {
     const list = personSessions(p).reverse(); let n = 0, last = '';
     for (const s of list) { const c = s.att?.[p.id] || ''; if (ABSENT.has(c)) { n++; if (!last) last = s.date; } else if (PRESENT.has(c)) break; }
@@ -164,14 +164,14 @@
         <span class="grow"></span>
         <button class="sm" data-act="attPdf" data-arg="blank">${ic('file', '📄')} Tukša veidlapa</button><button class="sm" data-act="attPdf" data-arg="filled">${ic('file', '📄')} Ar atzīmēm</button></div>
       <div class="att-days">${daysPick}${!days.length && v.group !== '*' && !v.all ? ' <span class="warn small">— atzīmē grupas nodarbību dienas, vai izvēlies “Visas mēneša dienas”.</span>' : ''}</div>
-      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
+      <p class="small muted" style="margin:6px 0">${esc(MON[m - 1])} ${y}. <b>Ar peli:</b> klikšķis maina atzīmi: <b>+</b> bija → <b>n</b> nebija → <b>k</b> kavēja → <b>a</b> attaisnots (skaitās nebija) → <b>s</b> slimības dēļ → tukšs. Klikšķis uz datuma — tēma, piezīmes, “visi bija”.</p>
       <div class="att-keys" id="attKeyHint"><span class="small"><b>Ar tastatūru:</b> uzklikšķini uz rūtiņas un raksti <kbd>+</kbd> (vai <kbd>B</kbd>) <kbd>N</kbd> <kbd>K</kbd> <kbd>A</kbd> <kbd>S</kbd> — atzīme tiek ierakstīta un fokuss pāriet tālāk. <kbd>Del</kbd> notīra, <kbd>Atstarpe</kbd> = klikšķis, bultiņas pārvietojas, <kbd>Esc</kbd> beidz.</span>
         <span class="seg"><span class="small muted" style="padding:0 6px">Pēc atzīmes:</span><button class="sm ${(v.dir || 'down') === 'down' ? 'on' : ''}" data-act="attDir" data-arg="down" title="Nākamā persona tajā pašā datumā (atzīmē vienu nodarbību)">↓ nākamā persona</button><button class="sm ${v.dir === 'right' ? 'on' : ''}" data-act="attDir" data-arg="right" title="Nākamais datums tai pašai personai">→ nākamais datums</button></span></div>
       ${(() => { const [mf, mt] = [v.month + '-01', monthDates(v.month).at(-1)], list = events().filter(e => (e.group === '*' || e.group === v.group || v.group === '*') && e.date <= mt && (e.dateTo || e.date) >= mf).sort((a, b) => a.date.localeCompare(b.date));
         return list.length ? `<div class="att-evstrip"><span class="small muted">Pasākumi šajā mēnesī:</span>${list.map(e => `<button type="button" class="sm" data-act="attEvOpen" data-arg="${e.id}" title="Atvērt pasākumu — dalībnieki un dokumenti">★ ${esc(U.fmtDate(e.date).slice(0, 5))}${e.dateTo && e.dateTo !== e.date ? '–' + esc(U.fmtDate(e.dateTo).slice(0, 5)) : ''} · ${esc(e.type)}: <b>${esc(e.topic || '')}</b> <span class="muted">(${evPresent(e).length})</span></button>`).join('')}</div>` : ''; })()}
       ${ppl.length ? `<div class="att-wrap"><table class="att-grid"><thead><tr><th class="ad-n">N.p.k.</th><th class="ad-name">Vārds, uzvārds</th>${head}<th class="ad-pct">Mēn.</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr><td></td><td class="small muted">Klātesošie</td>${foot}<td></td></tr></tfoot></table></div>` : ui.empty('Šajā grupā nav personu.')}
-      <p class="small muted">${esc(LEGEND)}. Procentos neskaita attaisnotos (a, s). <span class="ad-ev ad-ev-legend">★</span> virs datuma — <b>pasākums</b> (nometne, sacensības u. c.): tā kolonnā atzīmē, kas piedalījās; pasākumi apmeklējuma procentos netiek skaitīti. Klikšķis uz datuma atver pasākumu ar dokumentiem.</p></section>`;
+      <p class="small muted">${esc(LEGEND)}. Atzīme <b>a</b> statistikā ir tas pats, kas <b>n</b>: persona nav bijusi, nodarbība ietilpst “no cik”. Procentos neskaita tikai slimības dēļ (s). <span class="ad-ev ad-ev-legend">★</span> virs datuma — <b>pasākums</b> (nometne, sacensības u. c.): tā kolonnā atzīmē, kas piedalījās; pasākumi apmeklējuma procentos netiek skaitīti. Klikšķis uz datuma atver pasākumu ar dokumentiem.</p></section>`;
   }
   A.attMonth = d => { const v = view(); v.month = shiftMonth(v.month, Number(d)); CP.render(); };
   A.attAll = x => { view().all = x === '1'; CP.render(); };
@@ -261,7 +261,7 @@
         <div class="field wide"><label>Tēma</label><input name="topic" value="${esc(s.topic || '')}" list="dl_topics" placeholder="piem., Orientēšanās ar karti"><datalist id="dl_topics">${topics.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div>
         <div class="field wide"><label>Piezīmes</label><textarea name="notes" rows="2" data-autogrow>${esc(s.notes || '')}</textarea></div>
       </div>
-      ${s.id ? `<p class="small">Atzīmes: <b>${cnt('+') + cnt('k')}</b> klātesoši · <b>${cnt('n')}</b> nebija · <b>${cnt('a') + cnt('s')}</b> attaisnoti · ${ppl.length - Object.keys(s.att || {}).filter(k => ppl.some(p => p.id === k)).length} neatzīmēti</p>` : ''}
+      ${s.id ? `<p class="small">Atzīmes: <b>${cnt('+') + cnt('k')}</b> klātesoši · <b>${cnt('n') + cnt('a')}</b> nebija${cnt('a') ? ` (t. sk. ${cnt('a')} attaisnoti)` : ''} · <b>${cnt('s')}</b> slimības dēļ · ${ppl.length - Object.keys(s.att || {}).filter(k => ppl.some(p => p.id === k)).length} neatzīmēti</p>` : ''}
       <div class="actions"><button type="button" class="sm" data-act="sessFill" data-arg="all">Visi bija (+)</button><button type="button" class="sm" data-act="sessFill" data-arg="rest">Neatzīmētie — nebija (n)</button><button type="button" class="sm ghost" data-act="sessFill" data-arg="clear">Notīrīt atzīmes</button></div></div>
       <footer class="dlg-foot">${s.id ? `<button type="button" class="ghost danger" data-act="sessDel">Dzēst nodarbību</button>` : ''}<span class="grow"></span><button type="button" data-close="sessDialog">Atcelt</button><button class="mainbtn" type="submit">Saglabāt</button></footer></form>`;
     d.querySelector('form').onsubmit = e => {
@@ -457,7 +457,7 @@
     const vfs = CP.vfs?.personSummary(p) || '';
     if (!personSessions(p).length) return vfs ? `<section class="card"><h3>${ic('award')}VFS testi</h3>${vfs}</section>` : '';
     return `<section class="card"><h3>${ic('calendar')}Apmeklējums</h3>
-      <div class="att-mini"><div>${pctTag(r.pct)} <small class="muted">mācību gadā · ${r.present} no ${r.present + r.absent}${r.excused ? ` · ${r.excused} attaisnoti` : ''}</small></div>${spark(ser.map(x => x.y), 110, 26)}</div>
+      <div class="att-mini"><div>${pctTag(r.pct)} <small class="muted">mācību gadā · ${r.present} no ${r.present + r.absent}${r.justified ? ` · ${r.justified} attaisnoti (skaitās nebija)` : ''}${r.excused ? ` · ${r.excused} slimības dēļ` : ''}</small></div>${spark(ser.map(x => x.y), 110, 26)}</div>
       <div style="margin:6px 0">${dots(p, 12)}</div>
       ${sk.n >= lim ? `<p class="small warn" style="margin:0">⚠ Nav apmeklējis ${sk.n} nodarbības pēc kārtas</p>` : ''}
       ${vfs ? `<div class="small" style="margin-top:6px"><b>VFS testi:</b>${vfs}</div>` : ''}

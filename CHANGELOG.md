@@ -8,6 +8,7 @@
 - Dzimšanas datuma laukā ir kalendārs. Vecā personas koda 1. daļa aizpilda datumu. Jaunais kods (sākas ar 32) datumu nesatur — cipari datumā netiek likti, instruktors to ievada kalendārā.
 - Rekvizītu rindas (tālrunis, e-pasts, bērna kontakti) ir līdzinātas pa kreisi. Tukšā svītra ir tikpat gara kā oficiālajā veidlapā, tāpēc “Bērna” un “e-pasts” paliek vienā rindā un svītra neaiziet zem vārdiem. Līguma pamatteksts paliek izlīdzināts. Tukša oranža piezīme līguma un anketas logos vairs nerādās.
 - PDF veidlapas (kopsavilkums, apmeklējums, instruktāža, nometnes žurnāls, VFS protokols) fontus ņem no `vendor/pdf/cp-fonts.js`. Atsevišķs `.ttf` pieprasījums daļā tīklu pārtrūkst ar “Failed to fetch”, un veidlapa nesagatavojas.
+- Apmeklējuma atzīme **a** (attaisnots) statistikā skaitās kā **n** (nebija). 5 “bija” un 1 “a” ir 5 no 6, nevis 6 apmeklētas nodarbības. Slimības dēļ (**s**) procentos joprojām neskaita.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
