@@ -518,6 +518,8 @@ window.CP = window.CP || {};
   D.inYear = (p, yearId = D.activeYear()) => !!(p && D.enroll(p.id, yearId));
   D.peopleInYear = (yearId = D.activeYear()) => db().people.filter(p => D.inYear(p, yearId));
   D.groupOf = (p, yearId = D.activeYear()) => (p && D.enroll(p.id, yearId)?.group) || '';
+  D.NOGROUP = '!';
+  D.inGroup = (p, g) => !g || (g === D.NOGROUP ? !D.groupOf(p) : D.groupOf(p) === g);
   D.partStatus = (p, yearId = D.activeYear()) => {
     if (!p) return '';
     if (p.status === 'archived') return 'archived';
@@ -658,6 +660,7 @@ window.CP = window.CP || {};
     }
     for (const p of roster) {
       if (p.status === 'archived') continue;   // glabāšanas termiņi — viens kopsavilkums zemāk (retention.js)
+      if (!D.groupOf(p)) push({ kind: 'group', personId: p.id, sev: 1, top: 1, msg: `${U.full(p)}: nav norādīta grupa`, when: '' });
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });

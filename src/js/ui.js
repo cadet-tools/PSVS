@@ -136,18 +136,20 @@
     U.$('restoreBox').innerHTML = (S.pendingRoot && !S.root
       ? `<button class="mainbtn sm block" data-act="restoreRoot">🔓 Atļaut piekļuvi “${U.esc(S.pendingRoot.name)}”</button>` : '')
       + extras.map(r => `<button class="sm block" data-act="reconnectSource" data-arg="${U.esc(r.id)}" style="margin-top:6px">🔓 Pieslēgt “${U.esc(r.name)}”</button>`).join('');
-    const gs = D.groups(); if (S.groupFilter && !gs.includes(S.groupFilter)) S.groupFilter = '';
-    U.$('groupFilter').innerHTML = `<option value="">Visas grupas</option>` + gs.map(g => `<option ${g === S.groupFilter ? 'selected' : ''}>${U.esc(g)}</option>`).join('');
+    const gs = D.groups(); if (S.groupFilter && S.groupFilter !== D.NOGROUP && !gs.includes(S.groupFilter)) S.groupFilter = '';
+    const gf = U.$('groupFilter');
+    gf.innerHTML = `<option value="">Visas grupas</option><option value="${D.NOGROUP}" ${S.groupFilter === D.NOGROUP ? 'selected' : ''}>⚠ Bez grupas</option>` + gs.map(g => `<option ${g === S.groupFilter ? 'selected' : ''}>${U.esc(g)}</option>`).join('');
+    gf.classList.toggle('nogroup', S.groupFilter === D.NOGROUP);
     U.$('sideArchive').checked = S.sideArchive;
     const q = U.norm(U.$('search').value).replace(/ /g, '');
-    const people = S.db.people.filter(p => D.inYear(p) && (S.sideArchive ? p.status === 'archived' : p.status !== 'archived') && (!S.groupFilter || D.groupOf(p) === S.groupFilter)
+    const people = S.db.people.filter(p => D.inYear(p) && (S.sideArchive ? p.status === 'archived' : p.status !== 'archived') && D.inGroup(p, S.groupFilter)
       && (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name, p.phone, p.parentPhone, p.email, p.parentEmail, p.school].join(' ')).replace(/ /g, '').includes(q)))
       .sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     U.$('sideCount').textContent = people.length;
     U.$('sideList').innerHTML = people.map(p => {
       const miss = p.status !== 'archived' && D.missingDocs(p).length;
       return `<button class="person ${S.page === 'person' && S.selected === p.id ? 'active' : ''} ${p.status === 'archived' ? 'archived' : ''}" data-person="${p.id}">
-        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${U.esc(D.groupOf(p) || 'Bez grupas')}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
+        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${D.groupOf(p) ? U.esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
         ${miss ? `<span class="dot" title="Trūkst dokumentu: ${miss}"></span>` : ''}</button>`;
     }).join('') || `<p class="muted small pad">${S.boot && !S.root ? (S.boot.error ? 'Datu mape nav pieejama' : 'Gaida datu mapi…') : S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
   }

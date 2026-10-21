@@ -521,6 +521,8 @@ window.CP = window.CP || {};
   D.inYear = (p, yearId = D.activeYear()) => !!(p && D.enroll(p.id, yearId));
   D.peopleInYear = (yearId = D.activeYear()) => db().people.filter(p => D.inYear(p, yearId));
   D.groupOf = (p, yearId = D.activeYear()) => (p && D.enroll(p.id, yearId)?.group) || '';
+  D.NOGROUP = '!';
+  D.inGroup = (p, g) => !g || (g === D.NOGROUP ? !D.groupOf(p) : D.groupOf(p) === g);
   D.partStatus = (p, yearId = D.activeYear()) => {
     if (!p) return '';
     if (p.status === 'archived') return 'archived';
@@ -661,6 +663,7 @@ window.CP = window.CP || {};
     }
     for (const p of roster) {
       if (p.status === 'archived') continue;   // glabāšanas termiņi — viens kopsavilkums zemāk (retention.js)
+      if (!D.groupOf(p)) push({ kind: 'group', personId: p.id, sev: 1, top: 1, msg: `${U.full(p)}: nav norādīta grupa`, when: '' });
       if (p.birth && live) {
         const n = U.daysUntilBirthday(p.birth);
         if (n !== null && n <= 7) push({ kind: 'birthday', personId: p.id, sev: 0, msg: `${U.full(p)} — dzimšanas diena ${n === 0 ? 'šodien' : 'pēc ' + n + ' d.'} (${(U.age(p.birth) || 0) + (n === 0 ? 0 : 1)} g.)`, when: '' });
@@ -2123,18 +2126,20 @@ window.CP = window.CP || {};
     U.$('restoreBox').innerHTML = (S.pendingRoot && !S.root
       ? `<button class="mainbtn sm block" data-act="restoreRoot">🔓 Atļaut piekļuvi “${U.esc(S.pendingRoot.name)}”</button>` : '')
       + extras.map(r => `<button class="sm block" data-act="reconnectSource" data-arg="${U.esc(r.id)}" style="margin-top:6px">🔓 Pieslēgt “${U.esc(r.name)}”</button>`).join('');
-    const gs = D.groups(); if (S.groupFilter && !gs.includes(S.groupFilter)) S.groupFilter = '';
-    U.$('groupFilter').innerHTML = `<option value="">Visas grupas</option>` + gs.map(g => `<option ${g === S.groupFilter ? 'selected' : ''}>${U.esc(g)}</option>`).join('');
+    const gs = D.groups(); if (S.groupFilter && S.groupFilter !== D.NOGROUP && !gs.includes(S.groupFilter)) S.groupFilter = '';
+    const gf = U.$('groupFilter');
+    gf.innerHTML = `<option value="">Visas grupas</option><option value="${D.NOGROUP}" ${S.groupFilter === D.NOGROUP ? 'selected' : ''}>⚠ Bez grupas</option>` + gs.map(g => `<option ${g === S.groupFilter ? 'selected' : ''}>${U.esc(g)}</option>`).join('');
+    gf.classList.toggle('nogroup', S.groupFilter === D.NOGROUP);
     U.$('sideArchive').checked = S.sideArchive;
     const q = U.norm(U.$('search').value).replace(/ /g, '');
-    const people = S.db.people.filter(p => D.inYear(p) && (S.sideArchive ? p.status === 'archived' : p.status !== 'archived') && (!S.groupFilter || D.groupOf(p) === S.groupFilter)
+    const people = S.db.people.filter(p => D.inYear(p) && (S.sideArchive ? p.status === 'archived' : p.status !== 'archived') && D.inGroup(p, S.groupFilter)
       && (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name, p.phone, p.parentPhone, p.email, p.parentEmail, p.school].join(' ')).replace(/ /g, '').includes(q)))
       .sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     U.$('sideCount').textContent = people.length;
     U.$('sideList').innerHTML = people.map(p => {
       const miss = p.status !== 'archived' && D.missingDocs(p).length;
       return `<button class="person ${S.page === 'person' && S.selected === p.id ? 'active' : ''} ${p.status === 'archived' ? 'archived' : ''}" data-person="${p.id}">
-        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${U.esc(D.groupOf(p) || 'Bez grupas')}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
+        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${D.groupOf(p) ? U.esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
         ${miss ? `<span class="dot" title="Trūkst dokumentu: ${miss}"></span>` : ''}</button>`;
     }).join('') || `<p class="muted small pad">${S.boot && !S.root ? (S.boot.error ? 'Datu mape nav pieejama' : 'Gaida datu mapi…') : S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
   }
@@ -2628,7 +2633,7 @@ window.CP = window.CP || {};
     const L = S.list, q = U.norm(L.q).replace(/ /g, ''), last = D.lastContact();
     let rows = S.db.people.filter(p => D.inYear(p) &&
       (L.status === 'all' || (L.status === 'current' ? D.partStatus(p) !== 'archived' : D.partStatus(p) === L.status)) &&
-      (!L.group || D.groupOf(p) === L.group) &&
+      D.inGroup(p, L.group) &&
       (!L.missing || (D.partStatus(p) !== 'archived' && D.missingDocs(p).length)) &&
       (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.phone, p.parentPhone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
     const key = {
@@ -2663,7 +2668,7 @@ window.CP = window.CP || {};
         return `<tr class="${L.sel.has(p.id) ? 'sel' : ''}" data-person="${p.id}">
           <td class="chk"><input type="checkbox" data-act="listSel" data-arg="${p.id}" ${L.sel.has(p.id) ? 'checked' : ''} aria-label="Atlasīt"></td>
           <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass].filter(Boolean).join(', '))}</small></span></div></td>
-          <td>${esc(D.groupOf(p) || '—')}</td>
+          <td>${D.groupOf(p) ? esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}</td>
           <td>${p.birth ? U.age(p.birth) : '—'}</td>
           <td>${ui.status(D.partStatus(p))}</td>
           <td>${c ? `<span>${esc(c.name || c.role)}</span><small class="muted">${esc(c.phone ? U.prettyPhone(c.phone) : c.email)}</small>` : '<span class="muted">—</span>'}</td>
@@ -2683,7 +2688,7 @@ window.CP = window.CP || {};
         + `<div class="filters card">
           <input id="listQ" type="search" placeholder="Meklēt vārdu, tālruni, vecāku, skolu…" value="${esc(L.q)}">
           <select data-list="status">${STATUS_FILTERS.map(([v, t]) => `<option value="${v}" ${L.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
-          <select data-list="group"><option value="">Visas grupas</option>${gs.map(g => `<option ${g === L.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+          <select data-list="group" class="${L.group === D.NOGROUP ? 'nogroup' : ''}"><option value="">Visas grupas</option><option value="${D.NOGROUP}" ${L.group === D.NOGROUP ? 'selected' : ''}>⚠ Bez grupas</option>${gs.map(g => `<option ${g === L.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
           <label class="check"><input type="checkbox" data-list="missing" ${L.missing ? 'checked' : ''}> Tikai ar trūkstošiem dokumentiem</label>
         </div><div id="listBody">${listTable()}</div></div>`;
     }
@@ -4895,7 +4900,7 @@ window.CP = window.CP || {};
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc;
-  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🎓'), adult18: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰') };
+  const SEV = ['info', 'warn', 'bad'], ICON = { mtl: CP.ic('clipboard', '▣'), phone: CP.ic('phone', '☎'), task: CP.ic('task', '☐'), retention: CP.ic('archive', '🗄'), birthday: CP.ic('cake', '🎂'), adult: CP.ic('adult', '🔞'), equipment: CP.ic('backpack', '▣'), document: CP.ic('file', '📄'), idcard: CP.ic('idcard', '🪪'), registry: CP.ic('check', '✓'), attendance: CP.ic('calendar', '📅'), backup: CP.ic('shield', '🔐'), age21: CP.ic('adult', '🎓'), adult18: CP.ic('adult', '🔞'), quality: CP.ic('list', '☰'), group: CP.ic('alert', '⚠') };
 
   const alertRow = a => `<div class="row alert ${SEV[a.sev]}"><span class="al-ic">${ICON[a.kind] || '•'}</span><div class="grow">${esc(a.msg)}${a.when ? `<small class="muted"> · ${U.fmtDate(a.when)}</small>` : ''}</div>
     ${a.year ? `<small class="muted">${esc(U.yearSlash(a.year))}</small>` : ''}${a.taskId ? `<button class="sm" data-act="taskDone" data-arg="${a.taskId}">✓ Izpildīts</button>` : ''}${a.personId ? `<button class="sm" data-person="${a.personId}">Atvērt</button>` : ''}${a.page ? `<button class="sm" data-page="${a.page}">Pārskatīt</button>` : ''}${a.act ? `<button class="sm" data-act="${esc(a.act)}" data-arg="${esc(a.arg || '')}">${esc(a.actLabel || 'Atvērt')}</button>` : ''}</div>`;

@@ -14,7 +14,7 @@
     const L = S.list, q = U.norm(L.q).replace(/ /g, ''), last = D.lastContact();
     let rows = S.db.people.filter(p => D.inYear(p) &&
       (L.status === 'all' || (L.status === 'current' ? D.partStatus(p) !== 'archived' : D.partStatus(p) === L.status)) &&
-      (!L.group || D.groupOf(p) === L.group) &&
+      D.inGroup(p, L.group) &&
       (!L.missing || (D.partStatus(p) !== 'archived' && D.missingDocs(p).length)) &&
       (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.phone, p.parentPhone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
     const key = {
@@ -49,7 +49,7 @@
         return `<tr class="${L.sel.has(p.id) ? 'sel' : ''}" data-person="${p.id}">
           <td class="chk"><input type="checkbox" data-act="listSel" data-arg="${p.id}" ${L.sel.has(p.id) ? 'checked' : ''} aria-label="Atlasīt"></td>
           <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass].filter(Boolean).join(', '))}</small></span></div></td>
-          <td>${esc(D.groupOf(p) || '—')}</td>
+          <td>${D.groupOf(p) ? esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}</td>
           <td>${p.birth ? U.age(p.birth) : '—'}</td>
           <td>${ui.status(D.partStatus(p))}</td>
           <td>${c ? `<span>${esc(c.name || c.role)}</span><small class="muted">${esc(c.phone ? U.prettyPhone(c.phone) : c.email)}</small>` : '<span class="muted">—</span>'}</td>
@@ -69,7 +69,7 @@
         + `<div class="filters card">
           <input id="listQ" type="search" placeholder="Meklēt vārdu, tālruni, vecāku, skolu…" value="${esc(L.q)}">
           <select data-list="status">${STATUS_FILTERS.map(([v, t]) => `<option value="${v}" ${L.status === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
-          <select data-list="group"><option value="">Visas grupas</option>${gs.map(g => `<option ${g === L.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+          <select data-list="group" class="${L.group === D.NOGROUP ? 'nogroup' : ''}"><option value="">Visas grupas</option><option value="${D.NOGROUP}" ${L.group === D.NOGROUP ? 'selected' : ''}>⚠ Bez grupas</option>${gs.map(g => `<option ${g === L.group ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
           <label class="check"><input type="checkbox" data-list="missing" ${L.missing ? 'checked' : ''}> Tikai ar trūkstošiem dokumentiem</label>
         </div><div id="listBody">${listTable()}</div></div>`;
     }
