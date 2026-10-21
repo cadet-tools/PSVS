@@ -32,8 +32,9 @@
       const n = e.target.name; if (!n) return; SC.edited.add(n); SC.saved = false; delete form.dataset.warned;
       e.target.closest('.field').classList.remove('auto', 'check', 'warn', 'bad');
     });
+    form.addEventListener('input', e => { if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true }); });
     form.addEventListener('change', e => {
-      if (e.target.name === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(e.target.value);
+      if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
       if (e.target.name in D.PHONE_FIELDS) ui.phoneHints(form, U.$('scanTarget').value);
     });
     for (const id of ['scanFile', 'scanCam']) U.$(id).addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
@@ -67,9 +68,10 @@
     SC.doc = null; SC.file = null; SC.res = null; SC.lines = []; SC.found = {}; SC.edited.clear(); SC.saved = true; SC.pendingEdit = false;
     viewer.clear(); clearHints(); delete form.dataset.warned; buttons();
   }
-  const clearHints = () => U.qsa('.field', form).forEach(b => { b.classList.remove('auto', 'check', 'warn', 'bad', 'has-zone'); b.querySelector('.hint').innerHTML = ''; b.querySelector('.duphint')?.remove(); });
+  const clearHints = () => U.qsa('.field', form).forEach(b => { b.classList.remove('auto', 'check', 'warn', 'bad', 'has-zone'); b.querySelector('.hint').innerHTML = ''; b.querySelector('.duphint')?.remove(); b.querySelector('.pkdate')?.remove(); });
   function fillFromPerson(pid) {
     ui.fillForm(form, pid ? D.formPerson(D.person(pid)) : null); SC.edited.clear();
+    U.qsa('.pkdate', form).forEach(x => x.remove()); ui.syncPkBirth(form);
     U.$('scanStatusWrap').classList.toggle('hidden', !!pid);
     if (SC.res?.values) applyZones(SC.res.values);
   }
@@ -274,13 +276,14 @@
     }
     if (filled || check) SC.saved = false;
     redraw();
+    ui.syncPkBirth(form, { toast: true });
     const name = auto ? 'Atrasts automātiski. ' : SC.tpl ? `Veidne “${SC.tpl.name}”. ` : '';
     msg(`${name}${auto ? 'Aizpildīti' : 'No zonām'}: ${filled} lauki${check ? `, ${check} neskaidri un nav ievietoti` : ''}${missed ? `, ${missed} nav atpazīti` : ''}. Kartītē dati nonāk pēc apstiprinājuma.`, check || missed ? 'warn' : 'ok');
   }
   A.scanUse = k => {
     const f = SC.found[k], el = form.elements[k]; if (!f || !el) return;
     el.value = f.value; SC.edited.add(k); SC.saved = false; const box = el.closest('.field'); box.classList.remove('check'); box.classList.add('auto'); box.querySelector('.hint').innerHTML = '';
-    if (k === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(f.value);
+    if (k === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
   };
 
   /* --- Lauks ↔ dokuments --- */
@@ -437,9 +440,18 @@
   A.scanSave = async arg => {
     if (SC.busy) return msg('Uzgaidi, kamēr beigsies nolasīšana', 'warn');
     const o = ui.readForm(form); delete o.status; delete o.retentionMonths;
-    if (!o.birth && o.personalCode) o.birth = U.birthFromCode(o.personalCode);
+    if (!o.birth && o.personalCode && U.pkDate(o.personalCode).kind === 'old') o.birth = U.pkDate(o.personalCode).birth;
     const chk = ui.checkForm(form, o);
     if (chk.errors) { msg('Aizpildi obligātos laukus (vārds un uzvārds)', 'err'); U.qs('.field.bad input', form)?.focus(); return; }
+    const pkInfo = U.pkDate(o.personalCode);
+    if ((pkInfo.kind === 'new' || pkInfo.kind === 'bad') && !o.birth && !form.dataset.pkBirthAsked) {
+      form.dataset.pkBirthAsked = '1';
+      form.elements.birth.closest('.field')?.classList.add('warn');
+      const h = form.elements.birth.closest('.field')?.querySelector('.hint'); if (h) h.textContent = 'Ieraksti kalendārā.';
+      msg(U.PK_BIRTH_MSG[pkInfo.kind], 'warn');
+      form.elements.birth.focus(); try { form.elements.birth.showPicker(); } catch (err) { /* kalendārs */ }
+      return;
+    }
     const dupN = ui.phoneHints(form, U.$('scanTarget').value);
     if ((chk.warnings || dupN) && !form.dataset.warned) { form.dataset.warned = '1'; msg(dupN ? 'Tālruņa numurs sakrīt ar citas personas numuru (skat. pie lauka). Pārbaudi vai spied apstiprinājumu vēlreiz.' : 'Dažas vērtības izskatās aizdomīgas (iezīmētas). Labo tās vai spied apstiprinājumu vēlreiz, lai saglabātu tāpat.', 'warn'); (U.qs('.field.warn input', form) || U.qs('.duphint.bad', form)?.closest('.field').querySelector('input'))?.focus(); return; }
     const target = U.$('scanTarget').value; let p;

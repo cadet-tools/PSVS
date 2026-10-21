@@ -85,7 +85,7 @@
     { t: 'Kā pievienot jaunu personu?', kw: 'pievienot jauns persona jaunsargs kandidats cilveks izveidot ievadit kartite', a: 'Jaunu personu pievieno ar pogu “＋” sānjoslas augšā: ievadot ar roku, nolasot anketu vai pārņemot no cita instruktora.', steps: [
       ['Sānjoslas augšā spied zilo pogu “＋”.', null, '.aside-top [data-act=addPerson]'],
       ['Izvēlies, kā pievienot: “Ievadīt ar roku”, “Nolasīt anketu” vai “Pārņemt no cita instruktora”.', null, '#addPickDialog [data-act=addPersonNew]'],
-      ['Aizpildi vārdu, uzvārdu, personas kodu (dzimšanas datums aizpildās pats) un grupu. Spied “Saglabāt”.', null, '#personDialog button.mainbtn[type=submit]'] ] },
+      ['Aizpildi vārdu, uzvārdu, personas kodu (vecajā kodā dzimšanas datums aizpildās pats; jaunajā, kas sākas ar 32, atver kalendāru un ieraksti datumu) un grupu. Spied “Saglabāt”.', null, '#personDialog button.mainbtn[type=submit]'] ] },
     { t: 'Kā nolasīt anketu no attēla vai Word faila?', kw: 'anketa nolasit skenet foto attels ocr word pdf atpazit', a: 'Rīks nolasa anketu no Word, PDF vai fotogrāfijas. Atpazītie lauki parādās pārbaudes logā — kartītē nonāk tikai tas, ko apstiprini.', steps: [
       ['Sānjoslā spied “Ievadīt anketu”.', null, '.sidebtns [data-act=scan]'],
       ['Ievelc anketas failu vai fotogrāfiju logā (vai spied, lai izvēlētos failu).', null, '#scanDialog .scan-head'],

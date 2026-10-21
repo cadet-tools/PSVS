@@ -61,7 +61,7 @@
     const two = parentIdx === 2;
     const pn = two ? p.parent2Name : p.parentName, rel = two ? p.parent2Relation : p.parentRelation;
     return {
-      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '', j_dzimsanas: p.birth ? U.fmtDate(p.birth) : '',
+      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '', j_dzimsanas: p.birth ? String(p.birth).slice(0, 10) : (U.pkDate(p.personalCode).kind === 'old' ? U.pkDate(p.personalCode).birth : ''),
       j_adrese_dekl: p.addressDeclared || '', j_adrese_fakt: p.addressActual && U.norm(p.addressActual) !== U.norm(p.addressDeclared || '') ? p.addressActual : '',
       j_talrunis: phone(p.phone), j_epasts: p.email || '',
       p_vards: pn || '', ...relPick(rel), p_pk: two ? '' : (p.parentCode || ''),
@@ -122,7 +122,10 @@
     const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" ${CAPS[k] ? `data-cap="${CAPS[k]}"` : ''}></div>`;
     const warn = [];
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
-    if (p && !f.j_dzimsanas) warn.push('nav dzimšanas datuma');
+    if (p && !bIso(f.j_dzimsanas)) {
+      const k = U.pkDate(f.j_pk).kind;
+      warn.push(k === 'new' ? 'jaunajā personas kodā nav dzimšanas datuma — norādi to kalendārā' : k === 'bad' ? 'personas koda pirmā daļa nav dzimšanas datums — norādi datumu kalendārā' : 'nav dzimšanas datuma');
+    }
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
     if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
@@ -143,7 +146,7 @@
       </div>
       ${warn.length ? `<div class="notice">⚠ ${esc(warn.join('; '))}.</div>` : ''}
       ${p ? `<details class="ct-box" open><summary><b>Dati līgumā</b> <small class="muted">— no kartītes; šeit labotais attiecas tikai uz šo līgumu</small></summary><div class="fieldgrid">
-        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}${inp('j_dzimsanas', 'Dzimšanas datums', f.j_dzimsanas)}
+        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}<div class="field"><label>Dzimšanas datums</label><input type="date" data-ct="j_dzimsanas" value="${esc(bIso(f.j_dzimsanas))}"></div><div class="field wide" id="ctPkBirthWrap" ${pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)) ? '' : 'hidden'}><div class="notice">${esc(pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)))}</div></div>
         ${inp('j_talrunis', 'Jaunieša tālrunis', f.j_talrunis)}${inp('j_epasts', 'Jaunieša e-pasts', f.j_epasts)}
         ${c.kind === 'jaunietis' ? `${inp('j_adrese_dekl', 'Deklarētā adrese', f.j_adrese_dekl, 'wide')}${inp('j_adrese_fakt', 'Faktiskā adrese (ja atšķiras)', f.j_adrese_fakt, 'wide')}` : `
         <div class="field"><label>Pārstāvja statuss <b class="red">*</b></label><select data-ct="p_rel" class="${f.p_rel ? '' : 'need'}"><option value="">— izvēlies —</option>${REL.map(([v, l]) => `<option value="${v}" ${f.p_rel === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -158,8 +161,42 @@
       </div></details>`;
   }
   const ctDlg = () => U.$('contractDialog');
+  const bIso = v => /^\d{4}-\d{2}-\d{2}/.test(v || '') ? String(v).slice(0, 10) : (U.parseDate(v) || '');
+  function pkBirthNote(pk, birth) {
+    const info = U.pkDate(pk);
+    if (info.kind === 'new') return birth ? 'Jaunais personas kods — dzimšanas datums nav kodā.' : U.PK_BIRTH_MSG.new;
+    if (info.kind === 'bad' && !birth) return U.PK_BIRTH_MSG.bad;
+    return '';
+  }
+  function ctPkNote() {
+    const wrap = U.$('ctPkBirthWrap'); if (!wrap || !cur) return;
+    const note = pkBirthNote(cur.fields.j_pk, bIso(cur.fields.j_dzimsanas));
+    wrap.hidden = !note; const n = wrap.querySelector('.notice'); if (n) n.textContent = note;
+  }
+  function ctPk(t, open) {
+    if (!cur) return;
+    const info = U.pkDate(t.value);
+    if (info.kind === 'old' && !bIso(cur.fields.j_dzimsanas)) {
+      cur.fields.j_dzimsanas = info.birth;
+      const b = ctDlg().querySelector('[data-ct="j_dzimsanas"]');
+      if (b && !b.value) b.value = info.birth;
+    }
+    ctPkNote();
+    if (open && (info.kind === 'new' || info.kind === 'bad') && U.codeDigits(t.value).length >= 6 && !bIso(cur.fields.j_dzimsanas) && t.dataset.pkTold !== info.kind) {
+      t.dataset.pkTold = info.kind;
+      ui.toast(U.PK_BIRTH_MSG[info.kind], 'warn', 9000);
+      const b = ctDlg().querySelector('[data-ct="j_dzimsanas"]');
+      if (b) { b.focus(); try { b.showPicker(); } catch (e) { /* kalendārs */ } }
+    }
+    if (info.kind !== 'new' && info.kind !== 'bad') delete t.dataset.pkTold;
+  }
   document.addEventListener('change', e => {
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
+    if (t.dataset.ct) {
+      cur.fields[t.dataset.ct] = t.value;
+      if (t.dataset.ct === 'j_pk') ctPk(t, true);
+      if (t.dataset.ct === 'j_dzimsanas') ctPkNote();
+    }
     if (t.id === 'ctPerson') { const p = D.person(t.value); cur.pid = t.value; if (p) { const age = U.age(p.birth); cur.kind = age != null && age >= 18 ? 'jaunietis' : 'parstavis'; cur.no = p.contractNo || cur.no; cur.parent = 1; cur.fields = personData(p, 1); } renderDialog(); return; }
     const k = t.dataset.cc;
     if (k) {
@@ -177,7 +214,12 @@
   });
   document.addEventListener('input', e => {
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
-    if (t.dataset.ct) { cur.fields[t.dataset.ct] = t.value; if (t.dataset.ct === 'p_rel') renderDialog(); }
+    if (t.dataset.ct) {
+      cur.fields[t.dataset.ct] = t.value;
+      if (t.dataset.ct === 'j_pk') ctPk(t, U.codeDigits(t.value).length >= 11);
+      if (t.dataset.ct === 'j_dzimsanas') ctPkNote();
+      if (t.dataset.ct === 'p_rel') renderDialog();
+    }
     if (t.dataset.cc && t.dataset.cc !== 'parent') cur[t.dataset.cc] = t.value;
     if (t.dataset.ci) { inst()[t.dataset.ci] = t.value.trim(); CP.store.changed({ silent: true }); }
   });
@@ -193,7 +235,7 @@
       i_parvalde: line(I.parvalde, 4), i_nodala: line(I.nodala, 3), i_vards_gen: line(I.nameGen || genitive(I.name), 30), i_vards: L(I.name), i_amats: L(I.position),
       i_talrunis: line(phone(I.phone)), i_epasts: line(I.email),
       j_vards: L(f.j_vards), j_statuss_vards: [f.j_status, f.j_vards].filter(Boolean).join(' '), j_personas_kods: pkFmt(f.j_pk), j_vards_pk: [f.j_vards, pkFmt(f.j_pk)].filter(Boolean).join(', '),
-      j_dzimsanas_datums: f.j_dzimsanas ? f.j_dzimsanas : '____________________',
+      j_dzimsanas_datums: bIso(f.j_dzimsanas) ? U.fmtDate(bIso(f.j_dzimsanas)) : '____________________',
       j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis), j_epasts: line(f.j_epasts),
       p_vards: L(f.p_vards), p_statuss_vards: [relText(f), f.p_vards].filter(Boolean).join(' '), p_statuss: relText(f), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
       p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis), p_epasts: line(f.p_epasts),

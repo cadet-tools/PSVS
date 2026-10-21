@@ -102,6 +102,27 @@ window.CP = window.CP || {};
     const w = [1, 6, 3, 7, 9, 10, 5, 8, 4, 2]; let s = 0; for (let i = 0; i < 10; i++) s += Number(d[i]) * w[i];
     return (1101 - s) % 11 === Number(d[10]) && !!U.birthFromCode(d);
   };
+  /**
+   * Personas koda 1. daļa. Vecajā kodā tie ir DDMMYY + gadsimta cipars.
+   * Jaunais kods sākas ar 32 un dzimšanas datumu nesatur — birth paliek tukšs.
+   * kind: old | new | bad | short
+   */
+  U.pkDate = code => {
+    const c = U.codeDigits(code);
+    if (c.startsWith('32')) return { kind: 'new', birth: '' };
+    if (c.length < 6) return { kind: 'short', birth: '' };
+    const birth = c.length >= 11 ? U.birthFromCode(c) : '';
+    if (birth) return { kind: 'old', birth };
+    const dd = Number(c.slice(0, 2)), mm = Number(c.slice(2, 4));
+    const probe = new Date(2000, mm - 1, dd);
+    const dayOk = mm >= 1 && mm <= 12 && probe.getMonth() === mm - 1 && probe.getDate() === dd;
+    if (!dayOk) return { kind: 'bad', birth: '' };
+    return c.length < 11 ? { kind: 'short', birth: '' } : { kind: 'bad', birth: '' };
+  };
+  U.PK_BIRTH_MSG = {
+    new: 'Jaunajā personas kodā nav dzimšanas datuma. Ieraksti dzimšanas datumu atsevišķi.',
+    bad: 'Personas koda pirmā daļa nav dzimšanas datums. Ieraksti datumu atsevišķi.'
+  };
   U.maskCode = v => { const d = U.codeDigits(v); return d.length === 11 ? d.slice(0, 2) + '••••-•••' + d.slice(9) : (v ? '•••' : ''); };
 
   /* --- Tālrunis --- */

@@ -261,6 +261,40 @@
   document.addEventListener('change', e => {
     if (e.target.name === 'group' && S.db.settings.stickyGroup && e.target.value.trim() && e.target.closest('#personForm,#scanForm')) { S.db.settings.stickyGroup = e.target.value.trim(); CP.store.changed({ silent: true }); ui.syncPins(); }
   });
+  /** Personas kods → dzimšanas datums tikai no vecā koda. Jaunajam (32…) parāda paskaidrojumu un kalendāru. */
+  ui.syncPkBirth = (form, opt = {}) => {
+    const codeEl = form?.elements?.personalCode, birthEl = form?.elements?.birth;
+    if (!codeEl || !birthEl) return { kind: 'short', birth: '' };
+    const info = U.pkDate(codeEl.value);
+    const box = codeEl.closest('.field');
+    let note = box?.querySelector('.pkdate');
+    const bBox = birthEl.closest('.field');
+    if (info.kind === 'old') {
+      note?.remove();
+      if (!birthEl.value) birthEl.value = info.birth;
+      bBox?.classList.remove('warn');
+      delete codeEl.dataset.pkTold;
+      delete form.dataset.pkBirthAsked;
+      return info;
+    }
+    if (info.kind === 'new' || info.kind === 'bad') {
+      const text = U.PK_BIRTH_MSG[info.kind];
+      if (box && !note) { note = document.createElement('div'); note.className = 'hint pkdate'; box.appendChild(note); }
+      if (note) note.textContent = text;
+      if (birthEl.value) bBox?.classList.remove('warn'); else if (!birthEl.value) bBox?.classList.add('warn');
+      const digits = U.codeDigits(codeEl.value).length;
+      if (opt.toast && digits >= 6 && codeEl.dataset.pkTold !== info.kind) {
+        codeEl.dataset.pkTold = info.kind;
+        ui.toast(text, 'warn', 9000);
+        if (opt.open && !birthEl.value) { birthEl.focus(); try { birthEl.showPicker(); } catch (e) { /* kalendārs nav pieejams */ } }
+      }
+      return info;
+    }
+    note?.remove();
+    if (!birthEl.value) bBox?.classList.remove('warn');
+    delete codeEl.dataset.pkTold;
+    return info;
+  };
   ui.readForm = form => {
     const o = {};
     for (const f of CP.FIELDS) { const el = form.elements[f.k]; if (el) o[f.k] = String(el.value || '').trim(); }

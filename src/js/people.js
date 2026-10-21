@@ -397,22 +397,34 @@
     const st = form.elements.status; st.disabled = p?.status === 'archived';
     if (p?.status === 'archived') st.innerHTML = '<option value="archived">Arhīvā</option>'; else st.innerHTML = CP.FIELD.status.opts.map(([v, l]) => `<option value="${v}" ${v === (p?.status || 'active') ? 'selected' : ''}>${l}</option>`).join('');
     if (!p) form.elements.joined.value = U.iso();
+    U.qsa('.pkdate', form).forEach(x => x.remove()); delete form.dataset.pkBirthAsked;
+    ui.syncPkBirth(form);
     U.$('personDialog').showModal();
     const target = sec ? U.$('pf_sec_' + sec) : null;
     (target || form).scrollIntoView?.({ block: 'start' });
     setTimeout(() => (target?.querySelector('input,select,textarea') || form.elements.first).focus(), 30);
   }
+  form.addEventListener('input', e => { if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true }); });
   form.addEventListener('change', e => {
     if (e.target.name in D.PHONE_FIELDS) ui.phoneHints(form, editing);
-    if (e.target.name === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(e.target.value);
+    if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
     if (e.target.name === 'parentCode' || e.target.name === 'personalCode') delete form.dataset.warned;
   });
   form.addEventListener('submit', e => {
     e.preventDefault();
     const o = ui.readForm(form);
-    if (!o.birth && o.personalCode) o.birth = U.birthFromCode(o.personalCode);
+    if (!o.birth && o.personalCode && U.pkDate(o.personalCode).kind === 'old') o.birth = U.pkDate(o.personalCode).birth;
     const chk = ui.checkForm(form, o);
     if (chk.errors) { ui.toast('Aizpildi obligātos laukus', 'err'); U.qs('.field.bad input', form)?.focus(); return; }
+    const pkInfo = U.pkDate(o.personalCode);
+    if ((pkInfo.kind === 'new' || pkInfo.kind === 'bad') && !o.birth && !form.dataset.pkBirthAsked) {
+      form.dataset.pkBirthAsked = '1';
+      form.elements.birth.closest('.field')?.classList.add('warn');
+      const h = form.elements.birth.closest('.field')?.querySelector('.hint'); if (h) h.textContent = 'Ieraksti kalendārā.';
+      ui.toast(U.PK_BIRTH_MSG[pkInfo.kind], 'warn', 9000);
+      form.elements.birth.focus(); try { form.elements.birth.showPicker(); } catch (err) { /* kalendārs */ }
+      return;
+    }
     const dupPhones = ui.phoneHints(form, editing);
     if ((chk.warnings || dupPhones) && !form.dataset.warned) { form.dataset.warned = '1'; ui.toast(dupPhones ? 'Tālruņa numurs sakrīt ar citas personas numuru (skat. pie lauka). Pārbaudi vai spied “Saglabāt” vēlreiz.' : 'Dažas vērtības izskatās aizdomīgas (iezīmētas). Labo vai spied “Saglabāt” vēlreiz, lai saglabātu tāpat.', 'warn', 8000); (U.qs('.field.warn input', form) || U.qs('.duphint.bad', form)?.closest('.field').querySelector('input'))?.focus(); return; }
     if (!editing) {

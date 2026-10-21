@@ -213,9 +213,12 @@
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
       if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
       let pcBirth = '';
-      if (p.personalCode && U.codeDigits(p.personalCode).length !== 11) {   // nepilns / aizklāts kods (piem. 010312-*****) — paturam tikai dzimšanas datumu
-        const m6 = /^(\d{2})(\d{2})(\d{2})/.exec(U.codeDigits(p.personalCode));
-        if (m6) { const yy = Number(m6[3]), y = yy <= new Date().getFullYear() % 100 ? 2000 + yy : 1900 + yy; pcBirth = U.parseDate(`${m6[1]}.${m6[2]}.${y}`); }
+      if (p.personalCode && U.codeDigits(p.personalCode).length !== 11) {   // nepilns / aizklāts kods (piem. 010312-*****) — paturam tikai dzimšanas datumu, ja 1. daļa ir vecais kods
+        const digits = U.codeDigits(p.personalCode), info = U.pkDate(digits);
+        if (info.kind !== 'new' && info.kind !== 'bad' && digits.length >= 6) {
+          const m6 = /^(\d{2})(\d{2})(\d{2})/.exec(digits);
+          if (m6) { const yy = Number(m6[3]), y = yy <= new Date().getFullYear() % 100 ? 2000 + yy : 1900 + yy; pcBirth = U.parseDate(`${m6[1]}.${m6[2]}.${y}`); }
+        }
         delete p.personalCode;
       }
       if (p.personalCode && U.codeDigits(p.personalCode).length === 11) p.personalCode = U.fmtCode(p.personalCode);

@@ -105,6 +105,27 @@ window.CP = window.CP || {};
     const w = [1, 6, 3, 7, 9, 10, 5, 8, 4, 2]; let s = 0; for (let i = 0; i < 10; i++) s += Number(d[i]) * w[i];
     return (1101 - s) % 11 === Number(d[10]) && !!U.birthFromCode(d);
   };
+  /**
+   * Personas koda 1. daļa. Vecajā kodā tie ir DDMMYY + gadsimta cipars.
+   * Jaunais kods sākas ar 32 un dzimšanas datumu nesatur — birth paliek tukšs.
+   * kind: old | new | bad | short
+   */
+  U.pkDate = code => {
+    const c = U.codeDigits(code);
+    if (c.startsWith('32')) return { kind: 'new', birth: '' };
+    if (c.length < 6) return { kind: 'short', birth: '' };
+    const birth = c.length >= 11 ? U.birthFromCode(c) : '';
+    if (birth) return { kind: 'old', birth };
+    const dd = Number(c.slice(0, 2)), mm = Number(c.slice(2, 4));
+    const probe = new Date(2000, mm - 1, dd);
+    const dayOk = mm >= 1 && mm <= 12 && probe.getMonth() === mm - 1 && probe.getDate() === dd;
+    if (!dayOk) return { kind: 'bad', birth: '' };
+    return c.length < 11 ? { kind: 'short', birth: '' } : { kind: 'bad', birth: '' };
+  };
+  U.PK_BIRTH_MSG = {
+    new: 'Jaunajā personas kodā nav dzimšanas datuma. Ieraksti dzimšanas datumu atsevišķi.',
+    bad: 'Personas koda pirmā daļa nav dzimšanas datums. Ieraksti datumu atsevišķi.'
+  };
   U.maskCode = v => { const d = U.codeDigits(v); return d.length === 11 ? d.slice(0, 2) + '••••-•••' + d.slice(9) : (v ? '•••' : ''); };
 
   /* --- Tālrunis --- */
@@ -2227,6 +2248,40 @@ window.CP = window.CP || {};
   document.addEventListener('change', e => {
     if (e.target.name === 'group' && S.db.settings.stickyGroup && e.target.value.trim() && e.target.closest('#personForm,#scanForm')) { S.db.settings.stickyGroup = e.target.value.trim(); CP.store.changed({ silent: true }); ui.syncPins(); }
   });
+  /** Personas kods → dzimšanas datums tikai no vecā koda. Jaunajam (32…) parāda paskaidrojumu un kalendāru. */
+  ui.syncPkBirth = (form, opt = {}) => {
+    const codeEl = form?.elements?.personalCode, birthEl = form?.elements?.birth;
+    if (!codeEl || !birthEl) return { kind: 'short', birth: '' };
+    const info = U.pkDate(codeEl.value);
+    const box = codeEl.closest('.field');
+    let note = box?.querySelector('.pkdate');
+    const bBox = birthEl.closest('.field');
+    if (info.kind === 'old') {
+      note?.remove();
+      if (!birthEl.value) birthEl.value = info.birth;
+      bBox?.classList.remove('warn');
+      delete codeEl.dataset.pkTold;
+      delete form.dataset.pkBirthAsked;
+      return info;
+    }
+    if (info.kind === 'new' || info.kind === 'bad') {
+      const text = U.PK_BIRTH_MSG[info.kind];
+      if (box && !note) { note = document.createElement('div'); note.className = 'hint pkdate'; box.appendChild(note); }
+      if (note) note.textContent = text;
+      if (birthEl.value) bBox?.classList.remove('warn'); else if (!birthEl.value) bBox?.classList.add('warn');
+      const digits = U.codeDigits(codeEl.value).length;
+      if (opt.toast && digits >= 6 && codeEl.dataset.pkTold !== info.kind) {
+        codeEl.dataset.pkTold = info.kind;
+        ui.toast(text, 'warn', 9000);
+        if (opt.open && !birthEl.value) { birthEl.focus(); try { birthEl.showPicker(); } catch (e) { /* kalendārs nav pieejams */ } }
+      }
+      return info;
+    }
+    note?.remove();
+    if (!birthEl.value) bBox?.classList.remove('warn');
+    delete codeEl.dataset.pkTold;
+    return info;
+  };
   ui.readForm = form => {
     const o = {};
     for (const f of CP.FIELDS) { const el = form.elements[f.k]; if (el) o[f.k] = String(el.value || '').trim(); }
@@ -2956,22 +3011,34 @@ window.CP = window.CP || {};
     const st = form.elements.status; st.disabled = p?.status === 'archived';
     if (p?.status === 'archived') st.innerHTML = '<option value="archived">Arhīvā</option>'; else st.innerHTML = CP.FIELD.status.opts.map(([v, l]) => `<option value="${v}" ${v === (p?.status || 'active') ? 'selected' : ''}>${l}</option>`).join('');
     if (!p) form.elements.joined.value = U.iso();
+    U.qsa('.pkdate', form).forEach(x => x.remove()); delete form.dataset.pkBirthAsked;
+    ui.syncPkBirth(form);
     U.$('personDialog').showModal();
     const target = sec ? U.$('pf_sec_' + sec) : null;
     (target || form).scrollIntoView?.({ block: 'start' });
     setTimeout(() => (target?.querySelector('input,select,textarea') || form.elements.first).focus(), 30);
   }
+  form.addEventListener('input', e => { if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true }); });
   form.addEventListener('change', e => {
     if (e.target.name in D.PHONE_FIELDS) ui.phoneHints(form, editing);
-    if (e.target.name === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(e.target.value);
+    if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
     if (e.target.name === 'parentCode' || e.target.name === 'personalCode') delete form.dataset.warned;
   });
   form.addEventListener('submit', e => {
     e.preventDefault();
     const o = ui.readForm(form);
-    if (!o.birth && o.personalCode) o.birth = U.birthFromCode(o.personalCode);
+    if (!o.birth && o.personalCode && U.pkDate(o.personalCode).kind === 'old') o.birth = U.pkDate(o.personalCode).birth;
     const chk = ui.checkForm(form, o);
     if (chk.errors) { ui.toast('Aizpildi obligātos laukus', 'err'); U.qs('.field.bad input', form)?.focus(); return; }
+    const pkInfo = U.pkDate(o.personalCode);
+    if ((pkInfo.kind === 'new' || pkInfo.kind === 'bad') && !o.birth && !form.dataset.pkBirthAsked) {
+      form.dataset.pkBirthAsked = '1';
+      form.elements.birth.closest('.field')?.classList.add('warn');
+      const h = form.elements.birth.closest('.field')?.querySelector('.hint'); if (h) h.textContent = 'Ieraksti kalendārā.';
+      ui.toast(U.PK_BIRTH_MSG[pkInfo.kind], 'warn', 9000);
+      form.elements.birth.focus(); try { form.elements.birth.showPicker(); } catch (err) { /* kalendārs */ }
+      return;
+    }
     const dupPhones = ui.phoneHints(form, editing);
     if ((chk.warnings || dupPhones) && !form.dataset.warned) { form.dataset.warned = '1'; ui.toast(dupPhones ? 'Tālruņa numurs sakrīt ar citas personas numuru (skat. pie lauka). Pārbaudi vai spied “Saglabāt” vēlreiz.' : 'Dažas vērtības izskatās aizdomīgas (iezīmētas). Labo vai spied “Saglabāt” vēlreiz, lai saglabātu tāpat.', 'warn', 8000); (U.qs('.field.warn input', form) || U.qs('.duphint.bad', form)?.closest('.field').querySelector('input'))?.focus(); return; }
     if (!editing) {
@@ -5391,9 +5458,12 @@ window.CP = window.CP || {};
       for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
       if (p.personalCode && /^\d{10}$/.test(p.personalCode)) p.personalCode = '0' + p.personalCode;   // Excel nogriež sākuma nulli
       let pcBirth = '';
-      if (p.personalCode && U.codeDigits(p.personalCode).length !== 11) {   // nepilns / aizklāts kods (piem. 010312-*****) — paturam tikai dzimšanas datumu
-        const m6 = /^(\d{2})(\d{2})(\d{2})/.exec(U.codeDigits(p.personalCode));
-        if (m6) { const yy = Number(m6[3]), y = yy <= new Date().getFullYear() % 100 ? 2000 + yy : 1900 + yy; pcBirth = U.parseDate(`${m6[1]}.${m6[2]}.${y}`); }
+      if (p.personalCode && U.codeDigits(p.personalCode).length !== 11) {   // nepilns / aizklāts kods (piem. 010312-*****) — paturam tikai dzimšanas datumu, ja 1. daļa ir vecais kods
+        const digits = U.codeDigits(p.personalCode), info = U.pkDate(digits);
+        if (info.kind !== 'new' && info.kind !== 'bad' && digits.length >= 6) {
+          const m6 = /^(\d{2})(\d{2})(\d{2})/.exec(digits);
+          if (m6) { const yy = Number(m6[3]), y = yy <= new Date().getFullYear() % 100 ? 2000 + yy : 1900 + yy; pcBirth = U.parseDate(`${m6[1]}.${m6[2]}.${y}`); }
+        }
         delete p.personalCode;
       }
       if (p.personalCode && U.codeDigits(p.personalCode).length === 11) p.personalCode = U.fmtCode(p.personalCode);
@@ -7202,8 +7272,9 @@ window.CP = window.CP || {};
       const n = e.target.name; if (!n) return; SC.edited.add(n); SC.saved = false; delete form.dataset.warned;
       e.target.closest('.field').classList.remove('auto', 'check', 'warn', 'bad');
     });
+    form.addEventListener('input', e => { if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true }); });
     form.addEventListener('change', e => {
-      if (e.target.name === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(e.target.value);
+      if (e.target.name === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
       if (e.target.name in D.PHONE_FIELDS) ui.phoneHints(form, U.$('scanTarget').value);
     });
     for (const id of ['scanFile', 'scanCam']) U.$(id).addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
@@ -7237,9 +7308,10 @@ window.CP = window.CP || {};
     SC.doc = null; SC.file = null; SC.res = null; SC.lines = []; SC.found = {}; SC.edited.clear(); SC.saved = true; SC.pendingEdit = false;
     viewer.clear(); clearHints(); delete form.dataset.warned; buttons();
   }
-  const clearHints = () => U.qsa('.field', form).forEach(b => { b.classList.remove('auto', 'check', 'warn', 'bad', 'has-zone'); b.querySelector('.hint').innerHTML = ''; b.querySelector('.duphint')?.remove(); });
+  const clearHints = () => U.qsa('.field', form).forEach(b => { b.classList.remove('auto', 'check', 'warn', 'bad', 'has-zone'); b.querySelector('.hint').innerHTML = ''; b.querySelector('.duphint')?.remove(); b.querySelector('.pkdate')?.remove(); });
   function fillFromPerson(pid) {
     ui.fillForm(form, pid ? D.formPerson(D.person(pid)) : null); SC.edited.clear();
+    U.qsa('.pkdate', form).forEach(x => x.remove()); ui.syncPkBirth(form);
     U.$('scanStatusWrap').classList.toggle('hidden', !!pid);
     if (SC.res?.values) applyZones(SC.res.values);
   }
@@ -7444,13 +7516,14 @@ window.CP = window.CP || {};
     }
     if (filled || check) SC.saved = false;
     redraw();
+    ui.syncPkBirth(form, { toast: true });
     const name = auto ? 'Atrasts automātiski. ' : SC.tpl ? `Veidne “${SC.tpl.name}”. ` : '';
     msg(`${name}${auto ? 'Aizpildīti' : 'No zonām'}: ${filled} lauki${check ? `, ${check} neskaidri un nav ievietoti` : ''}${missed ? `, ${missed} nav atpazīti` : ''}. Kartītē dati nonāk pēc apstiprinājuma.`, check || missed ? 'warn' : 'ok');
   }
   A.scanUse = k => {
     const f = SC.found[k], el = form.elements[k]; if (!f || !el) return;
     el.value = f.value; SC.edited.add(k); SC.saved = false; const box = el.closest('.field'); box.classList.remove('check'); box.classList.add('auto'); box.querySelector('.hint').innerHTML = '';
-    if (k === 'personalCode' && !form.elements.birth.value) form.elements.birth.value = U.birthFromCode(f.value);
+    if (k === 'personalCode') ui.syncPkBirth(form, { toast: true, open: true });
   };
 
   /* --- Lauks ↔ dokuments --- */
@@ -7607,9 +7680,18 @@ window.CP = window.CP || {};
   A.scanSave = async arg => {
     if (SC.busy) return msg('Uzgaidi, kamēr beigsies nolasīšana', 'warn');
     const o = ui.readForm(form); delete o.status; delete o.retentionMonths;
-    if (!o.birth && o.personalCode) o.birth = U.birthFromCode(o.personalCode);
+    if (!o.birth && o.personalCode && U.pkDate(o.personalCode).kind === 'old') o.birth = U.pkDate(o.personalCode).birth;
     const chk = ui.checkForm(form, o);
     if (chk.errors) { msg('Aizpildi obligātos laukus (vārds un uzvārds)', 'err'); U.qs('.field.bad input', form)?.focus(); return; }
+    const pkInfo = U.pkDate(o.personalCode);
+    if ((pkInfo.kind === 'new' || pkInfo.kind === 'bad') && !o.birth && !form.dataset.pkBirthAsked) {
+      form.dataset.pkBirthAsked = '1';
+      form.elements.birth.closest('.field')?.classList.add('warn');
+      const h = form.elements.birth.closest('.field')?.querySelector('.hint'); if (h) h.textContent = 'Ieraksti kalendārā.';
+      msg(U.PK_BIRTH_MSG[pkInfo.kind], 'warn');
+      form.elements.birth.focus(); try { form.elements.birth.showPicker(); } catch (err) { /* kalendārs */ }
+      return;
+    }
     const dupN = ui.phoneHints(form, U.$('scanTarget').value);
     if ((chk.warnings || dupN) && !form.dataset.warned) { form.dataset.warned = '1'; msg(dupN ? 'Tālruņa numurs sakrīt ar citas personas numuru (skat. pie lauka). Pārbaudi vai spied apstiprinājumu vēlreiz.' : 'Dažas vērtības izskatās aizdomīgas (iezīmētas). Labo tās vai spied apstiprinājumu vēlreiz, lai saglabātu tāpat.', 'warn'); (U.qs('.field.warn input', form) || U.qs('.duphint.bad', form)?.closest('.field').querySelector('input'))?.focus(); return; }
     const target = U.$('scanTarget').value; let p;
@@ -9945,7 +10027,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const two = parentIdx === 2;
     const pn = two ? p.parent2Name : p.parentName, rel = two ? p.parent2Relation : p.parentRelation;
     return {
-      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '', j_dzimsanas: p.birth ? U.fmtDate(p.birth) : '',
+      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '', j_dzimsanas: p.birth ? String(p.birth).slice(0, 10) : (U.pkDate(p.personalCode).kind === 'old' ? U.pkDate(p.personalCode).birth : ''),
       j_adrese_dekl: p.addressDeclared || '', j_adrese_fakt: p.addressActual && U.norm(p.addressActual) !== U.norm(p.addressDeclared || '') ? p.addressActual : '',
       j_talrunis: phone(p.phone), j_epasts: p.email || '',
       p_vards: pn || '', ...relPick(rel), p_pk: two ? '' : (p.parentCode || ''),
@@ -10006,7 +10088,10 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" ${CAPS[k] ? `data-cap="${CAPS[k]}"` : ''}></div>`;
     const warn = [];
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
-    if (p && !f.j_dzimsanas) warn.push('nav dzimšanas datuma');
+    if (p && !bIso(f.j_dzimsanas)) {
+      const k = U.pkDate(f.j_pk).kind;
+      warn.push(k === 'new' ? 'jaunajā personas kodā nav dzimšanas datuma — norādi to kalendārā' : k === 'bad' ? 'personas koda pirmā daļa nav dzimšanas datums — norādi datumu kalendārā' : 'nav dzimšanas datuma');
+    }
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
     if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
@@ -10027,7 +10112,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       </div>
       ${warn.length ? `<div class="notice">⚠ ${esc(warn.join('; '))}.</div>` : ''}
       ${p ? `<details class="ct-box" open><summary><b>Dati līgumā</b> <small class="muted">— no kartītes; šeit labotais attiecas tikai uz šo līgumu</small></summary><div class="fieldgrid">
-        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}${inp('j_dzimsanas', 'Dzimšanas datums', f.j_dzimsanas)}
+        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}<div class="field"><label>Dzimšanas datums</label><input type="date" data-ct="j_dzimsanas" value="${esc(bIso(f.j_dzimsanas))}"></div><div class="field wide" id="ctPkBirthWrap" ${pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)) ? '' : 'hidden'}><div class="notice">${esc(pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)))}</div></div>
         ${inp('j_talrunis', 'Jaunieša tālrunis', f.j_talrunis)}${inp('j_epasts', 'Jaunieša e-pasts', f.j_epasts)}
         ${c.kind === 'jaunietis' ? `${inp('j_adrese_dekl', 'Deklarētā adrese', f.j_adrese_dekl, 'wide')}${inp('j_adrese_fakt', 'Faktiskā adrese (ja atšķiras)', f.j_adrese_fakt, 'wide')}` : `
         <div class="field"><label>Pārstāvja statuss <b class="red">*</b></label><select data-ct="p_rel" class="${f.p_rel ? '' : 'need'}"><option value="">— izvēlies —</option>${REL.map(([v, l]) => `<option value="${v}" ${f.p_rel === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -10042,8 +10127,42 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       </div></details>`;
   }
   const ctDlg = () => U.$('contractDialog');
+  const bIso = v => /^\d{4}-\d{2}-\d{2}/.test(v || '') ? String(v).slice(0, 10) : (U.parseDate(v) || '');
+  function pkBirthNote(pk, birth) {
+    const info = U.pkDate(pk);
+    if (info.kind === 'new') return birth ? 'Jaunais personas kods — dzimšanas datums nav kodā.' : U.PK_BIRTH_MSG.new;
+    if (info.kind === 'bad' && !birth) return U.PK_BIRTH_MSG.bad;
+    return '';
+  }
+  function ctPkNote() {
+    const wrap = U.$('ctPkBirthWrap'); if (!wrap || !cur) return;
+    const note = pkBirthNote(cur.fields.j_pk, bIso(cur.fields.j_dzimsanas));
+    wrap.hidden = !note; const n = wrap.querySelector('.notice'); if (n) n.textContent = note;
+  }
+  function ctPk(t, open) {
+    if (!cur) return;
+    const info = U.pkDate(t.value);
+    if (info.kind === 'old' && !bIso(cur.fields.j_dzimsanas)) {
+      cur.fields.j_dzimsanas = info.birth;
+      const b = ctDlg().querySelector('[data-ct="j_dzimsanas"]');
+      if (b && !b.value) b.value = info.birth;
+    }
+    ctPkNote();
+    if (open && (info.kind === 'new' || info.kind === 'bad') && U.codeDigits(t.value).length >= 6 && !bIso(cur.fields.j_dzimsanas) && t.dataset.pkTold !== info.kind) {
+      t.dataset.pkTold = info.kind;
+      ui.toast(U.PK_BIRTH_MSG[info.kind], 'warn', 9000);
+      const b = ctDlg().querySelector('[data-ct="j_dzimsanas"]');
+      if (b) { b.focus(); try { b.showPicker(); } catch (e) { /* kalendārs */ } }
+    }
+    if (info.kind !== 'new' && info.kind !== 'bad') delete t.dataset.pkTold;
+  }
   document.addEventListener('change', e => {
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
+    if (t.dataset.ct) {
+      cur.fields[t.dataset.ct] = t.value;
+      if (t.dataset.ct === 'j_pk') ctPk(t, true);
+      if (t.dataset.ct === 'j_dzimsanas') ctPkNote();
+    }
     if (t.id === 'ctPerson') { const p = D.person(t.value); cur.pid = t.value; if (p) { const age = U.age(p.birth); cur.kind = age != null && age >= 18 ? 'jaunietis' : 'parstavis'; cur.no = p.contractNo || cur.no; cur.parent = 1; cur.fields = personData(p, 1); } renderDialog(); return; }
     const k = t.dataset.cc;
     if (k) {
@@ -10061,7 +10180,12 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   });
   document.addEventListener('input', e => {
     const t = e.target; if (!ctDlg()?.contains(t) || !cur) return;
-    if (t.dataset.ct) { cur.fields[t.dataset.ct] = t.value; if (t.dataset.ct === 'p_rel') renderDialog(); }
+    if (t.dataset.ct) {
+      cur.fields[t.dataset.ct] = t.value;
+      if (t.dataset.ct === 'j_pk') ctPk(t, U.codeDigits(t.value).length >= 11);
+      if (t.dataset.ct === 'j_dzimsanas') ctPkNote();
+      if (t.dataset.ct === 'p_rel') renderDialog();
+    }
     if (t.dataset.cc && t.dataset.cc !== 'parent') cur[t.dataset.cc] = t.value;
     if (t.dataset.ci) { inst()[t.dataset.ci] = t.value.trim(); CP.store.changed({ silent: true }); }
   });
@@ -10077,7 +10201,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       i_parvalde: line(I.parvalde, 4), i_nodala: line(I.nodala, 3), i_vards_gen: line(I.nameGen || genitive(I.name), 30), i_vards: L(I.name), i_amats: L(I.position),
       i_talrunis: line(phone(I.phone)), i_epasts: line(I.email),
       j_vards: L(f.j_vards), j_statuss_vards: [f.j_status, f.j_vards].filter(Boolean).join(' '), j_personas_kods: pkFmt(f.j_pk), j_vards_pk: [f.j_vards, pkFmt(f.j_pk)].filter(Boolean).join(', '),
-      j_dzimsanas_datums: f.j_dzimsanas ? f.j_dzimsanas : '____________________',
+      j_dzimsanas_datums: bIso(f.j_dzimsanas) ? U.fmtDate(bIso(f.j_dzimsanas)) : '____________________',
       j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis), j_epasts: line(f.j_epasts),
       p_vards: L(f.p_vards), p_statuss_vards: [relText(f), f.p_vards].filter(Boolean).join(' '), p_statuss: relText(f), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
       p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis), p_epasts: line(f.p_epasts),
@@ -14208,7 +14332,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     { t: 'Kā pievienot jaunu personu?', kw: 'pievienot jauns persona jaunsargs kandidats cilveks izveidot ievadit kartite', a: 'Jaunu personu pievieno ar pogu “＋” sānjoslas augšā: ievadot ar roku, nolasot anketu vai pārņemot no cita instruktora.', steps: [
       ['Sānjoslas augšā spied zilo pogu “＋”.', null, '.aside-top [data-act=addPerson]'],
       ['Izvēlies, kā pievienot: “Ievadīt ar roku”, “Nolasīt anketu” vai “Pārņemt no cita instruktora”.', null, '#addPickDialog [data-act=addPersonNew]'],
-      ['Aizpildi vārdu, uzvārdu, personas kodu (dzimšanas datums aizpildās pats) un grupu. Spied “Saglabāt”.', null, '#personDialog button.mainbtn[type=submit]'] ] },
+      ['Aizpildi vārdu, uzvārdu, personas kodu (vecajā kodā dzimšanas datums aizpildās pats; jaunajā, kas sākas ar 32, atver kalendāru un ieraksti datumu) un grupu. Spied “Saglabāt”.', null, '#personDialog button.mainbtn[type=submit]'] ] },
     { t: 'Kā nolasīt anketu no attēla vai Word faila?', kw: 'anketa nolasit skenet foto attels ocr word pdf atpazit', a: 'Rīks nolasa anketu no Word, PDF vai fotogrāfijas. Atpazītie lauki parādās pārbaudes logā — kartītē nonāk tikai tas, ko apstiprini.', steps: [
       ['Sānjoslā spied “Ievadīt anketu”.', null, '.sidebtns [data-act=scan]'],
       ['Ievelc anketas failu vai fotogrāfiju logā (vai spied, lai izvēlētos failu).', null, '#scanDialog .scan-head'],
