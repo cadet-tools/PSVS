@@ -9898,7 +9898,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
   const FIELDS_HELP = [
     ['{liguma_nr}', 'līguma numurs'], ['{liguma_datums}', 'piem. 2026.gada 15.oktobrī'], ['{vieta}', 'līguma vieta'],
     ['{i_parvalde} {i_nodala}', 'novada pārvaldes un nodaļas nr.'], ['{i_vards_gen}', 'instruktora vārds ģenitīvā (Jāņa Egļa)'], ['{i_vards} {i_amats} {i_talrunis} {i_epasts}', 'instruktora dati'], ['{i_paraksta_datums}', 'piem. 2026. gada 15. oktobrī'],
-    ['{j_vards} {j_statuss_vards} {j_vards_pk}', 'jaunietis'], ['{j_pk1} … {j_pk11}', 'jaunieša personas koda cipari pa vienam'], ['{j_personas_kods} {j_adrese_dekl} {j_adrese_fakt} {j_talrunis} {j_epasts}', 'jaunieša dati'],
+    ['{j_vards} {j_statuss_vards} {j_vards_pk}', 'jaunietis'], ['{j_pk1} … {j_pk11}', 'jaunieša personas koda cipari pa vienam'], ['{j_dzimsanas_datums}', 'bērna / jaunieša dzimšanas datums, dd.mm.gggg'], ['{j_personas_kods} {j_adrese_dekl} {j_adrese_fakt} {j_talrunis} {j_epasts}', 'jaunieša dati'],
     ['{p_vards} {p_statuss_vards} {p_vards_pk} {p_pk1} … {p_pk11}', 'likumiskais pārstāvis'], ['{p_personas_kods} {p_adrese_dekl} {p_adrese_fakt} {p_talrunis} {p_epasts}', 'pārstāvja dati']
   ];
   CP.CONTRACT_FIELDS_HELP = FIELDS_HELP;
@@ -9945,7 +9945,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const two = parentIdx === 2;
     const pn = two ? p.parent2Name : p.parentName, rel = two ? p.parent2Relation : p.parentRelation;
     return {
-      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '',
+      j_vards: U.full(p), j_status: STATUS_WORD[D.partStatus(p)] || 'jaunsargs', j_pk: p.personalCode || '', j_dzimsanas: p.birth ? U.fmtDate(p.birth) : '',
       j_adrese_dekl: p.addressDeclared || '', j_adrese_fakt: p.addressActual && U.norm(p.addressActual) !== U.norm(p.addressDeclared || '') ? p.addressActual : '',
       j_talrunis: phone(p.phone), j_epasts: p.email || '',
       p_vards: pn || '', ...relPick(rel), p_pk: two ? '' : (p.parentCode || ''),
@@ -10006,6 +10006,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const iinp = (k, label, ph = '', extra = '') => `<div class="field ${extra}"><label>${label}</label><input data-ci="${k}" value="${esc(I[k] ?? '')}" placeholder="${esc(ph)}" ${CAPS[k] ? `data-cap="${CAPS[k]}"` : ''}></div>`;
     const warn = [];
     if (p && !f.j_pk) warn.push('jaunietim nav personas koda');
+    if (p && !f.j_dzimsanas) warn.push('nav dzimšanas datuma');
     if (c.kind === 'parstavis' && !f.p_vards) warn.push('nav norādīts likumiskais pārstāvis');
     if (c.kind === 'parstavis' && !f.p_pk) warn.push('nav pārstāvja personas koda');
     if (c.kind === 'parstavis' && p && !relText(f)) warn.push('izvēlies pārstāvja statusu (māte, tēvs, likumiskais pārstāvis vai cits)');
@@ -10026,7 +10027,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       </div>
       ${warn.length ? `<div class="notice">⚠ ${esc(warn.join('; '))}.</div>` : ''}
       ${p ? `<details class="ct-box" open><summary><b>Dati līgumā</b> <small class="muted">— no kartītes; šeit labotais attiecas tikai uz šo līgumu</small></summary><div class="fieldgrid">
-        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}
+        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}${inp('j_dzimsanas', 'Dzimšanas datums', f.j_dzimsanas)}
         ${inp('j_talrunis', 'Jaunieša tālrunis', f.j_talrunis)}${inp('j_epasts', 'Jaunieša e-pasts', f.j_epasts)}
         ${c.kind === 'jaunietis' ? `${inp('j_adrese_dekl', 'Deklarētā adrese', f.j_adrese_dekl, 'wide')}${inp('j_adrese_fakt', 'Faktiskā adrese (ja atšķiras)', f.j_adrese_fakt, 'wide')}` : `
         <div class="field"><label>Pārstāvja statuss <b class="red">*</b></label><select data-ct="p_rel" class="${f.p_rel ? '' : 'need'}"><option value="">— izvēlies —</option>${REL.map(([v, l]) => `<option value="${v}" ${f.p_rel === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -10076,6 +10077,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       i_parvalde: line(I.parvalde, 4), i_nodala: line(I.nodala, 3), i_vards_gen: line(I.nameGen || genitive(I.name), 30), i_vards: L(I.name), i_amats: L(I.position),
       i_talrunis: line(phone(I.phone)), i_epasts: line(I.email),
       j_vards: L(f.j_vards), j_statuss_vards: [f.j_status, f.j_vards].filter(Boolean).join(' '), j_personas_kods: pkFmt(f.j_pk), j_vards_pk: [f.j_vards, pkFmt(f.j_pk)].filter(Boolean).join(', '),
+      j_dzimsanas_datums: f.j_dzimsanas ? f.j_dzimsanas : '____________________',
       j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis), j_epasts: line(f.j_epasts),
       p_vards: L(f.p_vards), p_statuss_vards: [relText(f), f.p_vards].filter(Boolean).join(' '), p_statuss: relText(f), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
       p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis), p_epasts: line(f.p_epasts),
