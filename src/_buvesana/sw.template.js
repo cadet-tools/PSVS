@@ -5,6 +5,10 @@ const CACHE = '__CACHE__', PREFIX = '__PREFIX__';
 // Rīks tās sagatavo bezsaistei pats (vendor/offline.json), mainītos failus atjaunina.
 const VENDOR = 'cadet-vendor';
 const isVendor = u => /\/vendor\//.test(u.pathname);
+const pull = (req, opt) => new Promise((res, rej) => {
+  const go = n => fetch(req.clone(), opt).then(res, err => n ? setTimeout(() => go(n - 1), 400) : rej(err));
+  go(2);
+});
 const CORE = ['./', 'index.html', 'app.bundle.js', 'PS_LOGO.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
@@ -13,6 +17,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
+  if (/[?&]cpraw=1(?:&|$)/.test(url.search)) return;   // lapas lejupielāde bezsaistes sagatavošanai — pati ieliek kešā, kad fails ir pilns
   if (/\/version\.json$/.test(url.pathname)) return;   // versijas pārbaude vienmēr no tīkla
   if (/\/vendor\/offline\.json$/.test(url.pathname)) return;   // bezsaistes saraksts — vienmēr no tīkla (pārbauda izmaiņas)
   const page = req.mode === 'navigate' || /\/(index\.html|app\.bundle\.js|manifest\.webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
@@ -20,12 +25,12 @@ self.addEventListener('fetch', e => {
   const store = isVendor(url) ? VENDOR : CACHE;
   if (page || tpl) {
     // tīkls vispirms — atjauninājumi pienāk uzreiz; bez interneta — no keša
-    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)); } return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)).catch(() => {}); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' || page ? caches.match('index.html') : Response.error()))));
       // veidnei bez keša — kļūda (nevis galvenā lapa), lai rīks skaidri paziņo, ka tā nav pieejama
   } else {
     // bibliotēkas (pdf.js, atpazīšana, ikonas) — kešs vispirms
-    e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)); } return r; })));
+    e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || pull(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)).catch(() => {}); } return r; })));
   }
 });
 /* Paziņojuma klikšķis: atver (vai fokusē) rīka logu un pāriet uz vajadzīgo sadaļu */

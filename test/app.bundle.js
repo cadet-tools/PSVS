@@ -15260,10 +15260,25 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   async function manifest(net) {
     const url = abs('offline.json');
     if (net) {
-      const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw Error('bezsaistes saraksts nav atrasts');
-      const j = await r.clone().json(); (await caches.open(VCACHE)).put(url, r); return j;
+      const r = await fetch(url + '?cpraw=1', { cache: 'no-store' }); if (!r.ok) throw Error('bezsaistes saraksts nav atrasts');
+      const text = await r.text(); const j = JSON.parse(text);
+      await (await caches.open(VCACHE)).put(url, new Response(text, { headers: { 'Content-Type': 'application/json' } }));
+      return j;
     }
     const hit = await (await caches.open(VCACHE)).match(url); return hit ? hit.json() : null;
+  }
+  const latNet = e => { const m = (e && e.message) || String(e || ''); return /Cache\.put|network error|Failed to fetch|NetworkError|nepilns/i.test(m) && !/nepilns/.test(m) ? 'savienojums pārtrūka lejupielādes laikā' : m; };
+  /** Pilns fails atmiņā, tad kešā. ?cpraw=1 neiet caur servisa darbinieku, lai Cache.put nesaņem pārtrauktu plūsmu. */
+  async function pullFile(url) {
+    let last; const raw = url + (url.includes('?') ? '&' : '?') + 'cpraw=1';
+    for (let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch(raw, { cache: 'no-store' }); if (!r.ok) throw Error(String(r.status));
+        const buf = await r.arrayBuffer(); if (!buf.byteLength) throw Error('tukšs fails');
+        return { buf, type: r.headers.get('Content-Type') || '' };
+      } catch (e) { last = e; await new Promise(res => setTimeout(res, 500 * (i + 1))); }
+    }
+    throw last;
   }
   /** Pārbauda, vai visi faili ir kešā (bez tīkla) */
   async function check() {
@@ -15283,19 +15298,27 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     st.running = true; st.error = ''; paint();
     try {
       const m = await manifest(true), c = await caches.open(VCACHE), map = mapGet();
-      st.total = m.files.length; st.done = 0; st.bytes = 0;
+      st.total = m.files.length; st.done = 0; st.bytes = 0; const failed = [];
       for (const x of m.files) {
         const url = abs(x.f);
-        if (!(map[x.f] === x.h && await c.match(url, { ignoreSearch: true }))) {
-          const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw Error(`${x.f}: ${r.status}`);
-          await c.put(url, r); map[x.f] = x.h; mapSet(map); st.bytes += x.s;
-        }
-        st.done++; paint();
+        try {
+          if (!(map[x.f] === x.h && await c.match(url, { ignoreSearch: true }))) {
+            const { buf, type } = await pullFile(url);
+            if (buf.byteLength !== x.s) throw Error(`nepilns (${buf.byteLength} no ${x.s})`);
+            await c.put(url, new Response(buf, { headers: type ? { 'Content-Type': type } : {} }));
+            map[x.f] = x.h; mapSet(map); st.bytes += buf.byteLength;
+          }
+          st.done++;
+        } catch (e) { failed.push(`${x.f}: ${latNet(e)}`); }
+        paint();
       }
       for (const k of Object.keys(map)) if (!m.files.some(x => x.f === k)) delete map[k];
-      mapSet(map); st.ready = true;
-      if (manual) ui.toast('✓ Rīks sagatavots darbam bezsaistē', 'ok', 5000);
-    } catch (e) { st.error = e.message; st.ready = false; if (manual) ui.toast('Bezsaistei neizdevās sagatavot: ' + e.message, 'warn', 9000); }
+      mapSet(map); st.ready = !failed.length && st.done === m.files.length;
+      if (failed.length) {
+        st.error = (failed.length === 1 ? failed[0] : `${failed.length} faili neielādējās. ${failed.slice(0, 2).join('; ')}`) + ' Jau saglabātie paliek — spied pogu vēlreiz.';
+        if (manual) ui.toast('Bezsaistei neizdevās sagatavot: ' + st.error, 'warn', 9000);
+      } else if (manual) ui.toast('✓ Rīks sagatavots darbam bezsaistē', 'ok', 5000);
+    } catch (e) { st.error = latNet(e); st.ready = false; if (manual) ui.toast('Bezsaistei neizdevās sagatavot: ' + st.error, 'warn', 9000); }
     finally { st.running = false; paint(); }
   }
 
@@ -15326,8 +15349,36 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     } else if (done.length && !manual) ui.toast(`Savienojums atjaunots — izmaiņas nosūtītas: ${done.join(', ')}`, 'ok', 7000);
     else if (done.length) ui.toast(`Sinhronizēts: ${done.join(', ')}`, 'ok', 5000);
   }
+  const scopesWanted = () => {
+    const E = CP.encBackup?.state?.() || {}, s = [];
+    if (E.enabled && E.drive) s.push('drive');
+    if (CP.gcal?.enabled?.()) s.push('cal');
+    return s;
+  };
+  /** Ko rādīt pie “Sinhronizācija ar Google”. “Viss nosūtīts” tikai tad, kad Google tiešām ir pieslēgts un rindā nekā nav. */
+  function gView() {
+    const E = CP.encBackup?.state?.() || {}, G = CP.google;
+    const driveOn = !!(E.enabled && E.drive), calOn = !!CP.gcal?.enabled?.();
+    const last = E.last?.at || '', calLast = CP.gcal?.lastSync?.() || '', p = pend();
+    const when = iso => iso ? esc(U.fmtDateTime(iso)) : '';
+    if (!driveOn && !calOn) return {
+      html: E.enabled ? 'Šifrētā kopija ir mapē datorā. Google Drive un kalendārs nav pieslēgti, tāpēc uz Google nekas netiek sūtīts.' : 'Google nav pieslēgts. Šifrētā kopija un kalendārs nav ieslēgti, tāpēc nekas netiek sūtīts.',
+      act: 'netGoogleSet', label: 'Atvērt iestatījumus'
+    };
+    const miss = [];
+    if (driveOn && !G?.has?.('drive')) miss.push('Google Drive');
+    if (calOn && !G?.has?.('cal')) miss.push('kalendārs');
+    const prev = [last ? `Pēdējā kopija: ${when(last)}.` : (driveOn ? 'Kopija vēl nav nosūtīta.' : ''), calLast ? `Kalendārs: ${when(calLast)}.` : ''].filter(Boolean).join(' ');
+    if (miss.length) return {
+      html: `Google nav pieslēgts (${esc(miss.join(', '))}).${p.length ? ` Gaida nosūtīšanu: <b>${esc(p.map(x => x.l).join(', '))}</b>.` : ''}${prev ? ' ' + prev : ''}`,
+      act: 'netConnect', label: 'Pieslēgties'
+    };
+    if (p.length) return { html: `Gaida nosūtīšanu: <b>${esc(p.map(x => x.l).join(', '))}</b>.`, act: 'netSync', label: '⟳ Sinhronizēt tagad' };
+    return { html: `Viss nosūtīts.${last ? ' Pēdējā kopija: ' + when(last) + '.' : ''}${calLast ? ' Kalendārs: ' + when(calLast) + '.' : ''}`, act: '', label: '' };
+  }
+  A.netGoogleSet = () => { U.$('netDialog')?.close(); CP.actions.encGoSet?.(); };
   A.netConnect = async () => {
-    const list = pend(), scopes = [...new Set(list.map(x => x.scope))]; if (!scopes.length) return;
+    const scopes = scopesWanted(); if (!scopes.length) return;
     if (await CP.google.token(scopes, true)) syncAll(true);
   };
   A.netSync = () => syncAll(true);
@@ -15351,7 +15402,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   }
   function info() {
     let d = U.$('netDialog'); if (!d) { d = document.createElement('dialog'); d.id = 'netDialog'; document.body.appendChild(d); }
-    const p = pend(), E = CP.encBackup?.state?.(), last = E?.last?.at;
+    const g = gView();
     const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
     d.innerHTML = `<header class="dlg-head"><h2>${st.online ? '● Tiešsaiste' : '○ Bezsaiste'}</h2><button type="button" class="ghost" data-close="netDialog" aria-label="Aizvērt">✕</button></header>
       <div class="dlg-body net-info">
@@ -15360,8 +15411,8 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
         <p class="small">${st.ready === null ? 'Šajā versijā (atvērts no datora faila) bezsaistes kešs nav vajadzīgs — viss jau ir datorā.' : st.running ? `Sagatavo… ${st.done}/${st.total} (${pct}%)` : st.ready ? '✓ Rīks gatavs darbam bezsaistē: Word un PDF skatīšana, veidlapas, līgumi, anketu nolasīšana, personas lietas paka.' : `⚠ Vēl nav pilnībā sagatavots (${st.done}/${st.total || '?'})${st.error ? ' — ' + esc(st.error) : ''}. Bez tā bezsaistē var nestrādāt Word skatīšana, PDF veidlapas, līgumi un anketu nolasīšana.`}</p>
         ${st.ready === null ? '' : `<div class="actions"><button type="button" class="sm ${st.ready ? '' : 'mainbtn'}" data-act="netPrepare" ${st.running || !st.online ? 'disabled' : ''}>${st.ready ? 'Pārbaudīt atjauninājumus' : 'Sagatavot bezsaistei'} (~23 MB)</button></div>`}
         <h4>Sinhronizācija ar Google</h4>
-        ${p.length ? `<p class="small">Gaida nosūtīšanu: <b>${esc(p.map(x => x.l).join(', '))}</b>.</p>` : `<p class="small">Viss nosūtīts.${last ? ' Pēdējā kopija: ' + esc(U.fmtDateTime(last)) + '.' : ''}${CP.gcal?.lastSync() ? ' Kalendārs: ' + esc(U.fmtDateTime(CP.gcal.lastSync())) + '.' : ''}</p>`}
-        ${p.length ? `<div class="actions"><button type="button" class="sm mainbtn" data-act="netSync" ${st.online ? '' : 'disabled'}>⟳ Sinhronizēt tagad</button></div>` : ''}
+        <p class="small">${g.html}</p>
+        ${g.act ? `<div class="actions"><button type="button" class="sm mainbtn" data-act="${g.act}" ${st.online || g.act === 'netGoogleSet' ? '' : 'disabled'}>${esc(g.label)}</button></div>` : ''}
         <p class="small muted">Bez interneta nestrādā arī: “Ziņot”, WhatsApp / Signal saites, Google Vision atpazīšana un atjauninājumu pārbaude.</p>
       </div>`;
     if (!d.open) d.showModal();
