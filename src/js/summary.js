@@ -60,7 +60,7 @@
   let FONTS = null, LOGO = null;
   async function fonts() {
     if (FONTS) return FONTS;
-    const get = async n => new Uint8Array(await (await fetch(CP.VENDOR + n)).arrayBuffer());
+    const get = n => CP.pdf.bytes(n);
     const [r, b, x] = await Promise.all(['pdf/Manrope_400Regular.ttf', 'pdf/Manrope_700Bold.ttf', 'pdf/Manrope_800ExtraBold.ttf'].map(get));
     FONTS = { r, b, x };
     try { LOGO = await get('brand/CADET_pdf.png'); } catch (e) { LOGO = null; }

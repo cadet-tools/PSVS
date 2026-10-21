@@ -7741,12 +7741,33 @@ window.CP = window.CP || {};
   const U = CP.util;
   const MM = 72 / 25.4;
   let LIB = null;
+  /** Fontu baiti no cp-fonts.js. Atsevišķs .ttf pieprasījums skolās un nestabilā tīklā pārtrūkst (savienojums aizveras pēc 200). */
+  function b64bytes(b64) {
+    const bin = atob(b64), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  async function bytes(rel) {
+    try {
+      if (!self.CP_PDF_FONTS) await CP.reader.loadScript(CP.VENDOR + 'pdf/cp-fonts.js');
+      const b64 = self.CP_PDF_FONTS && self.CP_PDF_FONTS[rel];
+      if (b64) return b64bytes(b64);
+    } catch (e) { /* rezerve — tiešais fails */ }
+    let last;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch(CP.VENDOR + rel);
+        if (!r.ok) throw Error(r.status);
+        return new Uint8Array(await r.arrayBuffer());
+      } catch (e) { last = e; await new Promise(res => setTimeout(res, 400 * (i + 1))); }
+    }
+    throw Error('Neizdevās ielādēt PDF fontu. Atsvaidzini lapu ar Ctrl+F5.' + (last && last.message ? ' (' + last.message + ')' : ''));
+  }
   async function load() {
     if (LIB) return LIB;
     await CP.reader.loadScript(CP.VENDOR + 'pdf/pdf-lib.min.js');
     await CP.reader.loadScript(CP.VENDOR + 'pdf/fontkit.umd.min.js');
-    const get = async n => new Uint8Array(await (await fetch(CP.VENDOR + 'pdf/' + n)).arrayBuffer());
-    const [reg, bold, ital] = await Promise.all(['Tinos-400Regular.ttf', 'Tinos-700Bold.ttf', 'Tinos-400Regular_Italic.ttf'].map(get));
+    const [reg, bold, ital] = await Promise.all(['pdf/Tinos-400Regular.ttf', 'pdf/Tinos-700Bold.ttf', 'pdf/Tinos-400Regular_Italic.ttf'].map(bytes));
     LIB = { P: window.PDFLib, fk: window.fontkit, reg, bold, ital };
     return LIB;
   }
@@ -7989,7 +8010,7 @@ window.CP = window.CP || {};
     return doc.save();
   }
 
-  CP.pdf = { load, instruction, camp, attendance, vfs };
+  CP.pdf = { load, bytes, instruction, camp, attendance, vfs };
 })(window.CP);
 
 
@@ -13036,7 +13057,7 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
   let FONTS = null, LOGO = null;
   async function fonts() {
     if (FONTS) return FONTS;
-    const get = async n => new Uint8Array(await (await fetch(CP.VENDOR + n)).arrayBuffer());
+    const get = n => CP.pdf.bytes(n);
     const [r, b, x] = await Promise.all(['pdf/Manrope_400Regular.ttf', 'pdf/Manrope_700Bold.ttf', 'pdf/Manrope_800ExtraBold.ttf'].map(get));
     FONTS = { r, b, x };
     try { LOGO = await get('brand/CADET_pdf.png'); } catch (e) { LOGO = null; }

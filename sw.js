@@ -5,6 +5,10 @@ const CACHE = 'cadet-stable-1.59.0', PREFIX = 'cadet-stable-';
 // Rīks tās sagatavo bezsaistei pats (vendor/offline.json), mainītos failus atjaunina.
 const VENDOR = 'cadet-vendor';
 const isVendor = u => /\/vendor\//.test(u.pathname);
+const pull = (req, opt) => new Promise((res, rej) => {
+  const go = n => fetch(req.clone(), opt).then(res, err => n ? setTimeout(() => go(n - 1), 400) : rej(err));
+  go(2);
+});
 const CORE = ['./', 'index.html', 'app.bundle.js', 'PS_LOGO.png', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
@@ -25,7 +29,7 @@ self.addEventListener('fetch', e => {
       // veidnei bez keša — kļūda (nevis galvenā lapa), lai rīks skaidri paziņo, ka tā nav pieejama
   } else {
     // bibliotēkas (pdf.js, atpazīšana, ikonas) — kešs vispirms
-    e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)); } return r; })));
+    e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || pull(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(store).then(c => c.put(req, cp)); } return r; })));
   }
 });
 /* Paziņojuma klikšķis: atver (vai fokusē) rīka logu un pāriet uz vajadzīgo sadaļu */
