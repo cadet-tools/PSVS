@@ -1,5 +1,12 @@
 # Izmaiņu vēsture
 
+## 2026-10-21 — līguma veidnes
+- Četras standarta līguma veidnes (`vendor/templates/ligums-*.docx`) aizstātas ar `JAUNAS_VEIDLAPAS`. Aizpildāmās atzīmes paliek tajās pašās vietās, ko rīks jau raksta no kartītes.
+- Veidlapā jaunā centra adrese K. Valdemāra iela 10/12, Rīgā, LV-1473 un e-pasts jc@jc.gov.lv.
+- Ievadrindā paliek viens numurs (`{i_parvalde}` pirms “novada nodaļas”). Nodaļas numuram (`{i_nodala}`) jaunajā teikumā vietas nav.
+- Rīkojuma datums un numurs paliek tukši — jaunajā veidnē vairs nav 2021. gada 14. septembra rīkojuma Nr. 418, un rīkā šiem laukiem datu nav.
+- EDOC veidnēs vieta un datums vairs nav iesaldēti kā “Rīga, 2021”; rīks raksta instruktora vietu un izvēlēto datumu. Līguma numurs ir rindā “Līguma reģistrācijas Nr.”.
+
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
 - Faila pievienošana: viens fails — dokumenta logs atveras uzreiz, josla rāda kopēšanas progresu, “Saglabāt” gaida, līdz fails ir mapē; aizverot logu kopēšana tiek pārtraukta. Vairāki faili un “Aizstāt failu” — apakšā josla ar progresu. `store.saveFile` raksta pa daļām un pieņem `onProgress` / `signal`.
