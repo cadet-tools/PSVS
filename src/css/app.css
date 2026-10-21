@@ -20,7 +20,7 @@ h4 { font-size: 13px; color: #b9e3df; margin: 18px 0 8px }
 a { color: #9fd8ec }
 code { background: var(--field); padding: 1px 5px; border-radius: 5px }
 .muted { color: var(--muted) } .small { font-size: 12px } .warn { color: var(--amber) } .red { color: var(--red) } .good { color: var(--green) }
-.hidden { display: none !important } .grow { flex: 1 } .right { margin-left: auto } .nowrap { white-space: nowrap } .pre { white-space: pre-wrap; margin: 0 } .pad { padding: 8px }
+.hidden, [hidden] { display: none !important } .grow { flex: 1 } .right { margin-left: auto } .nowrap { white-space: nowrap } .pre { white-space: pre-wrap; margin: 0 } .pad { padding: 8px }
 
 /* --- Pogas un ievades lauki --- */
 button, .btn { font: inherit; background: #273b49; color: var(--txt); border: 1px solid #3b5867; border-radius: var(--r-sm); padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; white-space: nowrap; line-height: 1.3 }
@@ -85,7 +85,7 @@ label.inline { display: inline-flex; align-items: center; gap: 6px; white-space:
 .card > h3 .right { font-weight: 400 }
 details.card > summary { cursor: pointer; list-style: none } details.card[open] > summary { margin-bottom: 12px }
 .cards2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; align-items: start } .cards2 > .card { margin: 0 } .cards2 > .wide { grid-column: 1 / -1 }
-.notice { border: 1px solid #645537; background: #29271e; border-radius: 10px; padding: 9px 13px; color: #f0d7b5; margin-bottom: 12px; font-size: 13px }
+.notice { border: 1px solid #645537; background: #29271e; border-radius: 10px; padding: 9px 13px; color: #f0d7b5; margin-bottom: 12px; font-size: 13px } .notice:empty { display: none }
 .hero { border-color: #2e6a5d; background: linear-gradient(135deg, #15302b, var(--panel)) }
 .quick { display: flex; gap: 8px; flex-wrap: wrap }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px }

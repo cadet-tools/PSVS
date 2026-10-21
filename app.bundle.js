@@ -10112,7 +10112,7 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
       </div>
       ${warn.length ? `<div class="notice">⚠ ${esc(warn.join('; '))}.</div>` : ''}
       ${p ? `<details class="ct-box" open><summary><b>Dati līgumā</b> <small class="muted">— no kartītes; šeit labotais attiecas tikai uz šo līgumu</small></summary><div class="fieldgrid">
-        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}<div class="field"><label>Dzimšanas datums</label><input type="date" data-ct="j_dzimsanas" value="${esc(bIso(f.j_dzimsanas))}"></div><div class="field wide" id="ctPkBirthWrap" ${pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)) ? '' : 'hidden'}><div class="notice">${esc(pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)))}</div></div>
+        ${inp('j_status', 'Jaunieša statuss', f.j_status)}${inp('j_vards', 'Jaunieša vārds, uzvārds', f.j_vards)}${inp('j_pk', 'Jaunieša personas kods', f.j_pk)}<div class="field"><label>Dzimšanas datums</label><input type="date" data-ct="j_dzimsanas" value="${esc(bIso(f.j_dzimsanas))}"></div>${pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)) ? `<div class="field wide" id="ctPkBirthWrap"><div class="notice">${esc(pkBirthNote(f.j_pk, bIso(f.j_dzimsanas)))}</div></div>` : ''}
         ${inp('j_talrunis', 'Jaunieša tālrunis', f.j_talrunis)}${inp('j_epasts', 'Jaunieša e-pasts', f.j_epasts)}
         ${c.kind === 'jaunietis' ? `${inp('j_adrese_dekl', 'Deklarētā adrese', f.j_adrese_dekl, 'wide')}${inp('j_adrese_fakt', 'Faktiskā adrese (ja atšķiras)', f.j_adrese_fakt, 'wide')}` : `
         <div class="field"><label>Pārstāvja statuss <b class="red">*</b></label><select data-ct="p_rel" class="${f.p_rel ? '' : 'need'}"><option value="">— izvēlies —</option>${REL.map(([v, l]) => `<option value="${v}" ${f.p_rel === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -10135,9 +10135,17 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     return '';
   }
   function ctPkNote() {
-    const wrap = U.$('ctPkBirthWrap'); if (!wrap || !cur) return;
-    const note = pkBirthNote(cur.fields.j_pk, bIso(cur.fields.j_dzimsanas));
-    wrap.hidden = !note; const n = wrap.querySelector('.notice'); if (n) n.textContent = note;
+    const note = cur ? pkBirthNote(cur.fields.j_pk, bIso(cur.fields.j_dzimsanas)) : '';
+    let wrap = U.$('ctPkBirthWrap');
+    if (!note) { wrap?.remove(); return; }
+    if (!wrap) {
+      const birth = ctDlg()?.querySelector('[data-ct="j_dzimsanas"]')?.closest('.field');
+      if (!birth) return;
+      wrap = document.createElement('div'); wrap.id = 'ctPkBirthWrap'; wrap.className = 'field wide';
+      wrap.innerHTML = '<div class="notice"></div>';
+      birth.insertAdjacentElement('afterend', wrap);
+    }
+    wrap.querySelector('.notice').textContent = note;
   }
   function ctPk(t, open) {
     if (!cur) return;
@@ -10199,12 +10207,12 @@ s.innerHTML='<span class=ok>✓ Atjaunoti '+ok+' faili'+(bad?'</span> <span clas
     const g = {
       liguma_nr: line(c.no, 18), liguma_datums: c.date ? dateLv(c.date) : '20___.gada ___.___________', vieta: line(c.place, 12),
       i_parvalde: line(I.parvalde, 4), i_nodala: line(I.nodala, 3), i_vards_gen: line(I.nameGen || genitive(I.name), 30), i_vards: L(I.name), i_amats: L(I.position),
-      i_talrunis: line(phone(I.phone)), i_epasts: line(I.email),
+      i_talrunis: line(phone(I.phone), 25), i_epasts: line(I.email, 26),
       j_vards: L(f.j_vards), j_statuss_vards: [f.j_status, f.j_vards].filter(Boolean).join(' '), j_personas_kods: pkFmt(f.j_pk), j_vards_pk: [f.j_vards, pkFmt(f.j_pk)].filter(Boolean).join(', '),
       j_dzimsanas_datums: bIso(f.j_dzimsanas) ? U.fmtDate(bIso(f.j_dzimsanas)) : '____________________',
-      j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis), j_epasts: line(f.j_epasts),
+      j_adrese_dekl: L(f.j_adrese_dekl), j_adrese_fakt: L(f.j_adrese_fakt), j_talrunis: line(f.j_talrunis, c.kind === 'parstavis' ? 15 : 25), j_epasts: line(f.j_epasts, c.kind === 'parstavis' ? 21 : 26),
       p_vards: L(f.p_vards), p_statuss_vards: [relText(f), f.p_vards].filter(Boolean).join(' '), p_statuss: relText(f), p_personas_kods: pkFmt(f.p_pk), p_vards_pk: [f.p_vards, pkFmt(f.p_pk)].filter(Boolean).join(', '),
-      p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis), p_epasts: line(f.p_epasts),
+      p_adrese_dekl: L(f.p_adrese_dekl), p_adrese_fakt: L(f.p_adrese_fakt), p_talrunis: line(f.p_talrunis, 25), p_epasts: line(f.p_epasts, 26),
       i_paraksta_datums: c.signMode === 'blank' ? '_____.\u00a0gada ____.\u00a0________________' : dateLvSp(c.signMode === 'custom' ? (c.signDate || c.date) : c.date) || '_____.\u00a0gada ____.\u00a0________________',
       ...digits(f.j_pk, 'j'), ...digits(f.p_pk, 'p')
     };

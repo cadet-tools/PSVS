@@ -6,6 +6,7 @@
 - Aizpildāmās atzīmes ir tukšajās vietās, saglabājot veidlapas burtu izmēru (12,5 pt). Numurs galvenē ir `Nr. {liguma_nr}` agrākā Word lauka «DOKREGNUMURS» vietā. Ievadrindā `{i_parvalde}` un `{i_nodala}`.
 - Dzimšanas datuma līnija paliek. Tajā ierakstās `{j_dzimsanas_datums}` no kartītes (`dd.mm.gggg`, 12,5 pt). Ja datuma nav, līnija paliek tukša. Paraksts zem līnijas — `(dzimšanas datums)` vai `(dzimšanas dati)` — paliek sīkais.
 - Dzimšanas datuma laukā ir kalendārs. Vecā personas koda 1. daļa aizpilda datumu. Jaunais kods (sākas ar 32) datumu nesatur — cipari datumā netiek likti, instruktors to ievada kalendārā.
+- Rekvizītu rindas (tālrunis, e-pasts, bērna kontakti) ir līdzinātas pa kreisi. Tukšā svītra ir tikpat gara kā oficiālajā veidlapā, tāpēc “Bērna” un “e-pasts” paliek vienā rindā un svītra neaiziet zem vārdiem. Līguma pamatteksts paliek izlīdzināts. Tukša oranža piezīme līguma un anketas logos vairs nerādās.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
