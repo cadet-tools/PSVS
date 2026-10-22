@@ -16,6 +16,7 @@
 - Kontakta vārds pie numura ir tikai šī cilvēka vārds un uzvārds: bērns “Valters Bricka”, vecāks “Mārtiņš Bricka”, ārkārtas persona “Inga Bricka”. Bērns, vecāki, ārkārtas persona un viņu numuri ir piezīmē. Jau saglabātie kontakti jānoskenē vēlreiz.
 - Meklētājs atrod personas kartīti arī pēc vecāka vārda un uzvārda (abi vecāki): sānjosla, personu saraksts, arhīvs un Ctrl+K. Zem vārda parādās, kurš vecāks atbilda, piemēram “Tēvs: Mārtiņš Āboltiņš”. Atveras bērna kartīte.
 - Reģistrācijas un arhīva datumus var ierakstīt ar tastatūru, ne tikai izvēlēties kalendārā. Ierakstot ciparu, lauks vairs neaizveras. Tas pats DVS, Centra arhīvam, e-klasei un saziņai.
+- Personas kartītē arhivētam līgumam ir ✕. Tas noņem ierakstu no kartītes (apstiprinājums). Word fails personas mapē paliek. Līguma numurs kartītē paliek.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
