@@ -13,7 +13,7 @@
 - Grupu izvēlē ir **⚠ Bez grupas**. Sānjoslā un personu sarakstā tā atlasa personas bez grupas. Katrs tāds jaunsargs ir arī pie uzdevumiem un brīdinājumiem.
 - Kartītē pie “Reģistrācija un arhīvs” ir sadaļa **Saziņa**: atzīme “Ievietots ziņapmaiņas grupā” (WhatsApp, Signal vai cita). Kamēr atzīmes nav, rinda ir sarkana un persona ir brīdinājumos. Atzīmi var likt arī vairākām personām uzreiz.
 - Saziņā ir divas atzīmes: **Jaunsargs** un **Vecāks**. Brīdinājums paliek tikai tam, kurš vēl nav grupā. Agrākā vienā atzīme skaitās abiem; lieko var noņemt.
-- Kontakts telefonā vienmēr sākas ar bērna vārdu un uzvārdu. Vecākam un ārkārtas kontaktam iekavās ir viņa vārds un loma, piemēram “Miks Āboltiņš (Mārcis Āboltiņš, tēvs)”. Kartītē ir tikai šī cilvēka numurs, pārējie ir piezīmē — WhatsApp vairs nerāda vienu vārdu vairākas reizes. Jau saglabātie kontakti paši nepārdēvējas: QR jānoskenē vēlreiz.
+- Katram QR kodam ir sava kartīte ar tā cilvēka īsto vārdu. Iekavās ir pārējie, lai redz saistību: bērns “Valters Bricka (Mārtiņš Bricka tēvs, ārkārtas persona Inga Bricka)”, tēvs “Mārtiņš Bricka (Valters Bricka bērns, ārkārtas persona Inga Bricka)”, ārkārtas “Inga Bricka, ārkārtas persona (Valters Bricka bērns, Mārtiņš Bricka tēvs)”. Kartītē ir tikai šī cilvēka numurs. Jau saglabātie kontakti jānoskenē vēlreiz.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.
