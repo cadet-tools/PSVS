@@ -1,8 +1,10 @@
 /* =====================================================================
-   Reģistrācija ārējās sistēmās: DVS (pa dokumentiem), dokumentu nodošana Centra arhīvam (pa dokumentiem) un e-klase.
+   Reģistrācija ārējās sistēmās: DVS (pa dokumentiem), dokumentu nodošana Centra arhīvam (pa dokumentiem), e-klase
+   un saziņa (ievietots ziņapmaiņas grupā — WhatsApp, Signal vai citā).
    p.reg = { dvs: { docs: { 'Pieteikuma anketa': { done, date }, 'Līgums': {…}, … } },
              arhivs: { docs: { 'Pieteikuma anketa': { done, date }, … } },
-             eklase: { done: true, date } }
+             eklase: { done: true, date },
+             sazina: { done: true, date } }
    Arhīvam nododamie dokumenti = settings.archiveDocs (noklusēti anketa un līgums).
    DVS dokumentu saraksts = obligātie dokumenti (Iestatījumi → Dokumenti).
    Katru dokumentu var reģistrēt citā datumā. Kamēr kāds nav atzīmēts — brīdinājums
@@ -11,7 +13,7 @@
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, A = CP.actions, esc = U.esc;
-  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'arhivs', l: 'Centra arhīvs', loc: 'Centra arhīvā', long: 'Oriģināls nodots Jaunsardzes centra arhīvam' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }];
+  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'arhivs', l: 'Centra arhīvs', loc: 'Centra arhīvā', long: 'Oriģināls nodots Jaunsardzes centra arhīvam' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }, { k: 'sazina', l: 'Ziņapmaiņas grupa', loc: 'ziņapmaiņas grupā', long: 'Ievietots ziņapmaiņas grupā (WhatsApp, Signal vai citā)' }];
   CP.REGS = REGS;
   const on = () => { const s = S.db.settings.registries; return REGS.filter(r => !Array.isArray(s) || s.includes(r.k)); };
   const dvsDocs = () => (S.db.settings.requiredDocs || []).filter(Boolean);
@@ -52,7 +54,7 @@
     const out = [];
     for (const p of roster) {
       if (!followed(p)) continue;
-      const dm = D.dvsMissing(p), ek = on().some(r => r.k === 'eklase') && !p.reg?.eklase?.done;
+      const dm = D.dvsMissing(p), ek = on().some(r => r.k === 'eklase') && !p.reg?.eklase?.done, sz = on().some(r => r.k === 'sazina') && !p.reg?.sazina?.done;
       if (dm.length) {
         const inTool = dm.filter(k => !D.missingDocs(p).includes(k));
         out.push({ kind: 'registry', personId: p.id, sev: 1, when: '',
@@ -61,6 +63,7 @@
       const am = D.arcMissing(p);
       if (am.length) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: Centra arhīvam nav nodots — ${am.join(', ')}` });
       if (ek) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav atzīmēts, ka ievadīts e-klasē` });
+      if (sz) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav ievietots ziņapmaiņas grupā (WhatsApp, Signal vai cita)` });
     }
     return out;
   };
@@ -79,6 +82,13 @@
   function setReg(p, k, done) {
     if (k === 'dvs') { for (const kind of dvsDocs()) setDvs(p, kind, done); D.audit(p.id, 'update', [`DVS: ${done ? 'reģistrēti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
     if (k === 'arhivs') { for (const kind of arcDocs()) setArc(p, kind, done); D.audit(p.id, 'update', [`Centra arhīvs: ${done ? 'nodoti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
+    if (k === 'sazina') {
+      p.reg = { ...(p.reg || {}) };
+      if (done) p.reg.sazina = { done: true, date: p.reg.sazina?.date || U.iso() }; else delete p.reg.sazina;
+      p.updatedAt = U.now();
+      D.audit(p.id, 'update', [`Ziņapmaiņas grupa: ${done ? 'ievietots' : 'atzīme noņemta'}`]);
+      return;
+    }
     p.reg = { ...(p.reg || {}) };
     if (done) p.reg[k] = { done: true, date: U.iso() }; else delete p.reg[k];
     p.updatedAt = U.now();
@@ -100,6 +110,13 @@
     const t = e.target, v = t.dataset?.dvsdate; if (v == null) return false;
     const [id, i] = v.split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind || !t.value) return true;
     setDvs(p, kind, true, t.value); D.audit(p.id, 'update', [`DVS — ${kind}: datums ${U.fmtDate(t.value)}`]);
+    setTimeout(() => CP.store.changed(), 0); return true;
+  });
+  CP.changeHandlers.push(e => {
+    const t = e.target, v = t.dataset?.sazdate; if (v == null) return false;
+    const p = D.person(v); if (!p || !t.value) return true;
+    p.reg = { ...(p.reg || {}), sazina: { done: true, date: t.value } }; p.updatedAt = U.now();
+    D.audit(p.id, 'update', [`Ziņapmaiņas grupa: datums ${U.fmtDate(t.value)}`]);
     setTimeout(() => CP.store.changed(), 0); return true;
   });
   A.bulkReg = k => {
@@ -147,7 +164,15 @@
       return `<div class="reg-group"><label class="reg-row ${v?.done ? 'ok' : (miss ? 'miss' : '')}"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|eklase" ${v?.done ? 'checked' : ''}>
         <span class="grow"><b>e-klase</b> <small class="muted">${v?.done ? 'ievadīts ' + esc(U.fmtDate(v.date)) : (miss ? '— vēl nav ievadīts' : '')}</small></span></label></div>`;
     })() : '';
-    return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija un arhīvs</h3>${dvs}${arc}${ek}</section>`;
+    const saz = list.some(r => r.k === 'sazina') ? (() => {
+      const v = p.reg?.sazina, miss = fol && !v?.done;
+      return `<div class="reg-group"><div class="reg-title"><b>Saziņa</b></div>
+        <div class="reg-row ${v?.done ? 'ok' : (miss ? 'nogot' : '')}"><label class="check grow"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|sazina" ${v?.done ? 'checked' : ''}>
+          <span><b>Ievietots ziņapmaiņas grupā</b><br><small class="muted">${v?.done ? 'WhatsApp, Signal vai cita grupa' : (miss ? '<span class="red">✗ nav ievietots — WhatsApp, Signal vai cita grupa</span>' : 'WhatsApp, Signal vai cita grupa')}</small></span></label>
+          ${v?.done ? `<input type="date" class="sm reg-date" data-sazdate="${p.id}" value="${esc(v.date || '')}" title="Datums, kad ievietots grupā">` : ''}</div>
+        ${miss ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē, kad persona ir ievietota ziņapmaiņas grupā.</p>` : ''}</div>`;
+    })() : '';
+    return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija un arhīvs</h3>${dvs}${arc}${ek}${saz}</section>`;
   }
   CP.registry = { personCard, setReg, REGS, dvsOf, arcOf, arcDocs };
 })(window.CP);

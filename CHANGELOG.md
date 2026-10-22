@@ -11,6 +11,7 @@
 - Apmeklējuma atzīme **a** (attaisnots) statistikā skaitās kā **n** (nebija). 5 “bija” un 1 “a” ir 5 no 6, nevis 6 apmeklētas nodarbības. Slimības dēļ (**s**) procentos joprojām neskaita.
 - Bezsaites sagatavošana vairs neapstājas pie pirmā pārtrauktā faila. PDF fonti vairs netiek vilkti kā atsevišķi `.ttf` (tie ir `cp-fonts.js`), un “Viss nosūtīts” rādās tikai tad, kad Google tiešām ir pieslēgts. Ja kopija vai kalendārs nav ieslēgts, logs saka, ka Google nav pieslēgts.
 - Grupu izvēlē ir **⚠ Bez grupas**. Sānjoslā un personu sarakstā tā atlasa personas bez grupas. Katrs tāds jaunsargs ir arī pie uzdevumiem un brīdinājumiem.
+- Kartītē pie “Reģistrācija un arhīvs” ir sadaļa **Saziņa**: atzīme “Ievietots ziņapmaiņas grupā” (WhatsApp, Signal vai cita). Kamēr atzīmes nav, rinda ir sarkana un persona ir brīdinājumos. Atzīmi var likt arī vairākām personām uzreiz.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.

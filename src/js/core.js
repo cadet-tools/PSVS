@@ -346,7 +346,7 @@ window.CP = window.CP || {};
     retention: { left: { act: 'anon', on: true, m: 12 }, cand: { m: 6, on: true }, med: { m: 3, on: true }, comms: { m: 24, on: true }, ext: { m: 12, on: true }, backups: { m: 6, on: true }, changelog: { m: 12, on: true } },
     docKinds: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa', 'MTL aprites lapa', 'Jaunsarga apliecība', 'Pateicības raksts', 'Paskaidrojums', 'Cits'],
     requiredDocs: ['Pieteikuma anketa', 'Līgums', 'Ārsta izziņa'],
-    registries: ['dvs', 'arhivs', 'eklase'], arhivsAdded: true,
+    registries: ['dvs', 'arhivs', 'eklase', 'sazina'], arhivsAdded: true, sazinaAdded: true,
     archiveDocs: ['Pieteikuma anketa', 'Līgums'],
     // pasākumu dokumenti: katram dalībniekam (visiem pasākumiem / nometnēm) un pasākumam kopīgie
     evDocsAll: ['Vecāku atļauja'], evDocsCamp: ['Dalībnieka aptaujas lapa'], evDocsEvent: ['Kopējā parakstu lapa'], evDocsEventCamp: ['Nometnes žurnāls (aizpildīts)'],
@@ -406,6 +406,7 @@ window.CP = window.CP || {};
     for (const k of ['docKinds', 'requiredDocs', 'templates', 'tools', 'formTemplates', 'staff', 'docTemplates', 'registries', 'quals', 'archiveDocs', 'evDocsAll', 'evDocsCamp', 'evDocsEvent', 'evDocsEventCamp']) if (!Array.isArray(d.settings[k])) d.settings[k] = def[k];
     // jaunā atzīme “Centra arhīvs” — esošajām datu mapēm ieslēdz vienu reizi (lietotājs vēlāk var izslēgt)
     if (!raw.settings?.arhivsAdded) { if (!d.settings.registries.includes('arhivs')) d.settings.registries.splice(1, 0, 'arhivs'); d.settings.arhivsAdded = true; }
+    if (!raw.settings?.sazinaAdded) { if (!d.settings.registries.includes('sazina')) d.settings.registries.push('sazina'); d.settings.sazinaAdded = true; }
     d.settings.formDefaults = { ...def.formDefaults, ...(raw.settings?.formDefaults || {}) };
     d.settings.docValidity = { ...def.docValidity, ...(raw.settings?.docValidity || {}) };
     d.settings.retention = Object.fromEntries(Object.entries(def.retention).map(([k, v]) => [k, { ...v, ...((raw.settings?.retention || {})[k] || {}) }]));
