@@ -17,6 +17,7 @@
 - Meklētājs atrod personas kartīti arī pēc vecāka vārda un uzvārda (abi vecāki): sānjosla, personu saraksts, arhīvs un Ctrl+K. Zem vārda parādās, kurš vecāks atbilda, piemēram “Tēvs: Mārtiņš Āboltiņš”. Atveras bērna kartīte.
 - Reģistrācijas un arhīva datumus var ierakstīt ar tastatūru, ne tikai izvēlēties kalendārā. Ierakstot ciparu, lauks vairs neaizveras. Tas pats DVS, Centra arhīvam, e-klasei un saziņai.
 - Personas kartītē arhivētam līgumam ir ✕. Tas noņem ierakstu no kartītes (apstiprinājums). Word fails personas mapē paliek. Līguma numurs kartītē paliek.
+- Nomainot līguma numuru dokumenta logā (“Rediģēt dokumentu”) vai piesaistot līguma failu, kartītes **Līguma Nr.** nomainās uz šo numuru. Agrāk numurs kartītē palika, ja tur jau bija ieraksts.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.

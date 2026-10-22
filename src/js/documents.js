@@ -182,9 +182,9 @@
     dform.elements.received.value = U.iso(); dform.elements.format.value = 'paper'; dform.dataset.autoExp = '1'; docRuleUi(); U.$('documentDialog').showModal();
   };
   const isContract = kind => kind === 'Līgums';
-  /** Ja personai līguma numura vēl nav, ieraksta to, ko instruktors tikko ievadīja pie dokumenta. */
+  /** Kartītes “Līguma Nr.” ir tas pats numurs, ko instruktors ieraksta pie līguma dokumenta. Maiņa pārraksta iepriekšējo. */
   function rememberContractNo(personId, no) {
-    const p = D.person(personId), n = String(no || '').trim(); if (!p || !n || p.contractNo) return;
+    const p = D.person(personId), n = String(no || '').trim(); if (!p || !n || p.contractNo === n) return;
     p.contractNo = n; D.audit(personId, 'update', ['Līguma Nr.']);
   }
   /** Ārsta izziņa u.c.: prasa izsniegšanas datumu, termiņu aprēķina pats (var labot). Līgumam — numurs. */
