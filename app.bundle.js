@@ -41,6 +41,16 @@ window.CP = window.CP || {};
   U.norm = s => String(s || '').toLocaleLowerCase('lv').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9@.+]+/g, ' ').trim();
   U.full = p => `${p?.first || ''} ${p?.last || ''}`.trim();
   U.sortName = p => `${p?.last || ''} ${p?.first || ''}`.trim();
+  /** Teksts, pēc kura atrod personas kartīti: jaunietis un abi vecāki. */
+  U.personFind = p => [U.full(p), U.sortName(p), p?.parentName, p?.parent2Name].filter(Boolean).join(' ');
+  /** Ja vaicājums trāpa vecākam, nevis pašam jaunsargam — “Tēvs: Vārds Uzvārds”. */
+  U.parentFind = (p, q) => {
+    const n = U.norm(q).replace(/ /g, '');
+    if (!n || !p) return '';
+    if (U.norm(U.full(p) + ' ' + U.sortName(p)).replace(/ /g, '').includes(n)) return '';
+    const hit = (name, role) => name && U.norm(name).replace(/ /g, '').includes(n) ? `${role || 'Vecāks'}: ${name}` : '';
+    return [hit(p.parentName, p.parentRelation || 'Vecāks'), hit(p.parent2Name, p.parent2Relation || 'Otrs vecāks')].filter(Boolean).join(' · ');
+  };
   U.initials = p => ((p?.first || '?')[0] + (p?.last || '?')[0]).toUpperCase();
   U.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   U.debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
@@ -2134,13 +2144,14 @@ window.CP = window.CP || {};
     U.$('sideArchive').checked = S.sideArchive;
     const q = U.norm(U.$('search').value).replace(/ /g, '');
     const people = S.db.people.filter(p => D.inYear(p) && (S.sideArchive ? p.status === 'archived' : p.status !== 'archived') && D.inGroup(p, S.groupFilter)
-      && (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name, p.phone, p.parentPhone, p.email, p.parentEmail, p.school].join(' ')).replace(/ /g, '').includes(q)))
+      && (!q || U.norm([U.personFind(p), D.groupOf(p), p.phone, p.parentPhone, p.parent2Phone, p.email, p.parentEmail, p.school].join(' ')).replace(/ /g, '').includes(q)))
       .sort((a, b) => U.cmp(U.sortName(a), U.sortName(b)));
     U.$('sideCount').textContent = people.length;
     U.$('sideList').innerHTML = people.map(p => {
       const miss = p.status !== 'archived' && D.missingDocs(p).length;
+      const ph = U.parentFind(p, U.$('search').value);
       return `<button class="person ${S.page === 'person' && S.selected === p.id ? 'active' : ''} ${p.status === 'archived' ? 'archived' : ''}" data-person="${p.id}">
-        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${D.groupOf(p) ? U.esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
+        ${ui.avatar(p)}<span class="p-meta"><b>${U.esc(U.sortName(p))}</b><small>${D.groupOf(p) ? U.esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}${ph ? ' · ' + U.esc(ph) : ''}${D.partStatus(p) !== 'active' ? ' · ' + (CP.STATUSES[D.partStatus(p)] || '') : ''}</small></span>
         ${miss ? `<span class="dot" title="Trūkst dokumentu: ${miss}"></span>` : ''}</button>`;
     }).join('') || `<p class="muted small pad">${S.boot && !S.root ? (S.boot.error ? 'Datu mape nav pieejama' : 'Gaida datu mapi…') : S.db.people.length ? 'Šajā mācību gadā neviens nav atrasts' : 'Vēl nav personu'}</p>`;
   }
@@ -2636,7 +2647,7 @@ window.CP = window.CP || {};
       (L.status === 'all' || (L.status === 'current' ? D.partStatus(p) !== 'archived' : D.partStatus(p) === L.status)) &&
       D.inGroup(p, L.group) &&
       (!L.missing || (D.partStatus(p) !== 'archived' && D.missingDocs(p).length)) &&
-      (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.phone, p.parentPhone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
+      (!q || U.norm([U.personFind(p), D.groupOf(p), p.phone, p.parentPhone, p.parent2Phone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
     const key = {
       name: p => U.sortName(p).toLocaleLowerCase('lv'), group: p => (D.groupOf(p) || '~').toLocaleLowerCase('lv'), age: p => p.birth || '9999',
       status: p => D.partStatus(p), docs: p => D.missingDocs(p).length, contact: p => last[p.id] || ''
@@ -2669,7 +2680,7 @@ window.CP = window.CP || {};
         const miss = D.missingDocs(p), c = D.contacts(p).find(c => c.kind === 'parent') || D.contacts(p)[0];
         return `<tr class="${L.sel.has(p.id) ? 'sel' : ''}" data-person="${p.id}">
           <td class="chk"><input type="checkbox" data-act="listSel" data-arg="${p.id}" ${L.sel.has(p.id) ? 'checked' : ''} aria-label="Atlasīt"></td>
-          <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass].filter(Boolean).join(', '))}</small></span></div></td>
+          <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass, U.parentFind(p, L.q)].filter(Boolean).join(' · '))}</small></span></div></td>
           <td>${D.groupOf(p) ? esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}</td>
           <td>${p.birth ? U.age(p.birth) : '—'}</td>
           <td>${ui.status(D.partStatus(p))}</td>
@@ -2700,18 +2711,18 @@ window.CP = window.CP || {};
     render() {
       const q = U.norm(S.arcQ || '').replace(/ /g, ''), def = S.db.settings.retentionDefault ?? 12;
       const all = S.db.people.filter(p => p.status === 'archived');
-      const rows = all.filter(p => !q || U.norm([U.full(p), U.sortName(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
+      const rows = all.filter(p => !q || U.norm([U.personFind(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
         .sort((a, b) => String(b.left || '').localeCompare(String(a.left || '')) || U.cmp(U.sortName(a), U.sortName(b)));
       const years = p => D.enrollmentsOf(p.id).map(e => U.yearLabel(e.yearId)).join(', ');
       const due = p => p.anon ? '' : U.addMonths(p.left || String(p.updatedAt || '').slice(0, 10), p.retentionMonths ?? def);
       const body = !all.length ? ui.empty('Arhīvā vēl nav neviena.', '<p class="muted small">Kad jaunsargs izstājas, viņa kartītē spied <b>⋯ → Arhivēt (izstājies)</b>. Arhīvā dati glabājas līdz glabāšanas termiņa beigām.</p>')
         : `<div class="tablewrap"><table class="table"><thead><tr><th>Persona</th><th>Mācību gadi</th><th>Izstājies</th><th>Iemesls</th><th>Glabāt līdz</th></tr></thead><tbody>
-          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
+          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(), ph = U.parentFind(p, S.arcQ); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${ph ? `<small class="muted">${esc(ph)}</small>` : ''}${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
             <td class="small">${esc(years(p) || '—')}</td><td>${U.fmtDate(p.left) || '—'}</td><td class="small">${esc(p.reason || '')}</td>
             <td>${p.anon ? '<span class="muted">—</span>' : `<span class="${over ? 'pill warn' : ''}">${U.fmtDate(d)}${over ? ' · beidzies' : ''}</span>`}</td></tr>`; }).join('') || `<tr><td colspan="5" class="muted">Pēc meklējuma neviens netika atrasts.</td></tr>`}</tbody></table></div>
           <p class="muted small">${all.length} ${all.length % 10 === 1 && all.length % 100 !== 11 ? 'persona' : 'personas'} arhīvā (visos mācību gados).</p>`;
       return `<div class="page">${ui.pageHead('Arhīvs', 'Izstājušies jaunsargi un kandidāti no visiem mācību gadiem. Atver kartīti, lai atjaunotu vai dzēstu.', `<button data-page="retention">Glabāšanas termiņi →</button>`)}
-        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
+        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, vecāks, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
         <section class="card">${body}</section></div>`;
     }
   };
@@ -14626,8 +14637,9 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
     help.forEach((x, i) => out.push({ g: 'Palīgs', i: 'chat', l: x.h.t, help: x.h, open: i === 0, s: 10 + x.s, run: () => guide(x.h) }));
     if (S.db) {
       // persona vaicājumā (arī locījumā: “Annai”, “Kalniņam”) + ko ar to darīt
-      const nameHit = (p, t) => { if (t.length < 3) return false; const st = stem(t); return U.norm(U.full(p)).split(' ').some(w => w === t || (w.length > 2 && (w.startsWith(st) || t.startsWith(w)))); };
-      const cand = S.db.people.map(p => { const used = qt.filter(t => nameHit(p, t)); return { p, used, s: used.length }; }).filter(x => x.s).sort((a, b) => b.s - a.s || (D.inYear(b.p) - D.inYear(a.p)));
+      const wordHit = (name, t) => { if (!name || t.length < 3) return false; const st = stem(t); return U.norm(name).split(' ').some(w => w === t || (w.length > 2 && (w.startsWith(st) || t.startsWith(w)))); };
+      const nameHit = (p, t) => wordHit(U.full(p), t) || wordHit(p.parentName, t) || wordHit(p.parent2Name, t);
+      const cand = S.db.people.map(p => { const used = qt.filter(t => nameHit(p, t)); return { p, used, s: used.length, own: qt.filter(t => wordHit(U.full(p), t)).length }; }).filter(x => x.s).sort((a, b) => b.s - a.s || b.own - a.own || (D.inYear(b.p) - D.inYear(a.p)));
       const top = cand[0];
       if (top && (cand.length === 1 || cand[1].s < top.s || qt.length === top.s)) {
         const rest = qt.filter(t => !top.used.includes(t)), p = top.p;
@@ -14636,10 +14648,10 @@ ${o.incidents.length ? `<h2>Uzvedība un pārkāpumi</h2>${tbl(['Datums', 'Veids
         list.forEach((x, k) => out.push({ g: 'Persona: ' + U.full(p), i: x.i, l: x.l, sub: k === 0 && hits.length ? U.full(p) : '', s: (hits.length ? 12 : 6) - k * 0.01, run: () => x.run(p) }));
       }
       const pp = S.db.people.map(p => {
-        const text = U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name].filter(Boolean).join(' '));
+        const text = U.norm([U.personFind(p), D.groupOf(p)].filter(Boolean).join(' '));
         return { p, s: score(qt, text) + (U.norm(U.full(p)).startsWith(all) ? 1 : 0) };
       }).filter(x => x.s >= 1).sort((a, b) => b.s - a.s || U.cmp(U.sortName(a.p), U.sortName(b.p))).slice(0, 8);
-      for (const { p, s } of pp) out.push({ g: 'Personas', i: 'user', l: U.full(p) || 'Persona', sub: [D.groupOf(p), p.status === 'archived' ? 'arhīvā' : '', !D.inYear(p) ? 'nav šajā gadā' : ''].filter(Boolean).join(' · '), s: 5 + s, run: person(p.id) });
+      for (const { p, s } of pp) out.push({ g: 'Personas', i: 'user', l: U.full(p) || 'Persona', sub: [U.parentFind(p, q), D.groupOf(p), p.status === 'archived' ? 'arhīvā' : '', !D.inYear(p) ? 'nav šajā gadā' : ''].filter(Boolean).join(' · '), s: 5 + s, run: person(p.id) });
       const dd = (S.db.documents || []).map(d => { const p = D.person(d.personId); return { d, p, s: score(qt, U.norm([d.kind, d.title, d.path?.split('/').pop(), p && U.full(p)].filter(Boolean).join(' '))) }; })
         .filter(x => x.s >= 1).sort((a, b) => b.s - a.s || String(b.d.addedAt).localeCompare(String(a.d.addedAt))).slice(0, 6);
       for (const { d, p, s } of dd) out.push({ g: 'Dokumenti', i: 'file', l: (d.title || d.kind || 'Dokuments'), sub: [p && U.full(p), U.fmtDate(D.docDate(d))].filter(Boolean).join(' · '), s: 3 + s, run: p ? person(p.id, 'docs') : page('documents') });

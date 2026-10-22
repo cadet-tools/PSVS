@@ -38,6 +38,16 @@ window.CP = window.CP || {};
   U.norm = s => String(s || '').toLocaleLowerCase('lv').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9@.+]+/g, ' ').trim();
   U.full = p => `${p?.first || ''} ${p?.last || ''}`.trim();
   U.sortName = p => `${p?.last || ''} ${p?.first || ''}`.trim();
+  /** Teksts, pēc kura atrod personas kartīti: jaunietis un abi vecāki. */
+  U.personFind = p => [U.full(p), U.sortName(p), p?.parentName, p?.parent2Name].filter(Boolean).join(' ');
+  /** Ja vaicājums trāpa vecākam, nevis pašam jaunsargam — “Tēvs: Vārds Uzvārds”. */
+  U.parentFind = (p, q) => {
+    const n = U.norm(q).replace(/ /g, '');
+    if (!n || !p) return '';
+    if (U.norm(U.full(p) + ' ' + U.sortName(p)).replace(/ /g, '').includes(n)) return '';
+    const hit = (name, role) => name && U.norm(name).replace(/ /g, '').includes(n) ? `${role || 'Vecāks'}: ${name}` : '';
+    return [hit(p.parentName, p.parentRelation || 'Vecāks'), hit(p.parent2Name, p.parent2Relation || 'Otrs vecāks')].filter(Boolean).join(' · ');
+  };
   U.initials = p => ((p?.first || '?')[0] + (p?.last || '?')[0]).toUpperCase();
   U.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   U.debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };

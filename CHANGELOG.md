@@ -14,6 +14,7 @@
 - Kartītē pie “Reģistrācija un arhīvs” ir sadaļa **Saziņa**: atzīme “Ievietots ziņapmaiņas grupā” (WhatsApp, Signal vai cita). Kamēr atzīmes nav, rinda ir sarkana un persona ir brīdinājumos. Atzīmi var likt arī vairākām personām uzreiz.
 - Saziņā ir divas atzīmes: **Jaunsargs** un **Vecāks**. Brīdinājums paliek tikai tam, kurš vēl nav grupā. Agrākā vienā atzīme skaitās abiem; lieko var noņemt.
 - Kontakta vārds pie numura ir tikai šī cilvēka vārds un uzvārds: bērns “Valters Bricka”, vecāks “Mārtiņš Bricka”, ārkārtas persona “Inga Bricka”. Bērns, vecāki, ārkārtas persona un viņu numuri ir piezīmē. Jau saglabātie kontakti jānoskenē vēlreiz.
+- Meklētājs atrod personas kartīti arī pēc vecāka vārda un uzvārda (abi vecāki): sānjosla, personu saraksts, arhīvs un Ctrl+K. Zem vārda parādās, kurš vecāks atbilda, piemēram “Tēvs: Mārtiņš Āboltiņš”. Atveras bērna kartīte.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.

@@ -291,8 +291,9 @@
     help.forEach((x, i) => out.push({ g: 'Palīgs', i: 'chat', l: x.h.t, help: x.h, open: i === 0, s: 10 + x.s, run: () => guide(x.h) }));
     if (S.db) {
       // persona vaicājumā (arī locījumā: “Annai”, “Kalniņam”) + ko ar to darīt
-      const nameHit = (p, t) => { if (t.length < 3) return false; const st = stem(t); return U.norm(U.full(p)).split(' ').some(w => w === t || (w.length > 2 && (w.startsWith(st) || t.startsWith(w)))); };
-      const cand = S.db.people.map(p => { const used = qt.filter(t => nameHit(p, t)); return { p, used, s: used.length }; }).filter(x => x.s).sort((a, b) => b.s - a.s || (D.inYear(b.p) - D.inYear(a.p)));
+      const wordHit = (name, t) => { if (!name || t.length < 3) return false; const st = stem(t); return U.norm(name).split(' ').some(w => w === t || (w.length > 2 && (w.startsWith(st) || t.startsWith(w)))); };
+      const nameHit = (p, t) => wordHit(U.full(p), t) || wordHit(p.parentName, t) || wordHit(p.parent2Name, t);
+      const cand = S.db.people.map(p => { const used = qt.filter(t => nameHit(p, t)); return { p, used, s: used.length, own: qt.filter(t => wordHit(U.full(p), t)).length }; }).filter(x => x.s).sort((a, b) => b.s - a.s || b.own - a.own || (D.inYear(b.p) - D.inYear(a.p)));
       const top = cand[0];
       if (top && (cand.length === 1 || cand[1].s < top.s || qt.length === top.s)) {
         const rest = qt.filter(t => !top.used.includes(t)), p = top.p;
@@ -301,10 +302,10 @@
         list.forEach((x, k) => out.push({ g: 'Persona: ' + U.full(p), i: x.i, l: x.l, sub: k === 0 && hits.length ? U.full(p) : '', s: (hits.length ? 12 : 6) - k * 0.01, run: () => x.run(p) }));
       }
       const pp = S.db.people.map(p => {
-        const text = U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.parent2Name].filter(Boolean).join(' '));
+        const text = U.norm([U.personFind(p), D.groupOf(p)].filter(Boolean).join(' '));
         return { p, s: score(qt, text) + (U.norm(U.full(p)).startsWith(all) ? 1 : 0) };
       }).filter(x => x.s >= 1).sort((a, b) => b.s - a.s || U.cmp(U.sortName(a.p), U.sortName(b.p))).slice(0, 8);
-      for (const { p, s } of pp) out.push({ g: 'Personas', i: 'user', l: U.full(p) || 'Persona', sub: [D.groupOf(p), p.status === 'archived' ? 'arhīvā' : '', !D.inYear(p) ? 'nav šajā gadā' : ''].filter(Boolean).join(' · '), s: 5 + s, run: person(p.id) });
+      for (const { p, s } of pp) out.push({ g: 'Personas', i: 'user', l: U.full(p) || 'Persona', sub: [U.parentFind(p, q), D.groupOf(p), p.status === 'archived' ? 'arhīvā' : '', !D.inYear(p) ? 'nav šajā gadā' : ''].filter(Boolean).join(' · '), s: 5 + s, run: person(p.id) });
       const dd = (S.db.documents || []).map(d => { const p = D.person(d.personId); return { d, p, s: score(qt, U.norm([d.kind, d.title, d.path?.split('/').pop(), p && U.full(p)].filter(Boolean).join(' '))) }; })
         .filter(x => x.s >= 1).sort((a, b) => b.s - a.s || String(b.d.addedAt).localeCompare(String(a.d.addedAt))).slice(0, 6);
       for (const { d, p, s } of dd) out.push({ g: 'Dokumenti', i: 'file', l: (d.title || d.kind || 'Dokuments'), sub: [p && U.full(p), U.fmtDate(D.docDate(d))].filter(Boolean).join(' · '), s: 3 + s, run: p ? person(p.id, 'docs') : page('documents') });

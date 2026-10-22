@@ -16,7 +16,7 @@
       (L.status === 'all' || (L.status === 'current' ? D.partStatus(p) !== 'archived' : D.partStatus(p) === L.status)) &&
       D.inGroup(p, L.group) &&
       (!L.missing || (D.partStatus(p) !== 'archived' && D.missingDocs(p).length)) &&
-      (!q || U.norm([U.full(p), U.sortName(p), D.groupOf(p), p.parentName, p.phone, p.parentPhone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
+      (!q || U.norm([U.personFind(p), D.groupOf(p), p.phone, p.parentPhone, p.parent2Phone, p.email, p.parentEmail, p.school, p.schoolClass].join(' ')).replace(/ /g, '').includes(q)));
     const key = {
       name: p => U.sortName(p).toLocaleLowerCase('lv'), group: p => (D.groupOf(p) || '~').toLocaleLowerCase('lv'), age: p => p.birth || '9999',
       status: p => D.partStatus(p), docs: p => D.missingDocs(p).length, contact: p => last[p.id] || ''
@@ -49,7 +49,7 @@
         const miss = D.missingDocs(p), c = D.contacts(p).find(c => c.kind === 'parent') || D.contacts(p)[0];
         return `<tr class="${L.sel.has(p.id) ? 'sel' : ''}" data-person="${p.id}">
           <td class="chk"><input type="checkbox" data-act="listSel" data-arg="${p.id}" ${L.sel.has(p.id) ? 'checked' : ''} aria-label="Atlasīt"></td>
-          <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass].filter(Boolean).join(', '))}</small></span></div></td>
+          <td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b><small class="muted">${esc([p.school, p.schoolClass, U.parentFind(p, L.q)].filter(Boolean).join(' · '))}</small></span></div></td>
           <td>${D.groupOf(p) ? esc(D.groupOf(p)) : '<span class="warn">⚠ Bez grupas</span>'}</td>
           <td>${p.birth ? U.age(p.birth) : '—'}</td>
           <td>${ui.status(D.partStatus(p))}</td>
@@ -80,18 +80,18 @@
     render() {
       const q = U.norm(S.arcQ || '').replace(/ /g, ''), def = S.db.settings.retentionDefault ?? 12;
       const all = S.db.people.filter(p => p.status === 'archived');
-      const rows = all.filter(p => !q || U.norm([U.full(p), U.sortName(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
+      const rows = all.filter(p => !q || U.norm([U.personFind(p), p.reason, ...D.enrollmentsOf(p.id).map(e => e.group)].join(' ')).replace(/ /g, '').includes(q))
         .sort((a, b) => String(b.left || '').localeCompare(String(a.left || '')) || U.cmp(U.sortName(a), U.sortName(b)));
       const years = p => D.enrollmentsOf(p.id).map(e => U.yearLabel(e.yearId)).join(', ');
       const due = p => p.anon ? '' : U.addMonths(p.left || String(p.updatedAt || '').slice(0, 10), p.retentionMonths ?? def);
       const body = !all.length ? ui.empty('Arhīvā vēl nav neviena.', '<p class="muted small">Kad jaunsargs izstājas, viņa kartītē spied <b>⋯ → Arhivēt (izstājies)</b>. Arhīvā dati glabājas līdz glabāšanas termiņa beigām.</p>')
         : `<div class="tablewrap"><table class="table"><thead><tr><th>Persona</th><th>Mācību gadi</th><th>Izstājies</th><th>Iemesls</th><th>Glabāt līdz</th></tr></thead><tbody>
-          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
+          ${rows.map(p => { const d = due(p), over = d && d <= U.iso(), ph = U.parentFind(p, S.arcQ); return `<tr data-person="${p.id}"><td><div class="who">${ui.avatar(p, 'sm')}<span><b>${esc(U.sortName(p))}</b>${ph ? `<small class="muted">${esc(ph)}</small>` : ''}${p.anon ? '<small class="muted">anonimizēts</small>' : ''}</span></div></td>
             <td class="small">${esc(years(p) || '—')}</td><td>${U.fmtDate(p.left) || '—'}</td><td class="small">${esc(p.reason || '')}</td>
             <td>${p.anon ? '<span class="muted">—</span>' : `<span class="${over ? 'pill warn' : ''}">${U.fmtDate(d)}${over ? ' · beidzies' : ''}</span>`}</td></tr>`; }).join('') || `<tr><td colspan="5" class="muted">Pēc meklējuma neviens netika atrasts.</td></tr>`}</tbody></table></div>
           <p class="muted small">${all.length} ${all.length % 10 === 1 && all.length % 100 !== 11 ? 'persona' : 'personas'} arhīvā (visos mācību gados).</p>`;
       return `<div class="page">${ui.pageHead('Arhīvs', 'Izstājušies jaunsargi un kandidāti no visiem mācību gadiem. Atver kartīti, lai atjaunotu vai dzēstu.', `<button data-page="retention">Glabāšanas termiņi →</button>`)}
-        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
+        ${all.length ? `<div class="filters card"><input id="arcQ" type="search" placeholder="Meklēt arhīvā (vārds, vecāks, grupa, iemesls)…" value="${esc(S.arcQ || '')}"></div>` : ''}
         <section class="card">${body}</section></div>`;
     }
   };
