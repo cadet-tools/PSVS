@@ -4579,48 +4579,39 @@ window.CP = window.CP || {};
   const ve = s => String(s || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
   const splitName = full => { const p = String(full || '').trim().split(/\s+/); return p.length > 1 ? [p.slice(0, -1).join(' '), p.at(-1)] : [p[0] || '', '']; };
   /** Visi personas kontakti kā vCard ieraksti (jaunietis, vecāki, ārkārtas).
-      Katra kartīte ir sava cilvēka īstais vārds un uzvārds, iekavās — pārējie, lai redz saistību:
-      “Valters Bricka (Mārtiņš Bricka tēvs, ārkārtas persona Inga Bricka)”,
-      “Mārtiņš Bricka (Valters Bricka bērns, ārkārtas persona Inga Bricka)”,
-      “Inga Bricka, ārkārtas persona (Valters Bricka bērns, Mārtiņš Bricka tēvs)”.
-      Kartītē ir tikai šī cilvēka numurs. Pārējo numuri paliek piezīmē.
+      Vārds pie numura ir tikai šī cilvēka vārds un uzvārds: “Valters Bricka”, “Mārtiņš Bricka”, “Inga Bricka”.
+      Bērns, vecāki, ārkārtas persona un viņu numuri ir piezīmē, nevis vārdā.
+      Kartītē ir tikai šī cilvēka numurs.
       Etiķetes (Google “Labels”): “Jaunsardze – jaunsargi” / “Jaunsardze – vecāki”. */
   function entries(p) {
     const st = S.db.settings, org = st.contactOrg || 'Jaunsardze';
     const labYouth = st.labelYouth || `${org} – jaunsargi`, labParents = st.labelParents || `${org} – vecāki`;
     const child = U.full(p), all = D.contacts(p), out = [];
-    const relWord = c => c.kind === 'youth' ? 'Bērns' : c.kind === 'emergency' ? 'Ārkārtas kontakts' + (p.emergencyRelation ? ` (${p.emergencyRelation})` : '') : (c.role || 'Vecāks');
-    const linkOf = c => {
-      if (c.kind === 'youth') return child ? `${child} bērns` : 'bērns';
-      if (c.kind === 'emergency') { const name = String(c.name || '').trim(); return name ? `ārkārtas persona ${name}` : 'ārkārtas persona'; }
-      const name = String(c.name || '').trim(), role = (c.role || 'vecāks').toLowerCase();
-      return name ? `${name} ${role}` : role;
+    const roleHead = c => c.kind === 'youth' ? 'Bērns' : c.kind === 'emergency' ? 'Ārkārtas persona' + (p.emergencyRelation ? ` (${p.emergencyRelation})` : '') : (c.role || 'Vecāks');
+    const otherLine = o => {
+      const who = o.kind === 'youth' ? [child, D.groupOf(p) ? 'grupa ' + D.groupOf(p) : ''].filter(Boolean).join(', ') : (String(o.name || '').trim() || '—');
+      return [roleHead(o) + ':', who, U.normPhone(o.phone) ? U.prettyPhone(o.phone) : '', o.email || ''].filter(Boolean).join(' ');
     };
     for (const c of all) {
       const n = U.normPhone(c.phone); if (!n && !c.email) continue;
-      const isYouth = c.kind === 'youth', isEm = c.kind === 'emergency';
+      const isYouth = c.kind === 'youth';
       const others = all.filter(o => o !== c);
-      const links = others.map(linkOf).filter(Boolean);
-      const paren = links.length ? `(${links.join(', ')})` : (isYouth && D.groupOf(p) ? `(${D.groupOf(p)})` : '');
       const name = String(c.name || '').trim();
-      let first, last, own;
-      if (isYouth) { first = p.first || ''; last = p.last || ''; own = child; }
-      else if (isEm) { [first, last] = splitName(name || 'Ārkārtas persona'); own = name ? `${name}, ārkārtas persona` : 'Ārkārtas persona'; }
-      else { [first, last] = splitName(name || c.role || 'Vecāks'); own = name || c.role || 'Vecāks'; }
-      const full = [own, paren].filter(Boolean).join(' ');
-      const suffix = [isEm ? 'ārkārtas persona' : '', paren].filter(Boolean).join(' ');
+      let first, last, full;
+      if (isYouth) { first = p.first || ''; last = p.last || ''; full = child || 'Bērns'; }
+      else if (name) { [first, last] = splitName(name); full = name; }
+      else { first = roleHead(c); last = ''; full = roleHead(c); }
+      const school = [p.school, p.schoolClass].filter(Boolean).join(' ');
+      const selfLine = isYouth ? ['Bērns', D.groupOf(p) ? 'grupa ' + D.groupOf(p) : '', school].filter(Boolean).join(', ') : roleHead(c);
+      const note = [selfLine, ...others.map(otherLine)].join('\n');
       const rel = [];
       others.forEach((o, i) => {
-        if (o.name || o.kind === 'youth') rel.push(`item${i + 1}.X-ABRELATEDNAMES:${ve(o.kind === 'youth' ? child : o.name)}`, `item${i + 1}.X-ABLabel:${ve(relWord(o))}`);
+        if (o.name || o.kind === 'youth') rel.push(`item${i + 1}.X-ABRELATEDNAMES:${ve(o.kind === 'youth' ? child : o.name)}`, `item${i + 1}.X-ABLabel:${ve(roleHead(o))}`);
       });
-      const note = [
-        isYouth ? `Jaunsargs${D.groupOf(p) ? ', grupa ' + D.groupOf(p) : ''}${p.school ? ', ' + p.school : ''}${p.schoolClass ? ' ' + p.schoolClass : ''}` : `${relWord(c)} — ${child}${D.groupOf(p) ? ' (' + D.groupOf(p) + ')' : ''}`,
-        ...others.map(o => `${relWord(o)}: ${o.kind === 'youth' ? child : o.name || '—'}${U.normPhone(o.phone) ? ' ' + U.prettyPhone(o.phone) : ''}${o.email ? ' ' + o.email : ''}`)
-      ].join('\n');
-      out.push({ key: c.idx, kind: c.kind, label: `${c.role}: ${c.name || '—'}`, full, phone: n ? '+' + n : '', email: c.email || '', relCount: others.length,
-        vcf: ['BEGIN:VCARD', 'VERSION:3.0', `N:${ve(last)};${ve(first)};;;${ve(suffix)}`, `FN:${ve(full)}`,
+      out.push({ key: c.idx, kind: c.kind, label: `${c.role}: ${c.name || '—'}`, full, note, phone: n ? '+' + n : '', email: c.email || '', relCount: others.length,
+        vcf: ['BEGIN:VCARD', 'VERSION:3.0', `N:${ve(last)};${ve(first)};;;`, `FN:${ve(full)}`,
           n && `TEL;TYPE=CELL:+${n}`, c.email && `EMAIL;TYPE=INTERNET:${ve(c.email)}`, `ORG:${ve(org)}${D.groupOf(p) ? ';' + ve(D.groupOf(p)) : ''}`,
-          isYouth ? '' : `TITLE:${ve(relWord(c))}`, ...rel, `NOTE:${ve(note)}`,
+          ...rel, `NOTE:${ve(note)}`,
           `CATEGORIES:${[org, isYouth ? labYouth : labParents].map(x => x.replace(/,/g, ' ')).join(',')}`,
           'END:VCARD'].filter(Boolean).join('\r\n') });
     }
@@ -4647,7 +4638,7 @@ window.CP = window.CP || {};
       await CP.reader.loadScript(QR_URL);
       const q = window.qrcode; q.stringToBytes = q.stringToBytesFuncs['UTF-8'];
       const qr = q(0, 'L'); qr.addData(e.vcf, 'Byte'); qr.make();
-      box.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 3, scalable: true }) + `<p class="small"><b>${esc(e.full)}</b></p>`;
+      box.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 3, scalable: true }) + `<p class="small"><b>${esc(e.full)}</b></p>` + (e.note ? `<p class="small" style="text-align:left;white-space:pre-line">${esc(e.note)}</p>` : '');
     } catch (err) { box.innerHTML = `<p class="warn small">QR kodu neizdevās izveidot no lokālās bibliotēkas. Lieto .vcf failu.</p>`; }
   }
   A.vcDownload = () => {
