@@ -40,11 +40,17 @@
     setArc(p, kind, !was);
     D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: ${was ? 'atzīme noņemta' : 'nodots'}`]); CP.store.changed();
   };
+  /** Datuma lauks: saglabā uzreiz, bet nepārzīmē kartīti. Citādi pēc pirmā cipara fokuss pazūd un datumu nevar ierakstīt. */
+  function keepDate(t, prev, apply, audit) {
+    if (!t.value || t.value === prev) return true;
+    apply(t.value); D.audit(t._pid, 'update', [audit(t.value)]);
+    CP.store.changed({ silent: true }); return true;
+  }
   CP.changeHandlers.push(e => {
     const t = e.target, v = t.dataset?.arcdate; if (v == null) return false;
-    const [id, i] = v.split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind || !t.value) return true;
-    setArc(p, kind, true, t.value); D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: datums ${U.fmtDate(t.value)}`]);
-    setTimeout(() => CP.store.changed(), 0); return true;
+    const [id, i] = v.split('|'), p = D.person(id), kind = arcDocs()[Number(i)]; if (!p || !kind) return true;
+    t._pid = id;
+    return keepDate(t, arcOf(p, kind)?.date || '', d => setArc(p, kind, true, d), d => `Centra arhīvs — ${kind}: datums ${U.fmtDate(d)}`);
   });
   /* --- Saziņa: jaunsargs un vecāks atsevišķi (viens var būt grupā, otrs ne) --- */
   const sazOf = (p, who) => {
@@ -129,16 +135,22 @@
   /** Reģistrācijas datuma maiņa (dokuments var būt reģistrēts citā dienā) */
   CP.changeHandlers.push(e => {
     const t = e.target, v = t.dataset?.dvsdate; if (v == null) return false;
-    const [id, i] = v.split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind || !t.value) return true;
-    setDvs(p, kind, true, t.value); D.audit(p.id, 'update', [`DVS — ${kind}: datums ${U.fmtDate(t.value)}`]);
-    setTimeout(() => CP.store.changed(), 0); return true;
+    const [id, i] = v.split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind) return true;
+    t._pid = id;
+    return keepDate(t, dvsOf(p, kind)?.date || '', d => setDvs(p, kind, true, d), d => `DVS — ${kind}: datums ${U.fmtDate(d)}`);
   });
   CP.changeHandlers.push(e => {
     const t = e.target, v = t.dataset?.sazdate; if (v == null) return false;
-    const [id, who] = v.split('|'), p = D.person(id); if (!p || !SAZ.some(([k]) => k === who) || !t.value) return true;
-    setSaz(p, who, true, t.value);
-    D.audit(p.id, 'update', [`Ziņapmaiņas grupa — ${SAZ.find(([k]) => k === who)[1]}: datums ${U.fmtDate(t.value)}`]);
-    setTimeout(() => CP.store.changed(), 0); return true;
+    const [id, who] = v.split('|'), p = D.person(id); if (!p || !SAZ.some(([k]) => k === who)) return true;
+    t._pid = id;
+    const label = SAZ.find(([k]) => k === who)[1];
+    return keepDate(t, sazOf(p, who)?.date || '', d => setSaz(p, who, true, d), d => `Ziņapmaiņas grupa — ${label}: datums ${U.fmtDate(d)}`);
+  });
+  CP.changeHandlers.push(e => {
+    const t = e.target, id = t.dataset?.ekdate; if (id == null) return false;
+    const p = D.person(id); if (!p?.reg?.eklase?.done) return true;
+    t._pid = id;
+    return keepDate(t, p.reg.eklase.date || '', d => { p.reg.eklase = { ...p.reg.eklase, date: d }; p.updatedAt = U.now(); }, d => `e-klase: datums ${U.fmtDate(d)}`);
   });
   A.bulkReg = k => {
     let n = 0;
@@ -166,7 +178,7 @@
           const v = dvsOf(p, kind), inTool = received(p, kind);
           return `<div class="reg-row ${v ? 'ok' : !inTool ? 'nogot' : (fol ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="dvsToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
             <span><b>${esc(kind)}</b><br><small class="muted">${inTool ? 'rīkā: <span class="okc">✓ pievienots</span>' : '<span class="red">✗ nav saņemts — vispirms pievieno skenētu failu</span>'}${v ? (inTool ? '' : ' · <span class="red">atzīmēts DVS bez faila rīkā</span>') : (fol && inTool ? ' · DVS: <span class="warn">nav reģistrēts</span>' : '')}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS">` : ''}${inTool ? '' : addBtn(p, kind)}</div>`;
+            ${v ? `<input type="date" class="sm reg-date" data-dvsdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Reģistrēšanas datums DVS. Var ierakstīt vai izvēlēties kalendārā.">` : ''}${inTool ? '' : addBtn(p, kind)}</div>`;
         }).join('')}
         ${fol && dm.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē katru dokumentu, kad tas reģistrēts DVS. Datumu var nomainīt.</p>` : ''}</div>`;
     })() : '';
@@ -177,13 +189,14 @@
           const v = arcOf(p, kind), got = received(p, kind), miss = fol && !v && got;
           return `<div class="reg-row ${v ? 'ok' : !got ? 'nogot' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="arcToggle" data-arg="${p.id}|${i}" ${v ? 'checked' : ''}>
             <span><b>${esc(kind)}</b><br><small class="muted">${v ? 'oriģināls nodots arhīvam' + (got ? '' : ' · <span class="red">kartītē nav skenēta faila</span>') : got ? (fol ? '<span class="warn">saņemts, vēl nav nodots arhīvam</span>' : 'nav nodots') : '<span class="red">✗ vēl nav saņemts</span>'}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam">` : ''}${got ? '' : addBtn(p, kind)}</div>`;
+            ${v ? `<input type="date" class="sm reg-date" data-arcdate="${p.id}|${i}" value="${esc(v.date || '')}" title="Nodošanas datums Centra arhīvam. Var ierakstīt vai izvēlēties kalendārā.">` : ''}${got ? '' : addBtn(p, kind)}</div>`;
         }).join('')}</div>`;
     })() : '';
     const ek = list.some(r => r.k === 'eklase') ? (() => {
       const v = p.reg?.eklase, miss = fol && !v?.done;
-      return `<div class="reg-group"><label class="reg-row ${v?.done ? 'ok' : (miss ? 'miss' : '')}"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|eklase" ${v?.done ? 'checked' : ''}>
-        <span class="grow"><b>e-klase</b> <small class="muted">${v?.done ? 'ievadīts ' + esc(U.fmtDate(v.date)) : (miss ? '— vēl nav ievadīts' : '')}</small></span></label></div>`;
+      return `<div class="reg-group"><div class="reg-row ${v?.done ? 'ok' : (miss ? 'miss' : '')}"><label class="check grow"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|eklase" ${v?.done ? 'checked' : ''}>
+        <span><b>e-klase</b><br><small class="muted">${v?.done ? 'ievadīts e-klasē' : (miss ? '— vēl nav ievadīts' : '')}</small></span></label>
+        ${v?.done ? `<input type="date" class="sm reg-date" data-ekdate="${p.id}" value="${esc(v.date || '')}" title="Ievadīšanas datums e-klasē. Var ierakstīt vai izvēlēties kalendārā.">` : ''}</div></div>`;
     })() : '';
     const saz = list.some(r => r.k === 'sazina') ? (() => {
       const miss = SAZ.filter(([k]) => fol && !sazOf(p, k)), okN = SAZ.filter(([k]) => sazOf(p, k)).length;
@@ -192,7 +205,7 @@
           const v = sazOf(p, k), red = fol && !v;
           return `<div class="reg-row ${v ? 'ok' : (red ? 'nogot' : '')}"><label class="check grow"><input type="checkbox" data-act="sazToggle" data-arg="${p.id}|${k}" ${v ? 'checked' : ''}>
             <span><b>${l}</b><br><small class="muted">${v ? 'ievietots ziņapmaiņas grupā' : (red ? '<span class="red">✗ nav ievietots — WhatsApp, Signal vai cita grupa</span>' : 'WhatsApp, Signal vai cita grupa')}</small></span></label>
-            ${v ? `<input type="date" class="sm reg-date" data-sazdate="${p.id}|${k}" value="${esc(v.date || '')}" title="Datums, kad ${l.toLowerCase()} ievietots grupā">` : ''}</div>`;
+            ${v ? `<input type="date" class="sm reg-date" data-sazdate="${p.id}|${k}" value="${esc(v.date || '')}" title="Datums, kad ${l.toLowerCase()} ievietots grupā. Var ierakstīt vai izvēlēties kalendārā.">` : ''}</div>`;
         }).join('')}
         ${miss.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē jaunsargu un vecāku atsevišķi. Viens var būt grupā, otrs vēl ne.</p>` : ''}</div>`;
     })() : '';
