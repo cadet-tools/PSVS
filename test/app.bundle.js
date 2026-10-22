@@ -4577,10 +4577,12 @@ window.CP = window.CP || {};
 
   /* --- vCard 3.0 --- */
   const ve = s => String(s || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
-  const splitName = full => { const p = String(full || '').trim().split(/\s+/); return p.length > 1 ? [p.slice(0, -1).join(' '), p.at(-1)] : [p[0] || '', '']; };
   /** Visi personas kontakti kā vCard ieraksti (jaunietis, vecāki, ārkārtas).
-      Katrā kartītē ir arī saistītie cilvēki: bērna kartītē — vecāku vārdi un numuri (zvanāmi tieši no kartītes),
-      vecāka kartītē — bērna vārds, grupa un numurs. Etiķetes (Google “Labels”): “Jaunsardze – jaunsargi” / “Jaunsardze – vecāki”. */
+      Vārds kartītē vienmēr ir bērna vārds un uzvārds. Vecākam un ārkārtas kontaktam
+      iekavās ir viņa paša vārds un loma: “Miks Āboltiņš (Mārcis Āboltiņš, tēvs)”.
+      Kartītē ir tikai šī cilvēka numurs. Pārējie paliek piezīmē un kā saistītie vārdi,
+      lai WhatsApp nerāda vienu un to pašu vārdu pa reizei uz katru numuru.
+      Etiķetes (Google “Labels”): “Jaunsardze – jaunsargi” / “Jaunsardze – vecāki”. */
   function entries(p) {
     const st = S.db.settings, org = st.contactOrg || 'Jaunsardze';
     const labYouth = st.labelYouth || `${org} – jaunsargi`, labParents = st.labelParents || `${org} – vecāki`;
@@ -4589,17 +4591,15 @@ window.CP = window.CP || {};
     for (const c of all) {
       const n = U.normPhone(c.phone); if (!n && !c.email) continue;
       const isYouth = c.kind === 'youth';
-      let first, last, suffix;
-      if (isYouth) { first = p.first; last = p.last; suffix = D.groupOf(p) ? `(${D.groupOf(p)})` : ''; }
-      else { [first, last] = splitName(c.name || c.role); suffix = `(${child}, ${c.kind === 'emergency' ? 'ārkārtas' : (c.role || 'vecāks').toLowerCase()})`; }
+      const first = p.first, last = p.last;
+      const parent = String(c.name || '').trim();
+      const role = c.kind === 'emergency' ? 'ārkārtas' : (c.role || 'vecāks').toLowerCase();
+      const suffix = isYouth ? (D.groupOf(p) ? `(${D.groupOf(p)})` : '') : (parent ? `(${parent}, ${role})` : `(${role})`);
       const full = [first, last, suffix].filter(Boolean).join(' ');
       const others = all.filter(o => o !== c);
-      // Saistīto cilvēku numuri ar nosaukumu — redzami un zvanāmi tieši no kontakta
       const rel = [];
       others.forEach((o, i) => {
-        const on = U.normPhone(o.phone), who = `${relWord(o)}: ${o.kind === 'youth' ? child : o.name || ''}`.trim();
-        if (on) rel.push(`item${i + 1}.TEL:+${on}`, `item${i + 1}.X-ABLabel:${ve(who)}`);
-        if (o.name || o.kind === 'youth') rel.push(`item${i + 11}.X-ABRELATEDNAMES:${ve(o.kind === 'youth' ? child : o.name)}`, `item${i + 11}.X-ABLabel:${ve(relWord(o))}`);
+        if (o.name || o.kind === 'youth') rel.push(`item${i + 1}.X-ABRELATEDNAMES:${ve(o.kind === 'youth' ? child : o.name)}`, `item${i + 1}.X-ABLabel:${ve(relWord(o))}`);
       });
       const note = [
         isYouth ? `Jaunsargs${D.groupOf(p) ? ', grupa ' + D.groupOf(p) : ''}${p.school ? ', ' + p.school : ''}${p.schoolClass ? ' ' + p.schoolClass : ''}` : `${relWord(c)} — ${child}${D.groupOf(p) ? ' (' + D.groupOf(p) + ')' : ''}`,
@@ -4608,7 +4608,7 @@ window.CP = window.CP || {};
       out.push({ key: c.idx, kind: c.kind, label: `${c.role}: ${c.name || '—'}`, full, phone: n ? '+' + n : '', email: c.email || '', relCount: others.length,
         vcf: ['BEGIN:VCARD', 'VERSION:3.0', `N:${ve(last)};${ve(first)};;;${ve(suffix)}`, `FN:${ve(full)}`,
           n && `TEL;TYPE=CELL:+${n}`, c.email && `EMAIL;TYPE=INTERNET:${ve(c.email)}`, `ORG:${ve(org)}${D.groupOf(p) ? ';' + ve(D.groupOf(p)) : ''}`,
-          isYouth ? '' : `TITLE:${ve(relWord(c))} — ${ve(child)}`, ...rel, `NOTE:${ve(note)}`,
+          isYouth ? '' : `TITLE:${ve([parent, relWord(c)].filter(Boolean).join(' — '))}`, ...rel, `NOTE:${ve(note)}`,
           `CATEGORIES:${[org, isYouth ? labYouth : labParents].map(x => x.replace(/,/g, ' ')).join(',')}`,
           'END:VCARD'].filter(Boolean).join('\r\n') });
     }
