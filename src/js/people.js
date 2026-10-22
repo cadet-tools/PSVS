@@ -37,7 +37,7 @@
       <button class="sm" data-act="bulkReg" data-arg="dvs" title="Atzīmēt, ka atlasītajiem visi obligātie dokumenti reģistrēti DVS">✓ DVS (visi dok.)</button>
       <button class="sm" data-act="bulkReg" data-arg="arhivs" title="Atzīmēt, ka atlasītajiem visi dokumenti (anketa, līgums) nodoti Centra arhīvam">✓ Arhīvam (visi dok.)</button>
       <button class="sm" data-act="bulkReg" data-arg="eklase" title="Atzīmēt, ka atlasītie ievadīti e-klasē">✓ e-klase</button>
-      <button class="sm" data-act="bulkReg" data-arg="sazina" title="Atzīmēt, ka atlasītie ievietoti ziņapmaiņas grupā (WhatsApp, Signal vai citā)">✓ Ziņojumu grupa</button>
+      <button class="sm" data-act="bulkReg" data-arg="sazina" title="Atzīmēt, ka atlasītajiem jaunsargs un vecāks ir ziņapmaiņas grupā">✓ Jaunsargs un vecāks</button>
       <button class="sm" data-act="bulkCsv">⬇ CSV</button>
       <button class="sm" data-act="bulkVcard" title="Kontakti Google / telefonam">📇 vCard</button>
       <button class="sm" data-act="bulkArchive">Arhivēt</button>

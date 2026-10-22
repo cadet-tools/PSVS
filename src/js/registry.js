@@ -4,7 +4,7 @@
    p.reg = { dvs: { docs: { 'Pieteikuma anketa': { done, date }, 'Līgums': {…}, … } },
              arhivs: { docs: { 'Pieteikuma anketa': { done, date }, … } },
              eklase: { done: true, date },
-             sazina: { done: true, date } }
+             sazina: { jaunsargs: { done, date }, vecaks: { done, date } } }
    Arhīvam nododamie dokumenti = settings.archiveDocs (noklusēti anketa un līgums).
    DVS dokumentu saraksts = obligātie dokumenti (Iestatījumi → Dokumenti).
    Katru dokumentu var reģistrēt citā datumā. Kamēr kāds nav atzīmēts — brīdinājums
@@ -13,7 +13,8 @@
 (function (CP) {
   'use strict';
   const U = CP.util, S = CP.state, D = CP.data, A = CP.actions, esc = U.esc;
-  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'arhivs', l: 'Centra arhīvs', loc: 'Centra arhīvā', long: 'Oriģināls nodots Jaunsardzes centra arhīvam' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }, { k: 'sazina', l: 'Ziņapmaiņas grupa', loc: 'ziņapmaiņas grupā', long: 'Ievietots ziņapmaiņas grupā (WhatsApp, Signal vai citā)' }];
+  const REGS = [{ k: 'dvs', l: 'DVS', loc: 'DVS', long: 'Reģistrēts DVS sistēmā' }, { k: 'arhivs', l: 'Centra arhīvs', loc: 'Centra arhīvā', long: 'Oriģināls nodots Jaunsardzes centra arhīvam' }, { k: 'eklase', l: 'e-klase', loc: 'e-klasē', long: 'Ievadīts e-klasē' }, { k: 'sazina', l: 'Ziņapmaiņas grupa', loc: 'ziņapmaiņas grupā', long: 'Jaunsargs un vecāks ievietoti ziņapmaiņas grupā (WhatsApp, Signal vai citā)' }];
+  const SAZ = [['jaunsargs', 'Jaunsargs'], ['vecaks', 'Vecāks']];
   CP.REGS = REGS;
   const on = () => { const s = S.db.settings.registries; return REGS.filter(r => !Array.isArray(s) || s.includes(r.k)); };
   const dvsDocs = () => (S.db.settings.requiredDocs || []).filter(Boolean);
@@ -45,16 +46,31 @@
     setArc(p, kind, true, t.value); D.audit(p.id, 'update', [`Centra arhīvs — ${kind}: datums ${U.fmtDate(t.value)}`]);
     setTimeout(() => CP.store.changed(), 0); return true;
   });
+  /* --- Saziņa: jaunsargs un vecāks atsevišķi (viens var būt grupā, otrs ne) --- */
+  const sazOf = (p, who) => {
+    const s = p.reg?.sazina; if (!s) return null;
+    if (s[who]?.done) return s[who];
+    if (s.done && !s.jaunsargs && !s.vecaks) return { done: true, date: s.date };   // vecā vienotā atzīme — skaitās abiem
+    return null;
+  };
+  const sazMissing = p => followed(p) && on().some(r => r.k === 'sazina') ? SAZ.filter(([k]) => !sazOf(p, k)).map(([, l]) => l) : [];
+  function setSaz(p, who, done, date) {
+    p.reg = { ...(p.reg || {}) };
+    const prev = p.reg.sazina || {}, s = {};
+    for (const [k] of SAZ) { const v = sazOf(p, k); if (v) s[k] = { done: true, date: v.date }; }
+    if (done) s[who] = { done: true, date: date || s[who]?.date || prev[who]?.date || U.iso() }; else delete s[who];
+    p.reg.sazina = s; p.updatedAt = U.now();
+  }
   /** Saderībai: sistēmas, kur kaut kas nav atzīmēts */
   D.regMissing = p => {
     if (!followed(p)) return [];
-    return on().filter(r => r.k === 'dvs' ? D.dvsMissing(p).length : r.k === 'arhivs' ? D.arcMissing(p).length : !p.reg?.[r.k]?.done);
+    return on().filter(r => r.k === 'dvs' ? D.dvsMissing(p).length : r.k === 'arhivs' ? D.arcMissing(p).length : r.k === 'sazina' ? sazMissing(p).length : !p.reg?.[r.k]?.done);
   };
   D.regAlerts = roster => {
     const out = [];
     for (const p of roster) {
       if (!followed(p)) continue;
-      const dm = D.dvsMissing(p), ek = on().some(r => r.k === 'eklase') && !p.reg?.eklase?.done, sz = on().some(r => r.k === 'sazina') && !p.reg?.sazina?.done;
+      const dm = D.dvsMissing(p), ek = on().some(r => r.k === 'eklase') && !p.reg?.eklase?.done, sz = sazMissing(p);
       if (dm.length) {
         const inTool = dm.filter(k => !D.missingDocs(p).includes(k));
         out.push({ kind: 'registry', personId: p.id, sev: 1, when: '',
@@ -63,7 +79,7 @@
       const am = D.arcMissing(p);
       if (am.length) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: Centra arhīvam nav nodots — ${am.join(', ')}` });
       if (ek) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav atzīmēts, ka ievadīts e-klasē` });
-      if (sz) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav ievietots ziņapmaiņas grupā (WhatsApp, Signal vai cita)` });
+      if (sz.length) out.push({ kind: 'registry', personId: p.id, sev: 1, when: '', msg: `${U.full(p)}: nav ievietots ziņapmaiņas grupā — ${sz.join(', ')}` });
     }
     return out;
   };
@@ -83,10 +99,8 @@
     if (k === 'dvs') { for (const kind of dvsDocs()) setDvs(p, kind, done); D.audit(p.id, 'update', [`DVS: ${done ? 'reģistrēti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
     if (k === 'arhivs') { for (const kind of arcDocs()) setArc(p, kind, done); D.audit(p.id, 'update', [`Centra arhīvs: ${done ? 'nodoti visi dokumenti' : 'atzīmes noņemtas'}`]); return; }
     if (k === 'sazina') {
-      p.reg = { ...(p.reg || {}) };
-      if (done) p.reg.sazina = { done: true, date: p.reg.sazina?.date || U.iso() }; else delete p.reg.sazina;
-      p.updatedAt = U.now();
-      D.audit(p.id, 'update', [`Ziņapmaiņas grupa: ${done ? 'ievietots' : 'atzīme noņemta'}`]);
+      for (const [who] of SAZ) setSaz(p, who, done);
+      D.audit(p.id, 'update', [`Ziņapmaiņas grupa: ${done ? 'jaunsargs un vecāks ievietoti' : 'atzīmes noņemtas'}`]);
       return;
     }
     p.reg = { ...(p.reg || {}) };
@@ -96,7 +110,14 @@
   }
   A.regToggle = arg => {
     const [id, k] = String(arg).split('|'), p = D.person(id); if (!p) return;
-    setReg(p, k, !p.reg?.[k]?.done); CP.store.changed();
+    setReg(p, k, k === 'sazina' ? !!sazMissing(p).length : !p.reg?.[k]?.done); CP.store.changed();
+  };
+  A.sazToggle = arg => {
+    const [id, who] = String(arg).split('|'), p = D.person(id); if (!p || !SAZ.some(([k]) => k === who)) return;
+    const was = !!sazOf(p, who);
+    setSaz(p, who, !was);
+    D.audit(p.id, 'update', [`Ziņapmaiņas grupa — ${SAZ.find(([k]) => k === who)[1]}: ${was ? 'atzīme noņemta' : 'ievietots'}`]);
+    CP.store.changed();
   };
   A.dvsToggle = arg => {
     const [id, i] = String(arg).split('|'), p = D.person(id), kind = dvsDocs()[Number(i)]; if (!p || !kind) return;
@@ -114,16 +135,16 @@
   });
   CP.changeHandlers.push(e => {
     const t = e.target, v = t.dataset?.sazdate; if (v == null) return false;
-    const p = D.person(v); if (!p || !t.value) return true;
-    p.reg = { ...(p.reg || {}), sazina: { done: true, date: t.value } }; p.updatedAt = U.now();
-    D.audit(p.id, 'update', [`Ziņapmaiņas grupa: datums ${U.fmtDate(t.value)}`]);
+    const [id, who] = v.split('|'), p = D.person(id); if (!p || !SAZ.some(([k]) => k === who) || !t.value) return true;
+    setSaz(p, who, true, t.value);
+    D.audit(p.id, 'update', [`Ziņapmaiņas grupa — ${SAZ.find(([k]) => k === who)[1]}: datums ${U.fmtDate(t.value)}`]);
     setTimeout(() => CP.store.changed(), 0); return true;
   });
   A.bulkReg = k => {
     let n = 0;
     for (const id of S.list.sel) {
       const p = D.person(id); if (!p) continue;
-      if (k === 'dvs' ? D.dvsMissing(p).length || !dvsDocs().every(x => dvsOf(p, x)) : k === 'arhivs' ? !arcDocs().every(x => arcOf(p, x)) : !p.reg?.[k]?.done) { setReg(p, k, true); n++; }
+      if (k === 'dvs' ? D.dvsMissing(p).length || !dvsDocs().every(x => dvsOf(p, x)) : k === 'arhivs' ? !arcDocs().every(x => arcOf(p, x)) : k === 'sazina' ? !SAZ.every(([w]) => sazOf(p, w)) : !p.reg?.[k]?.done) { setReg(p, k, true); n++; }
     }
     CP.store.changed(); CP.ui.toast(k === 'dvs' ? `DVS: visi dokumenti atzīmēti kā reģistrēti ${n} personām` : k === 'arhivs' ? `Centra arhīvs: visi dokumenti atzīmēti kā nodoti ${n} personām` : `${REGS.find(r => r.k === k)?.l}: atzīmētas ${n} personas`, 'ok');
   };
@@ -165,12 +186,15 @@
         <span class="grow"><b>e-klase</b> <small class="muted">${v?.done ? 'ievadīts ' + esc(U.fmtDate(v.date)) : (miss ? '— vēl nav ievadīts' : '')}</small></span></label></div>`;
     })() : '';
     const saz = list.some(r => r.k === 'sazina') ? (() => {
-      const v = p.reg?.sazina, miss = fol && !v?.done;
-      return `<div class="reg-group"><div class="reg-title"><b>Saziņa</b></div>
-        <div class="reg-row ${v?.done ? 'ok' : (miss ? 'nogot' : '')}"><label class="check grow"><input type="checkbox" data-act="regToggle" data-arg="${p.id}|sazina" ${v?.done ? 'checked' : ''}>
-          <span><b>Ievietots ziņapmaiņas grupā</b><br><small class="muted">${v?.done ? 'WhatsApp, Signal vai cita grupa' : (miss ? '<span class="red">✗ nav ievietots — WhatsApp, Signal vai cita grupa</span>' : 'WhatsApp, Signal vai cita grupa')}</small></span></label>
-          ${v?.done ? `<input type="date" class="sm reg-date" data-sazdate="${p.id}" value="${esc(v.date || '')}" title="Datums, kad ievietots grupā">` : ''}</div>
-        ${miss ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē, kad persona ir ievietota ziņapmaiņas grupā.</p>` : ''}</div>`;
+      const miss = SAZ.filter(([k]) => fol && !sazOf(p, k)), okN = SAZ.filter(([k]) => sazOf(p, k)).length;
+      return `<div class="reg-group"><div class="reg-title"><b>Saziņa</b> <span class="pill ${okN === SAZ.length ? 'ok' : ''}">${okN}/${SAZ.length} ievietoti</span></div>
+        ${SAZ.map(([k, l]) => {
+          const v = sazOf(p, k), red = fol && !v;
+          return `<div class="reg-row ${v ? 'ok' : (red ? 'nogot' : '')}"><label class="check grow"><input type="checkbox" data-act="sazToggle" data-arg="${p.id}|${k}" ${v ? 'checked' : ''}>
+            <span><b>${l}</b><br><small class="muted">${v ? 'ievietots ziņapmaiņas grupā' : (red ? '<span class="red">✗ nav ievietots — WhatsApp, Signal vai cita grupa</span>' : 'WhatsApp, Signal vai cita grupa')}</small></span></label>
+            ${v ? `<input type="date" class="sm reg-date" data-sazdate="${p.id}|${k}" value="${esc(v.date || '')}" title="Datums, kad ${l.toLowerCase()} ievietots grupā">` : ''}</div>`;
+        }).join('')}
+        ${miss.length ? `<p class="small warn" style="margin:4px 0 0">⚠ Atzīmē jaunsargu un vecāku atsevišķi. Viens var būt grupā, otrs vēl ne.</p>` : ''}</div>`;
     })() : '';
     return `<section class="card reg-card"><h3>${CP.ic('check', '✓')}Reģistrācija un arhīvs</h3>${dvs}${arc}${ek}${saz}</section>`;
   }
