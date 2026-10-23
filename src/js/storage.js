@@ -94,6 +94,22 @@
     CP.validateDb(parsed);
     return fh;
   }
+  /** Ieraksta failu no jauna, ja Chrome īslaicīgi pazaudē rokturi (NotFoundError), kamēr rezerves kopija lasa mapi. */
+  async function putFile(name, text) {
+    let last;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const fh = await S.root.getFileHandle(name, { create: true });
+        await writeExact(fh, text);
+        return fh;
+      } catch (e) {
+        last = e;
+        if (e.name !== 'NotFoundError' || i === 2) throw e;
+        await new Promise(r => setTimeout(r, 250 * (i + 1)));
+      }
+    }
+    throw last;
+  }
 
   async function backupText(text, opts = {}) {
     if (!text) return { ok: true, skipped: true };
@@ -169,8 +185,7 @@
       try { CP.changelog?.capture(S.db); } catch (e) { console.error('žurnāls', e); }
       CP.validateDb(S.db);
       let text = JSON.stringify(S.db, null, 2);
-      const tmp = await S.root.getFileHandle(TMP, { create: true });
-      await writeExact(tmp, text);
+      await putFile(TMP, text);
       if (existing) {
         const again = await readStamp(existing);
         const external = !again.parseOk || store.fileChanged(S.fileStamp, S.loadedRevision, again.lastModified, again.revision);
@@ -186,11 +201,10 @@
           S.db.revision = prevRev + 1;
           S.db.updatedAt = U.now();
           text = JSON.stringify(S.db, null, 2);
-          await writeExact(tmp, text);
+          await putFile(TMP, text);
         }
       }
-      const fh = existing || await S.root.getFileHandle(CP.DATAFILE, { create: true });
-      await writeExact(fh, text);
+      const fh = await putFile(CP.DATAFILE, text);
       const file = await fh.getFile();
       S.fileStamp = file.lastModified;
       S.loadedRevision = S.db.revision;
@@ -200,7 +214,7 @@
       else S.dirty = false;
       CP.ui.updateSaveState();
       try { await S.root.removeEntry(TMP); }
-      catch (e) { CP.ui.toast('Dati saglabāti, bet pagaidu failu neizdevās izdzēst: ' + e.message, 'warn'); }
+      catch (e) { if (e.name !== 'NotFoundError') CP.ui.toast('Dati saglabāti, bet pagaidu failu neizdevās izdzēst: ' + e.message, 'warn'); }
       if (!silent) CP.ui.toast('Saglabāts', 'ok');
       if (S.dirty && S.db.settings.autosave && !S.conflict) store.schedule();
       return true;

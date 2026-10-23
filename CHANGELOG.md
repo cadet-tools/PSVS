@@ -18,6 +18,7 @@
 - Reģistrācijas un arhīva datumus var ierakstīt ar tastatūru, ne tikai izvēlēties kalendārā. Ierakstot ciparu, lauks vairs neaizveras. Tas pats DVS, Centra arhīvam, e-klasei un saziņai.
 - Personas kartītē arhivētam līgumam ir ✕. Tas noņem ierakstu no kartītes (apstiprinājums). Word fails personas mapē paliek. Līguma numurs kartītē paliek.
 - Nomainot līguma numuru dokumenta logā (“Rediģēt dokumentu”) vai piesaistot līguma failu, kartītes **Līguma Nr.** nomainās uz šo numuru. Agrāk numurs kartītē palika, ja tur jau bija ieraksts.
+- Automātiskā saglabāšana paliek: katra datu izmaiņa pēc apmēram sekundes tiek rakstīta `CADET_PERSONALS_DATI.json`, ja ieslēgts “Saglabāt automātiski”. Rezerves kopija vairs nemēģina iekļaut pagaidu failu `.raksta` (tas pastāv tikai ieraksta brīdī un tūlīt tiek dzēsts). Tāpēc vairs nerādās, ka šis fails nav saglabāts. Ja pats fails jau ir pazudis, dzēšana to neuzskata par kļūdu. Ja Chrome īslaicīgi pazaudē faila rokturi, ieraksts tiek mēģināts vēlreiz.
 
 ## 1.59.0 — 2026-10-20
 - Dokumentam “Līgums” lauks **Līguma numurs** ir obligāts (dokumenta logs un “Piesaistīt failu”). Glabājas pie dokumenta (`contractNo`); ja personai numura vēl nav, ieraksta arī kartītē. Kartītes obligātajos dokumentos rāda “Nr. …” vai “nav līguma numura”.

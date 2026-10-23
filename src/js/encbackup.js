@@ -14,7 +14,7 @@
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, store = CP.store;
   const ic = (n, f = '') => CP.ic(n, f);
   const FORMAT = 'cadet-rezerve', DIRNAME = 'CADET_PERSONĀLS_ATJAUNOŠANA', OLD_DIR = 'CADET_rezerve', DIRNAMES = [DIRNAME, OLD_DIR], ITER = 600000;
-  const SKIP = n => /^(_arhivi|_rezerves|\..*|~\$.*|desktop\.ini|thumbs\.db)$/i.test(n) || /\.crswap$/i.test(n);
+  const SKIP = n => /^(_arhivi|_rezerves|\..*|~\$.*|desktop\.ini|thumbs\.db)$/i.test(n) || /\.crswap$/i.test(n) || /\.raksta$/i.test(n);
   const te = new TextEncoder(), td = new TextDecoder();
   const b64 = u => { u = new Uint8Array(u); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
   const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -189,7 +189,11 @@
             await bs.put(id, await encBytes(CFG.master, data));
             idx.files[key] = { id, size: f.size, lm: f.lastModified, sha: await sha(data), ...meta }; added++; bytes += f.size;
           }
-        } catch (e) { if (e.auth || e.api) throw e; console.error(key, e); failed.push(label); }
+        } catch (e) {
+          if (e.auth || e.api) throw e;
+          if (e.name === 'NotFoundError' && /\.raksta$/i.test(String(key))) return;
+          console.error(key, e); failed.push(label);
+        }
         if (++done % 10 === 0) { status = `run:${done}/${jobs.length}`; paint(); await new Promise(r => setTimeout(r, 0)); }
       });
       // 3) dzēstie faili → noņem no kopijas

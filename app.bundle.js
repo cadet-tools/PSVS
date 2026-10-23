@@ -959,6 +959,22 @@ window.CP = window.CP || {};
     CP.validateDb(parsed);
     return fh;
   }
+  /** Ieraksta failu no jauna, ja Chrome īslaicīgi pazaudē rokturi (NotFoundError), kamēr rezerves kopija lasa mapi. */
+  async function putFile(name, text) {
+    let last;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const fh = await S.root.getFileHandle(name, { create: true });
+        await writeExact(fh, text);
+        return fh;
+      } catch (e) {
+        last = e;
+        if (e.name !== 'NotFoundError' || i === 2) throw e;
+        await new Promise(r => setTimeout(r, 250 * (i + 1)));
+      }
+    }
+    throw last;
+  }
 
   async function backupText(text, opts = {}) {
     if (!text) return { ok: true, skipped: true };
@@ -1034,8 +1050,7 @@ window.CP = window.CP || {};
       try { CP.changelog?.capture(S.db); } catch (e) { console.error('žurnāls', e); }
       CP.validateDb(S.db);
       let text = JSON.stringify(S.db, null, 2);
-      const tmp = await S.root.getFileHandle(TMP, { create: true });
-      await writeExact(tmp, text);
+      await putFile(TMP, text);
       if (existing) {
         const again = await readStamp(existing);
         const external = !again.parseOk || store.fileChanged(S.fileStamp, S.loadedRevision, again.lastModified, again.revision);
@@ -1051,11 +1066,10 @@ window.CP = window.CP || {};
           S.db.revision = prevRev + 1;
           S.db.updatedAt = U.now();
           text = JSON.stringify(S.db, null, 2);
-          await writeExact(tmp, text);
+          await putFile(TMP, text);
         }
       }
-      const fh = existing || await S.root.getFileHandle(CP.DATAFILE, { create: true });
-      await writeExact(fh, text);
+      const fh = await putFile(CP.DATAFILE, text);
       const file = await fh.getFile();
       S.fileStamp = file.lastModified;
       S.loadedRevision = S.db.revision;
@@ -1065,7 +1079,7 @@ window.CP = window.CP || {};
       else S.dirty = false;
       CP.ui.updateSaveState();
       try { await S.root.removeEntry(TMP); }
-      catch (e) { CP.ui.toast('Dati saglabāti, bet pagaidu failu neizdevās izdzēst: ' + e.message, 'warn'); }
+      catch (e) { if (e.name !== 'NotFoundError') CP.ui.toast('Dati saglabāti, bet pagaidu failu neizdevās izdzēst: ' + e.message, 'warn'); }
       if (!silent) CP.ui.toast('Saglabāts', 'ok');
       if (S.dirty && S.db.settings.autosave && !S.conflict) store.schedule();
       return true;
@@ -9208,7 +9222,7 @@ window.CP = window.CP || {};
   const U = CP.util, S = CP.state, D = CP.data, ui = CP.ui, A = CP.actions, esc = U.esc, store = CP.store;
   const ic = (n, f = '') => CP.ic(n, f);
   const FORMAT = 'cadet-rezerve', DIRNAME = 'CADET_PERSONĀLS_ATJAUNOŠANA', OLD_DIR = 'CADET_rezerve', DIRNAMES = [DIRNAME, OLD_DIR], ITER = 600000;
-  const SKIP = n => /^(_arhivi|_rezerves|\..*|~\$.*|desktop\.ini|thumbs\.db)$/i.test(n) || /\.crswap$/i.test(n);
+  const SKIP = n => /^(_arhivi|_rezerves|\..*|~\$.*|desktop\.ini|thumbs\.db)$/i.test(n) || /\.crswap$/i.test(n) || /\.raksta$/i.test(n);
   const te = new TextEncoder(), td = new TextDecoder();
   const b64 = u => { u = new Uint8Array(u); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
   const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -9383,7 +9397,11 @@ window.CP = window.CP || {};
             await bs.put(id, await encBytes(CFG.master, data));
             idx.files[key] = { id, size: f.size, lm: f.lastModified, sha: await sha(data), ...meta }; added++; bytes += f.size;
           }
-        } catch (e) { if (e.auth || e.api) throw e; console.error(key, e); failed.push(label); }
+        } catch (e) {
+          if (e.auth || e.api) throw e;
+          if (e.name === 'NotFoundError' && /\.raksta$/i.test(String(key))) return;
+          console.error(key, e); failed.push(label);
+        }
         if (++done % 10 === 0) { status = `run:${done}/${jobs.length}`; paint(); await new Promise(r => setTimeout(r, 0)); }
       });
       // 3) dzēstie faili → noņem no kopijas
